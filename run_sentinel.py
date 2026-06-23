@@ -30,7 +30,12 @@ def deploy_to_chamber(target_file_path):
         
     # 3. Construct the Anti-Gravity Execution String
     podman_cmd = [
-        "podman", "run", "--rm", "--network=none", "--user", "0",
+        "podman", "run", "--rm", 
+        "--network=none", 
+        "--user", "0",
+        "--security-opt", "no-new-privileges=true",
+        "--cap-drop=ALL",
+        "--read-only",
         "-v", f"{host_airlock}:{container_airlock}:Z",
         engine_image,
         "python3", "quarantine_chamber.py", container_payload_path

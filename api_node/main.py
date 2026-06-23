@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-import subprocess
+import asyncio
 
 app = FastAPI(title="Quantum Flex Core Node")
 
@@ -13,10 +13,22 @@ async def ingest_payload(request: Request):
         
     print(f"[>>] API Received Ingestion Request for: {file_path}")
     
-    # Trigger the Sentinel Orchestrator locally
     orchestrator = "/home/chambers/quantum_flex/run_sentinel.py"
+    
     try:
-        result = subprocess.run(["python3", orchestrator, file_path], capture_output=True, text=True)
-        return {"status": "success", "telemetry": result.stdout}
+        # Anti-Gravity Execution: Non-blocking asynchronous subprocess
+        process = await asyncio.create_subprocess_exec(
+            "python3", orchestrator, file_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        # The API yields control back to the event loop while waiting for Podman
+        stdout, stderr = await process.communicate()
+        
+        if process.returncode == 0:
+            return {"status": "success", "telemetry": stdout.decode().strip()}
+        else:
+            return {"status": "fatal", "error": stderr.decode().strip()}
     except Exception as e:
         return {"status": "fatal", "error": str(e)}
