@@ -1,0 +1,5 @@
+# Quantum Flex Operational Exclusions
+*.isolated
+*.log
+api_threat.txt
+api_env/
