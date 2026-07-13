@@ -1,151 +1,214 @@
 #!/usr/bin/env python3
 """
-Quantum Flex Sentinel: Euclidean Drive Monitor
-==============================================
-Calculates the Euclidean distance (Drive) between current telemetry and the optimal setpoint.
-V1: Memory Usage (MB)
-V2: CPU Load (%)
-V3: I/O Wait (%)
-V4: Cryptographic Integrity (Binary Penalty)
+Quantum Flex Sentinel: Unified Truth Ledger (Euclidean Drive)
+==============================================================
+Single-cycle execution designed for systemd .timer invocation.
+NO flat-file silos. ALL telemetry flows directly to the amara-matrix
+PostgreSQL state-bus via psycopg2.
 
-If Drive > Tolerance, executes a SIGSTOP (Hardstop) on the deviant node.
+Mathematical Bound:
+    D = sqrt( sum( (Sc_i - Sb_i)^2 ) )
+    
+State Vector: [V1_RAM_MB, V2_CPU_PCT, V3_IO_WAIT_PCT, V4_HASH_PENALTY]
+Tolerance: 1500
+Hash Penalty: 5000 (guarantees instant breach regardless of other vectors)
 """
 
-import math
-import time
-import json
-import logging
 import subprocess
 import psycopg2
+import math
+import json
+from datetime import datetime
 
-# ── Configuration ─────────────────────────────────────────────────────────────
-TOLERANCE = 1500.0
-HASH_PENALTY = 5000.0  # Massive penalty to mathematically guarantee a hardstop
-POLLING_INTERVAL = 10   # Seconds. Balances reactivity with runtime overhead.
-
-# Setpoints (Sb)
-SB_MEM = 512.0
-SB_CPU = 5.0
-SB_IOW = 1.0
-SB_HASH = 0.0
-
-BASELINE_SETPOINT = [SB_MEM, SB_CPU, SB_IOW, SB_HASH]
-
-PG_CONFIG = {
-    "host": "127.0.0.1", "port": 5432,
-    "dbname": "telemetry", "user": "ghostnode",
+# ── Configuration & Baselines ─────────────────────────────────────────────────
+# Superuser connection (Truth Log: memory_logs, integrity_registry)
+DB_CONFIG = {
+    "dbname": "telemetry",
+    "user": "ghostnode",
     "password": "quantum_flex_auth",
+    "host": "127.0.0.1",
+    "port": "5432",
 }
 
-logging.basicConfig(level=logging.INFO, format="[%(asctime)s] SENTINEL | %(message)s")
-log = logging.getLogger("sentinel")
+# Restricted service role (sentinel_ledger ONLY — blast radius containment)
+DB_SENTINEL = {
+    "dbname": "telemetry",
+    "user": "sentinel_service",
+    "password": "***REDACTED-ROTATED-CREDENTIAL***",
+    "host": "127.0.0.1",
+    "port": "5432",
+}
 
-def get_expected_digest(node_id):
-    try:
-        conn = psycopg2.connect(**PG_CONFIG, connect_timeout=3)
-        cur = conn.cursor()
-        cur.execute("SELECT expected_digest FROM integrity_registry WHERE node_id = %s", (node_id,))
-        res = cur.fetchone()
-        conn.close()
-        return res[0] if res else None
-    except Exception as e:
-        log.error(f"DB Error: {e}")
-        return None
+TARGET_NODE = "amara-matrix"
+TOLERANCE = 1500.0
+HASH_PENALTY_VALUE = 5000.0  # Mathematically guarantees breach of 1500 threshold
 
-def get_node_telemetry(node_id):
-    # 1. Get stats
-    try:
-        stats_raw = subprocess.check_output(
-            ["podman", "stats", node_id, "--no-stream", "--format", "json"], 
-            text=True
-        )
-        stats = json.loads(stats_raw)[0]
-        
-        # Parse Mem (e.g. "75MB" -> 75.0)
-        mem_str = stats.get("MemUsage", "0B").split("/")[0].strip().replace("MB", "").replace("GB", "").replace("B", "")
-        # Very rough parse for PoC, assuming MB scale.
-        try: mem_mb = float(mem_str) * 1024 if "G" in stats.get("MemUsage","") else float(mem_str)
-        except: mem_mb = 0.0
-        
-        # Parse CPU
-        cpu_str = stats.get("CPUPerc", "0.00%").replace("%", "")
-        try: cpu_pct = float(cpu_str)
-        except: cpu_pct = 0.0
-        
-    except Exception as e:
-        log.error(f"Failed to fetch stats for {node_id}: {e}")
-        return None
+# Setpoints: [RAM_MB, CPU_Percent, IO_Wait_Percent, Hash_Mismatch_Penalty]
+SETPOINT = [512.0, 5.0, 1.0, 0.0]
 
-    # 2. Get IO Wait (System-wide proxy for now)
+
+def execute_command(cmd):
+    """Executes a local shell command and returns stdout."""
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
+def get_current_telemetry():
+    """Extracts V1 (RAM), V2 (CPU), V3 (IO Wait), V4 (Hash) from the physical node."""
+    # ── V1 & V2: Podman Stats ─────────────────────────────────────────────
+    stats_raw = execute_command(f"podman stats --no-stream --format json {TARGET_NODE}")
+    stats = json.loads(stats_raw)[0]
+
+    # Parse RAM: e.g. "107MB / 2.147GB" -> 107.0
+    mem_usage_str = stats.get("mem_usage", "0MB / 0GB").split("/")[0].strip()
+    mem_val = float("".join(c for c in mem_usage_str if c.isdigit() or c == "."))
+    if "GB" in mem_usage_str or "GiB" in mem_usage_str:
+        mem_val *= 1024.0
+    ram_mb = mem_val
+
+    # Parse CPU: e.g. "0.61%" -> 0.61
+    cpu_percent = float(stats.get("cpu_percent", "0.00%").replace("%", ""))
+
+    # ── V3: I/O Wait (from /proc/stat) ────────────────────────────────────
     try:
         with open("/proc/stat", "r") as f:
-            cpu_times = f.readline().split()[1:8]
-            cpu_times = [float(x) for x in cpu_times]
-            io_wait = cpu_times[4]
-            total_time = sum(cpu_times)
-            # Rough instantaneous IO wait %
-            io_pct = (io_wait / total_time) * 100.0 if total_time > 0 else 0.0
-    except:
-        io_pct = 0.0
+            cpu_line = f.readline().split()
+            # Fields: user nice system idle iowait irq softirq steal
+            cpu_times = [float(x) for x in cpu_line[1:8]]
+            iowait = cpu_times[4]
+            total = sum(cpu_times)
+            io_wait_pct = (iowait / total) * 100.0 if total > 0 else 0.0
+    except Exception:
+        io_wait_pct = 0.0
 
-    # 3. Get Integrity
-    expected_digest = get_expected_digest(node_id)
-    hash_penalty = 0.0
-    if expected_digest:
-        try:
-            current_digest = subprocess.check_output(
-                ["podman", "inspect", "--format='{{.ImageDigest}}'", node_id], 
-                text=True
-            ).strip().strip("'")
-            if current_digest != expected_digest:
-                hash_penalty = HASH_PENALTY
-        except Exception:
-            hash_penalty = HASH_PENALTY # Assume breach on failure
-            
-    return [mem_mb, cpu_pct, io_pct, hash_penalty]
+    # ── V4: Cryptographic Integrity ───────────────────────────────────────
+    current_digest = execute_command(
+        f"podman inspect --format='{{{{.ImageDigest}}}}' {TARGET_NODE}"
+    )
 
-def calculate_drive(current_state, baseline_setpoint):
-    if len(current_state) != len(baseline_setpoint):
-        raise ValueError("State vectors must align.")
-    return math.sqrt(sum((c - b) ** 2 for c, b in zip(current_state, baseline_setpoint)))
+    return ram_mb, cpu_percent, io_wait_pct, current_digest
 
-def hardstop_node(node_id, drive_val):
-    log.critical(f"TOLERANCE BREACHED! Drive: {drive_val:.2f} > {TOLERANCE}. Executing SIGSTOP.")
-    subprocess.run(["podman", "pause", node_id])
-    
-    # Update Truth Log
+
+def query_integrity_registry(current_digest):
+    """Queries amara-matrix for the baseline hash. Returns (conn, hash_penalty)."""
+    conn = None
     try:
-        conn = psycopg2.connect(**PG_CONFIG)
+        conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO memory_logs (agent_id, action_taken, outcome)
-            VALUES ('SENTINEL', %s, 'Drive threshold exceeded. Container frozen.')
-        """, (f"SIGSTOP issued to {node_id} (D={drive_val:.2f})",))
-        
-        cur.execute("UPDATE integrity_registry SET lockout_status = TRUE WHERE node_id = %s", (node_id,))
-        conn.commit()
-        conn.close()
-    except:
-        pass
 
-def main():
-    log.info("Sentinel Euclidean Drive Monitor Online.")
-    target_node = "amara-matrix"
-    
-    while True:
-        telemetry = get_node_telemetry(target_node)
-        if telemetry:
-            try:
-                drive = calculate_drive(telemetry, BASELINE_SETPOINT)
-                log.info(f"Node: {target_node} | Sc: {telemetry} | Drive: {drive:.2f}")
-                
-                if drive > TOLERANCE:
-                    hardstop_node(target_node, drive)
-                    break # Halt monitoring after quarantine
-            except Exception as e:
-                log.error(f"Calculation fault: {e}")
-        
-        time.sleep(POLLING_INTERVAL)
+        cur.execute(
+            "SELECT expected_digest FROM integrity_registry WHERE node_id = %s",
+            (TARGET_NODE,),
+        )
+        row = cur.fetchone()
+        expected_digest = row[0] if row else None
+        cur.close()
+
+        if expected_digest is None:
+            # No baseline registered — fail secure
+            return conn, HASH_PENALTY_VALUE
+
+        hash_penalty = 0.0 if current_digest == expected_digest else HASH_PENALTY_VALUE
+        return conn, hash_penalty
+
+    except Exception as e:
+        print(f"[SENTINEL] TRUTH LOG FAILURE: {e}")
+        # Fail secure: apply penalty if DB unreachable
+        return conn, HASH_PENALTY_VALUE
+
+
+def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
+    """Commits the telemetry vector and drive calculation to the unified state-bus."""
+    # 1. Write to memory_logs via ghostnode (superuser)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """INSERT INTO memory_logs (agent_id, action_taken, outcome)
+               VALUES (%s, %s, %s)""",
+            (
+                "Sentinel",
+                f"Euclidean Drive: {drive:.2f}",
+                f"V1_RAM={ram:.1f}MB V2_CPU={cpu:.2f}% V3_IOW={io:.2f}% V4_HASH={hash_penalty:.0f}",
+            ),
+        )
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"[SENTINEL] Failed to commit to Truth Log: {e}")
+
+    # 2. Write structured telemetry to sentinel_ledger via restricted role
+    status = "HARDSTOP" if drive > TOLERANCE else "EQUILIBRIUM"
+    try:
+        sconn = psycopg2.connect(**DB_SENTINEL)
+        scur = sconn.cursor()
+        scur.execute(
+            """INSERT INTO sentinel_ledger (cpu_usage, mem_usage, io_wait, hash_penalty, drive_score, status)
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            (cpu, ram, io, hash_penalty, drive, status),
+        )
+        sconn.commit()
+        scur.close()
+        sconn.close()
+    except Exception as e:
+        print(f"[SENTINEL] Failed to commit to sentinel_ledger: {e}")
+
+
+def execute_hardstop(conn, drive):
+    """Freezes the deviant container and locks the integrity registry."""
+    print(f"[SENTINEL] CRITICAL: Drive {drive:.2f} > {TOLERANCE}. EXECUTING HARDSTOP (SIGSTOP).")
+    execute_command(f"podman pause {TARGET_NODE}")
+
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE integrity_registry SET lockout_status = TRUE WHERE node_id = %s",
+            (TARGET_NODE,),
+        )
+        cur.execute(
+            """INSERT INTO memory_logs (agent_id, action_taken, outcome)
+               VALUES ('Sentinel', %s, 'Container frozen. Lockout engaged.')""",
+            (f"HARDSTOP: Drive {drive:.2f} breached tolerance {TOLERANCE}",),
+        )
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"[SENTINEL] Lockout log failed: {e}")
+
+
+def enforce_homeostasis():
+    """Single-cycle homeostatic enforcement. Designed for .timer invocation."""
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{ts}] Sentinel Cycle Initiated...")
+
+    # 1. Extract physical telemetry
+    ram, cpu, io, current_hash = get_current_telemetry()
+
+    # 2. Query the Truth Log for integrity baseline
+    conn, hash_penalty = query_integrity_registry(current_hash)
+
+    # 3. Construct current state vector
+    current_state = [ram, cpu, io, hash_penalty]
+
+    # 4. Calculate Euclidean Drive
+    drive = math.sqrt(sum((c - b) ** 2 for c, b in zip(current_state, SETPOINT)))
+
+    print(f"[{ts}] Telemetry Vector: {current_state} | Drive: {drive:.2f} | Tolerance: {TOLERANCE}")
+
+    # 5. Commit to unified state-bus (NO flat files)
+    if conn:
+        log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty)
+
+    # 6. The Logic Gate
+    if drive > TOLERANCE:
+        if conn:
+            execute_hardstop(conn, drive)
+    else:
+        print(f"[{ts}] System within equilibrium. No action required.")
+
+    # 7. Cleanup
+    if conn:
+        conn.close()
+
 
 if __name__ == "__main__":
-    main()
+    enforce_homeostasis()
