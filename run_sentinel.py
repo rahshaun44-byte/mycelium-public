@@ -6,8 +6,8 @@ import shutil
 def deploy_to_chamber(target_file_path):
     print("\n[>>] QUANTUM FLEX: Initializing Sentinel Orchestrator...")
     
-    # Define absolute boundaries
-    host_airlock = os.path.expanduser("~/quantum_flex/sentinel")
+    # Define absolute boundaries — correct path for this host
+    host_airlock = os.path.expanduser("~/mycelium/sentinel")
     container_airlock = "/opt/sentinel"
     engine_image = "qflex/sentinel:v1"
     
