@@ -81,3 +81,47 @@ async def ingest_payload(request: Request):
             return {"status": "fatal", "error": stderr.decode().strip()}
     except Exception as e:
         return {"status": "fatal", "error": str(e)}
+
+
+@app.post("/webhook/ingest")
+async def webhook_ingest(request: Request):
+    """Stage raw HTTP POST JSON payload directly into the Sentinel sandbox."""
+    try:
+        data = await request.json()
+    except Exception as e:
+        return {"status": "error", "message": f"Invalid JSON payload: {e}"}
+
+    import random
+    temp_dir = "/home/USERNAME/.gemini/antigravity-ide/scratch/quantum-flex_HIDDEN/quarantine"
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    filename = f"webhook_{int(datetime.now().timestamp())}_{random.randint(100, 999)}.json"
+    temp_file_path = os.path.join(temp_dir, filename)
+
+    try:
+        with open(temp_file_path, "w") as f:
+            import json
+            json.dump(data, f)
+            
+        process = await asyncio.create_subprocess_exec(
+            "python3", ORCHESTRATOR, temp_file_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+        if process.returncode == 0:
+            return {"status": "success", "telemetry": stdout.decode().strip()}
+        else:
+            return {"status": "fatal", "error": stderr.decode().strip()}
+            
+    except Exception as e:
+        if os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except Exception:
+                pass
+        return {"status": "fatal", "error": str(e)}

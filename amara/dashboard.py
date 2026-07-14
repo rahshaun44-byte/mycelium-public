@@ -2,12 +2,14 @@
 """
 A.M.A.R.A. Sync Dashboard — Quantum Flex
 ==========================================
-Premium real-time dashboard. Pulls live telemetry from:
-  - sentinel/ledger/ledger.json (ghost-node heartbeat)
-  - PostgreSQL amara-matrix (throttle events, telemetry history)
+Premium real-time dashboard. Pulls ALL telemetry from the unified
+PostgreSQL state-bus (amara-matrix). NO flat-file silos.
+  - sentinel_ledger (Euclidean Drive telemetry)
+  - memory_logs (Sentinel/Amara decisions)
+  - integrity_registry (cryptographic baseline)
   - Athena node /health (RAG node status)
   - Ollama /api/tags (model inventory)
-Port: 8000 (0.0.0.0 — Tailscale mesh accessible)
+Port: 8000 (127.0.0.1 — Zero-Trust, Tailscale handles mesh routing)
 """
 
 import json
@@ -37,21 +39,60 @@ PG_CONFIG = {
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
-LEDGER_PATH  = Path(__file__).parent.parent / "sentinel/ledger/ledger.json"
 ATHENA_URL   = "http://127.0.0.1:8001"
 OLLAMA_URL   = "http://127.0.0.1:11434"
 API_NODE_URL = "http://127.0.0.1:8002"
 
 
 # ── Data helpers ──────────────────────────────────────────────────────────────
-def read_ledger() -> dict:
-    if not LEDGER_PATH.exists():
-        return {"status": "NO_DATA", "message": "Ghost Node ledger not found"}
+def get_sentinel_drive(limit: int = 1) -> dict:
+    """Pulls the latest Euclidean Drive telemetry from sentinel_ledger."""
+    if not PG_AVAILABLE:
+        return {"drive_score": 0, "status": "NO_DB", "cpu_usage": 0, "mem_usage": 0, "io_wait": 0, "hash_penalty": 0}
     try:
-        with open(LEDGER_PATH) as f:
-            return json.load(f)
+        conn = psycopg2.connect(**PG_CONFIG)
+        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM sentinel_ledger ORDER BY id DESC LIMIT %s", (limit,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row:
+            return dict(row)
+        return {"drive_score": 0, "status": "NO_DATA", "cpu_usage": 0, "mem_usage": 0, "io_wait": 0, "hash_penalty": 0}
     except Exception as e:
-        return {"status": "ERROR", "message": str(e)}
+        return {"drive_score": 0, "status": "ERROR", "cpu_usage": 0, "mem_usage": 0, "io_wait": 0, "hash_penalty": 0}
+
+
+def get_sentinel_history(limit: int = 10) -> list:
+    """Pulls recent Sentinel drive history from sentinel_ledger."""
+    if not PG_AVAILABLE:
+        return []
+    try:
+        conn = psycopg2.connect(**PG_CONFIG)
+        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM sentinel_ledger ORDER BY id DESC LIMIT %s", (limit,))
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        conn.close()
+        return rows
+    except Exception:
+        return []
+
+
+def get_integrity_status() -> dict:
+    """Reads the integrity_registry for cryptographic baseline status."""
+    if not PG_AVAILABLE:
+        return {"node_id": "unknown", "lockout_status": False}
+    try:
+        conn = psycopg2.connect(**PG_CONFIG)
+        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM integrity_registry LIMIT 1")
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return dict(row) if row else {"node_id": "unknown", "lockout_status": False}
+    except Exception:
+        return {"node_id": "unknown", "lockout_status": False}
 
 
 def get_pg_history(limit: int = 10) -> list:
@@ -116,18 +157,22 @@ async def probe_ollama() -> dict:
 # ── API endpoints ─────────────────────────────────────────────────────────────
 @app.get("/api/telemetry")
 async def get_telemetry():
-    ledger  = read_ledger()
+    drive   = get_sentinel_drive()
     athena  = await probe_athena()
     ollama  = await probe_ollama()
     history = get_pg_history(10)
     throttle = get_throttle_events(5)
+    sentinel = get_sentinel_history(10)
+    integrity = get_integrity_status()
     return {
-        "ledger":          ledger,
-        "athena":          athena,
-        "ollama":          ollama,
+        "drive":             drive,
+        "integrity":         integrity,
+        "athena":            athena,
+        "ollama":            ollama,
         "telemetry_history": history,
-        "throttle_events": throttle,
-        "timestamp":       datetime.now().isoformat(),
+        "throttle_events":   throttle,
+        "sentinel_history":  sentinel,
+        "timestamp":         datetime.now().isoformat(),
     }
 
 
@@ -146,22 +191,33 @@ async def proxy_query(request: Request):
 # ── Premium HTML dashboard ────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    ledger   = read_ledger()
-    athena   = await probe_athena()
-    ollama   = await probe_ollama()
-    history  = get_pg_history(8)
-    throttle = get_throttle_events(5)
+    drive_data = get_sentinel_drive()
+    athena     = await probe_athena()
+    ollama     = await probe_ollama()
+    history    = get_pg_history(8)
+    throttle   = get_throttle_events(5)
+    sentinel   = get_sentinel_history(8)
+    integrity  = get_integrity_status()
 
-    # Extract live metrics
-    tel = ledger.get("telemetry", {})
-    iowait   = tel.get("iowait_pct", "—")
-    ram_pct  = tel.get("ram_used_pct", "—")
-    swap_mb  = tel.get("swap_used_mb", "—")
-    load_1m  = tel.get("cpu_load_1m", "—")
-    status   = ledger.get("status", "UNKNOWN")
-    conf     = ledger.get("confidence", 0)
-    ts       = ledger.get("timestamp", "—")
-    alerts   = ledger.get("alerts", [])
+    # Extract live metrics from the unified state-bus
+    drive_score = float(drive_data.get("drive_score", 0) or 0)
+    iowait   = f"{float(drive_data.get('io_wait', 0) or 0):.2f}"
+    ram_mb   = f"{float(drive_data.get('mem_usage', 0) or 0):.1f}"
+    cpu_pct  = f"{float(drive_data.get('cpu_usage', 0) or 0):.2f}"
+    hash_pen = float(drive_data.get("hash_penalty", 0) or 0)
+    status   = drive_data.get("status", "UNKNOWN")
+    lockout  = integrity.get("lockout_status", False)
+    ts       = str(drive_data.get("timestamp", datetime.now().isoformat()))
+
+    # Confidence = inverse of drive relative to tolerance (1500)
+    conf     = max(0, min(1.0, 1.0 - (drive_score / 1500.0)))
+    alerts   = []
+    if lockout:
+        alerts.append("LOCKOUT ACTIVE: Integrity registry breach detected")
+    if hash_pen > 0:
+        alerts.append(f"HASH MISMATCH: Cryptographic penalty {hash_pen}")
+    if drive_score > 1125:
+        alerts.append(f"DRIVE WARNING: D={drive_score:.1f} approaching tolerance")
 
     athena_status = athena.get("status", "OFFLINE")
     athena_vecs   = athena.get("vector_count", "—")
@@ -515,27 +571,32 @@ async def index():
   </div>
 
   <!-- Live Metrics -->
-  <p class="section-header">Live Kernel Telemetry</p>
+  <p class="section-header">Euclidean Drive Telemetry (Unified State-Bus)</p>
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="metric-label">I/O Wait</div>
+      <div class="metric-label">Euclidean Drive (D)</div>
+      <div class="metric-value">{drive_score:.1f}</div>
+      <div class="metric-unit">tolerance: 1500.0</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">V1 · RAM Usage</div>
+      <div class="metric-value">{ram_mb}</div>
+      <div class="metric-unit">MB (cgroup limit: 2 GiB)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">V2 · CPU Load</div>
+      <div class="metric-value">{cpu_pct}</div>
+      <div class="metric-unit">% utilization</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">V3 · I/O Wait</div>
       <div class="metric-value">{iowait}</div>
-      <div class="metric-unit">% — dissolved oxygen level</div>
+      <div class="metric-unit">% — disk pressure</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">RAM Pressure</div>
-      <div class="metric-value">{ram_pct}</div>
-      <div class="metric-unit">% of 14 GiB</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Swap Used</div>
-      <div class="metric-value">{swap_mb}</div>
-      <div class="metric-unit">MB of 8 GiB</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">CPU Load (1m)</div>
-      <div class="metric-value">{load_1m}</div>
-      <div class="metric-unit">of 12 logical cores</div>
+      <div class="metric-label">V4 · Hash Integrity</div>
+      <div class="metric-value" style="color:{'var(--green)' if hash_pen == 0 else 'var(--red)'}">{"VALID" if hash_pen == 0 else "BREACH"}</div>
+      <div class="metric-unit">penalty: {hash_pen:.0f}</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Athena Vectors</div>
@@ -657,10 +718,17 @@ async def index():
     </div>
   </div>
 
-  <!-- Raw Ledger -->
-  <p class="section-header">Raw Ledger State</p>
+  <!-- Sentinel Ledger History -->
+  <p class="section-header">Sentinel Ledger (sentinel_service role)</p>
   <div class="card">
-    <pre style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent);white-space:pre-wrap">{json.dumps(ledger, indent=2, default=str)}</pre>
+    <table>
+      <thead>
+        <tr><th>Timestamp</th><th>Drive</th><th>RAM</th><th>CPU</th><th>IOW</th><th>Hash</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {''.join(f'<tr><td>{str(s.get("timestamp",""))[:19]}</td><td>{s.get("drive_score",0):.1f}</td><td>{s.get("mem_usage",0):.0f}MB</td><td>{s.get("cpu_usage",0):.2f}%</td><td>{s.get("io_wait",0):.3f}%</td><td style="color:{"var(--green)" if s.get("hash_penalty",0)==0 else "var(--red)"}">{s.get("hash_penalty",0):.0f}</td><td style="color:{"var(--green)" if s.get("status")=="EQUILIBRIUM" else "var(--red)"}">{s.get("status","?")}</td></tr>' for s in sentinel) if sentinel else '<tr><td colspan="7" style="color:var(--text-muted);text-align:center">Awaiting Sentinel data</td></tr>'}
+      </tbody>
+    </table>
   </div>
 
   <div class="footer">
@@ -714,4 +782,5 @@ async def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("dashboard:app", host="0.0.0.0", port=8000, reload=True)
+    # Zero-Trust: Bind STRICTLY to localhost. Tailscale handles mesh routing natively.
+    uvicorn.run("dashboard:app", host="127.0.0.1", port=8000, reload=False)

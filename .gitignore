@@ -3,3 +3,9 @@
 *.log
 api_threat.txt
 api_env/
+.env*
+secrets.txt
+*.pem
+*.key
+n8n/data/
+__pycache__/

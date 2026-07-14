@@ -18,6 +18,7 @@ import subprocess
 import psycopg2
 import math
 import json
+import requests
 from datetime import datetime
 
 # ── Configuration & Baselines ─────────────────────────────────────────────────
@@ -153,10 +154,29 @@ def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
         print(f"[SENTINEL] Failed to commit to sentinel_ledger: {e}")
 
 
+def trigger_n8n_webhook(drive):
+    """Fires a localized webhook to the n8n orchestrator."""
+    url = "http://127.0.0.1:5678/webhook/sentinel-alert"
+    payload = {
+        "timestamp": datetime.now().isoformat(),
+        "deviant_node": TARGET_NODE,
+        "euclidean_drive": f"{drive:.2f}",
+        "lockout_status": True,
+        "action_taken": "HARDSTOP_SIGSTOP_EXECUTED"
+    }
+    try:
+        response = requests.post(url, json=payload, timeout=2.0)
+        print(f"[SENTINEL] n8n Webhook Fired. Response: {response.status_code}")
+    except Exception as e:
+        print(f"[SENTINEL] Failed to trigger n8n webhook: {e}")
+
 def execute_hardstop(conn, drive):
     """Freezes the deviant container and locks the integrity registry."""
     print(f"[SENTINEL] CRITICAL: Drive {drive:.2f} > {TOLERANCE}. EXECUTING HARDSTOP (SIGSTOP).")
     execute_command(f"podman pause {TARGET_NODE}")
+
+    # Trigger Orchestrator
+    trigger_n8n_webhook(drive)
 
     try:
         cur = conn.cursor()

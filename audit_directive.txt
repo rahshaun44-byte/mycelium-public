@@ -1,6 +1,6 @@
 Engage Information Security Audit Mode.
 HARD STOP ENFORCED: Read-only operations only. Do not write or edit any files.
-Execute exactly: `ls -laZ /home/chambers/quantum_flex/sentinel/`
+Execute exactly: `ls -laZ /home/USERNAME/mycelium/sentinel/`
 Analyze the output matrix:
 1. Verify all files retain the `container_file_t` SELinux context.
 2. Verify any file ending in `.isolated` has absolute zero permissions (000 / ----------).

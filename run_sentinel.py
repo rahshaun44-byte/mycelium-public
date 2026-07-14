@@ -9,7 +9,7 @@ def deploy_to_chamber(target_file_path):
     # Define absolute boundaries — correct path for this host
     host_airlock = os.path.expanduser("~/mycelium/sentinel")
     container_airlock = "/opt/sentinel"
-    engine_image = "qflex/sentinel:v1"
+    engine_image = "localhost/qflex/sentinel:v1"
     
     # 1. Verify Host Payload
     if not os.path.exists(target_file_path):
@@ -38,7 +38,7 @@ def deploy_to_chamber(target_file_path):
         "--read-only",
         "-v", f"{host_airlock}:{container_airlock}:Z",
         engine_image,
-        "python3", "quarantine_chamber.py", container_payload_path
+        container_payload_path
     ]
     
     print(f"[>>] Detonating Chamber: {' '.join(podman_cmd)}")
