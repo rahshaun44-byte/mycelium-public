@@ -43,6 +43,8 @@ DB_SENTINEL = {
 TARGET_NODE = "amara-matrix"
 TOLERANCE = 1500.0
 HASH_PENALTY_VALUE = 5000.0  # Mathematically guarantees breach of 1500 threshold
+RECOVERY_CPU_THRESHOLD = 30.0   # Host CPU must be below this % to auto-recover
+RECOVERY_RAM_THRESHOLD = 75.0   # Host RAM must be below this % to auto-recover
 
 # Setpoints: [RAM_MB, CPU_Percent, IO_Wait_Percent, Hash_Mismatch_Penalty]
 SETPOINT = [512.0, 5.0, 1.0, 0.0]
@@ -195,10 +197,113 @@ def execute_hardstop(conn, drive):
         print(f"[SENTINEL] Lockout log failed: {e}")
 
 
+def check_lockout_status():
+    """Queries integrity_registry to determine if amara-matrix is in lockout."""
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT lockout_status FROM integrity_registry WHERE node_id = %s",
+            (TARGET_NODE,),
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return row[0] if row else False
+    except Exception:
+        # If DB is unreachable (paused container), check container state directly
+        state = execute_command(f"podman inspect --format='{{{{.State.Status}}}}' {TARGET_NODE}")
+        return state == "paused"
+
+
+def evaluate_host_vitals():
+    """Reads host CPU and RAM WITHOUT touching the database.
+    This is the recovery sensor — it works even when amara-matrix is frozen."""
+    # Host RAM from /proc/meminfo
+    try:
+        with open("/proc/meminfo", "r") as f:
+            mem = {}
+            for line in f:
+                parts = line.split()
+                if len(parts) >= 2:
+                    mem[parts[0].rstrip(":")] = int(parts[1])
+        total = mem.get("MemTotal", 1)
+        available = mem.get("MemAvailable", 0)
+        host_ram_pct = ((total - available) / total) * 100.0
+    except Exception:
+        host_ram_pct = 100.0  # Fail-secure: assume overloaded
+
+    # Host CPU from /proc/stat (instantaneous snapshot)
+    try:
+        with open("/proc/stat", "r") as f:
+            cpu_line = f.readline().split()
+            cpu_times = [float(x) for x in cpu_line[1:8]]
+            idle = cpu_times[3]
+            total_time = sum(cpu_times)
+            host_cpu_pct = ((total_time - idle) / total_time) * 100.0 if total_time > 0 else 100.0
+    except Exception:
+        host_cpu_pct = 100.0  # Fail-secure
+
+    return host_cpu_pct, host_ram_pct
+
+
+def execute_recovery():
+    """Recovery pathway: if host vitals are at equilibrium, unpause amara-matrix
+    and clear the lockout flag. This closes the homeostatic loop."""
+    host_cpu, host_ram = evaluate_host_vitals()
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    print(f"[{ts}] [SENTINEL] LOCKOUT DETECTED. Evaluating host for recovery...")
+    print(f"[{ts}] [SENTINEL] Host CPU: {host_cpu:.1f}% (threshold: {RECOVERY_CPU_THRESHOLD}%) | "
+          f"Host RAM: {host_ram:.1f}% (threshold: {RECOVERY_RAM_THRESHOLD}%)")
+
+    if host_cpu < RECOVERY_CPU_THRESHOLD and host_ram < RECOVERY_RAM_THRESHOLD:
+        print(f"[{ts}] [SENTINEL] HOST AT EQUILIBRIUM. Executing RECOVERY (SIGCONT).")
+        execute_command(f"podman unpause {TARGET_NODE}")
+
+        # Clear lockout in the registry now that the container is back
+        try:
+            conn = psycopg2.connect(**DB_CONFIG)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE integrity_registry SET lockout_status = FALSE WHERE node_id = %s",
+                (TARGET_NODE,),
+            )
+            cur.execute(
+                """INSERT INTO memory_logs (agent_id, action_taken, outcome)
+                   VALUES ('Sentinel', %s, %s)""",
+                (
+                    f"RECOVERY: Host CPU={host_cpu:.1f}% RAM={host_ram:.1f}%",
+                    f"Container unpaused. Lockout cleared. System restored to equilibrium.",
+                ),
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            print(f"[{ts}] [SENTINEL] RECOVERY COMPLETE. Lockout cleared.")
+            return True
+        except Exception as e:
+            print(f"[{ts}] [SENTINEL] Recovery DB update failed: {e}")
+            return True  # Container was unpaused even if DB log failed
+    else:
+        print(f"[{ts}] [SENTINEL] Host still under stress. Maintaining lockout.")
+        return False
+
+
 def enforce_homeostasis():
     """Single-cycle homeostatic enforcement. Designed for .timer invocation."""
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] Sentinel Cycle Initiated...")
+
+    # 0. RECOVERY CHECK — evaluate BEFORE touching the container
+    # If amara-matrix is paused, we cannot extract telemetry from it.
+    # Evaluate host-level vitals (no DB dependency) and recover if safe.
+    if check_lockout_status():
+        recovered = execute_recovery()
+        if not recovered:
+            print(f"[{ts}] Lockout persists. Skipping telemetry cycle.")
+            return
+        # If recovered, fall through to normal telemetry cycle
 
     # 1. Extract physical telemetry
     ram, cpu, io, current_hash = get_current_telemetry()
@@ -209,8 +314,9 @@ def enforce_homeostasis():
     # 3. Construct current state vector
     current_state = [ram, cpu, io, hash_penalty]
 
-    # 4. Calculate Euclidean Drive
-    drive = math.sqrt(sum((c - b) ** 2 for c, b in zip(current_state, SETPOINT)))
+    # 4. Calculate Euclidean Drive (with zero-division guard)
+    sum_sq = sum((c - b) ** 2 for c, b in zip(current_state, SETPOINT))
+    drive = math.sqrt(sum_sq) if sum_sq > 0 else 0.0
 
     print(f"[{ts}] Telemetry Vector: {current_state} | Drive: {drive:.2f} | Tolerance: {TOLERANCE}")
 
