@@ -216,6 +216,47 @@ def check_lockout_status():
         return state == "paused"
 
 
+def update_opa_threat_flag(flag_name: str, value: bool):
+    """
+    Update the threat flag by generating a new OPA bundle and saving it 
+    to the bundle server directory so all sidecars can pull it.
+    """
+    import os
+    import tarfile
+    
+    bundle_dir = "/home/USERNAME/mycelium/sentinel/bundle_server"
+    os.makedirs(bundle_dir, exist_ok=True)
+    
+    # Read existing or create new
+    data_path = os.path.join(bundle_dir, "data.json")
+    try:
+        with open(data_path, "r") as f:
+            data = json.load(f)
+    except Exception:
+        data = {"threat_flags": {}}
+        
+    if "threat_flags" not in data:
+        data["threat_flags"] = {}
+        
+    data["threat_flags"][flag_name] = value
+    
+    with open(data_path, "w") as f:
+        json.dump(data, f)
+        
+    # Create the bundle
+    policy_path = "/home/USERNAME/mycelium/sentinel/policies/membrane_health.rego"
+    bundle_path = os.path.join(bundle_dir, "bundle.tar.gz")
+    
+    try:
+        with tarfile.open(bundle_path, "w:gz") as tar:
+            tar.add(data_path, arcname="data.json")
+            if os.path.exists(policy_path):
+                tar.add(policy_path, arcname="membrane_health.rego")
+        print(f"[SENTINEL] OPA bundle updated. Threat flag '{flag_name}' set to {value}.")
+    except Exception as e:
+        print(f"[SENTINEL] Failed to update OPA bundle: {e}")
+
+
 def evaluate_host_vitals():
     """Reads host CPU and RAM WITHOUT touching the database.
     This is the recovery sensor — it works even when amara-matrix is frozen."""
@@ -326,6 +367,10 @@ def enforce_homeostasis():
 
     # 6. The Logic Gate
     if drive > TOLERANCE:
+        # If the hash penalty is maxed out, it's a crypto compromise
+        if hash_penalty >= HASH_PENALTY_VALUE:
+            update_opa_threat_flag("ML_KEM_COMPROMISED", True)
+            
         if conn:
             execute_hardstop(conn, drive)
     else:

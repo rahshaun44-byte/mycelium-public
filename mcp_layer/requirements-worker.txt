@@ -1,0 +1,4 @@
+# Minimal dependencies for the immune daemon and SSS relay
+# urllib is stdlib — no external HTTP library needed
+# oqs-python is installed from source in the Containerfile
+cryptography==41.0.3

@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════════
+# Quantum Flex PQC Worker — Post-Quantum Cryptographic Cell
+# Base: Fedora 40 (matches host SELinux policy)
+# Includes: liboqs (compiled), oqs-python, immune_daemon, sss_relay
+# ═══════════════════════════════════════════════════════════════════
+FROM registry.fedoraproject.org/fedora:40
+
+# Build dependencies for liboqs
+RUN dnf install -y --setopt=install_weak_deps=False \
+        gcc gcc-c++ cmake ninja-build \
+        python3 python3-pip python3-devel \
+        openssl openssl-devel \
+        git curl \
+    && dnf clean all
+
+# ── Stage 1: Compile liboqs ──────────────────────────────────────
+WORKDIR /build
+RUN git clone --depth=1 https://github.com/open-quantum-safe/liboqs.git && \
+    cmake -S liboqs -B liboqs/build \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -GNinja && \
+    cmake --build liboqs/build --parallel $(nproc) && \
+    cmake --install liboqs/build && \
+    ldconfig
+
+# ── Stage 2: Install oqs-python ──────────────────────────────────
+RUN git clone --depth=1 https://github.com/open-quantum-safe/liboqs-python.git && \
+    cd liboqs-python && \
+    pip3 install --no-cache-dir . && \
+    cd / && rm -rf /build
+
+# ── Stage 3: Application layer ───────────────────────────────────
+WORKDIR /opt/pqc-worker
+
+# Copy the immune daemon, sss_relay, and crypto provider config
+COPY immune_daemon.py .
+COPY sss_relay.py .
+COPY crypto_provider.conf .
+COPY requirements-worker.txt .
+RUN pip3 install --no-cache-dir -r requirements-worker.txt
+
+# OPA sidecar will be at localhost:8181 (shared pod network)
+ENV OPA_ENDPOINT="http://127.0.0.1:8181"
+ENV POLL_INTERVAL_MS="500"
+ENV PYTHONUNBUFFERED=1
+ENV WORKER_CMD="python3 /opt/pqc-worker/sss_relay.py"
+
+# The daemon runs as PID 1, managing the worker subprocess
+ENTRYPOINT ["python3", "-u", "immune_daemon.py"]
