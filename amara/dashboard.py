@@ -13,14 +13,24 @@ Port: 8000 (127.0.0.1 — Zero-Trust, Tailscale handles mesh routing)
 """
 
 import json
+import os
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import httpx
-from fastapi import FastAPI, Request
+from pydantic import BaseModel
+from fastapi import FastAPI, Request, Header, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse
+
+# Add parent dir to path to import Sentinel logic
+sys.path.append(str(Path(__file__).parent.parent))
+try:
+    from sentinel.sentinel import update_opa_threat_flag
+except ImportError:
+    def update_opa_threat_flag(alg, status): pass
 
 # ── PostgreSQL (optional — falls back gracefully) ─────────────────────────────
 try:
@@ -32,17 +42,45 @@ except ImportError:
 
 PG_CONFIG = {
     "host": "127.0.0.1", "port": 5432,
-    "dbname": "telemetry", "user": "ghostnode",
-    "password": "quantum_flex_auth",
+    "dbname": "quantum_flex", "user": "quantum",
+    "password": "flex_secure_pass",
 }
 
-# ── App ───────────────────────────────────────────────────────────────────────
+# ── Local Inference Engine (A.T.H.E.N.A Vectors) ──────────────────────────────
+try:
+    from sentence_transformers import SentenceTransformer
+    # BAAI/bge-small-en-v1.5 is a highly optimized 384-dimensional embedding model
+    embedding_engine = SentenceTransformer('BAAI/bge-small-en-v1.5')
+except ImportError:
+    embedding_engine = None
+
 app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
 ATHENA_URL   = "http://127.0.0.1:8001"
 OLLAMA_URL   = "http://127.0.0.1:11434"
 API_NODE_URL = "http://127.0.0.1:8002"
 
+# ── WebSocket Manager ─────────────────────────────────────────────────────────
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
 
 # ── Data helpers ──────────────────────────────────────────────────────────────
 def get_sentinel_drive(limit: int = 1) -> dict:
@@ -188,6 +226,94 @@ async def proxy_query(request: Request):
         return JSONResponse(status_code=503, content={"error": str(e)})
 
 
+@app.post("/api/threat_flag")
+async def toggle_threat(request: Request, x_api_key: str = Header(None)):
+    """Interactive Kill Switch. Requires strict API Key auth."""
+    expected_key = os.environ.get("DASHBOARD_API_KEY", "quantum-admin-2026")
+    if x_api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Invalid API Key. Zero-Trust Violation.")
+    
+    data = await request.json()
+    algorithm = data.get("algorithm", "ML-KEM-768")
+    status = data.get("status", "TOXIC")
+
+    # Update local bundle data via sentinel function. The Rego policy and
+    # sentinel.py's own hardstop path both key off "ML_KEM_COMPROMISED" (bool),
+    # not the raw algorithm name/status string the UI sends.
+    update_opa_threat_flag("ML_KEM_COMPROMISED", status == "TOXIC")
+    
+    await manager.broadcast({
+        "type": "THREAT_FLAG",
+        "algorithm": algorithm,
+        "status": status,
+        "timestamp": datetime.now().isoformat()
+    })
+    return {"success": True, "message": f"Threat flag {status} applied to {algorithm}"}
+
+
+@app.post("/api/internal/webhook_transition")
+async def webhook_transition(request: Request):
+    """Internal webhook called by immune_daemon in the background thread."""
+    data = await request.json()
+    data["type"] = "TRANSITION"
+    await manager.broadcast(data)
+    return {"success": True}
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+
+# ── A.T.H.E.N.A. Continuous Ingestion Pipeline ────────────────────────────────
+
+class DocumentChunk(BaseModel):
+    chunk_id: str
+    payload: str
+    metadata: dict
+
+async def process_and_shard_vector(chunk: DocumentChunk):
+    if not embedding_engine or not PG_AVAILABLE:
+        print("[ATHENA] Ingestion failed: engine or DB unavailable.")
+        return
+        
+    try:
+        # 1. Local inference call to generate vector embedding
+        vector = embedding_engine.encode(chunk.payload).tolist()
+        
+        # 2. Compute Golden Ratio Modulus 8 Shard
+        hash_int = int(chunk.chunk_id, 16)
+        phi = 0.6180339887
+        shard_index = int(8 * ((hash_int * phi) % 1))
+        
+        # 3. Direct bare-metal upsert to the specific sharded PostgreSQL table
+        table_name = f"edge_ingest_queue.vector_shard_{shard_index}"
+        
+        conn = psycopg2.connect(**PG_CONFIG)
+        cur = conn.cursor()
+        cur.execute(
+            f"INSERT INTO {table_name} (id, embedding, content, meta) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING",
+            (chunk.chunk_id, vector, chunk.payload, json.dumps(chunk.metadata))
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(f"[ATHENA] Sharded chunk {chunk.chunk_id[:8]}... to {table_name}")
+    except Exception as e:
+        print(f"[ATHENA] Ingestion Error: {e}")
+
+@app.post("/v1/athena/ingest", status_code=202)
+async def ingest_buffer(chunk: DocumentChunk, background_tasks: BackgroundTasks):
+    """Zero-lock async endpoint for Alpine quarantine chamber telemetry."""
+    background_tasks.add_task(process_and_shard_vector, chunk)
+    return {"status": "queued", "chunk_id": chunk.chunk_id}
+
+
 # ── Premium HTML dashboard ────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
 async def index():
@@ -308,20 +434,33 @@ async def index():
       position: fixed;
       inset: 0;
       background-image:
+        radial-gradient(circle at 15% 50%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
         linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
       pointer-events: none;
       z-index: 0;
     }}
     .container {{ position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 24px; }}
+    
+    /* Glassmorphism Classes */
+    .glass-panel {{
+      background: rgba(13, 20, 34, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }}
 
     /* Header */
     .header {{
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 32px; padding: 24px 32px;
       background: linear-gradient(135deg, rgba(0,229,255,0.08), rgba(124,58,237,0.08));
-      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 16px;
       box-shadow: var(--glow);
     }}
@@ -491,39 +630,68 @@ async def index():
 
     /* RAG query box */
     .query-box {{
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px; margin-bottom: 20px;
+      background: rgba(13, 20, 34, 0.6); backdrop-filter: blur(12px); 
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px; padding: 20px; margin-bottom: 20px;
     }}
     .query-input-row {{
       display: flex; gap: 12px; margin-top: 12px;
     }}
     #rag-input {{
-      flex: 1; background: var(--bg-card2);
-      border: 1px solid var(--border); border-radius: 8px;
+      flex: 1; background: rgba(17, 25, 39, 0.8);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
       padding: 12px 16px; color: var(--text);
       font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
-      outline: none;
+      outline: none; transition: border-color 0.2s;
     }}
     #rag-input:focus {{ border-color: var(--accent); }}
-    #rag-btn {{
+    .btn-premium {{
       padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer;
       background: linear-gradient(135deg, var(--accent2), var(--accent));
       color: #fff; font-weight: 600; font-size: 0.85rem;
-      transition: opacity 0.2s;
+      transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,229,255,0.2);
     }}
-    #rag-btn:hover {{ opacity: 0.85; }}
-    #rag-btn:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+    .btn-premium:hover {{ opacity: 0.9; transform: translateY(-1px); }}
+    .btn-premium:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+    .btn-danger {{
+      background: linear-gradient(135deg, #ff4444, #cc0000);
+      box-shadow: 0 4px 15px rgba(255,68,68,0.2);
+    }}
     #rag-output {{
       margin-top: 14px; padding: 14px;
-      background: var(--bg-primary); border-radius: 8px;
+      background: rgba(8, 12, 20, 0.8); border-radius: 8px;
       font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
       color: var(--green); min-height: 60px; white-space: pre-wrap;
-      display: none;
+      display: none; border: 1px solid rgba(255,255,255,0.05);
     }}
+
+    /* Pulse Animation for active tunnels */
+    .pulse-tunnel {{
+      animation: tunnel-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }}
+    @keyframes tunnel-pulse {{
+      0%, 100% {{ opacity: 1; text-shadow: 0 0 10px var(--accent); }}
+      50% {{ opacity: 0.5; text-shadow: none; }}
+    }}
+
+    /* Immune Control Panel */
+    .immune-panel {{
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;
+    }}
+    .immune-card {{
+      padding: 24px; display: flex; flex-direction: column; gap: 16px;
+    }}
+    .immune-data-row {{
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.02);
+    }}
+    .immune-val {{ font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--accent); }}
+    .threat-input {{ width: 100%; margin-bottom: 12px; }}
 
     /* Two-column layout */
     .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
-    @media (max-width: 900px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
+    @media (max-width: 900px) {{ .two-col, .immune-panel {{ grid-template-columns: 1fr; }} }}
 
     .footer {{
       text-align: center; padding: 24px;
@@ -573,40 +741,62 @@ async def index():
   <!-- Live Metrics -->
   <p class="section-header">Euclidean Drive Telemetry (Unified State-Bus)</p>
   <div class="metrics-grid">
-    <div class="metric-card">
+    <div class="metric-card glass-panel">
       <div class="metric-label">Euclidean Drive (D)</div>
       <div class="metric-value">{drive_score:.1f}</div>
       <div class="metric-unit">tolerance: 1500.0</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card glass-panel">
       <div class="metric-label">V1 · RAM Usage</div>
       <div class="metric-value">{ram_mb}</div>
       <div class="metric-unit">MB (cgroup limit: 2 GiB)</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card glass-panel">
       <div class="metric-label">V2 · CPU Load</div>
       <div class="metric-value">{cpu_pct}</div>
       <div class="metric-unit">% utilization</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card glass-panel">
       <div class="metric-label">V3 · I/O Wait</div>
       <div class="metric-value">{iowait}</div>
       <div class="metric-unit">% — disk pressure</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card glass-panel">
       <div class="metric-label">V4 · Hash Integrity</div>
       <div class="metric-value" style="color:{'var(--green)' if hash_pen == 0 else 'var(--red)'}">{"VALID" if hash_pen == 0 else "BREACH"}</div>
       <div class="metric-unit">penalty: {hash_pen:.0f}</div>
     </div>
-    <div class="metric-card">
-      <div class="metric-label">Athena Vectors</div>
-      <div class="metric-value">{athena_vecs}</div>
-      <div class="metric-unit">ChromaDB collection</div>
+  </div>
+
+  <!-- Immune C2 Panel -->
+  <p class="section-header">Quantum Flex Immune Engine (C2)</p>
+  <div class="immune-panel">
+    <div class="immune-card glass-panel">
+      <h3 style="color:var(--accent); font-size:1rem;">Biological Cell Monitor</h3>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom: 8px;">Real-time autonomic cryptographic state tracking.</p>
+      <div class="immune-data-row">
+        <span>Active KEM Tunnel</span>
+        <span class="immune-val pulse-tunnel" id="active-kem-display">ML-KEM-768</span>
+      </div>
+      <div class="immune-data-row">
+        <span>Active Signature</span>
+        <span class="immune-val" id="active-sig-display">ML-DSA-65</span>
+      </div>
+      <div class="immune-data-row">
+        <span>OPA Sidecar Polling</span>
+        <span class="immune-val" style="color:var(--green)">500ms</span>
+      </div>
     </div>
-    <div class="metric-card">
-      <div class="metric-label">Ollama Models</div>
-      <div class="metric-value" style="font-size:0.9rem;padding-top:8px">{ollama_models}</div>
-      <div class="metric-unit">loaded inference engines</div>
+    
+    <div class="immune-card glass-panel">
+      <h3 style="color:#ff4444; font-size:1rem;">Threat Injector</h3>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom: 8px;">Zero-Trust authenticated kill-switch simulation.</p>
+      <input type="password" id="api-key-input" class="threat-input" placeholder="Enter DASHBOARD_API_KEY..." style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:6px; font-family:'JetBrains Mono', monospace;" />
+      <div style="display:flex; gap:12px; margin-top: auto;">
+        <button class="btn-premium btn-danger" style="flex:1;" onclick="injectThreat('ML-KEM-768', 'TOXIC')">Poison ML-KEM-768</button>
+        <button class="btn-premium" style="flex:1; background:var(--border);" onclick="injectThreat('ML-KEM-768', 'COMPLIANT')">Clear Toxin</button>
+      </div>
+      <div id="threat-response" style="font-size:0.75rem; font-family:'JetBrains Mono', monospace; margin-top:8px; color:var(--green); display:none;"></div>
     </div>
   </div>
 
@@ -677,7 +867,7 @@ async def index():
       <input id="rag-input" type="text"
         placeholder="Ask Athena anything about Quantum Flex..."
         onkeydown="if(event.key==='Enter')submitQuery()"/>
-      <button id="rag-btn" onclick="submitQuery()">Query Athena</button>
+      <button class="btn-premium" id="rag-btn" onclick="submitQuery()">Query Athena</button>
     </div>
     <pre id="rag-output"></pre>
   </div>
@@ -737,8 +927,70 @@ async def index():
 </div>
 
 <script>
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds for the non-live tables
   setTimeout(() => location.reload(), 30000);
+
+  // ── WebSocket State Reconciliation (The UI Pulse) ──
+  const ws = new WebSocket(`ws://${{window.location.host}}/ws`);
+  
+  ws.onmessage = function(event) {{
+      const data = JSON.parse(event.data);
+      console.log("WebSocket Event:", data);
+      
+      if (data.type === "TRANSITION") {{
+          // Triggered by immune_daemon background thread
+          const kemDisplay = document.getElementById("active-kem-display");
+          kemDisplay.textContent = data.new_kem;
+          
+          // Flash animation
+          kemDisplay.style.color = "#ff4444";
+          setTimeout(() => {{
+              kemDisplay.style.color = "var(--accent)";
+          }}, 600);
+      }}
+      
+      if (data.type === "THREAT_FLAG") {{
+          // Status updated by API
+          const tr = document.getElementById("threat-response");
+          tr.style.display = "block";
+          tr.textContent = `[${{data.timestamp.substring(11,19)}}] OPA Bundle Updated: ${{data.algorithm}} -> ${{data.status}}`;
+      }}
+  }};
+
+  async function injectThreat(algorithm, status) {{
+      const apiKey = document.getElementById('api-key-input').value;
+      const resDiv = document.getElementById('threat-response');
+      if (!apiKey) {{
+          resDiv.style.display = "block";
+          resDiv.style.color = "#ff4444";
+          resDiv.textContent = "[ERROR] API Key Required for C2 Execution.";
+          return;
+      }}
+      
+      try {{
+          const res = await fetch('/api/threat_flag', {{
+              method: 'POST',
+              headers: {{
+                  'Content-Type': 'application/json',
+                  'x-api-key': apiKey
+              }},
+              body: JSON.stringify({{algorithm, status}})
+          }});
+          const data = await res.json();
+          resDiv.style.display = "block";
+          if (!res.ok) {{
+              resDiv.style.color = "#ff4444";
+              resDiv.textContent = "[SECURITY VIOLATION] " + data.detail;
+          }} else {{
+              resDiv.style.color = "var(--green)";
+              resDiv.textContent = "[SUCCESS] " + data.message;
+          }}
+      }} catch (e) {{
+          resDiv.style.display = "block";
+          resDiv.style.color = "#ff4444";
+          resDiv.textContent = "[ERROR] " + e;
+      }}
+  }}
 
   async function submitQuery() {{
     const input = document.getElementById('rag-input');
