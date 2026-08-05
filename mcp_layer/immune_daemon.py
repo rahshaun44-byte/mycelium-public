@@ -32,9 +32,17 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
+
+try:
+    import psycopg2
+    import requests
+except ImportError:
+    psycopg2 = None
+    requests = None
 
 # ── Configuration ─────────────────────────────────────────────────
 OPA_ENDPOINT = os.environ.get("OPA_ENDPOINT", "http://127.0.0.1:8181")
@@ -54,6 +62,51 @@ logging.basicConfig(
 )
 log = logging.getLogger("immune_daemon")
 
+PG_CONFIG = {
+    "host": "127.0.0.1", "port": 5432,
+    "dbname": "telemetry", "user": "ghostnode",
+    "password": "quantum_flex_auth",
+}
+DASHBOARD_WEBHOOK = "http://127.0.0.1:8000/api/internal/webhook_transition"
+
+def log_transition_background(old_kem: str, new_kem: str, findings: list):
+    """
+    Executes in O(1) background thread to prevent I/O blocking during Vein Collapse.
+    Logs to the unified PostgreSQL Truth Log (memory_logs) and pushes SSE webhook.
+    """
+    def _run():
+        action = f"VEIN COLLAPSE: {old_kem} → {new_kem}"
+        outcome = f"TOXIC findings: {[f.get('algorithm') for f in findings]}"
+        
+        # 1. Truth Log Insertion
+        if psycopg2:
+            try:
+                conn = psycopg2.connect(**PG_CONFIG)
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO memory_logs (agent_id, action_taken, outcome) VALUES (%s, %s, %s)",
+                    ("immune_daemon", action, outcome)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+                log.info("Truth Log sync complete (async).")
+            except Exception as e:
+                log.error(f"Truth Log async insert failed: {e}")
+
+        # 2. Webhook to Dashboard for Real-Time UI Pulse
+        if requests:
+            try:
+                requests.post(
+                    DASHBOARD_WEBHOOK,
+                    json={"old_kem": old_kem, "new_kem": new_kem, "findings": findings, "timestamp": datetime.now().isoformat()},
+                    timeout=2
+                )
+                log.info("Dashboard webhook push complete (async).")
+            except Exception as e:
+                log.error(f"Dashboard webhook async push failed: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
 
 class ImmuneState:
     """Tracks the daemon's current cryptographic posture."""
@@ -205,6 +258,9 @@ def execute_vein_collapse(state: ImmuneState, verdict: dict):
 
     log.info(f"TRANSITION COMPLETE: {old_kem} → {fallback} "
              f"(total transitions: {state.transition_count})")
+
+    # ── Step 4: Fire async truth logging and webhook ──────────────
+    log_transition_background(old_kem, fallback, toxic_findings)
 
 
 def fail_secure_response(state: ImmuneState):

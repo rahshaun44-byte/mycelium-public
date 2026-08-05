@@ -30,7 +30,8 @@ echo "[$(date)] IMMUNE POD: Pod created. Shared network namespace active."
 # ── 2. Deploy OPA Sidecar (Bundle Pulling) ───────────────────────
 # OPA will serve on port 8181 (accessible to worker via localhost)
 # It pulls bundles from the bundle server to sync threat flags
-cat <<EOF > /tmp/opa-config.yaml
+OPA_CONFIG_TMP=$(mktemp)
+cat <<EOF > "${OPA_CONFIG_TMP}"
 services:
   default:
     url: ${BUNDLE_SERVER_URL}
@@ -49,7 +50,7 @@ podman run -d \
     --security-opt no-new-privileges:true \
     --memory 128m \
     --cpus 0.25 \
-    -v /tmp/opa-config.yaml:/config.yaml:ro \
+    -v "${OPA_CONFIG_TMP}:/config.yaml:ro,Z" \
     docker.io/openpolicyagent/opa:latest-static \
     run \
         --server \
@@ -79,7 +80,12 @@ echo "[$(date)] IMMUNE POD: CBOMkit-theia sidecar deployed."
 # Build the worker image if not already present
 if ! podman image exists qflex-pqc-worker:latest; then
     echo "[$(date)] IMMUNE POD: Building PQC worker image..."
+    # Resource-clamp the BUILD phase — liboqs compilation is the heaviest
+    # single workload on this node. Without this, the build can consume
+    # all 14G of RAM and hard-lock the host.
     podman build \
+        --memory="6g" \
+        --cpus="4" \
         -t qflex-pqc-worker:latest \
         -f "${SCRIPT_DIR}/Containerfile.pqc-worker" \
         "${SCRIPT_DIR}"
@@ -100,8 +106,8 @@ echo "[$(date)] IMMUNE POD: OPA → 127.0.0.1:8181 | Worker Health → 127.0.0.1
 echo "[$(date)] IMMUNE POD: Running post-deploy verification..."
 sleep 3
 
-# Verify OPA is responding
-OPA_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8181/health || echo "000")
+# Verify OPA is responding from inside the pod namespace (using worker which has curl)
+OPA_HEALTH=$(podman exec qflex-pqc-worker curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8181/health || echo "000")
 if [ "${OPA_HEALTH}" = "200" ]; then
     echo "[$(date)] IMMUNE POD: OPA health check ✅ (HTTP ${OPA_HEALTH})"
 else

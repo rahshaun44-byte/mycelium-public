@@ -26,6 +26,12 @@ try:
 except ImportError:
     OQS_AVAILABLE = False
 
+try:
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+except ImportError:
+    AESGCM = None
+import os
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] SSS_RELAY | %(message)s",
@@ -81,13 +87,60 @@ class SSSRelay:
         time.sleep(0.01 * len(self.buffer))
         log.info("Re-encapsulation complete. Shards ready for healthy vein.")
         
+    def simulate_remote_node_key(self):
+        """Simulate a remote node generating a ML-KEM-768 keypair and sharing its public key."""
+        if OQS_AVAILABLE:
+            with oqs.KeyEncapsulation(self.active_kem) as kem:
+                public_key = kem.generate_keypair()
+                return public_key
+        return b"MOCK_PUBLIC_KEY"
+
+    def hybrid_encapsulate(self, shard_data: bytes, remote_pub_key: bytes) -> dict:
+        """
+        Executes the Hybrid Encapsulation Workflow:
+        1. Encapsulation (Local) using KEM and remote public key.
+        2. Symmetric Encryption of the SSS shard using AES-256-GCM.
+        3. Bundle creation.
+        """
+        if OQS_AVAILABLE and AESGCM:
+            with oqs.KeyEncapsulation(self.active_kem) as kem:
+                # 2. Encapsulation (Local)
+                kem_ciphertext, shared_secret = kem.encap_secret(remote_pub_key)
+                
+                # 3. Symmetric Encryption (AES-256-GCM uses the 32-byte shared secret)
+                aesgcm = AESGCM(shared_secret[:32])
+                nonce = os.urandom(12)
+                aes_ciphertext = aesgcm.encrypt(nonce, shard_data, None)
+                
+                # 4. Transmission Bundle
+                return {
+                    "kem_ciphertext": kem_ciphertext,
+                    "aes_nonce": nonce,
+                    "aes_ciphertext": aes_ciphertext
+                }
+        else:
+            # Fallback mock for local testing without C-bindings
+            return {
+                "kem_ciphertext": b"MOCK_KEM_CT",
+                "aes_nonce": b"MOCK_NONCE",
+                "aes_ciphertext": b"MOCK_AES_CT_" + shard_data
+            }
+
     def route_shards(self):
-        """Route the encapsulated shards to their destination."""
+        """Route the encapsulated shards to their destination using hybrid encryption."""
         if not self.buffer:
             return
             
-        log.debug(f"Routing {len(self.buffer)} shards via {self.active_kem} tunnel...")
-        # Simulate network routing
+        log.debug(f"Routing {len(self.buffer)} shards via {self.active_kem} hybrid tunnel...")
+        
+        # 1. Key Generation (Remote - simulated)
+        remote_pub_key = self.simulate_remote_node_key()
+        
+        for shard in self.buffer:
+            bundle = self.hybrid_encapsulate(shard, remote_pub_key)
+            log.info(f"Transmitting Bundle -> KEM CT: {len(bundle['kem_ciphertext'])}B | AES CT: {len(bundle['aes_ciphertext'])}B")
+            
+        # Simulate network routing delay
         time.sleep(0.05)
         self.buffer.clear()
         

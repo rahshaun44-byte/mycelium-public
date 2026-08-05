@@ -9,7 +9,8 @@ Designed for daily cron invocation via systemd .timer.
 """
 
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timedelta
+import brie_medium
 
 # Superuser connection (must be able to DELETE from memory_logs)
 DB_CONFIG = {
@@ -23,47 +24,58 @@ DB_CONFIG = {
 RETENTION_DAYS = 7
 
 
+def manage_partitions(cur, base_table):
+    now = datetime.now()
+    
+    # 1. Prune T-7 (Drop old partition)
+    prune_date = now - timedelta(days=RETENTION_DAYS)
+    prune_suffix = prune_date.strftime("%Y_%m_%d")
+    prune_table = f"{base_table}_p{prune_suffix}"
+    
+    # 1.5 Brie Node Medium (Synchronous Purge & Attestation Hook)
+    try:
+        k_t = brie_medium.neurogenesis_purge(cur, prune_table)
+        cur.execute(f"DROP TABLE IF EXISTS {prune_table}")
+        print(f"[Neurogenesis] Partition {prune_table} safely dropped post-attestation. k_t: {k_t.hex()[:16]}")
+    except Exception as e:
+        print(f"[Neurogenesis] ABORTING DROP for {prune_table}: {e}")
+        raise RuntimeError(f"PURGE INTEGRITY BREACH on {prune_table}") from e
+
+    
+    # 2. Provision T+1 and T+2
+    for offset in [1, 2]:
+        future_date = now + timedelta(days=offset)
+        start_ts = future_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_ts = start_ts + timedelta(days=1)
+        
+        suffix = start_ts.strftime("%Y_%m_%d")
+        new_table = f"{base_table}_p{suffix}"
+        
+        start_str = start_ts.strftime("%Y-%m-%d %H:%M:%S")
+        end_str = end_ts.strftime("%Y-%m-%d %H:%M:%S")
+        
+        cur.execute(f"CREATE TABLE IF NOT EXISTS {new_table} PARTITION OF {base_table} FOR VALUES FROM ('{start_str}') TO ('{end_str}')")
+
 def prune_truth_log():
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{ts}] Neurogenesis Cycle Initiated — pruning telemetry older than {RETENTION_DAYS} days...")
+    print(f"[{ts}] Neurogenesis Cycle Initiated — enforcing {RETENTION_DAYS}-day rolling window and provisioning future partitions...")
 
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
 
-        # 1. Prune memory_logs (primary truth log)
-        cur.execute(
-            "DELETE FROM memory_logs WHERE timestamp < NOW() - INTERVAL '%s days'",
-            (RETENTION_DAYS,),
-        )
-        memory_pruned = cur.rowcount
+        tables_to_manage = ["memory_logs", "sentinel_ledger", "telemetry_log"]
+        
+        for table in tables_to_manage:
+            manage_partitions(cur, table)
 
-        # 2. Prune sentinel_ledger (structured telemetry)
-        cur.execute(
-            "DELETE FROM sentinel_ledger WHERE timestamp < NOW() - INTERVAL '%s days'",
-            (RETENTION_DAYS,),
-        )
-        sentinel_pruned = cur.rowcount
-
-        # 3. Prune telemetry_log (qf_monitor data) if it exists
-        try:
-            cur.execute(
-                "DELETE FROM telemetry_log WHERE timestamp < NOW() - INTERVAL '%s days'",
-                (RETENTION_DAYS,),
-            )
-            telemetry_pruned = cur.rowcount
-        except Exception:
-            conn.rollback()
-            telemetry_pruned = 0
-
-        # 4. Log the pruning event itself
+        # Log the pruning event itself
         cur.execute(
             """INSERT INTO memory_logs (agent_id, action_taken, outcome)
                VALUES ('Neurogenesis', %s, %s)""",
             (
-                f"PRUNE: {RETENTION_DAYS}-day rolling window enforced",
-                f"Deleted {memory_pruned} memory_logs, {sentinel_pruned} sentinel_ledger, "
-                f"{telemetry_pruned} telemetry_log rows.",
+                f"PRUNE & PROVISION: {RETENTION_DAYS}-day rolling window enforced",
+                f"Dropped T-{RETENTION_DAYS} partitions and provisioned T+1, T+2 for all truth logs.",
             ),
         )
 
@@ -71,14 +83,10 @@ def prune_truth_log():
         cur.close()
         conn.close()
 
-        print(f"[{ts}] Pruning complete:")
-        print(f"  memory_logs:    {memory_pruned} rows deleted")
-        print(f"  sentinel_ledger: {sentinel_pruned} rows deleted")
-        print(f"  telemetry_log:  {telemetry_pruned} rows deleted")
+        print(f"[{ts}] Neurogenesis complete: Partitions managed via O(1) ops.")
 
     except Exception as e:
         print(f"[{ts}] NEUROGENESIS FAILURE: {e}")
-
 
 if __name__ == "__main__":
     prune_truth_log()

@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════════
 # Quantum Flex PQC Worker — Post-Quantum Cryptographic Cell
-# Base: Fedora 40 (matches host SELinux policy)
+# Base: Fedora 44 (matches host SELinux policy)
 # Includes: liboqs (compiled), oqs-python, immune_daemon, sss_relay
 # ═══════════════════════════════════════════════════════════════════
-FROM registry.fedoraproject.org/fedora:40
+FROM registry.fedoraproject.org/fedora:44
 
 # Build dependencies for liboqs
 RUN dnf install -y --setopt=install_weak_deps=False \
@@ -14,13 +14,16 @@ RUN dnf install -y --setopt=install_weak_deps=False \
     && dnf clean all
 
 # ── Stage 1: Compile liboqs ──────────────────────────────────────
+# Hard-cap: 2 threads max. $(nproc) on this 12-core box spawns 12 g++
+# processes, each eating ~1GB for PQC crypto. That's a 12GB spike into
+# 14GB RAM with only zram swap — guaranteed hard-lock.
 WORKDIR /build
 RUN git clone --depth=1 https://github.com/open-quantum-safe/liboqs.git && \
     cmake -S liboqs -B liboqs/build \
         -DBUILD_SHARED_LIBS=ON \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
         -GNinja && \
-    cmake --build liboqs/build --parallel $(nproc) && \
+    cmake --build liboqs/build --parallel 2 && \
     cmake --install liboqs/build && \
     ldconfig
 

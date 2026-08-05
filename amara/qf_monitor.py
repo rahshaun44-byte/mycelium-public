@@ -19,8 +19,12 @@ import json
 import logging
 import os
 import re
+import sqlite3
 from datetime import datetime
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / "sentinel" / ".env")
 
 # ── PostgreSQL connection (psycopg2 if available, else SQLite fallback) ──────
 try:
@@ -28,7 +32,6 @@ try:
     import psycopg2.extras
     DB_MODE = "postgres"
 except ImportError:
-    import sqlite3
     DB_MODE = "sqlite"
 
 # ── Configuration ─────────────────────────────────────────────────────────────
@@ -42,11 +45,11 @@ THRESHOLDS = {
 
 # PostgreSQL credentials (matches amara-matrix container)
 PG_CONFIG = {
-    "host":     "127.0.0.1",
-    "port":     5432,
+    "host":     os.environ["DB_HOST"],
+    "port":     int(os.environ["DB_PORT"]),
     "dbname":   "telemetry",
-    "user":     "ghostnode",
-    "password": "quantum_flex_auth",
+    "user":     os.environ["DB_USER"],
+    "password": os.environ["DB_PASSWORD"],
 }
 
 SQLITE_FALLBACK  = Path(__file__).parent.parent / "sentinel/intelligence/amara_monitor.db"
@@ -174,7 +177,7 @@ def read_memory() -> dict:
                     mem[parts[0].rstrip(":")] = int(parts[1])  # kB
     except Exception as e:
         log.warning(f"meminfo read failed: {e}")
-        return {"ram_used_pct": 0.0, "swap_used_mb": 0.0}
+        return {"ram_used_pct": 0.0, "swap_used_mb": 0.0, "ram_total_mb": 0.0}
 
     total    = mem.get("MemTotal", 1)
     free     = mem.get("MemAvailable", 0)
@@ -282,7 +285,6 @@ def main():
         if metrics["iowait_pct"] > THRESHOLDS["iowait_pct"]:
             msg = (f"[CRITICAL] iowait={metrics['iowait_pct']}% "
                    f"> threshold {THRESHOLDS['iowait_pct']}%")
-            log.critical(msg)
             alerts.append(msg)
             status   = "CRITICAL"
             critical = True
@@ -306,7 +308,7 @@ def main():
                 status = "WARNING"
 
         # Throttle Athena if critical
-        if critical and not athena_paused:
+        if critical:
             if check_container_running(ATHENA_CONTAINER):
                 result = podman_action("pause", ATHENA_CONTAINER)
                 log.critical(f"[REFLEX] Athena throttled: {result}")
@@ -330,8 +332,7 @@ def main():
             log.info(
                 f"[OPTIMAL] iowait={metrics['iowait_pct']}% | "
                 f"RAM={metrics['ram_used_pct']}% | "
-                f"Swap={metrics['swap_used_mb']:.1f}MB | "
-                f"Load={metrics['cpu_load_1m']}"
+                f"Swap={metrics['swap_used_mb']}MB"
             )
 
         # Persist
