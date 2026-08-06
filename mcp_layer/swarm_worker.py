@@ -8,16 +8,21 @@ Executes the task payload, updates status to COMPLETED/FAILED,
 and logs the outcome to memory_logs.
 """
 
+import os
 import time
 import json
 import logging
+from pathlib import Path
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 PG_CONFIG = {
     "host": "127.0.0.1", "port": 5432,
-    "dbname": "telemetry", "user": "ghostnode",
-    "password": "quantum_flex_auth",
+    "dbname": "telemetry", "user": os.environ["GHOSTNODE_DB_USER"],
+    "password": os.environ["GHOSTNODE_DB_PASSWORD"],
 }
 AGENT_ID = "swarm_worker_01"
 

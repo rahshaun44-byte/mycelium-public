@@ -6,9 +6,12 @@
 - **Physical Lock:** LUKS2 Full Disk Encryption (`/dev/nvme0n1p3`). Requires manual passphrase on boot.
 - **Volatile Logging (Zero-Trace):** All user-level agent services (`amara-dashboard`, `amara-predict`, `athena-node`, `sentinel-drive`) write output logs strictly to RAM (`/run/user/1000/`). If the physical drive is extracted and loses power, all telemetry and operational states instantly evaporate.
 
-## 2. Ghost Node (The Nervous System)
-- **Path:** `/home/USERNAME/mycelium/mcp_layer/`
-- **Function:** The capture gateway for raw telemetry. It actively monitors `/proc`, `vmstat`, and kernel metrics, funneling the raw system noise into the matrix for upstream analysis.
+## 2. Telemetry Capture (qf-monitor)
+- **Path:** `/home/USERNAME/mycelium/amara/qf_monitor.py`
+- **Service:** `qf-monitor.service` (Systemd User Daemon, 30s cadence)
+- **Function:** Reads `/proc` and `vmstat` kernel metrics (iowait, RAM, swap, load) and writes `sentinel/ledger/ledger.json`, consumed by the AMARA dashboard.
+- **Retired:** Ghost Node (`sentinel/decision_gate.py` + the unused Go stub in `systemd-backup/main.go`) was a duplicate, disabled implementation of this same telemetry-to-ledger job. It produced no output `qf-monitor` didn't already provide, so it and its systemd unit have been removed (2026-08-06).
+- **Ingest load safety:** `api_node/main.py`'s `/ingest` and `/webhook/ingest` endpoints previously spawned an unbounded subprocess per request. This is now capped by an `asyncio.Semaphore` (`INGEST_CONCURRENCY_LIMIT`, default 4) so a traffic burst waits for a free slot instead of exhausting host RAM/CPU.
 
 ## 3. A.M.A.R.A. Matrix & Task Queue (The Dual-Role Truth Log)
 - **Container:** `amara-matrix` (Rootless Podman, `postgres:15-alpine`)

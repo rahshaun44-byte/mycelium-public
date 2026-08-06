@@ -10,6 +10,25 @@ app = FastAPI(title="Quantum Flex Core Node API", version="2.0.0")
 ORCHESTRATOR = "/home/USERNAME/mycelium/run_sentinel.py"
 ATHENA_URL = "http://127.0.0.1:8001"
 
+# Each ingest request spawns a full python3 subprocess (run_sentinel.py).
+# Without a cap, a burst of requests spawns unbounded concurrent subprocesses
+# and can exhaust host RAM/CPU. This bounds concurrent subprocess execution;
+# excess requests wait for a slot instead of each spawning immediately.
+INGEST_CONCURRENCY_LIMIT = int(os.environ.get("INGEST_CONCURRENCY_LIMIT", "4"))
+_ingest_semaphore = asyncio.Semaphore(INGEST_CONCURRENCY_LIMIT)
+
+
+async def run_orchestrator(*args: str) -> tuple[int, bytes, bytes]:
+    """Run run_sentinel.py as a subprocess, bounded by _ingest_semaphore."""
+    async with _ingest_semaphore:
+        process = await asyncio.create_subprocess_exec(
+            "python3", ORCHESTRATOR, *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        return process.returncode, stdout, stderr
+
 
 @app.get("/status")
 async def system_status():
@@ -67,15 +86,9 @@ async def ingest_payload(request: Request):
     print(f"[>>] API Received Ingestion Request for: {file_path}")
 
     try:
-        # Anti-Gravity Execution: Non-blocking asynchronous subprocess
-        process = await asyncio.create_subprocess_exec(
-            "python3", ORCHESTRATOR, file_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
+        returncode, stdout, stderr = await run_orchestrator(file_path)
 
-        if process.returncode == 0:
+        if returncode == 0:
             return {"status": "success", "telemetry": stdout.decode().strip()}
         else:
             return {"status": "fatal", "error": stderr.decode().strip()}
@@ -103,17 +116,12 @@ async def webhook_ingest(request: Request):
             import json
             json.dump(data, f)
             
-        process = await asyncio.create_subprocess_exec(
-            "python3", ORCHESTRATOR, temp_file_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
+        returncode, stdout, stderr = await run_orchestrator(temp_file_path)
+
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-        if process.returncode == 0:
+        if returncode == 0:
             return {"status": "success", "telemetry": stdout.decode().strip()}
         else:
             return {"status": "fatal", "error": stderr.decode().strip()}

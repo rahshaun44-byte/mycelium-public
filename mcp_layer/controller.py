@@ -7,22 +7,27 @@ into atomic tasks. It feeds these tasks sequentially into the local Ollama insta
 for structuring and inserts them into the PostgreSQL task_queue via SKIP LOCKED pattern.
 """
 
+import os
 import sys
 import json
 import logging
 import asyncio
 from datetime import datetime
+from pathlib import Path
 import psycopg2
 from pydantic import BaseModel
 import httpx
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 OLLAMA_URL = "http://127.0.0.1:11434"
 MODEL = "gemma2:2b"
 PG_CONFIG = {
     "host": "127.0.0.1", "port": 5432,
-    "dbname": "telemetry", "user": "ghostnode",
-    "password": "quantum_flex_auth",
+    "dbname": "telemetry", "user": os.environ["GHOSTNODE_DB_USER"],
+    "password": os.environ["GHOSTNODE_DB_PASSWORD"],
 }
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] CONTROLLER | %(message)s")
