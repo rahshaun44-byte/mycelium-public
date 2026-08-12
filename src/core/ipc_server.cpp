@@ -21,7 +21,20 @@
 
 #include "quantum-flex/crypto_shamir.hpp"
 
+#include <openssl/crypto.h>
+
 namespace {
+    // Genesis/unlock shard payloads are recovered secret material with no
+    // further use once consumed — cleanse them rather than leaving raw bytes
+    // sitting in freed heap memory until something else happens to overwrite it.
+    void cleanse_shards(std::vector<quantumflex::crypto::SecretShard>& shards) {
+        for (auto& shard : shards) {
+            if (!shard.payload.empty()) {
+                OPENSSL_cleanse(shard.payload.data(), shard.payload.size());
+            }
+        }
+    }
+
     // Shard payloads are raw bytes and may contain ',' or ':' — the delimiters
     // this wire format uses — so payloads are always hex-encoded in transit
     // (see tools/genesis_tool.cpp, the only current producer of INIT|/UNLOCK|
@@ -238,40 +251,53 @@ namespace quantumflex::ipc {
             return true;
         }
 
-        const std::string stream(buffer.data(), static_cast<std::size_t>(bytes_read));
-        
+        std::string stream(buffer.data(), static_cast<std::size_t>(bytes_read));
+
         if (node_.get_state() == quantumflex::node::SystemState::UNINITIALIZED) {
             const std::string init_prefix = "INIT|";
             if (stream.starts_with(init_prefix)) {
+                auto shards = parse_shares(stream, init_prefix);
                 try {
-                    node_.initialize_node(parse_shares(stream, init_prefix), 3);
+                    node_.initialize_node(shards, 3);
                     ssl_write_str(ssl, "ACK|GENESIS_SECURED\n");
                 } catch (const std::exception& e) {
                     const std::string err = std::string("ERR|") + e.what() + "\n";
                     ssl_write_str(ssl, err);
                     std::cerr << "[!] " << e.what() << '\n';
                 }
+                cleanse_shards(shards);
             } else {
                 ssl_write_str(ssl, "ERR|NODE_UNINITIALIZED_CALL_INIT\n");
             }
         } else if (node_.get_state() == quantumflex::node::SystemState::LOCKED) {
             const std::string unlock_prefix = "UNLOCK|";
             if (stream.starts_with(unlock_prefix)) {
+                auto shards = parse_shares(stream, unlock_prefix);
                 try {
-                    node_.unlock_node(parse_shares(stream, unlock_prefix), 3);
+                    node_.unlock_node(shards, 3);
                     ssl_write_str(ssl, "ACK|NODE_UNLOCKED\n");
                 } catch (const std::exception& e) {
                     const std::string err = std::string("ERR|") + e.what() + "\n";
                     ssl_write_str(ssl, err);
                     std::cerr << "[!] " << e.what() << '\n';
+                    cleanse_shards(shards);
                     // NOLINTNEXTLINE(concurrency-mt-unsafe)
                     std::exit(1);
                 }
+                cleanse_shards(shards);
             } else {
                 ssl_write_str(ssl, "ERR|NODE_LOCKED\n");
             }
         } else {
             handle_active_telemetry(stream, ssl, node_);
+        }
+
+        // Cleanse the raw wire buffer — for INIT|/UNLOCK| it still holds the
+        // hex-encoded shard text even after the decoded SecretShards above
+        // have been cleansed.
+        OPENSSL_cleanse(buffer.data(), buffer.size());
+        if (!stream.empty()) {
+            OPENSSL_cleanse(stream.data(), stream.size());
         }
 
         SSL_shutdown(ssl);

@@ -275,8 +275,12 @@ namespace quantumflex::node {
         this->suspended_time_.clear();
         this->suspended_sig_.clear();
         this->current_state_ = SystemState::ACTIVE;
-        
+
         std::cout << "[+] Node Unlocked. Superposition collapsed into ACTIVE state.\n";
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        std::cout << "[AUDIT] Genesis Authority authenticated via mTLS at "
+                  << std::to_string(std::time(nullptr)) << " - Node unsealed (threshold="
+                  << static_cast<int>(threshold) << ").\n";
     }
 
     void LocalNode::initialize_node(const std::vector<crypto::SecretShard>& shards, uint8_t threshold) {
@@ -286,11 +290,15 @@ namespace quantumflex::node {
 
         this->active_salt_ = crypto::ShamirSecretSharing::recover_secret(shards, threshold);
         this->current_state_ = SystemState::ACTIVE;
-        
+
         // Immediate disk anchor
         this->serialize_state(data_path("ledger.dat"));
-        
+
         std::cout << "[+] Node Initialized. Cryptographic entropy provided by Root Authority.\n";
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        std::cout << "[AUDIT] Genesis Authority authenticated via mTLS at "
+                  << std::to_string(std::time(nullptr)) << " - Node genesis sealed (threshold="
+                  << static_cast<int>(threshold) << ").\n";
     }
 
 } // namespace quantumflex::node
