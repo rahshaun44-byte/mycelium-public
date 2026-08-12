@@ -1,4 +1,0 @@
-/home/USERNAME/mycelium/build_check/CMakeFiles/quantum_flex_engine.dir
-/home/USERNAME/mycelium/build_check/CMakeFiles/sentinel_push.dir
-/home/USERNAME/mycelium/build_check/CMakeFiles/edit_cache.dir
-/home/USERNAME/mycelium/build_check/CMakeFiles/rebuild_cache.dir

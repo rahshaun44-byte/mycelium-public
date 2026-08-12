@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/USERNAME/mycelium/build_check/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

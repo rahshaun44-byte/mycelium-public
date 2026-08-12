@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/sentinel_push.dir/link.d CMakeFiles/sentinel_push.dir/sentinel_push.cpp.o -o sentinel_push  -lsystemd /usr/lib64/libssl.so /usr/lib64/libcrypto.so
