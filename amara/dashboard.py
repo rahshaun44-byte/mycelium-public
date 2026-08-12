@@ -58,7 +58,7 @@ app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
 ATHENA_URL   = "http://127.0.0.1:8001"
 OLLAMA_URL   = "http://127.0.0.1:11434"
-API_NODE_URL = "http://127.0.0.1:8002"
+API_NODE_URL = "http://yoga.tail2b296e.ts.net:8002"
 
 # ── WebSocket Manager ─────────────────────────────────────────────────────────
 class ConnectionManager:

@@ -64,8 +64,8 @@ log = logging.getLogger("immune_daemon")
 
 PG_CONFIG = {
     "host": "127.0.0.1", "port": 5432,
-    "dbname": "telemetry", "user": "ghostnode",
-    "password": "quantum_flex_auth",
+    "dbname": "telemetry", "user": os.environ["GHOSTNODE_DB_USER"],
+    "password": os.environ["GHOSTNODE_DB_PASSWORD"],
 }
 DASHBOARD_WEBHOOK = "http://127.0.0.1:8000/api/internal/webhook_transition"
 

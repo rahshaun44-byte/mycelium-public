@@ -61,6 +61,7 @@ class TripwireLogger:
         self.log_path = log_path
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         self.prev_hash = self._get_last_hash()
+        self._lock = threading.Lock()
 
     def _get_last_hash(self) -> str:
         """Read the last entry's hash to continue the chain."""
@@ -262,7 +263,7 @@ def start_filesystem_watcher(logger: TripwireLogger):
         # Matched against the full path (ERE). Drops noisy dirs and DB/backup churn
         # from other daemons so FS_CHANGE stays signal, not scratch-file noise.
         exclude_pattern = (
-            r"/(venv|__pycache__|\.git|node_modules|intelligence|ledger)/"
+            r"/(venv|__pycache__|\.git|node_modules|intelligence|ledger|chroma_db|bundle_server)/"
             r"|\.(pyc|swp)$"
             r"|\.db(-journal|-wal|-shm)?$"
             r"|~$"

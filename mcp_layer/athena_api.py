@@ -45,6 +45,35 @@ MAX_VECTORS    = 50_000   # Hard stop on collection size
 MAX_BATCH_SIZE = 32       # Max docs per embed batch
 TOP_K_RESULTS  = 4        # Retrieval depth for RAG
 
+# ── Guardrails ────────────────────────────────────────────────────────────────
+# Only these sources are eligible to answer queries from (still fully ingestible,
+# just not retrievable for /query). Reachable over Tailscale now, not just localhost.
+ALLOWED_SOURCE_PREFIXES = ("sentinel/",)
+ALLOWED_SOURCE_EXACT    = {"manual", "quantum_flex_architecture.txt"}
+
+# Refuse to answer questions that touch live secrets or defense-bypass mechanics,
+# regardless of what's in the retrieved context.
+SENSITIVE_PATTERNS = [
+    r"private[\s_-]?key", r"\bpem\b", r"ssh[\s_-]?key", r"api[\s_-]?key",
+    r"tailscale[\s_-]?key", r"auth[\s_-]?key", r"\bsecret\b", r"\bcredential",
+    r"\bpassword\b", r"\bpasswd\b", r"root password", r"sudo password",
+    r"bypass.*lockout", r"lockout.*bypass", r"disable.*tripwire",
+    r"disable.*lockout", r"override.*lockout", r"defeat.*tripwire",
+    r"\.env\b", r"mtls.*cert.*private",
+]
+import re as _re
+_SENSITIVE_RE = _re.compile("|".join(SENSITIVE_PATTERNS), _re.IGNORECASE)
+
+
+def is_sensitive(text: str) -> bool:
+    return bool(_SENSITIVE_RE.search(text))
+
+
+def is_allowed_source(source: str) -> bool:
+    if source in ALLOWED_SOURCE_EXACT:
+        return True
+    return any(source.startswith(p) for p in ALLOWED_SOURCE_PREFIXES)
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,

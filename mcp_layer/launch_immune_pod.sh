@@ -97,6 +97,7 @@ podman run -d \
     --security-opt no-new-privileges:true \
     --memory 512m \
     --cpus 1.0 \
+    --env-file "${SCRIPT_DIR}/../.env" \
     qflex-pqc-worker:latest
 
 echo "[$(date)] IMMUNE POD: PQC worker deployed. Immune system ONLINE."
