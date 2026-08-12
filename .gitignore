@@ -21,3 +21,11 @@ sentinel/intelligence/*.db
 build_check/
 build/
 compile_commands.json
+
+# Invalidated ceremony artifacts — no code path in this repo consumes
+# Groth16/circom output (LocalNode's ZkCommitment is plain salted SHA-256).
+# Regenerated more than once by sessions unaware it was already retired —
+# keep this excluded rather than let it get committed again.
+sentinel/ceremony/
+*.ptau
+*.zkey
