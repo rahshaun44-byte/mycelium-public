@@ -6,11 +6,13 @@ the $Y=f(x-h)+k$ bias filter logic.
 """
 import sys
 import math
-import json
 import time
 import re
-import urllib.request
+import subprocess
+import logging
 from datetime import datetime
+
+log = logging.getLogger("lif_sentinel")
 
 # SNN / LIF Threshold Parameters
 V_THRESHOLD = 1500.0   # Action potential threshold
@@ -47,34 +49,25 @@ class LIFNeuron:
         return self.v
 
     def fire(self):
-        # The neuron has crossed the threshold. Execute alert and reset.
-        print(f"\n[!] ACTION POTENTIAL FIRED for IP {self.ip}! Critical Threshold ({V_THRESHOLD}) Breached.")
-        print(f"[!] TRUTH VERIFICATION REQUIRED: Temporal buildup confirms malicious bias (k).")
+        # The neuron has crossed the threshold. Alert only — no automated
+        # response. IPs aren't files; there's nothing here for quarantine_chamber
+        # to act on, and auto-blocking risks locking out legitimate access on a
+        # false positive.
         self.total_spikes_fired += 1
-        # Reset voltage after spiking
         self.v = V_REST
-        
-        # Transmit payload to Athena
-        payload = {
-            "alert": "BRUTE_FORCE_DETECTED",
-            "ip_address": self.ip,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "threshold": V_THRESHOLD
-        }
-        try:
-            req = urllib.request.Request(
-                "http://localhost:9999/athena/alert", 
-                data=json.dumps(payload).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
-            )
-            urllib.request.urlopen(req, timeout=2)
-            print("[+] Successfully transmitted alert payload to Athena node.")
-        except Exception as e:
-            print(f"[-] Could not reach Athena node: {e}")
+        log.warning(
+            "ACTION POTENTIAL FIRED for %s — brute-force threshold (%.0f) breached at %s",
+            self.ip, V_THRESHOLD, datetime.utcnow().isoformat() + "Z",
+        )
+
+FAILED_LOGIN_RE = re.compile(r'Failed password for (?:invalid user )?\S+ from (\S+)')
 
 def tail_f(file_path):
+    """Line generator over a plain file, tailed from EOF. Requires read access
+    to file_path — on this host /var/log/secure is root-only, so this path is
+    for manual/ad-hoc use where you already have that access. The daemon path
+    (process_journal) doesn't need it."""
     with open(file_path, "r") as f:
-        # Move to the end of the file to simulate live tailing
         f.seek(0, 2)
         while True:
             line = f.readline()
@@ -83,27 +76,51 @@ def tail_f(file_path):
                 continue
             yield line
 
-def process_logs(log_file):
+def journalctl_tail(unit="sshd"):
+    """Line generator over `journalctl -u <unit> -f`, readable by any user in
+    a group journald grants read access to (wheel/systemd-journal on this
+    host) — no root required."""
+    proc = subprocess.Popen(
+        ["journalctl", "-u", unit, "-f", "-n", "0"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+    )
+    for line in proc.stdout:
+        yield line
+
+def _scan(lines):
+    """Core detection loop: watch a line stream for failed-login events, feed
+    each source IP's LIF neuron, and yield the IP whenever one fires."""
     neurons = {}
-    
-    print(f"--- SNN Sentinel Node Online (Live Mode) ---")
-    print(f"Parameters: V_th={V_THRESHOLD}, Tau={TAU_MS}ms, SpikeWeight={SPIKE_WEIGHT}")
-    print(f"Monitoring live log stream {log_file} for structural anomalies...\n")
-    
-    FAILED_LOGIN_RE = re.compile(r'Failed password for (?:invalid user )?\S+ from (\S+)')
-    
-    for line in tail_f(log_file):
+    for line in lines:
         match = FAILED_LOGIN_RE.search(line)
-        if match:
-            ip = match.group(1)
-            if ip not in neurons:
-                neurons[ip] = LIFNeuron(ip)
-            
-            current_time_ms = time.time() * 1000.0
-            v_current = neurons[ip].update(current_time_ms, True)
-            print(f"[*] Threat Event (k) from {ip} | Membrane Potential: {v_current:.2f}")
+        if not match:
+            continue
+        ip = match.group(1)
+        if ip not in neurons:
+            neurons[ip] = LIFNeuron(ip)
+
+        neuron = neurons[ip]
+        fired_before = neuron.total_spikes_fired
+        v_current = neuron.update(time.time() * 1000.0, True)
+        log.info("Threat event from %s | membrane potential: %.2f", ip, v_current)
+
+        if neuron.total_spikes_fired > fired_before:
+            yield ip
+
+def process_logs(log_file):
+    """Manual/ad-hoc entry point: `python lif_sentinel.py <log_file>`."""
+    log.info("SNN Sentinel Node online (file mode) — watching %s", log_file)
+    for ip in _scan(tail_f(log_file)):
+        pass  # LIFNeuron.fire() already logs the alert; nothing else to do here.
+
+def process_journal(unit="sshd"):
+    """Daemon entry point — no root/file-permission requirements. Yields the
+    source IP each time a neuron fires, for callers that want to react."""
+    log.info("SNN Sentinel Node online (journal mode) — watching journalctl -u %s", unit)
+    yield from _scan(journalctl_tail(unit))
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     if len(sys.argv) < 2:
         print("Usage: python lif_sentinel.py <log_file>")
         sys.exit(1)
