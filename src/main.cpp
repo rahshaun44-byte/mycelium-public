@@ -28,9 +28,24 @@ namespace {
 } // namespace
 
 auto main() -> int {
-    // Catch both terminal exits (SIGINT) and systemd shutdown calls (SIGTERM)
-    static_cast<void>(std::signal(SIGINT, handle_signal));
-    static_cast<void>(std::signal(SIGTERM, handle_signal));
+    // Flush every write immediately. Under systemd, stdout isn't a TTY, so
+    // glibc fully-buffers it by default — without this, log lines (including
+    // the shutdown sequence) wouldn't appear until the buffer filled or the
+    // process exited, making `journalctl`/log-tailing misleading.
+    std::cout << std::unitbuf;
+
+    // Catch both terminal exits (SIGINT) and systemd shutdown calls (SIGTERM).
+    // std::signal() on glibc installs handlers with SA_RESTART, which would
+    // silently restart the blocking accept4() call in the ingestion loop below
+    // instead of returning EINTR — the shutdown flag would then never get
+    // checked and the process would hang until SIGKILL. Use sigaction()
+    // directly with SA_RESTART cleared so accept4() is interrupted.
+    struct sigaction shutdown_action{};
+    shutdown_action.sa_handler = handle_signal;
+    sigemptyset(&shutdown_action.sa_mask);
+    shutdown_action.sa_flags = 0;
+    sigaction(SIGINT, &shutdown_action, nullptr);
+    sigaction(SIGTERM, &shutdown_action, nullptr);
 
     quantumflex::node::LocalNode daemon;
     const std::string data_dir = environment_value("QF_DATA_DIR", "/home/USERNAME/quantum-flex/data");
@@ -61,16 +76,20 @@ auto main() -> int {
         return 1;
     }
 
+    const std::string bind_address = environment_value("QF_BIND_ADDRESS", "127.0.0.1");
+    const int bind_port = std::stoi(environment_value("QF_BIND_PORT", "9443"));
+
     quantumflex::ipc::IpcServer server(
-        9443,
+        bind_port,
         environment_value("QF_SERVER_CERT", data_dir + "/mtls/qf_server.crt"),
         environment_value("QF_SERVER_KEY", data_dir + "/mtls/qf_server.key"),
         environment_value("QF_ROOT_CA", data_dir + "/mtls/qf_root_ca.pem"),
-        daemon
+        daemon,
+        bind_address
     );
 
     std::cout << "[*] Quantum Flex Engine Online. Awaiting Telemetry...\n";
-    std::cout << "[*] mTLS TCP Socket listening on 127.0.0.1:9443\n";
+    std::cout << "[*] mTLS TCP Socket listening on " << bind_address << ":" << bind_port << "\n";
     
     // Boot Postgres Event Listener
     if (!postgres_conninfo.empty()) {

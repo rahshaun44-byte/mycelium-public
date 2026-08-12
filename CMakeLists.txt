@@ -42,3 +42,13 @@ target_link_libraries(quantum_flex_engine PRIVATE
 add_executable(sentinel_push sentinel_push.cpp)
 target_include_directories(sentinel_push PRIVATE ${SYSTEMD_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(sentinel_push PRIVATE ${SYSTEMD_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
+
+add_executable(qf_genesis_tool
+    tools/genesis_tool.cpp
+    src/crypto/crypto_shamir.cpp
+)
+target_include_directories(qf_genesis_tool PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_link_libraries(qf_genesis_tool PRIVATE OpenSSL::Crypto)

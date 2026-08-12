@@ -22,19 +22,32 @@
 #include "quantum-flex/crypto_shamir.hpp"
 
 namespace {
+    // Shard payloads are raw bytes and may contain ',' or ':' — the delimiters
+    // this wire format uses — so payloads are always hex-encoded in transit
+    // (see tools/genesis_tool.cpp, the only current producer of INIT|/UNLOCK|
+    // lines). Decode back to raw bytes before handing shards to LocalNode.
+    auto hex_decode(const std::string& hex) -> std::string {
+        std::string raw;
+        raw.reserve(hex.length() / 2);
+        for (std::size_t i = 0; i + 1 < hex.length(); i += 2) {
+            raw.push_back(static_cast<char>(std::stoi(hex.substr(i, 2), nullptr, 16)));
+        }
+        return raw;
+    }
+
     auto parse_shares(const std::string& stream, const std::string& prefix) -> std::vector<quantumflex::crypto::SecretShard> {
         const std::string shares_str = stream.substr(prefix.length());
         std::vector<quantumflex::crypto::SecretShard> shards;
-        
+
         std::istringstream share_stream(shares_str);
         std::string share_token;
-        
+
         while (std::getline(share_stream, share_token, ',')) {
             const size_t colon_pos = share_token.find(':');
             if (colon_pos != std::string::npos) {
                 const uint8_t shard_id = static_cast<uint8_t>(std::stoi(share_token.substr(0, colon_pos)));
-                const std::string data = share_token.substr(colon_pos + 1);
-                shards.push_back(quantumflex::crypto::SecretShard{.id = shard_id, .payload = data}); 
+                const std::string data = hex_decode(share_token.substr(colon_pos + 1));
+                shards.push_back(quantumflex::crypto::SecretShard{.id = shard_id, .payload = data});
             }
         }
         return shards;

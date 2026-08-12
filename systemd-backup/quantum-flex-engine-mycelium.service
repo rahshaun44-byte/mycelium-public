@@ -1,0 +1,23 @@
+[Unit]
+Description=Quantum Flex: Mycelium Evidence Engine (isolated, 127.0.0.1:9444)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/mycelium
+Environment=QF_DATA_DIR=%h/.local/share/quantum-flex-mycelium
+Environment=QF_BIND_ADDRESS=127.0.0.1
+Environment=QF_BIND_PORT=9444
+Environment=QF_SERVER_CERT=%h/.local/share/quantum-flex-mycelium/mtls/server.crt
+Environment=QF_SERVER_KEY=%h/.local/share/quantum-flex-mycelium/mtls/server.key
+Environment=QF_ROOT_CA=%h/.local/share/quantum-flex-mycelium/mtls/ca.crt
+Environment=QF_ED_PRIVATE_KEY=%h/.local/share/quantum-flex-mycelium/ed_priv.pem
+Environment=QF_PQC_PRIVATE_KEY=%h/.local/share/quantum-flex-mycelium/pqc_priv.pem
+ExecStart=%h/mycelium/build_check/quantum_flex_engine
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:%h/.local/state/quantum-flex-mycelium/engine.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target
