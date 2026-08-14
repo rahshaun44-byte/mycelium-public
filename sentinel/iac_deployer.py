@@ -11,7 +11,7 @@ import sys
 import subprocess
 from string import Template
 
-BASE_DIR = "/home/USERNAME/mycelium"
+BASE_DIR = os.path.expanduser("~/mycelium")
 TEMPLATE_PATH = os.path.join(BASE_DIR, "sentinel/templates/gold_standard.yml")
 DEPLOY_DIR = os.path.join(BASE_DIR, "sentinel/deployments")
 

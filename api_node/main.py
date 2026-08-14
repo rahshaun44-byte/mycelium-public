@@ -7,7 +7,7 @@ from datetime import datetime
 app = FastAPI(title="Quantum Flex Core Node API", version="2.0.0")
 
 # Correct absolute paths for this host
-ORCHESTRATOR = "/home/USERNAME/mycelium/run_sentinel.py"
+ORCHESTRATOR = os.path.expanduser("~/mycelium/run_sentinel.py")
 ATHENA_URL = "http://127.0.0.1:8001"
 
 # Each ingest request spawns a full python3 subprocess (run_sentinel.py).
@@ -105,7 +105,7 @@ async def webhook_ingest(request: Request):
         return {"status": "error", "message": f"Invalid JSON payload: {e}"}
 
     import random
-    temp_dir = "/home/USERNAME/.gemini/antigravity-ide/scratch/quantum-flex_HIDDEN/quarantine"
+    temp_dir = os.path.expanduser("~/.gemini/antigravity-ide/scratch/quantum-flex_HIDDEN/quarantine")
     os.makedirs(temp_dir, exist_ok=True)
     
     filename = f"webhook_{int(datetime.now().timestamp())}_{random.randint(100, 999)}.json"

@@ -708,7 +708,7 @@ async def index():
   <div class="header">
     <div class="header-left">
       <h1>A.M.A.R.A. Intelligence Sync</h1>
-      <div class="subtitle">Quantum Flex / Ghost Node Telemetry — Rahshaun Chambers</div>
+      <div class="subtitle">Quantum Flex / Ghost Node Telemetry — USERNAME</div>
     </div>
     <div class="header-right">
       <div class="last-sync"><span class="live-dot"></span>LIVE</div>

@@ -1,5 +1,5 @@
 # QUANTUM FLEX ARCHITECTURE v2.1 (The Swarm)
-**Senior Software Executive Chief:** Rahshaun Chambers
+**Senior Software Executive Chief:** USERNAME
 **System Posture:** Zero-Trust, Decentralized, Rootless Podman, Native Fedora SELinux.
 
 ## 1. Cryptographic Neutralization (The Perimeter)

@@ -1,5 +1,5 @@
 QUANTUM FLEX ARCHITECTURE v1.0
-Senior Software Executive Chief: Rahshaun Chambers
+Senior Software Executive Chief: USERNAME
 System Posture: Zero-Trust, Decentralized, Rootless Podman, Native Fedora SELinux.
 
 SYSTEM OVERVIEW

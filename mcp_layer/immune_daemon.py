@@ -67,7 +67,9 @@ PG_CONFIG = {
     "dbname": "telemetry", "user": os.environ["GHOSTNODE_DB_USER"],
     "password": os.environ["GHOSTNODE_DB_PASSWORD"],
 }
-DASHBOARD_WEBHOOK = "http://127.0.0.1:8000/api/internal/webhook_transition"
+DASHBOARD_WEBHOOK = os.environ.get(
+    "DASHBOARD_WEBHOOK", "http://10.0.2.2:8000/api/internal/webhook_transition"
+)  # Host network from pod — see BUNDLE_SERVER_URL in launch_immune_pod.sh
 
 def log_transition_background(old_kem: str, new_kem: str, findings: list):
     """

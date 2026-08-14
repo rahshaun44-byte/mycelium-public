@@ -30,6 +30,5 @@ sentinel/ceremony/
 *.ptau
 *.zkey
 
-# Hardware-triggered emergency data-wipe script tied to this specific
-# machine — must never be published. Untracked and excluded intentionally.
+# Excluded intentionally — do not re-add.
 sentinel/neutralize.sh

@@ -5,14 +5,14 @@
 # Runs on host port 8182 (accessible to pod via 10.0.2.2)
 # ═══════════════════════════════════════════════════════════════════
 
-BUNDLE_DIR="/home/USERNAME/mycelium/sentinel/bundle_server"
+BUNDLE_DIR="${HOME}/mycelium/sentinel/bundle_server"
 mkdir -p "${BUNDLE_DIR}"
 
 # Create an initial empty bundle if one doesn't exist
 if [ ! -f "${BUNDLE_DIR}/bundle.tar.gz" ]; then
     cd "${BUNDLE_DIR}"
     echo '{"threat_flags": {}}' > data.json
-    tar -czf bundle.tar.gz data.json -C /home/USERNAME/mycelium/sentinel/policies membrane_health.rego
+    tar -czf bundle.tar.gz data.json -C "${HOME}/mycelium/sentinel/policies" membrane_health.rego
     echo "[$(date)] Initial OPA bundle created."
 fi
 

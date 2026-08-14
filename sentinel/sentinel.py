@@ -324,7 +324,7 @@ def update_opa_threat_flag(flag_name: str, value: bool):
     """
     import tarfile
     
-    bundle_dir = "/home/USERNAME/mycelium/sentinel/bundle_server"
+    bundle_dir = os.path.expanduser("~/mycelium/sentinel/bundle_server")
     os.makedirs(bundle_dir, exist_ok=True)
     
     data_path = os.path.join(bundle_dir, "data.json")
@@ -342,7 +342,7 @@ def update_opa_threat_flag(flag_name: str, value: bool):
     with open(data_path, "w") as f:
         json.dump(data, f)
         
-    policy_path = "/home/USERNAME/mycelium/sentinel/policies/membrane_health.rego"
+    policy_path = os.path.expanduser("~/mycelium/sentinel/policies/membrane_health.rego")
     bundle_path = os.path.join(bundle_dir, "bundle.tar.gz")
     
     try:

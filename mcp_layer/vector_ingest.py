@@ -5,7 +5,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Absolute Paths for Zero-Trust Routing
-BASE_DIR = "/home/USERNAME/mycelium"
+BASE_DIR = os.path.expanduser("~/mycelium")
 KB_DIR = os.path.join(BASE_DIR, "sentinel/knowledge_base")
 DB_DIR = os.path.join(BASE_DIR, "sentinel/chroma_db")
 COLLECTION_NAME = "quantum_flex_kb"
