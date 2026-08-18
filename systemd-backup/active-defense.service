@@ -1,0 +1,13 @@
+[Unit]
+Description=Quantum Flex Active Defense Daemon
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/USERNAME/mycelium/sentinel
+ExecStart=/usr/bin/python3 /home/USERNAME/mycelium/sentinel/active_defense.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

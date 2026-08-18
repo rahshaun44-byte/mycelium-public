@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+crypto_provider.conf
+.env*
+*.key
+*.pem
+*.pfx
+secrets*

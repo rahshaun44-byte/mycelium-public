@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""
+Quantum Flex Mobile CLI (Termux / Samsung Galaxy S23 FE)
+=========================================================
+Lightweight command-line interface to interact with the Quantum Flex
+node stack and MCP server running on your host machine over Tailscale.
+
+Target Host: 100.64.1.29 (quantumflex)
+"""
+
+import sys
+import json
+import urllib.request
+import urllib.parse
+import urllib.error
+from datetime import datetime
+
+HOST_IP = "100.64.1.29"
+MCP_PORT = 9000
+DASHBOARD_PORT = 8000
+API_PORT = 8080
+ATHENA_PORT = 8001
+
+def _http_get(url: str, timeout: float = 5.0) -> dict:
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "QuantumFlex-S23FE/2.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode())
+    except urllib.error.URLError as e:
+        return {"error": f"Connection failed to {url}: {e}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def _http_post(url: str, data: dict, timeout: float = 60.0) -> dict:
+    try:
+        payload = json.dumps(data).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json", "User-Agent": "QuantumFlex-S23FE/2.0"}
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode())
+    except urllib.error.URLError as e:
+        return {"error": f"Connection failed to {url}: {e}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def cmd_status():
+    print("\n==========================================")
+    print("  QUANTUM FLEX: Remote Node Health Check  ")
+    print(f"  Target: http://{HOST_IP}:{API_PORT}")
+    print("==========================================")
+    
+    data = _http_get(f"http://{HOST_IP}:{API_PORT}/status", timeout=4.0)
+    if "error" in data:
+        print(f"[!] API Gateway: OFFLINE ({data['error']})")
+    else:
+        print(f"[+] API Gateway: {data.get('api_node', 'ONLINE')}")
+        print(f"    Timestamp  : {data.get('timestamp', '')}")
+        nodes = data.get("nodes", {})
+        athena = nodes.get("athena", {})
+        print(f"    Athena Node: {athena.get('status', 'UNKNOWN')} ({athena.get('vector_count', 0)} vectors)")
+        ollama = nodes.get("ollama", {})
+        print(f"    Ollama     : {ollama.get('status', 'UNKNOWN')} ({len(ollama.get('models', []))} models)")
+
+    print("\n------------------------------------------")
+    print("  AMARA Telemetry & Euclidean Drive (D)   ")
+    print("------------------------------------------")
+    dash_data = _http_get(f"http://{HOST_IP}:{DASHBOARD_PORT}/api/telemetry", timeout=4.0)
+    if "error" in dash_data:
+        print(f"[!] Dashboard: OFFLINE ({dash_data['error']})")
+    else:
+        drive = dash_data.get("drive", {})
+        score = float(drive.get("drive_score", 0) or 0)
+        status = drive.get("status", "OPTIMAL")
+        print(f"  Euclidean Drive (D): {score:.1f} / 1500.0 (Status: {status})")
+        print(f"  RAM Usage          : {drive.get('mem_usage', 0)} MB")
+        print(f"  CPU Utilization    : {drive.get('cpu_usage', 0)} %")
+        print(f"  I/O Wait           : {drive.get('io_wait', 0)} %")
+        print(f"  Integrity Penalty  : {drive.get('hash_penalty', 0)}")
+
+    print("==========================================\n")
+
+def cmd_athena(question: str):
+    print(f"\n[*] Querying Athena RAG Knowledge Base...")
+    print(f"    Question: \"{question}\"")
+    data = _http_post(f"http://{HOST_IP}:{API_PORT}/query", {"question": question}, timeout=60.0)
+    if "error" in data:
+        print(f"[!] Error: {data['error']}")
+    else:
+        print("\n--- [ATHENA ANSWER] -----------------------")
+        print(data.get("answer", "(No answer returned)"))
+        print("------------------------------------------")
+        sources = data.get("sources", [])
+        if sources:
+            print(f"Sources: {', '.join(sources)}")
+        print(f"Model  : {data.get('model', 'gemma2:2b')}\n")
+
+def cmd_mcp():
+    print(f"\n==========================================")
+    print(f"  QUANTUM FLEX MCP SERVER (Port {MCP_PORT})")
+    print(f"==========================================")
+    print(f"  SSE Endpoint       : http://{HOST_IP}:{MCP_PORT}/sse")
+    print(f"  Streamable HTTP    : http://{HOST_IP}:{MCP_PORT}/")
+    print(f"\nAvailable MCP Tools on Quantum Flex Stack:")
+    print("  1. list_services      - Inspect all node background services")
+    print("  2. ask_athena         - Query RAG memory node over loopback")
+    print("  3. dashboard_snapshot - Live Euclidean Drive & telemetry")
+    print("  4. api_node_status    - Gateway health status")
+    print("  5. tailnet_mesh_status- Inspect Tailscale link to S23 FE")
+    print("  6. service_status     - Read service stdout & stderr logs")
+    print("  7. service_action     - Start / Stop / Restart node services")
+    print("==========================================\n")
+
+def print_help():
+    print("""
+Quantum Flex Mobile Controller (Samsung S23 FE)
+Usage:
+  python qflex_cli.py status             - Full health check of host services
+  python qflex_cli.py athena "<query>"   - Ask Athena RAG a question
+  python qflex_cli.py mcp                - View MCP server details and tools
+  python qflex_cli.py dash               - Output web dashboard URL
+""")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print_help()
+        sys.exit(0)
+
+    cmd = sys.argv[1].lower()
+    if cmd == "status":
+        cmd_status()
+    elif cmd in ("athena", "ask", "rag"):
+        if len(sys.argv) < 3:
+            print("Usage: python qflex_cli.py athena \"<your question>\"")
+        else:
+            cmd_athena(" ".join(sys.argv[2:]))
+    elif cmd == "mcp":
+        cmd_mcp()
+    elif cmd in ("dash", "dashboard"):
+        print(f"\nAMARA Sync Dashboard URL: http://{HOST_IP}:{DASHBOARD_PORT}")
+        print("Open this in Samsung Internet or Chrome over Tailscale.\n")
+    else:
+        print_help()
