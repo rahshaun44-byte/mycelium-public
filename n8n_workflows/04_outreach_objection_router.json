@@ -1,0 +1,88 @@
+{
+  "name": "QuantumFlex — Operation Kinetic Yield Objection Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "prospect-reply",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Prospect Reply Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8001/query",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"question\": \"You are A.T.H.E.N.A., acting as Senior Cryptographic Architect for Rahshaun Chambers (FinallyFungus LLC). Prospect at {{ $json.body.company || 'a defense subcontractor' }} said: \\\"{{ $json.body.reply_text || $json.body.message }}\\\". Formulate an authoritative, engineering-grounded, and concise email reply (under 150 words) that validates their view, cites the specific failure mode under OMB M-26-15 or NIST FIPS 203, and offers to send the 2-page Whitepaper.\",\n  \"top_k\": 4\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Athena Counter-Synthesis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst inbound = $('Prospect Reply Webhook').first().json.body;\n\nreturn {\n  prospect_name: inbound.prospect_name || 'Architect',\n  company: inbound.company || 'Target Subcontractor',\n  objection: inbound.reply_text || inbound.message,\n  draft_counter_response: res.answer,\n  sources: res.sources || [],\n  generated_at: new Date().toISOString()\n};"
+      },
+      "name": "Format Draft Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "Return Draft to Operator",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Prospect Reply Webhook": {
+      "main": [
+        [
+          {
+            "node": "Athena Counter-Synthesis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Athena Counter-Synthesis": {
+      "main": [
+        [
+          {
+            "node": "Format Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Return Draft to Operator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
