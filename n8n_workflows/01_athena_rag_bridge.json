@@ -1,0 +1,88 @@
+{
+  "name": "QuantumFlex — Athena Neural RAG Webhook Bridge",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "athena-ask",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Inbound",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8001/query",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"question\": \"{{ $json.body.question || $json.body.query || 'Provide system status summary' }}\",\n  \"top_k\": 4\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Athena Vector Query",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nreturn {\n  status: 'SUCCESS',\n  query: res.question || $json.question,\n  answer: res.answer,\n  sources: res.sources || [],\n  model: res.model || 'athena:latest',\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Format Tactical Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "Respond to Caller",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Inbound": {
+      "main": [
+        [
+          {
+            "node": "Athena Vector Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Athena Vector Query": {
+      "main": [
+        [
+          {
+            "node": "Format Tactical Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Tactical Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Caller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "name": "QuantumFlex — Autonomous Lead Triage & AI Qualification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-triage",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Inbound Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:11434/api/generate",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen2.5-coder:1.5b\",\n  \"prompt\": \"You are an elite B2B cybersecurity qualification AI. Analyze this inbound lead:\\n\\nName: {{ $json.body.name || 'Anonymous' }}\\nEmail: {{ $json.body.email || 'N/A' }}\\nMessage: {{ $json.body.message || $json.body.query }}\\nBudget: {{ $json.body.budget || 'Unspecified' }}\\n\\nOutput a JSON object with:\\n{\\n  \\\"intent\\\": \\\"HIGH\\\" | \\\"MEDIUM\\\" | \\\"LOW\\\",\\n  \\\"estimated_value_usd\\\": number,\\n  \\\"service_category\\\": \\\"PQC_AUDIT\\\" | \\\"AUTOMATION_AGENCY\\\" | \\\"SOC_CONSULTING\\\" | \\\"GENERAL\\\",\\n  \\\"summary\\\": \\\"concise 1-sentence assessment\\\",\\n  \\\"recommended_action\\\": \\\"BOOK_CALENDAR\\\" | \\\"SEND_NURTURE\\\" | \\\"DISQUALIFY\\\"\\n}\\n\\nReturn ONLY valid JSON.\",\n  \"format\": \"json\",\n  \"stream\": false\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Local Qwen Evaluation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.response;\nlet parsed = {};\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parsed = { intent: 'MEDIUM', summary: raw, recommended_action: 'REVIEW' };\n}\n\nreturn {\n  lead_name: $('Inbound Lead Webhook').first().json.body.name || 'Anonymous',\n  lead_email: $('Inbound Lead Webhook').first().json.body.email || 'N/A',\n  qualification: parsed,\n  is_high_ticket: parsed.intent === 'HIGH' || parsed.estimated_value_usd >= 1000,\n  processed_at: new Date().toISOString()\n};"
+      },
+      "name": "Parse Qualification Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_high_ticket }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "High Value Filter",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"PROCESSED\",\n  \"priority\": \"URGENT\",\n  \"qualification\": {{ JSON.stringify($json.qualification) }},\n  \"action_triggered\": \"VIP_SLACK_ALERT_AND_CALENDAR_PUSH\"\n}",
+        "options": {}
+      },
+      "name": "VIP Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1150, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"PROCESSED\",\n  \"priority\": \"STANDARD\",\n  \"qualification\": {{ JSON.stringify($json.qualification) }},\n  \"action_triggered\": \"EMAIL_NURTURE_SEQUENCE\"\n}",
+        "options": {}
+      },
+      "name": "Standard Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1150, 400]
+    }
+  ],
+  "connections": {
+    "Inbound Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Local Qwen Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Qwen Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Parse Qualification Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification Logic": {
+      "main": [
+        [
+          {
+            "node": "High Value Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High Value Filter": {
+      "main": [
+        [
+          {
+            "node": "VIP Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Standard Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

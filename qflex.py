@@ -5,7 +5,7 @@
 ═════════════════════════════════════════════════════════════════════
 Intelligent, secure, and effortless unified interface for QuantumFlex.
 Provides live telemetry, neural vector RAG, autonomous swarm orchestration,
-PQC crypto-agility monitoring, and DePIN wealth elevation tracking.
+PQC crypto-agility monitoring, n8n workflow automation, and master host vault backup.
 """
 
 import os
@@ -41,6 +41,7 @@ ATHENA_URL = "http://127.0.0.1:8001"
 AMARA_URL = "http://127.0.0.1:8000"
 OPA_URL = os.environ.get("OPA_ENDPOINT", "http://127.0.0.1:8181")
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+N8N_URL = "http://127.0.0.1:5678"
 
 def print_banner():
     banner = f"""
@@ -59,7 +60,10 @@ def http_get(url: str, timeout: float = 3.0):
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "QuantumFlex-HUD/2.5"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode())
+            try:
+                return json.loads(resp.read().decode())
+            except Exception:
+                return {"status": "ONLINE"}
     except Exception:
         return None
 
@@ -83,6 +87,7 @@ def check_service_health():
         {"name": "Open Policy Agent", "url": f"{OPA_URL}/v1/data", "port": 8181, "stratum": "PQC Gating"},
         {"name": "Athena Neural RAG", "url": f"{ATHENA_URL}/health", "port": 8001, "stratum": "Vector Memory"},
         {"name": "Amara Dashboard", "url": f"{AMARA_URL}/", "port": 8000, "stratum": "Matrix HUD"},
+        {"name": "n8n Workflow Engine", "url": f"{N8N_URL}/healthz", "port": 5678, "stratum": "Automation Core"},
     ]
 
     print(f"\n{BOLD}{CYAN}─── [BIOLOGICAL STRATA HEALTH VITALS] ───────────────────────────{RESET}")
@@ -110,7 +115,7 @@ def cmd_ask_athena(query: str):
 
     answer = resp.get("answer", "(No response generated)")
     sources = resp.get("sources", [])
-    model = resp.get("model", "qwen2.5-coder:1.5b")
+    model = resp.get("model", "athena:latest")
 
     print(f"\n{CYAN}{BOLD}┌─── [A.T.H.E.N.A. SYNTHESIS] ────────────────────────────────────{RESET}")
     print(f"{GREEN}{answer.strip()}{RESET}")
@@ -180,6 +185,22 @@ def cmd_start_stack():
     time.sleep(3)
     check_service_health()
 
+def cmd_start_n8n():
+    """Launches n8n workflow engine."""
+    n8n_ps = ROOT_DIR / "Start-N8nNode.ps1"
+    print(f"{BOLD}[*] Launching n8n Autonomous Workflow Engine...{RESET}")
+    subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(n8n_ps)], shell=True)
+    time.sleep(3)
+    check_service_health()
+
+def cmd_backup_vault():
+    """Creates a permanent master host vault archive."""
+    vault_script = ROOT_DIR / "tools" / "secure_host_vault.py"
+    if vault_script.exists():
+        subprocess.run([sys.executable, str(vault_script)])
+    else:
+        print(f"{RED}[!] secure_host_vault.py missing.{RESET}\n")
+
 def interactive_hud():
     """Interactive TUI Menu for instant ease of use."""
     while True:
@@ -188,10 +209,12 @@ def interactive_hud():
         print(f"{BOLD}SELECT AN ACTION:{RESET}")
         print(f"  {CYAN}[1]{RESET} Ask A.T.H.E.N.A. (Neural Vector Memory / RAG)")
         print(f"  {CYAN}[2]{RESET} Dispatch Swarm Directive (\"The Claw\" Controller)")
-        print(f"  {CYAN}[3]{RESET} DePIN & Wealth Elevation Dashboard (Passive Income)")
+        print(f"  {CYAN}[3]{RESET} Sovereign Wealth Dashboard (3-Stream Engine)")
         print(f"  {CYAN}[4]{RESET} PQC Immune Daemon & Crypto-Agility Status")
         print(f"  {CYAN}[5]{RESET} Rotate & Secure All Credentials (CSPRNG Vault)")
-        print(f"  {CYAN}[6]{RESET} Start Full Biological Stack (All 6 Services)")
+        print(f"  {CYAN}[6]{RESET} Start Full Biological Stack (All Node Services)")
+        print(f"  {CYAN}[7]{RESET} Launch n8n Workflow Engine (Port 5678)")
+        print(f"  {CYAN}[8]{RESET} Backup Master Host Vault (C:\\Users\\quant\\QuantumFlex_Master_Vault)")
         print(f"  {CYAN}[0]{RESET} Exit HUD Console\n")
 
         choice = input(f"{BOLD}{MAGENTA}quantum-flex > {RESET}").strip()
@@ -218,6 +241,12 @@ def interactive_hud():
             input(f"{DIM}Press Enter to continue...{RESET}")
         elif choice == "6":
             cmd_start_stack()
+            input(f"{DIM}Press Enter to continue...{RESET}")
+        elif choice == "7":
+            cmd_start_n8n()
+            input(f"{DIM}Press Enter to continue...{RESET}")
+        elif choice == "8":
+            cmd_backup_vault()
             input(f"{DIM}Press Enter to continue...{RESET}")
         elif choice in ("0", "exit", "quit", "q"):
             print(f"\n{GREEN}QuantumFlex HUD session closed. State invariant.{RESET}\n")
@@ -253,16 +282,22 @@ def main():
         cmd_rotate_credentials()
     elif cmd in ("start", "up"):
         cmd_start_stack()
+    elif cmd in ("n8n", "automation"):
+        cmd_start_n8n()
+    elif cmd in ("backup", "save", "archive"):
+        cmd_backup_vault()
     else:
         print("""
 QuantumFlex Unified Command Console
 Usage:
   python qflex.py                - Open interactive Cyberpunk HUD
-  python qflex.py status         - Check health of all 6 biological strata
-  python qflex.py ask "<query>"  - Interrogate Athena Vector Memory (Qwen2.5-Coder)
+  python qflex.py status         - Check health of all biological strata
+  python qflex.py ask "<query>"  - Interrogate Athena Vector Memory (athena:latest)
   python qflex.py claw "<task>"  - Decompose and queue swarm directive
-  python qflex.py wealth         - View DePIN income & phi-confidence payout tiers
+  python qflex.py wealth         - View Sovereign Wealth Elevation Engine
   python qflex.py pqc            - Inspect post-quantum KEM/DSA agility status
+  python qflex.py n8n            - Launch n8n Autonomous Workflow Engine
+  python qflex.py backup         - Save & archive entire stack to Master Host Vault
   python qflex.py rotate         - Rotate all database and API credentials
   python qflex.py start          - Launch all node background services
 """)

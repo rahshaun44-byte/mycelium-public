@@ -1,0 +1,88 @@
+{
+  "name": "QuantumFlex — Automated PQC CBOM Compliance Audit",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pqc-audit",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Trigger PQC Audit",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8181/v1/data/membrane/health/verdict",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"input\": {\n    \"bomFormat\": \"CycloneDX\",\n    \"specVersion\": \"1.5\",\n    \"metadata\": { \"timestamp\": new Date().toISOString() },\n    \"components\": {{ JSON.stringify($json.body.components || [\n      {\n        \"type\": \"crypto-asset\",\n        \"name\": \"Active-KEM\",\n        \"cryptoProperties\": { \"assetType\": \"algorithm\", \"algorithmProperties\": { \"algorithm\": $json.body.active_kem || \"ML-KEM-768\" } }\n      },\n      {\n        \"type\": \"crypto-asset\",\n        \"name\": \"Active-Signature\",\n        \"cryptoProperties\": { \"assetType\": \"algorithm\", \"algorithmProperties\": { \"algorithm\": $json.body.active_sig || \"ML-DSA-65\" } }\n      }\n    ]) }}\n  }\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "name": "OPA Sidecar Evaluation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const verdict = $input.first().json.result || $input.first().json;\nconst isCompliant = verdict.node_status === 'COMPLIANT';\n\nreturn {\n  compliance_status: verdict.node_status,\n  total_assets_scanned: verdict.total_components,\n  toxic_count: verdict.toxic_count,\n  findings: verdict.findings || [],\n  recommended_fallback: verdict.recommended_fallback,\n  executive_summary: isCompliant ? \n    'PASSED: Cryptographic assets are fully compliant with NIST FIPS 203/204 and OMB M-26-15 guidelines.' :\n    'WARNING: Cryptographic toxicity detected. Immediate algorithmic migration recommended.',\n  remediation_plan: isCompliant ? 'None required' : `Step down active KEM to ${verdict.recommended_fallback}`,\n  generated_at: new Date().toISOString()\n};"
+      },
+      "name": "Generate Audit Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "Return Audit Verdict",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Trigger PQC Audit": {
+      "main": [
+        [
+          {
+            "node": "OPA Sidecar Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OPA Sidecar Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Generate Audit Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Audit Report": {
+      "main": [
+        [
+          {
+            "node": "Return Audit Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
