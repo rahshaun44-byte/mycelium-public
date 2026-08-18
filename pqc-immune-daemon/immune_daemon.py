@@ -18,7 +18,7 @@ Key improvements:
 Environment variables (all optional):
   OPA_ENDPOINT          default http://127.0.0.1:8181
   PQC_PROVIDER_CONF     path to crypto_provider.conf
-  WORKER_CMD            command line of the worker process
+  WORKER_PID            PID of the worker process to signal on rollover (POSIX)
   POLL_INTERVAL_MS      default 500
   FAIL_SECURE_THRESHOLD default 3
   PQC_DB_*              optional Postgres audit
@@ -57,6 +57,7 @@ DEFAULT_OPA = "http://127.0.0.1:8181"
 DEFAULT_VERDICT_PATH = "/v1/data/membrane/health/verdict"
 DEFAULT_POLL_MS = 500
 DEFAULT_FAIL_SECURE = 3
+DEFAULT_CONF = Path("crypto_provider.conf")
 FALLBACK_MAP = {
     "ML-KEM-512": "FrodoKEM-640-AES",
     "ML-KEM-768": "FrodoKEM-976-AES",
@@ -82,7 +83,13 @@ def setup_logging(verbose: bool = False) -> None:
 # ── Chain Navigation ──────────────────────────────────────────────
 def next_fallback(current: str) -> str:
     """Return the next algorithm down the chain, or NONE if exhausted."""
-    return FALLBACK_MAP.get(current, "X25519")
+    if current not in FALLBACK_MAP:
+        log.critical(
+            "Unrecognized active algorithm %r — refusing to guess a fallback. "
+            "Halting rollover; manual intervention required.", current
+        )
+        return "NONE"
+    return FALLBACK_MAP[current]
 
 
 # ── Config helpers & Watcher ──────────────────────────────────────
@@ -206,7 +213,11 @@ def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict
         r = requests.post(url, json={"input": cbom}, timeout=timeout)
         r.raise_for_status()
         data = r.json()
-        return data.get("result") or data
+        result = data.get("result")
+        if not isinstance(result, dict) or "node_status" not in result:
+            log.warning("OPA returned no usable verdict (policy not loaded?) — treating as failure")
+            return None
+        return result
     except Exception as e:
         log.warning("OPA query failed: %s", e)
         return None
@@ -291,8 +302,15 @@ def execute_collapse(
 ) -> None:
     old = state.active_kem
     if recommended in ("NONE", "", None) or recommended == old:
-        log.info("No useful fallback recommended — skipping collapse")
-        return
+        log.critical("FATAL: TOXIC verdict with no usable fallback (recommended=%s). Audit event raised. Halting.", recommended)
+        async_audit(old, recommended, findings, pg_config, webhook)
+        if state.worker_pid:
+            try:
+                log.critical("FATAL: Sending SIGTERM to worker PID %s to halt data path.", state.worker_pid)
+                os.kill(state.worker_pid, signal.SIGTERM)
+            except OSError as e:
+                log.error("Failed to terminate worker PID %s: %s", state.worker_pid, e)
+        sys.exit(1)
 
     log.warning("TOXIC -> collapsing %s -> %s", old, recommended)
     atomic_rewrite_conf(state.conf_path, {"active_kem": recommended}, dry_run=dry_run)
@@ -314,7 +332,10 @@ def execute_collapse(
             except Exception as e:
                 log.error("Failed to signal worker: %s", e)
         else:
-            log.debug("No SIGHUP on this platform — worker will pick up config via watcher")
+            if not state.worker_pid:
+                log.warning("No WORKER_PID set — worker will not be signalled; it must poll the config file instead")
+            else:
+                log.debug("No SIGHUP on this platform — worker will pick up config via watcher")
 
         async_audit(old, recommended, findings, pg_config, webhook)
 
@@ -358,6 +379,7 @@ def decision_loop(
                         "No safe downgrade available. Manual intervention required.",
                         state.active_kem,
                     )
+                    sys.exit(1)
                 else:
                     log.error("FAIL-SECURE triggered — %s → %s", state.active_kem, fallback)
                     execute_collapse(

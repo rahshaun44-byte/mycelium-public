@@ -898,28 +898,28 @@ async def index():
   </div>
 
   <script>
-    async function executeMobileAction(action) {
+    async function executeMobileAction(action) {{
       const apiKey = document.getElementById('api-key-input').value || 'quantum-admin-2026';
-      const payload = { action: action };
-      if (action === 'directive') {
+      const payload = {{ action: action }};
+      if (action === 'directive') {{
         payload.directive = document.getElementById('directive-input').value;
-      }
-      try {
-        const res = await fetch('/api/mobile/action', {
+      }}
+      try {{
+        const res = await fetch('/api/mobile/action', {{
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          headers: {{ 'Content-Type': 'application/json', 'x-api-key': apiKey }},
           body: JSON.stringify(payload)
-        });
+        }});
         const data = await res.json();
-        if (data.success) {
+        if (data.success) {{
             alert("✅ Action Initiated: " + data.message);
-        } else {
+        }} else {{
             alert("❌ Failed: " + (data.detail || data.error));
-        }
-      } catch (err) {
+        }}
+      }} catch (err) {{
         alert("❌ Error: " + err);
-      }
-    }
+      }}
+    }}
   </script>
 
   <!-- Node Status -->
@@ -1260,4 +1260,4 @@ async def index():
 if __name__ == "__main__":
     import uvicorn
     dashboard_port = int(os.environ.get("DASHBOARD_PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=dashboard_port)
+    uvicorn.run(app, host=os.environ.get("QF_BIND_HOST", "127.0.0.1"), port=dashboard_port)

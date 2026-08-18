@@ -45,6 +45,7 @@ SERVICES = [
         "script": "amara/dashboard.py",
         "pattern": "dashboard.py",
         "port": 8000,
+        "env": {"DASHBOARD_PORT": "8000", "QF_BIND_HOST": "100.64.1.29"}
     },
     {
         "name": "Api-Node",
@@ -132,6 +133,10 @@ def start_all():
 
         print(f"[*] Launching {name}...")
 
+        cmd_env = os.environ.copy()
+        if "env" in svc:
+            cmd_env.update(svc["env"])
+
         if sys.platform == "win32":
             # DETACHED_PROCESS = 0x00000008, CREATE_NEW_PROCESS_GROUP = 0x00000200
             creation_flags = 0x00000008 | 0x00000200
@@ -142,6 +147,7 @@ def start_all():
                 stderr=log_err,
                 creationflags=creation_flags,
                 close_fds=True,
+                env=cmd_env,
             )
         else:
             p = subprocess.Popen(
