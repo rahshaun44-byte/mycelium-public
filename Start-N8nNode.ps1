@@ -6,14 +6,16 @@ $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "  QUANTUM FLEX: N8N AUTONOMOUS WORKFLOW ENGINE" -ForegroundColor Cyan
+Write-Host "  QUANTUM FLEX: N8N AUTONOMOUS WORKFLOW ENGINE (v2.8.4)" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 
 # 1. Environment & Paths
-$env:Path = "$env:LOCALAPPDATA\Programs\nodejs;$env:APPDATA\npm;$env:LOCALAPPDATA\Programs\Ollama;$env:LOCALAPPDATA\Programs\OPA;$env:Path"
+$nodeDir = "$env:LOCALAPPDATA\Programs\nodejs"
+$env:Path = "$nodeDir;$env:LOCALAPPDATA\Programs\Ollama;$env:LOCALAPPDATA\Programs\OPA;$env:Path"
 
 $env:N8N_PORT = "5678"
 $env:N8N_HOST = "127.0.0.1"
+$env:N8N_LISTEN_ADDRESS = "127.0.0.1"
 $env:N8N_PROTOCOL = "http"
 $env:WEBHOOK_URL = "http://127.0.0.1:5678/"
 $env:N8N_USER_FOLDER = "$env:USERPROFILE\.n8n"
@@ -32,9 +34,9 @@ if ($n8nProc) {
 }
 
 Write-Host "[*] Launching n8n Autonomous Automation Daemon..." -ForegroundColor Yellow
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c n8n start" -WindowStyle Hidden
+Start-Process -FilePath "$nodeDir\node.exe" -ArgumentList "`"$nodeDir\node_modules\n8n\bin\n8n`" start" -WindowStyle Hidden
 
-Start-Sleep -Seconds 4
+Start-Sleep -Seconds 5
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  N8N ENGINE ONLINE -> http://127.0.0.1:5678" -ForegroundColor Green
 Write-Host "  Import workflows from: $Root\n8n_workflows" -ForegroundColor Green
