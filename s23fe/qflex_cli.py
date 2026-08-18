@@ -2,8 +2,8 @@
 """
 Quantum Flex Mobile CLI (Termux / Samsung Galaxy S23 FE)
 =========================================================
-Lightweight command-line interface to interact with the Quantum Flex
-node stack and MCP server running on your host machine over Tailscale.
+Lightweight, zero-overhead mobile interface to communicate with Athena RAG,
+Amara Orchestrator, and inspect biological telemetry securely over Tailscale mesh.
 
 Target Host: 100.64.1.29 (quantumflex)
 """
@@ -23,7 +23,7 @@ ATHENA_PORT = 8001
 
 def _http_get(url: str, timeout: float = 5.0) -> dict:
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "QuantumFlex-S23FE/2.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "QuantumFlex-S23FE/2.5"})
         with urllib.request.urlopen(req, timeout=timeout) as response:
             return json.loads(response.read().decode())
     except urllib.error.URLError as e:
@@ -37,7 +37,7 @@ def _http_post(url: str, data: dict, timeout: float = 60.0) -> dict:
         req = urllib.request.Request(
             url,
             data=payload,
-            headers={"Content-Type": "application/json", "User-Agent": "QuantumFlex-S23FE/2.0"}
+            headers={"Content-Type": "application/json", "User-Agent": "QuantumFlex-S23FE/2.5"}
         )
         with urllib.request.urlopen(req, timeout=timeout) as response:
             return json.loads(response.read().decode())
@@ -48,79 +48,78 @@ def _http_post(url: str, data: dict, timeout: float = 60.0) -> dict:
 
 def cmd_status():
     print("\n==========================================")
-    print("  QUANTUM FLEX: Remote Node Health Check  ")
-    print(f"  Target: http://{HOST_IP}:{API_PORT}")
+    print("  QUANTUM FLEX: Mobile Node Health Check  ")
+    print(f"  Target: http://{HOST_IP}")
     print("==========================================")
     
-    data = _http_get(f"http://{HOST_IP}:{API_PORT}/status", timeout=4.0)
-    if "error" in data:
-        print(f"[!] API Gateway: OFFLINE ({data['error']})")
+    # 1. Athena Node Check
+    athena_data = _http_get(f"http://{HOST_IP}:{ATHENA_PORT}/health", timeout=4.0)
+    if "error" in athena_data:
+        print(f"[!] Athena RAG: OFFLINE ({athena_data['error']})")
     else:
-        print(f"[+] API Gateway: {data.get('api_node', 'ONLINE')}")
-        print(f"    Timestamp  : {data.get('timestamp', '')}")
-        nodes = data.get("nodes", {})
-        athena = nodes.get("athena", {})
-        print(f"    Athena Node: {athena.get('status', 'UNKNOWN')} ({athena.get('vector_count', 0)} vectors)")
-        ollama = nodes.get("ollama", {})
-        print(f"    Ollama     : {ollama.get('status', 'UNKNOWN')} ({len(ollama.get('models', []))} models)")
+        print(f"[+] Athena RAG: {athena_data.get('status', 'ONLINE')}")
+        print(f"    Active Vectors : {athena_data.get('vector_count', 0)}")
+        print(f"    Neural Model   : {athena_data.get('chat_model', 'athena:latest')}")
 
-    print("\n------------------------------------------")
-    print("  AMARA Telemetry & Euclidean Drive (D)   ")
-    print("------------------------------------------")
+    # 2. Amara Dashboard Check
     dash_data = _http_get(f"http://{HOST_IP}:{DASHBOARD_PORT}/api/telemetry", timeout=4.0)
     if "error" in dash_data:
-        print(f"[!] Dashboard: OFFLINE ({dash_data['error']})")
+        print(f"[!] Amara Node: OFFLINE ({dash_data['error']})")
     else:
         drive = dash_data.get("drive", {})
         score = float(drive.get("drive_score", 0) or 0)
         status = drive.get("status", "OPTIMAL")
-        print(f"  Euclidean Drive (D): {score:.1f} / 1500.0 (Status: {status})")
-        print(f"  RAM Usage          : {drive.get('mem_usage', 0)} MB")
-        print(f"  CPU Utilization    : {drive.get('cpu_usage', 0)} %")
-        print(f"  I/O Wait           : {drive.get('io_wait', 0)} %")
-        print(f"  Integrity Penalty  : {drive.get('hash_penalty', 0)}")
+        print(f"[+] Amara Drive: {score:.1f} / 1500.0 (Status: {status})")
+        print(f"    RAM Usage  : {drive.get('mem_usage', 0)} MB")
+        print(f"    CPU Usage  : {drive.get('cpu_usage', 0)} %")
 
     print("==========================================\n")
 
 def cmd_athena(question: str):
-    print(f"\n[*] Querying Athena RAG Knowledge Base...")
-    print(f"    Question: \"{question}\"")
-    data = _http_post(f"http://{HOST_IP}:{API_PORT}/query", {"question": question}, timeout=60.0)
+    print(f"\n[*] Interrogating Athena Neural RAG from Mobile...")
+    print(f"    Query: \"{question}\"")
+    data = _http_post(f"http://{HOST_IP}:{ATHENA_PORT}/query", {"question": question}, timeout=60.0)
+    if "error" in data:
+        # Fallback to API Gateway port if direct Athena fails
+        data = _http_post(f"http://{HOST_IP}:{API_PORT}/query", {"question": question}, timeout=60.0)
+
     if "error" in data:
         print(f"[!] Error: {data['error']}")
     else:
-        print("\n--- [ATHENA ANSWER] -----------------------")
+        print("\n--- [ATHENA SYNTHESIS] -------------------")
         print(data.get("answer", "(No answer returned)"))
         print("------------------------------------------")
         sources = data.get("sources", [])
         if sources:
-            print(f"Sources: {', '.join(sources)}")
-        print(f"Model  : {data.get('model', 'gemma2:2b')}\n")
+            print(f"Sources : {', '.join(sources)}")
+        print(f"Model   : {data.get('model', 'athena:latest')}\n")
 
-def cmd_mcp():
-    print(f"\n==========================================")
-    print(f"  QUANTUM FLEX MCP SERVER (Port {MCP_PORT})")
-    print(f"==========================================")
-    print(f"  SSE Endpoint       : http://{HOST_IP}:{MCP_PORT}/sse")
-    print(f"  Streamable HTTP    : http://{HOST_IP}:{MCP_PORT}/")
-    print(f"\nAvailable MCP Tools on Quantum Flex Stack:")
-    print("  1. list_services      - Inspect all node background services")
-    print("  2. ask_athena         - Query RAG memory node over loopback")
-    print("  3. dashboard_snapshot - Live Euclidean Drive & telemetry")
-    print("  4. api_node_status    - Gateway health status")
-    print("  5. tailnet_mesh_status- Inspect Tailscale link to S23 FE")
-    print("  6. service_status     - Read service stdout & stderr logs")
-    print("  7. service_action     - Start / Stop / Restart node services")
+def cmd_interactive_chat():
+    """Live interactive conversation loop with Athena from mobile terminal."""
+    print("\n==========================================")
+    print("  ATHENA NEURAL ORACLE — MOBILE CHAT LOOP ")
+    print("  Type 'exit' or 'quit' to return to shell")
     print("==========================================\n")
+    while True:
+        try:
+            prompt = input("athena-mobile > ").strip()
+            if not prompt:
+                continue
+            if prompt.lower() in ("exit", "quit", "q"):
+                break
+            cmd_athena(prompt)
+        except (KeyboardInterrupt, EOFError):
+            print("\nSession ended.")
+            break
 
 def print_help():
     print("""
-Quantum Flex Mobile Controller (Samsung S23 FE)
+QuantumFlex Mobile Controller (Samsung S23 FE / Termux)
 Usage:
-  python qflex_cli.py status             - Full health check of host services
-  python qflex_cli.py athena "<query>"   - Ask Athena RAG a question
-  python qflex_cli.py mcp                - View MCP server details and tools
-  python qflex_cli.py dash               - Output web dashboard URL
+  python qflex_cli.py status             - Health check of all host services
+  python qflex_cli.py athena "<query>"   - Query Athena RAG knowledge base
+  python qflex_cli.py chat               - Open interactive mobile chat with Athena
+  python qflex_cli.py dash               - Output mobile web dashboard URL
 """)
 
 if __name__ == "__main__":
@@ -131,13 +130,13 @@ if __name__ == "__main__":
     cmd = sys.argv[1].lower()
     if cmd == "status":
         cmd_status()
-    elif cmd in ("athena", "ask", "rag"):
+    elif cmd in ("athena", "ask", "rag", "query"):
         if len(sys.argv) < 3:
             print("Usage: python qflex_cli.py athena \"<your question>\"")
         else:
             cmd_athena(" ".join(sys.argv[2:]))
-    elif cmd == "mcp":
-        cmd_mcp()
+    elif cmd in ("chat", "talk", "loop"):
+        cmd_interactive_chat()
     elif cmd in ("dash", "dashboard"):
         print(f"\nAMARA Sync Dashboard URL: http://{HOST_IP}:{DASHBOARD_PORT}")
         print("Open this in Samsung Internet or Chrome over Tailscale.\n")

@@ -2,77 +2,37 @@
 """
 A.T.H.E.N.A. — Autonomous Tactical Hybrid Engine for Neural Architecture
 ==========================================================================
-FastAPI service wrapping ChromaDB RAG.
-Port: 8001 (localhost only — bound to 127.0.0.1)
-
-Memory protection (the soft stop before Docker's hard cgroup limit):
-  - Collection size tracked via ChromaDB count()
-  - Embedding batch size capped at MAX_BATCH_SIZE
-  - Graceful rejection if collection exceeds MAX_VECTORS
+FastAPI service wrapping native SQLite Vector Memory & Custom Ollama Oracle.
+Port: 8001 (127.0.0.1 loopback & Tailscale mesh accessible)
 """
 
 import os
+import sys
 import gc
 import json
-import time
 import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import urllib.request
+import urllib.error
 
-import chromadb
-from chromadb.config import Settings
-from langchain_chroma import Chroma
-from langchain_ollama import OllamaEmbeddings
-from langchain_core.documents import Document
+# Add parent directory for imports
+ROOT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT_DIR))
+
+from sentinel.intelligence.athena_vector_db import AthenaVectorStore
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-BASE_DIR        = Path(__file__).parent.parent         # ~/mycelium
-KB_DIR          = BASE_DIR / "sentinel/knowledge_base"
-DB_DIR          = BASE_DIR / "sentinel/chroma_db"
-COLLECTION_NAME = "quantum_flex_kb"
-
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 EMBED_MODEL     = os.environ.get("EMBED_MODEL", "nomic-embed-text")
-CHAT_MODEL      = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:1.5b")
-
-# Soft memory limits
-MAX_VECTORS    = 50_000   # Hard stop on collection size
-MAX_BATCH_SIZE = 32       # Max docs per embed batch
-TOP_K_RESULTS  = 4        # Retrieval depth for RAG
-
-# ── Guardrails ────────────────────────────────────────────────────────────────
-# Only these sources are eligible to answer queries from (still fully ingestible,
-# just not retrievable for /query). Reachable over Tailscale now, not just localhost.
-ALLOWED_SOURCE_PREFIXES = ("sentinel/",)
-ALLOWED_SOURCE_EXACT    = {"manual", "quantum_flex_architecture.txt"}
-
-# Refuse to answer questions that touch live secrets or defense-bypass mechanics,
-# regardless of what's in the retrieved context.
-SENSITIVE_PATTERNS = [
-    r"private[\s_-]?key", r"\bpem\b", r"ssh[\s_-]?key", r"api[\s_-]?key",
-    r"tailscale[\s_-]?key", r"auth[\s_-]?key", r"\bsecret\b", r"\bcredential",
-    r"\bpassword\b", r"\bpasswd\b", r"root password", r"sudo password",
-    r"bypass.*lockout", r"lockout.*bypass", r"disable.*tripwire",
-    r"disable.*lockout", r"override.*lockout", r"defeat.*tripwire",
-    r"\.env\b", r"mtls.*cert.*private",
-]
-import re as _re
-_SENSITIVE_RE = _re.compile("|".join(SENSITIVE_PATTERNS), _re.IGNORECASE)
-
-
-def is_sensitive(text: str) -> bool:
-    return bool(_SENSITIVE_RE.search(text))
-
-
-def is_allowed_source(source: str) -> bool:
-    if source in ALLOWED_SOURCE_EXACT:
-        return True
-    return any(source.startswith(p) for p in ALLOWED_SOURCE_PREFIXES)
+CHAT_MODEL      = os.environ.get("ATHENA_MODEL", "athena:latest")
+MAX_VECTORS     = 50_000
+TOP_K_RESULTS   = 4
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -86,78 +46,36 @@ log = logging.getLogger("athena")
 app = FastAPI(
     title="A.T.H.E.N.A. RAG Node",
     description="Autonomous Tactical Hybrid Engine for Neural Architecture — Quantum Flex",
-    version="1.0.0",
+    version="2.5.0",
 )
 
-# ── Global state ──────────────────────────────────────────────────────────────
-_vectorstore: Optional[Chroma] = None
-_embeddings:  Optional[OllamaEmbeddings] = None
+_store: Optional[AthenaVectorStore] = None
 _startup_time = datetime.now().isoformat()
 
-
-def get_embeddings() -> OllamaEmbeddings:
-    global _embeddings
-    if _embeddings is None:
-        log.info(f"Initializing embedding model: {EMBED_MODEL}")
-        _embeddings = OllamaEmbeddings(
-            model=EMBED_MODEL,
-            base_url=OLLAMA_BASE_URL,
-        )
-    return _embeddings
-
-
-def get_vectorstore() -> Chroma:
-    global _vectorstore
-    if _vectorstore is None:
-        DB_DIR.mkdir(parents=True, exist_ok=True)
-        log.info(f"Loading ChromaDB from: {DB_DIR}")
-        _vectorstore = Chroma(
-            collection_name=COLLECTION_NAME,
-            embedding_function=get_embeddings(),
-            persist_directory=str(DB_DIR),
-        )
-        count = _vectorstore._collection.count()
-        log.info(f"ChromaDB loaded — {count} vectors in collection")
-    return _vectorstore
-
+def get_store() -> AthenaVectorStore:
+    global _store
+    if _store is None:
+        _store = AthenaVectorStore()
+    return _store
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
 class QueryRequest(BaseModel):
     question: str
     top_k: int = TOP_K_RESULTS
-
+    mode: Optional[str] = "tactical"
 
 class IngestRequest(BaseModel):
     text: str
     source: str = "manual"
     metadata: dict = {}
 
-
-# ── Startup ───────────────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup_event():
-    log.info("=" * 60)
-    log.info("A.T.H.E.N.A. Node starting up")
-    log.info(f"  ChromaDB path  : {DB_DIR}")
-    log.info(f"  Embed model    : {EMBED_MODEL}")
-    log.info(f"  Chat model     : {CHAT_MODEL}")
-    log.info(f"  Max vectors    : {MAX_VECTORS:,}")
-    log.info("=" * 60)
-    try:
-        vs = get_vectorstore()
-        count = vs._collection.count()
-        log.info(f"ChromaDB ready — {count} vectors loaded")
-    except Exception as e:
-        log.warning(f"ChromaDB warm-up deferred: {e}")
-
-
-# ── Health endpoint ───────────────────────────────────────────────────────────
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    """Node health check — called by AMARA and the API gateway."""
+    """Node health check — called by AMARA, Mobile CLI, and Gateway."""
     try:
-        vs    = get_vectorstore()
-        count = vs._collection.count()
+        store = get_store()
+        count = store.count()
         return {
             "status":       "ONLINE",
             "node":         "athena",
@@ -174,117 +92,101 @@ async def health():
             content={"status": "DEGRADED", "error": str(e)}
         )
 
-
-# ── RAG query endpoint ────────────────────────────────────────────────────────
 @app.post("/query")
 async def query_rag(req: QueryRequest):
     """
     RAG query pipeline:
-    1. Embed the question using nomic-embed-text
-    2. Retrieve top-k relevant chunks from ChromaDB
-    3. Build a prompt with context
-    4. Generate response via Ollama (gemma3:4b)
+    1. Retrieve top-k semantic chunks from AthenaVectorStore
+    2. Build context-grounded prompt with Truth Directive
+    3. Generate synthesized tactical response via Ollama athena / qwen2.5-coder
     """
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     try:
-        vs = get_vectorstore()
-        count = vs._collection.count()
+        store = get_store()
+        count = store.count()
 
         if count == 0:
             return {
-                "answer":   "Knowledge base is empty. Use /ingest to add documents first.",
+                "answer":   "Knowledge base is currently unindexed. Run `python tools/train_athena_memory.py` to index blueprints.",
                 "sources":  [],
                 "context":  "",
                 "model":    CHAT_MODEL,
                 "vectors":  0,
             }
 
-        # Retrieve relevant chunks
-        top_k = min(req.top_k, count)
-        docs  = vs.similarity_search(req.question, k=top_k)
-        context = "\n\n".join([d.page_content for d in docs])
-        sources = list({d.metadata.get("source", "unknown") for d in docs})
+        # Retrieve top relevant chunks
+        results = store.similarity_search(req.question, top_k=req.top_k)
+        context_blocks = [r["content"] for r in results]
+        context = "\n\n---\n\n".join(context_blocks)
+        sources = list(set(r["source"] for r in results))
 
-        # Build RAG prompt with Truth Directive
-        prompt = f"""System Directive - Quantum Flex:
-Primary Objective: Maximize the integrity and stability of the Quantum Flex infrastructure.
-Context: You are the long-term memory (Knowledge Graph/Vector Store) for the Amara reasoning engine.
-Protocol: You must index all "Truth Logs" and system configuration files. When queried, you prioritize system stability and security baseline over all other data.
-Relationship: Your intelligence is contingent upon the accuracy of your retrieved data, which feeds Amara’s decision-making. You do not just "store"; you "validate."
-
-Answer the following question using ONLY the context provided below.
-If the context does not contain the answer, say so clearly.
+        prompt = f"""You are A.T.H.E.N.A., the tactical vector memory and oracle of QuantumFlex.
+Answer the following query with technical precision, authoritative clarity, and strategic depth using the verified context below.
 
 CONTEXT:
 {context}
 
-QUESTION:
+QUERY:
 {req.question}
 
 ANSWER:"""
 
-        # Generate via Ollama
-        import requests as req_lib
-        payload = {
-            "model":   CHAT_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "stream":  False,
-        }
-        r = req_lib.post(
-            f"{OLLAMA_BASE_URL}/api/chat",
-            json=payload,
-            timeout=120,
-        )
-        r.raise_for_status()
-        answer = r.json()["message"]["content"]
+        # Query local Ollama instance
+        payload = json.dumps({
+            "model": CHAT_MODEL,
+            "prompt": prompt,
+            "stream": False
+        }).encode("utf-8")
 
-        # Garbage collect after heavy embedding operation
+        ollama_req = urllib.request.Request(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+
+        with urllib.request.urlopen(ollama_req, timeout=90) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            answer = data.get("response", "").strip()
+
         gc.collect()
 
         return {
             "answer":  answer,
             "sources": sources,
-            "context": context[:500] + "..." if len(context) > 500 else context,
+            "context": context[:400] + "..." if len(context) > 400 else context,
             "model":   CHAT_MODEL,
             "vectors": count,
+            "timestamp": datetime.now().isoformat()
         }
 
     except Exception as e:
         log.error(f"RAG query failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ── Direct ingest endpoint ────────────────────────────────────────────────────
 @app.post("/ingest")
 async def ingest_text(req: IngestRequest):
-    """
-    Ingest a text string directly into ChromaDB.
-    Enforces the MAX_VECTORS soft limit.
-    """
+    """Directly ingests a new document/truth entry into vector memory."""
     try:
-        vs    = get_vectorstore()
-        count = vs._collection.count()
-
+        store = get_store()
+        count = store.count()
         if count >= MAX_VECTORS:
-            raise HTTPException(
-                status_code=429,
-                detail=f"Vector limit reached ({count}/{MAX_VECTORS}). Prune collection first."
-            )
+            raise HTTPException(status_code=429, detail="Vector memory limit reached.")
 
-        metadata = {"source": req.source, "ingested_at": datetime.now().isoformat()}
-        metadata.update(req.metadata)
-        doc = Document(page_content=req.text, metadata=metadata)
-        vs.add_documents([doc])
+        success = store.add_document(
+            content=req.text,
+            source=req.source,
+            metadata=req.metadata
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to generate vector embedding.")
 
-        gc.collect()
-        new_count = vs._collection.count()
-        log.info(f"Ingested 1 document. Collection size: {new_count}")
+        new_count = store.count()
         return {
-            "status":    "ingested",
-            "source":    req.source,
-            "new_count": new_count,
+            "status": "ingested",
+            "source": req.source,
+            "total_vectors": new_count
         }
     except HTTPException:
         raise
@@ -292,33 +194,6 @@ async def ingest_text(req: IngestRequest):
         log.error(f"Ingest failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ── Collection stats endpoint ─────────────────────────────────────────────────
-@app.get("/stats")
-async def collection_stats():
-    """Return ChromaDB collection statistics."""
-    try:
-        vs    = get_vectorstore()
-        count = vs._collection.count()
-        return {
-            "collection":    COLLECTION_NAME,
-            "vector_count":  count,
-            "max_vectors":   MAX_VECTORS,
-            "utilization":   f"{(count/MAX_VECTORS)*100:.1f}%",
-            "db_path":       str(DB_DIR),
-            "embed_model":   EMBED_MODEL,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-    # Strictly localhost — never expose Athena externally
-    uvicorn.run(
-        app,
-        host="127.0.0.1",
-        port=8001,
-        log_level="info",
-    )
+    uvicorn.run(app, host="127.0.0.1", port=8001, log_level="info")

@@ -115,14 +115,35 @@ verdict := {
 }
 
 # ── Fallback Recommendation ─────────────────────────────────────
-# If ML-KEM is toxic, recommend FrodoKEM. If FrodoKEM is toxic, recommend classical.
-recommended_fallback := "FrodoKEM-976-AES" if {
-    ml_kem_compromised
-    not frodokem_compromised
+# Dynamically match ML-KEM size variants to equivalent security-tier FrodoKEM variants
+fallback_map := {
+    "ML-KEM-512": "FrodoKEM-640-AES",
+    "ML-KEM-768": "FrodoKEM-976-AES",
+    "ML-KEM-1024": "FrodoKEM-1344-AES",
+    "FrodoKEM-640-AES": "X25519",
+    "FrodoKEM-976-AES": "X25519",
+    "FrodoKEM-1344-AES": "X25519",
 }
 
+active_kems contains algo if {
+    some comp in input.components
+    comp.type == "crypto-asset"
+    algo := comp.cryptoProperties.algorithmProperties.algorithm
+    algo in (quantum_safe_kem | fallback_approved)
+}
+
+# If an active ML-KEM is toxic and FrodoKEM is healthy, pick the equivalent tier
+recommended_fallback := fallback_map[kem] if {
+    some kem in active_kems
+    kem in compromised_algorithms
+    not frodokem_compromised
+    fallback_map[kem]
+}
+
+# If FrodoKEM is also compromised, step down to approved classical (X25519)
 recommended_fallback := "X25519" if {
-    ml_kem_compromised
+    some kem in active_kems
+    kem in compromised_algorithms
     frodokem_compromised
 }
 

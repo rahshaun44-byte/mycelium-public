@@ -57,9 +57,15 @@ DEFAULT_OPA = "http://127.0.0.1:8181"
 DEFAULT_VERDICT_PATH = "/v1/data/membrane/health/verdict"
 DEFAULT_POLL_MS = 500
 DEFAULT_FAIL_SECURE = 3
-DEFAULT_CONF = Path("crypto_provider.conf")
-
-FALLBACK_CHAIN = ["ML-KEM-768", "FrodoKEM-976-AES", "X25519"]
+FALLBACK_MAP = {
+    "ML-KEM-512": "FrodoKEM-640-AES",
+    "ML-KEM-768": "FrodoKEM-976-AES",
+    "ML-KEM-1024": "FrodoKEM-1344-AES",
+    "FrodoKEM-640-AES": "X25519",
+    "FrodoKEM-976-AES": "X25519",
+    "FrodoKEM-1344-AES": "X25519",
+    "X25519": "NONE",
+}
 
 log = logging.getLogger("immune_daemon")
 
@@ -76,15 +82,7 @@ def setup_logging(verbose: bool = False) -> None:
 # ── Chain Navigation ──────────────────────────────────────────────
 def next_fallback(current: str) -> str:
     """Return the next algorithm down the chain, or NONE if exhausted."""
-    try:
-        idx = FALLBACK_CHAIN.index(current)
-    except ValueError:
-        # Unknown current algorithm — fail to the most conservative option
-        log.warning("Unknown active KEM %r — falling to chain tail", current)
-        return FALLBACK_CHAIN[-1]
-    if idx + 1 < len(FALLBACK_CHAIN):
-        return FALLBACK_CHAIN[idx + 1]
-    return "NONE"
+    return FALLBACK_MAP.get(current, "X25519")
 
 
 # ── Config helpers & Watcher ──────────────────────────────────────
