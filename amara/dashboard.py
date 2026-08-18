@@ -45,7 +45,7 @@ PG_CONFIG = {
     "port": int(os.environ.get("DB_PORT", 5432)),
     "dbname": os.environ.get("DB_NAME", "telemetry"),
     "user": os.environ.get("DB_USER", os.environ.get("GHOSTNODE_DB_USER", "ghostnode")),
-    "password": os.environ.get("DB_PASSWORD", os.environ.get("GHOSTNODE_DB_PASSWORD", "quantum_flex_secure_pass")),
+    "password": os.environ.get("DB_PASSWORD", os.environ.get("GHOSTNODE_DB_PASSWORD", "")),
     "connect_timeout": 1,
 }
 

@@ -25,6 +25,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
 
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # ── Configuration & Baselines ─────────────────────────────────────────────────
@@ -32,7 +33,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 DB_CONFIG = {
     "dbname": os.environ.get("DB_NAME", "telemetry"),
     "user": os.environ.get("DB_USER", os.environ.get("GHOSTNODE_DB_USER", "ghostnode")),
-    "password": os.environ.get("DB_PASSWORD", os.environ.get("GHOSTNODE_DB_PASSWORD", "quantum_flex_secure_pass")),
+    "password": os.environ.get("DB_PASSWORD", os.environ.get("GHOSTNODE_DB_PASSWORD", "")),
     "host": os.environ.get("DB_HOST", "127.0.0.1"),
     "port": os.environ.get("DB_PORT", "5432"),
 }
@@ -41,7 +42,7 @@ DB_CONFIG = {
 DB_SENTINEL = {
     "dbname": os.environ.get("DB_NAME", "telemetry"),
     "user": os.environ.get("SENTINEL_DB_USER", "sentinel_service"),
-    "password": os.environ.get("SENTINEL_DB_PASSWORD", "quantum_flex_secure_pass"),
+    "password": os.environ.get("SENTINEL_DB_PASSWORD", ""),
     "host": os.environ.get("DB_HOST", "127.0.0.1"),
     "port": os.environ.get("DB_PORT", "5432"),
 }
