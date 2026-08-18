@@ -107,11 +107,11 @@ client-cert auth), default `9443`, driven one connection at a time by
 repo, under `/usr/local/libexec/quantum-flex/` — see below) is the client that actually talks to
 this socket.
 
-**Crypto-agility / "immune" subsystem** (`mcp_layer/immune_daemon.py`,
-`mcp_layer/crypto_provider.conf`, `sentinel/policies/membrane_health.rego`): a decision loop, not a
+**Crypto-agility / "immune" subsystem** (`pqc-immune-daemon/immune_daemon.py`,
+`pqc-immune-daemon/crypto_provider.conf`, `sentinel/policies/membrane_health.rego`): a decision loop, not a
 one-off script. Every 500ms, `immune_daemon.py` generates a CBOM snapshot of the active PQC
 algorithm, POSTs it to a co-located OPA sidecar, and if OPA's verdict is `TOXIC`, rewrites
-`crypto_provider.conf` (`sed`, in place) and `SIGHUP`s the worker process to force renegotiation
+`crypto_provider.conf` (atomically via `os.replace`) and `SIGHUP`s the worker process to force renegotiation
 with the fallback algorithm. Fails secure: if OPA is unreachable, treat the current algorithm as
 toxic rather than assume it's fine.
 

@@ -18,7 +18,7 @@ product.** It has not been reviewed by anyone outside this repository, has
 no FIPS validation, and makes no claim to satisfy any federal mandate. What
 it does claim, and what you can verify yourself by reading the ~300 lines
 of code, is that it implements the specific *mechanisms* those documents
-describe — a provider-based config, an automated inventory snapshot, and
+describe — a provider-based config, a synthetic compliance payload about its own state, and
 signal-driven renegotiation — correctly and in working order.
 
 ## How it works
@@ -31,7 +31,7 @@ Every `POLL_INTERVAL_MS` (default 500ms), the daemon:
 2. POSTs it to a local [Open Policy Agent](https://www.openpolicyagent.org/)
    sidecar running the policy in `membrane_health.rego`.
 3. If the verdict comes back `TOXIC` for the active KEM:
-   - Rewrites `crypto_provider.conf` in place (`sed`) to the recommended
+   - Rewrites `crypto_provider.conf` atomically (`mkstemp` -> `fsync` -> `os.replace`) to the recommended
      fallback algorithm.
    - Sends `SIGHUP` to the worker process. The worker is expected to catch
      the signal and renegotiate its tunnel on the new algorithm — no

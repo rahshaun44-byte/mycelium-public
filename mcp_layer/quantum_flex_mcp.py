@@ -48,7 +48,7 @@ KNOWN_SERVICES = {
     "Api-Node": {"pattern": "api_node/main.py", "port": 8080, "script": "api_node/main.py"},
     "Quantum-Flex-MCP": {"pattern": "quantum_flex_mcp.py", "port": 9000, "script": "mcp_layer/quantum_flex_mcp.py"},
     "Sentinel-Tripwire": {"pattern": "tripwire_daemon.py", "port": None, "script": "sentinel/tripwire_daemon.py"},
-    "Immune-Daemon": {"pattern": "immune_daemon.py", "port": None, "script": "mcp_layer/immune_daemon.py"},
+    "Immune-Daemon": {"pattern": "immune_daemon.py", "port": None, "script": "pqc-immune-daemon/immune_daemon.py"},
 }
 
 ALLOWED_ACTIONS = {"start", "stop", "restart"}

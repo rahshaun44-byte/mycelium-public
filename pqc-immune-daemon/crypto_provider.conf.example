@@ -1,6 +1,6 @@
 # ═══════════════════════════════════════════════════════════════════
 # Quantum Flex — Cryptographic Provider Configuration
-# This file is MUTABLE. The immune_daemon.py rewrites it via sed
+# This file is MUTABLE. The immune_daemon.py rewrites it atomically
 # when OPA flags the active algorithm as TOXIC.
 # ═══════════════════════════════════════════════════════════════════
 

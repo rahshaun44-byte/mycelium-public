@@ -67,7 +67,7 @@ SERVICES = [
     },
     {
         "name": "Immune-Daemon",
-        "script": "mcp_layer/immune_daemon.py",
+        "script": "pqc-immune-daemon/immune_daemon.py",
         "pattern": "immune_daemon.py",
         "port": None,
     },
