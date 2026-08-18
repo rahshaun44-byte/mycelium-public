@@ -36,9 +36,9 @@ KB_DIR          = BASE_DIR / "sentinel/knowledge_base"
 DB_DIR          = BASE_DIR / "sentinel/chroma_db"
 COLLECTION_NAME = "quantum_flex_kb"
 
-OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-EMBED_MODEL     = "nomic-embed-text"
-CHAT_MODEL      = "gemma2:2b"   # Lightweight — fits in 14GB RAM alongside ChromaDB
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+EMBED_MODEL     = os.environ.get("EMBED_MODEL", "nomic-embed-text")
+CHAT_MODEL      = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:1.5b")
 
 # Soft memory limits
 MAX_VECTORS    = 50_000   # Hard stop on collection size

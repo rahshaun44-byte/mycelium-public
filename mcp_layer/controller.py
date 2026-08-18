@@ -22,8 +22,8 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-OLLAMA_URL = "http://127.0.0.1:11434"
-MODEL = "gemma2:2b"
+OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:1.5b")
 PG_CONFIG = {
     "host": "127.0.0.1", "port": 5432,
     "dbname": "telemetry", "user": os.environ["GHOSTNODE_DB_USER"],

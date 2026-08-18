@@ -3,9 +3,12 @@ import json
 import sqlite3
 from pathlib import Path
 from datetime import datetime
-import requests
+from dotenv import load_dotenv
 
-OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434") + "/api/chat"
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:1.5b")
 MEMORY_DB = Path("sentinel/intelligence/ollama_memory.db")
 
 class OllamaAgent:
@@ -18,7 +21,7 @@ class OllamaAgent:
     def chat(self, prompt):
         try:
             payload = {
-                "model": "gemma3:12b",
+                "model": OLLAMA_MODEL,
                 "messages": [{"role": "user", "content": prompt}],
                 "stream": False
             }
