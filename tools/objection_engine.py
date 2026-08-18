@@ -18,7 +18,7 @@ from pathlib import Path
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-ATHENA_URL = "http://127.0.0.1:8001/query"
+ATHENA_URL = "http://127.0.0.1:8005/query"
 
 # ANSI Colors
 CYAN = "\033[96m"

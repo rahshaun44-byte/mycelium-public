@@ -3,7 +3,7 @@
 
 This Master Services Agreement ("Agreement") is entered into as of this _____ day of ____________, 2026 ("Effective Date"), by and between:
 
-**CONSULTANT:** FinallyFungus LLC ("Consultant"), a limited liability company, and  
+**CONSULTANT:** FinallyFungus LLC [⚠ Entity registration must be verified with state before signing] ("Consultant"), a limited liability company, and  
 **CLIENT:** ____________________________________________________ ("Client"), a corporation/entity.
 
 ---
@@ -59,7 +59,7 @@ Each party agrees to preserve the confidentiality of all proprietary and non-pub
 
 6.2 **Consequential Damages:** IN NO EVENT SHALL EITHER PARTY BE LIABLE FOR ANY INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES (INCLUDING LOSS OF PROFITS OR DATA), EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
-6.3 **Insurance:** Consultant maintains Technology Errors & Omissions (E&O) and Cyber Liability insurance with standard coverage limits of not less than $1,000,000.
+9.3 **Insurance:** [⚠ STRICKEN UNLESS POLICY IS ACTIVELY BOUND] Consultant maintains Technology Errors & Omissions (E&O) and Cyber Liability insurance with standard coverage limits of not less than $1,000,000.
 
 ---
 

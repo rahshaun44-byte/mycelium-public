@@ -59,7 +59,7 @@ except ImportError:
 
 app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
-ATHENA_URL   = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
+ATHENA_URL   = os.environ.get("ATHENA_URL", "http://127.0.0.1:8005")
 OLLAMA_URL   = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 API_NODE_URL = os.environ.get("API_NODE_URL", "http://127.0.0.1:8080")
 
@@ -283,6 +283,52 @@ async def webhook_transition(request: Request):
     await manager.broadcast(data)
     return {"success": True}
 
+@app.get("/manifest.json")
+async def get_manifest():
+    manifest_path = Path(__file__).parent / "manifest.json"
+    if manifest_path.exists():
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            return JSONResponse(json.load(f))
+    return JSONResponse(status_code=404, content={"error": "Manifest not found"})
+
+@app.post("/api/mobile/action")
+async def mobile_action(request: Request, x_api_key: str = Header(None)):
+    expected_key = os.environ.get("DASHBOARD_API_KEY", "quantum-admin-2026")
+    if x_api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Invalid API Key.")
+    
+    data = await request.json()
+    action = data.get("action")
+    import sys
+    try:
+        if action == "backup":
+            script = Path(__file__).parent.parent / "tools" / "secure_host_vault.py"
+            subprocess.Popen([sys.executable, str(script)], creationflags=0x00000008 | 0x00000200 if sys.platform == "win32" else 0)
+            return {"success": True, "message": "Host Vault Backup Initiated"}
+        elif action == "rotate":
+            script = Path(__file__).parent.parent / "tools" / "rotate_credentials.py"
+            subprocess.Popen([sys.executable, str(script), "--rotate"], creationflags=0x00000008 | 0x00000200 if sys.platform == "win32" else 0)
+            return {"success": True, "message": "Credential Rotation Initiated"}
+        elif action == "directive":
+            directive = data.get("directive", "")
+            script = Path(__file__).parent.parent / "mcp_layer" / "controller.py"
+            subprocess.Popen([sys.executable, str(script), directive], creationflags=0x00000008 | 0x00000200 if sys.platform == "win32" else 0)
+            return {"success": True, "message": f"Directive Dispatched: {directive}"}
+        elif action == "cli":
+            command = data.get("command", "")
+            if not command:
+                return JSONResponse(status_code=400, content={"error": "Empty command"})
+            try:
+                res = subprocess.run(f'"{sys.executable}" qflex.py {command}', shell=True, capture_output=True, text=True, timeout=30, cwd=str(Path(__file__).parent.parent))
+                output = res.stdout if res.returncode == 0 else res.stderr
+                return {"success": True, "output": output}
+            except Exception as e:
+                return JSONResponse(status_code=500, content={"error": str(e)})
+        else:
+            return JSONResponse(status_code=400, content={"error": "Unknown action"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -424,8 +470,12 @@ async def index():
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="description" content="A.M.A.R.A. Quantum Flex Infrastructure Dashboard — Live node telemetry and RAG interface"/>
+  <meta name="theme-color" content="#00e5ff"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="manifest" href="/manifest.json"/>
   <title>A.M.A.R.A. | Quantum Flex</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
@@ -824,6 +874,54 @@ async def index():
     </div>
   </div>
 
+  </div>
+
+  <!-- Mobile Control Hub -->
+  <p class="section-header">Mobile Command Hub</p>
+  <div class="metrics-grid" style="margin-bottom: 24px;">
+    <div class="metric-card glass-panel" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 24px; cursor: pointer;" onclick="executeMobileAction('backup')">
+      <div style="font-size:2rem; margin-bottom: 12px;">💾</div>
+      <div class="metric-label" style="margin-bottom:0;">Backup Master Vault</div>
+      <div class="metric-unit" style="margin-top: 4px;">Snapshots current state</div>
+    </div>
+    <div class="metric-card glass-panel" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 24px; cursor: pointer;" onclick="executeMobileAction('rotate')">
+      <div style="font-size:2rem; margin-bottom: 12px;">🔐</div>
+      <div class="metric-label" style="margin-bottom:0;">Rotate Credentials</div>
+      <div class="metric-unit" style="margin-top: 4px;">CSPRNG Vault Rotation</div>
+    </div>
+    <div class="metric-card glass-panel" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 24px;">
+      <div style="font-size:2rem; margin-bottom: 12px;">⚡</div>
+      <div class="metric-label">Swarm Directive</div>
+      <input type="text" id="directive-input" placeholder="Enter Task..." style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:8px; border-radius:6px; font-family:'JetBrains Mono', monospace; font-size: 0.75rem; margin-top: 6px;" />
+      <button class="btn-premium" style="width:100%; margin-top: 8px; padding: 8px; font-size: 0.75rem;" onclick="executeMobileAction('directive')">Dispatch</button>
+    </div>
+  </div>
+
+  <script>
+    async function executeMobileAction(action) {
+      const apiKey = document.getElementById('api-key-input').value || 'quantum-admin-2026';
+      const payload = { action: action };
+      if (action === 'directive') {
+        payload.directive = document.getElementById('directive-input').value;
+      }
+      try {
+        const res = await fetch('/api/mobile/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("✅ Action Initiated: " + data.message);
+        } else {
+            alert("❌ Failed: " + (data.detail || data.error));
+        }
+      } catch (err) {
+        alert("❌ Error: " + err);
+      }
+    }
+  </script>
+
   <!-- Node Status -->
   <p class="section-header">Node Registry</p>
   <div class="nodes-grid">
@@ -881,19 +979,40 @@ async def index():
   <p class="section-header">Active Alerts</p>
   <div class="alerts-box">{alerts_html}</div>
 
-  <!-- Athena RAG Query -->
+  <!-- Athena Conversational Interface -->
   <div class="query-box">
-    <p class="section-header">A.T.H.E.N.A. RAG Query Interface</p>
-    <div style="font-size:0.8rem;color:var(--text-muted)">
-      Query the Athena cognitive node directly. Searches ChromaDB knowledge base.
+    <p class="section-header">A.T.H.E.N.A. Neural Conversational Chat</p>
+    <div id="chat-window" style="background:rgba(8, 12, 20, 0.8); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:16px; height:300px; overflow-y:auto; margin-bottom:12px; font-family:'JetBrains Mono', monospace; font-size:0.8rem; display:flex; flex-direction:column; gap:12px;">
+      <div style="color:var(--text-muted)">[SYSTEM] Athena Online. Awaiting queries...</div>
     </div>
     <div class="query-input-row">
-      <input id="rag-input" type="text"
-        placeholder="Ask Athena anything about Quantum Flex..."
-        onkeydown="if(event.key==='Enter')submitQuery()"/>
-      <button class="btn-premium" id="rag-btn" onclick="submitQuery()">Query Athena</button>
+      <input id="chat-input" type="text" style="flex: 1; background: rgba(17, 25, 39, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; outline: none; transition: border-color 0.2s;" placeholder="Message Athena..." onkeydown="if(event.key==='Enter')sendChatMessage()"/>
+      <button class="btn-premium" id="chat-btn" onclick="sendChatMessage()">Send</button>
     </div>
-    <pre id="rag-output"></pre>
+  </div>
+
+  <!-- Live Neural Training Module -->
+  <div class="query-box">
+    <p class="section-header">Neural Memory Ingestion (Training)</p>
+    <div style="font-size:0.8rem;color:var(--text-muted); margin-bottom:8px;">
+      Directly inject raw text, intelligence briefs, or architecture data into Athena's vector memory.
+    </div>
+    <textarea id="train-input" rows="4" placeholder="Paste intelligence here to train Athena..." style="width:100%; background:rgba(17, 25, 39, 0.8); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; color:var(--text); font-family:'JetBrains Mono', monospace; font-size:0.8rem; resize:vertical; outline:none; margin-bottom:12px;"></textarea>
+    <button class="btn-premium" id="train-btn" style="width:100%; background:linear-gradient(135deg, var(--green), #00cc66);" onclick="submitTraining()">Ingest into Vector Memory</button>
+  </div>
+
+  <!-- QuantumFlex Web Terminal -->
+  <div class="query-box">
+    <p class="section-header">QuantumFlex Web Terminal (CLI)</p>
+    <div style="font-size:0.8rem;color:var(--text-muted); margin-bottom:8px;">
+      Execute raw `qflex.py` commands on the host machine.
+    </div>
+    <pre id="cli-output" style="background:rgba(8, 12, 20, 0.8); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:12px; min-height:80px; max-height:200px; overflow-y:auto; font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:var(--text); margin-bottom:12px; white-space:pre-wrap;">Console ready.</pre>
+    <div class="query-input-row">
+      <span style="display:flex; align-items:center; font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--accent);">qflex></span>
+      <input id="cli-input" type="text" style="flex: 1; background: rgba(17, 25, 39, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; outline: none; transition: border-color 0.2s;" placeholder="status, wealth, pqc, etc." onkeydown="if(event.key==='Enter')executeCLI()"/>
+      <button class="btn-premium" id="cli-btn" onclick="executeCLI()">Execute</button>
+    </div>
   </div>
 
   <!-- Two-column tables -->
@@ -1016,17 +1135,27 @@ async def index():
       }}
   }}
 
-  async function submitQuery() {{
-    const input = document.getElementById('rag-input');
-    const btn   = document.getElementById('rag-btn');
-    const out   = document.getElementById('rag-output');
+  async function sendChatMessage() {{
+    const input = document.getElementById('chat-input');
+    const btn   = document.getElementById('chat-btn');
+    const windowDiv = document.getElementById('chat-window');
     const q = input.value.trim();
     if (!q) return;
 
+    input.value = '';
     btn.disabled = true;
-    btn.textContent = 'Querying...';
-    out.style.display = 'block';
-    out.textContent = '[ATHENA] Processing RAG query...';
+
+    const userMsg = document.createElement('div');
+    userMsg.style = 'align-self: flex-end; background:rgba(0, 229, 255, 0.1); border:1px solid rgba(0, 229, 255, 0.2); padding:10px; border-radius:8px; max-width:80%; color:var(--text); width:fit-content; margin-left:auto;';
+    userMsg.textContent = "You: " + q;
+    windowDiv.appendChild(userMsg);
+    windowDiv.scrollTop = windowDiv.scrollHeight;
+
+    const loadingMsg = document.createElement('div');
+    loadingMsg.style = 'align-self: flex-start; color:var(--text-muted); font-style:italic;';
+    loadingMsg.textContent = "Athena is thinking...";
+    windowDiv.appendChild(loadingMsg);
+    windowDiv.scrollTop = windowDiv.scrollHeight;
 
     try {{
       const res = await fetch('/api/query', {{
@@ -1035,20 +1164,92 @@ async def index():
         body: JSON.stringify({{question: q}})
       }});
       const data = await res.json();
+      
+      windowDiv.removeChild(loadingMsg);
+      
+      const athenaMsg = document.createElement('div');
+      athenaMsg.style = 'align-self: flex-start; background:rgba(124, 58, 237, 0.1); border:1px solid rgba(124, 58, 237, 0.2); padding:10px; border-radius:8px; max-width:80%; color:var(--green); width:fit-content;';
+      
       if (data.error) {{
-        out.textContent = '[ERROR] ' + data.error;
+        athenaMsg.style.color = 'var(--red)';
+        athenaMsg.textContent = '[ERROR] ' + data.error;
       }} else {{
-        out.textContent = '[ANSWER]\\n' + data.answer +
-          '\\n\\n[SOURCES] ' + (data.sources || []).join(', ') +
-          '\\n[MODEL] ' + data.model +
-          '\\n[VECTORS] ' + data.vectors;
+        athenaMsg.textContent = data.answer + "\\n\\n[SOURCES] " + (data.sources || []).join(', ');
       }}
+      windowDiv.appendChild(athenaMsg);
     }} catch(e) {{
-      out.textContent = '[OFFLINE] Athena node unavailable: ' + e;
+      windowDiv.removeChild(loadingMsg);
+      const athenaMsg = document.createElement('div');
+      athenaMsg.style = 'align-self: flex-start; color:var(--red); padding:10px;';
+      athenaMsg.textContent = '[OFFLINE] Athena node unavailable: ' + e;
+      windowDiv.appendChild(athenaMsg);
     }}
 
+    windowDiv.scrollTop = windowDiv.scrollHeight;
     btn.disabled = false;
-    btn.textContent = 'Query Athena';
+  }}
+
+  async function submitTraining() {{
+    const input = document.getElementById('train-input');
+    const btn   = document.getElementById('train-btn');
+    const text = input.value.trim();
+    if (!text) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Ingesting...';
+
+    const chunkId = Date.now().toString(16) + Math.floor(Math.random()*1000).toString(16);
+
+    try {{
+      const res = await fetch('/v1/athena/ingest', {{
+        method: 'POST',
+        headers: {{'Content-Type': 'application/json'}},
+        body: JSON.stringify({{
+          chunk_id: chunkId,
+          payload: text,
+          metadata: {{ source: "mobile_hud_manual_ingest", timestamp: new Date().toISOString() }}
+        }})
+      }});
+      if (res.ok) {{
+        alert("✅ Intelligence successfully queued for Vector Ingestion.");
+        input.value = '';
+      }} else {{
+        alert("❌ Ingestion Failed.");
+      }}
+    }} catch(e) {{
+      alert("❌ Error: " + e);
+    }}
+    btn.disabled = false;
+    btn.textContent = 'Ingest into Vector Memory';
+  }}
+
+  async function executeCLI() {{
+    const input = document.getElementById('cli-input');
+    const btn   = document.getElementById('cli-btn');
+    const out   = document.getElementById('cli-output');
+    const apiKey = document.getElementById('api-key-input').value || 'quantum-admin-2026';
+    const cmd = input.value.trim();
+    if (!cmd) return;
+
+    btn.disabled = true;
+    out.textContent = "Executing: qflex.py " + cmd + "\\n...";
+    
+    try {{
+      const res = await fetch('/api/mobile/action', {{
+        method: 'POST',
+        headers: {{ 'Content-Type': 'application/json', 'x-api-key': apiKey }},
+        body: JSON.stringify({{action: 'cli', command: cmd}})
+      }});
+      const data = await res.json();
+      if (data.success) {{
+        out.textContent = data.output;
+      }} else {{
+        out.textContent = "[ERROR] " + (data.error || "Unknown Error");
+      }}
+    }} catch (e) {{
+      out.textContent = "[ERROR] " + e;
+    }}
+    btn.disabled = false;
   }}
 </script>
 </body>

@@ -38,7 +38,7 @@ SERVICES = [
         "name": "Athena-Node",
         "script": "mcp_layer/athena_api.py",
         "pattern": "athena_api.py",
-        "port": 8001,
+        "port": 8005,
     },
     {
         "name": "Amara-Dashboard",

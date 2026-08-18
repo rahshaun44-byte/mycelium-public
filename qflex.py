@@ -37,7 +37,7 @@ DIM = "\033[2m"
 RESET = "\033[0m"
 
 # Service Ports & Endpoints
-ATHENA_URL = "http://127.0.0.1:8001"
+ATHENA_URL = "http://127.0.0.1:8005"
 AMARA_URL = "http://127.0.0.1:8000"
 OPA_URL = os.environ.get("OPA_ENDPOINT", "http://127.0.0.1:8181")
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
@@ -85,7 +85,7 @@ def check_service_health():
     services = [
         {"name": "Ollama LLM Runner", "url": f"{OLLAMA_URL}/api/tags", "port": 11434, "stratum": "Neural Inference"},
         {"name": "Open Policy Agent", "url": f"{OPA_URL}/v1/data", "port": 8181, "stratum": "PQC Gating"},
-        {"name": "Athena Neural RAG", "url": f"{ATHENA_URL}/health", "port": 8001, "stratum": "Vector Memory"},
+        {"name": "Athena Neural RAG", "url": f"{ATHENA_URL}/health", "port": 8005, "stratum": "Vector Memory"},
         {"name": "Amara Dashboard", "url": f"{AMARA_URL}/", "port": 8000, "stratum": "Matrix HUD"},
         {"name": "n8n Workflow Engine", "url": f"{N8N_URL}/healthz", "port": 5678, "stratum": "Automation Core"},
     ]

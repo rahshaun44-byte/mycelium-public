@@ -26,7 +26,7 @@ True capital expansion requires **high-dimensional cognitive leverage**: product
 │     STREAM 1     │             │     STREAM 2     │              │     STREAM 3     │
 │ PQC OMB M-26-15  │             │ Autonomous AI    │              │ Web3 & Protocol  │
 │ Enterprise Audit │             │ Workflow Agency  │              │ Bounty Scouting  │
-│  ($3.5k–$10k/pkg)│             │ ($500–$1.5k/mo)  │              │  ($2k–$50k/find) │
+│  ($2k–$5k/pilot) │             │ ($500–$1.5k/mo)  │              │  ($2k–$50k/find) │
 └──────────────────┘             └──────────────────┘              └──────────────────┘
 ```
 
@@ -47,7 +47,7 @@ True capital expansion requires **high-dimensional cognitive leverage**: product
   4. Dynamic Crypto-Agility Fallback Blueprint.
 - **Target Profile:** Mid-market FedRAMP-certified SaaS vendors, defense contractors (CMMC Level 2/3), and financial API providers.
 - **Delivery Mechanism:** Executed autonomously via n8n workflow [`03_pqc_cbom_audit_pipeline.json`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows/03_pqc_cbom_audit_pipeline.json).
-- **Price Point:** $3,500 – $10,000 per audit engagement.
+- **Price Point:** $2,000 – $5,000 per fixed-scope pilot (architectural gap analysis) to establish reference credibility, targeting larger retainers post-pilot.
 
 ---
 
@@ -79,7 +79,7 @@ True capital expansion requires **high-dimensional cognitive leverage**: product
 
 To graduate any of the above streams from **Market Framing** into a verified **Wealth Vector**, the following protocol criteria must be satisfied:
 
-1. **Named Entity:** A specific, identified paying company, organization, or protocol program.
+1. **Named Entity:** A specific, identified paying company, organization, or protocol program. *(CURRENT STATUS: NULL — zero active payers until a SOW is signed)*
 2. **Signed Deliverable / Bounty Submission:** A signed statement of work, active contract retainer, or formal bug bounty issue ID on a public bounty platform.
 3. **Verifiable Settlement Channel:** Direct fiat bank wire, Stripe merchant transaction, or on-chain escrow payout.
 

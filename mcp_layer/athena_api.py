@@ -3,7 +3,7 @@
 A.T.H.E.N.A. — Autonomous Tactical Hybrid Engine for Neural Architecture
 ==========================================================================
 FastAPI service wrapping native SQLite Vector Memory & Custom Ollama Oracle.
-Port: 8001 (127.0.0.1 loopback & Tailscale mesh accessible)
+Port: 8005 (127.0.0.1 loopback & Tailscale mesh accessible)
 """
 
 import os
@@ -196,4 +196,4 @@ async def ingest_text(req: IngestRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8001, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=8005, log_level="info")

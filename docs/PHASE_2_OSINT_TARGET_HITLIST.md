@@ -47,16 +47,16 @@
 
 ### Variation 1: The Math-First / CISO Architecture Angle
 **Target:** CISO / VP of Information Security  
-**Subject:** `OMB M-26-15 / dynamic CBOM vs hardcoded ML-KEM migration`
+**Subject:** `CNSA 2.0 / dynamic agility vs hardcoded ML-KEM migration`
 
 ```text
 {{First_Name}},
 
-OMB M-26-15 mandates that federal contractors submit PQC migration plans by October 2026, but the majority of migration roadmaps are making a structural error: hardcoding ML-KEM (FIPS 203) directly into application stacks.
+With the January 1, 2027 CNSA 2.0 procurement gate approaching with no waiver queue, the majority of migration roadmaps are making a structural error: hardcoding ML-KEM (FIPS 203) directly into application stacks.
 
 If a mathematical flaw or side-channel vulnerability emerges in structured lattices, static implementations force another full codebase refactor. Furthermore, static CBOM scans generated at compile time fail to satisfy continuous compliance once binaries are deployed on live infrastructure.
 
-I engineered a native C++/POSIX crypto-agility supervisor that solves this at runtime:
+I engineered a cross-platform Python crypto-agility supervisor that solves this at runtime:
 1. Generates continuous CycloneDX-compliant CBOM snapshots every 500ms.
 2. Uses an Open Policy Agent (OPA) sidecar to evaluate algorithm health.
 3. Automatically collapses compromised ML-KEM instances down to an unstructured lattice fallback (FrodoKEM) via atomic provider config swaps—with zero worker process restarts and zero dropped connections.
@@ -79,13 +79,13 @@ FinallyFungus LLC | Quantum Flex Architecture
 
 Most PQC discussions overlook process survivability during in-flight cipher suite renegotiation. Under NIST FIPS 203/204, swapping key encapsulation mechanisms on active defense network nodes typically requires tearing down the cryptographic tunnel or bouncing daemon processes.
 
-We built a bare-metal reference supervisor designed for high-availability systems:
-- It maintains active workers across SIGHUP/SIGUSR1 signal reloads.
+We built a cross-platform Python reference supervisor designed for high-availability systems:
+- It maintains active workers across SIGHUP reloads (and provides a watcher utility for Windows).
 - It parses dynamic threat feeds via a local OPA engine (membrane_health.rego).
 - Upon a TOXIC verdict, it executes an atomic rewrite of provider configurations, stepping down from ML-KEM to FrodoKEM in <0.5ms while keeping the network tunnel intact.
 - It treats policy engine unreachability as a fail-secure event, triggering immediate autonomous fallback.
 
-If you are architecting your CMMC Level 2/3 boundary for upcoming PQC requirements, I can share our C++ kernel design and the live test harness output. Let me know if you want the whitepaper sent over.
+If you are architecting your CMMC Level 2/3 boundary for upcoming PQC requirements, I can share our supervisor design and the live test harness output. Let me know if you want the whitepaper sent over.
 
 Best,
 Rahshaun "Rocky" Chambers
@@ -94,14 +94,14 @@ FinallyFungus LLC | Quantum Flex Architecture
 
 ---
 
-### Variation 3: The CMMC / October 2026 Compliance Deadline Angle
+### Variation 3: The CMMC & CNSA 2.0 Compliance Deadline Angle
 **Target:** Director of Infrastructure / DevSecOps Lead / CMMC Program Manager  
-**Subject:** `Automating CycloneDX CBOM generation ahead of Oct 2026 M-26-15`
+**Subject:** `Solving crypto-agility ahead of the Jan 2027 CNSA 2.0 gate`
 
 ```text
 {{First_Name}},
 
-With CMMC Level 2 assessments accelerating and OMB M-26-15 setting an October 2026 deadline for cryptographic migration plans, manual cryptographic asset spreadsheets are creating significant audit liability. Federal auditors will require proof of continuous cryptographic visibility (CBOM) and verifiable crypto-agility across CUI boundaries.
+With CMMC Level 2 assessments accelerating and the January 1, 2027 CNSA 2.0 procurement gate approaching with no waivers, manual cryptographic asset spreadsheets are creating significant audit liability. Federal auditors will require proof of continuous cryptographic visibility and verifiable crypto-agility across CUI boundaries.
 
 We packaged a lightweight advisory integration:
 1. Automated CycloneDX v1.5 CBOM generation tracking active KEMs and signature schemes across native endpoints.

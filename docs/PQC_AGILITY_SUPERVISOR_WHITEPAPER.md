@@ -1,4 +1,4 @@
-# NATIVE PQC-AGILITY SUPERVISOR: OMB M-26-15 COMPLIANCE ARCHITECTURE
+# NATIVE PQC-AGILITY SUPERVISOR: CNSA 2.0 & CMMC 2.0 ARCHITECTURE
 **Autonomous Algorithmic Migration & Continuous Cryptographic Policy Enforcement**
 
 *Author:* Rahshaun Chambers (FinallyFungus LLC / QuantumFlex Systems)  
@@ -9,9 +9,9 @@
 
 ## 1. Executive Summary & Regulatory Catalyst
 
-In June 2026, the Executive Office of the President issued **OMB Memorandum M-26-15** (*Execution of the Migration to Post-Quantum Cryptography*), establishing mandatory milestones for federal agencies, defense suppliers, and critical infrastructure contractors to inventory, isolate, and migrate High Value Assets (HVAs) away from vulnerable classical public-key cryptography (RSA, ECC, Diffie-Hellman).
+The defense and federal supply chain faces a compressed convergence of cryptographic mandates. The **January 1, 2027 CNSA 2.0 procurement gate** strictly requires ML-KEM-1024 and ML-DSA-87 for all new National Security Systems (NSS) acquisitions, with no waiver queue. In parallel, **CMMC 2.0 Phase 2 assessments begin November 10, 2026**, demanding verifiable, FIPS-validated cryptography. While **OMB Memorandum M-26-15** primarily targets federal agencies (setting an October 22, 2026 deadline for agency migration plans), it drives immediate downstream pressure into procurement specifications and RFP security questionnaires.
 
-Traditional static cryptographic migrations require destructive code refactoring, manual certificate reissuance, and scheduled process downtime. This whitepaper introduces the **Native PQC-Agility Supervisor**, a biological, zero-restart cryptographic control plane. By combining real-time anomaly detection, machine-readable Cryptographic Bills of Materials (CBOM), and an Open Policy Agent (OPA) policy engine, the system autonomously executes **atomic algorithmic fallback** (e.g., `ML-KEM-768` $\rightarrow$ `FrodoKEM-976-AES` $\rightarrow$ `X25519`) without interrupting live worker processes.
+Traditional static cryptographic migrations require destructive code refactoring, manual certificate reissuance, and scheduled process downtime. This whitepaper introduces the **Native PQC-Agility Supervisor**, a cross-platform Python-based, zero-restart cryptographic control plane. By combining CycloneDX-shaped active algorithm self-inventories and an Open Policy Agent (OPA) policy engine, the system autonomously executes **atomic algorithmic fallback** (e.g., `ML-KEM-768` $\rightarrow$ `FrodoKEM-976-AES` $\rightarrow$ `X25519`) without interrupting live worker processes.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────┐
@@ -45,10 +45,10 @@ Traditional static cryptographic migrations require destructive code refactoring
 
 ## 2. Structural Architecture & Core Mechanisms
 
-### 2.1 Continuous CycloneDX CBOM Generation
-The supervisor continuously scans active process memory and runtime configuration to assemble a standard **CycloneDX v1.5 Cryptographic Bill of Materials (CBOM)**:
-- Encapsulates active Key Encapsulation Mechanisms (KEMs) and Digital Signature Algorithms (DSAs).
-- Maps cryptographic assets against the **NIST FIPS 203 (ML-KEM)**, **FIPS 204 (ML-DSA)**, and **FIPS 205 (SLH-DSA)** standard catalogs.
+### 2.1 CycloneDX-Shaped Active Algorithm Inventory
+The supervisor evaluates its own active configuration to assemble a **CycloneDX-shaped Cryptographic Bill of Materials (CBOM)** self-inventory:
+- Emits active Key Encapsulation Mechanisms (KEMs) and Digital Signature Algorithms (DSAs) to the policy sidecar.
+- Designed to act as the enforcement layer integrating with full estate scanners (e.g., CBOMkit-theia) for comprehensive inventory ingestion.
 
 ### 2.2 Open Policy Agent (OPA) Sidecar Evaluation
 The CBOM payload is evaluated over high-speed local loopback against declarative Rego rules (`membrane_health.rego`):
@@ -85,9 +85,16 @@ The architecture was validated via a live-fire integration suite simulating an u
 
 ---
 
-## 4. Enterprise Advisory & Integration Scope
+## 4. Scope and Limitations
 
-For defense contractors subject to **CMMC 2.0 (Level 2/3)** and **OMB M-26-15**, FinallyFungus LLC delivers rapid architectural prototyping and compliance enablement:
+- **No Cryptography Performed:** The supervisor is a control-plane component that performs no cryptography at all. It contains no cryptographic module, validated or otherwise, and performs no key establishment, encryption, or signing. It is designed to sit *around* a customer's FIPS-validated modules.
+- **KEM-Scoped Rollover:** Automated fallback is currently scoped to key-establishment algorithms. Signature schemes are evaluated and reported, but not automatically rotated.
+
+---
+
+## 5. Enterprise Advisory & Integration Scope
+
+For defense contractors subject to **CNSA 2.0** and **CMMC 2.0 (Level 2/3)**, FinallyFungus LLC delivers rapid architectural prototyping and compliance enablement:
 - **Phase 1: Cryptographic Inventory & CBOM Automated Pipeline Setup**
 - **Phase 2: OPA Policy Customization & Threat Feed Integration**
 - **Phase 3: Daemon Hardening & Zero-Downtime Fallback Verification**
