@@ -76,7 +76,7 @@ $services = @(
     },
     @{
         Name = "Immune-Daemon"
-        Script = "mcp_layer\immune_daemon.py"
+        Script = "pqc-immune-daemon\immune_daemon.py"
         Args = ""
         Pattern = "immune_daemon.py"
     }

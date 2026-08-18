@@ -87,7 +87,10 @@ def run_tripwire():
 def run_immune_daemon():
     """Background worker for Immune Daemon."""
     try:
-        from mcp_layer.immune_daemon import main as immune_main
+        import sys
+        import os
+        sys.path.insert(0, os.path.abspath("pqc-immune-daemon"))
+        from immune_daemon import main as immune_main
         log.info("[+] PQC Immune Daemon thread active")
         immune_main()
     except Exception as e:
