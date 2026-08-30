@@ -1,136 +1,182 @@
+#define UNICODE
+#define _UNICODE
+#include <windows.h>
+#include <winevt.h>
 #include <iostream>
-#include <fstream>
+#include <string>
 #include <vector>
-#include <cstring>
-#include <unistd.h>
-#include <fcntl.h>
-#include <arpa/inet.h>
-#include <systemd/sd-journal.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <cerrno>
+#include <chrono>
+#include <libpq-fe.h>
 
-const char* CA_CERT     = "/etc/quantum-flex/root-ca.crt";
-const char* CLIENT_CERT = "/etc/quantum-flex/endpoint.crt";
-const char* CLIENT_KEY  = "/etc/quantum-flex/endpoint.key";
-const char* ATHENA_HOST = "127.0.0.1";
-const int   ATHENA_PORT = 9443;
+#pragma comment(lib, "wevtapi.lib")
+#pragma comment(lib, "libpq.lib")
 
-SSL_CTX* create_mtls_context() {
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
+static HANDLE g_hStopEvent = NULL;
 
-    const SSL_METHOD *method = TLS_client_method();
-    SSL_CTX *ctx = SSL_CTX_new(method);
-    if (!ctx) {
-        ERR_print_errors_fp(stderr);
-        return nullptr;
+BOOL WINAPI ConsoleHandler(DWORD signal) {
+    if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT || signal == CTRL_SHUTDOWN_EVENT) {
+        std::wcout << L"\n[SENTINEL] Shutdown signal received. Exiting...\n";
+        if (g_hStopEvent) {
+            SetEvent(g_hStopEvent);
+        }
+        return TRUE;
     }
-
-    if (SSL_CTX_use_certificate_file(ctx, CLIENT_CERT, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        SSL_CTX_free(ctx);
-        return nullptr;
-    }
-
-    if (SSL_CTX_use_PrivateKey_file(ctx, CLIENT_KEY, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        SSL_CTX_free(ctx);
-        return nullptr;
-    }
-
-    if (!SSL_CTX_load_verify_locations(ctx, CA_CERT, nullptr)) {
-        ERR_print_errors_fp(stderr);
-        SSL_CTX_free(ctx);
-        return nullptr;
-    }
-
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
-    return ctx;
+    return FALSE;
 }
 
-bool push_to_athena(const std::string& payload) {
-    SSL_CTX *ctx = create_mtls_context();
-    if (!ctx) {
-        std::cerr << "[SENTINEL] Failed to create mTLS context\n";
-        return false;
+class SentinelEngine {
+public:
+    SentinelEngine() {
+        std::wcout << L"=================================================================\n";
+        std::wcout << L"  QUANTUM FLEX // WINDOWS NATIVE SENTINEL ENGINE (C++20)\n";
+        std::wcout << L"  Zero-Trust Telemetry Core | Target: Windows Event Log API\n";
+        std::wcout << L"=================================================================\n";
+
+        // Read connection credentials dynamically from environment
+        const char* env_conninfo = std::getenv("QUANTUM_PG_CONNINFO");
+        std::string conninfo_str;
+
+        if (env_conninfo && strlen(env_conninfo) > 0) {
+            conninfo_str = env_conninfo;
+        } else {
+            const char* db_host = std::getenv("DB_HOST") ? std::getenv("DB_HOST") : "127.0.0.1";
+            const char* db_port = std::getenv("DB_PORT") ? std::getenv("DB_PORT") : "5432";
+            const char* db_name = std::getenv("DB_NAME") ? std::getenv("DB_NAME") : "quantum_flex";
+            const char* db_user = std::getenv("QUANTUM_SENTINEL_USER") ? std::getenv("QUANTUM_SENTINEL_USER") : "quantum_sentinel";
+            const char* db_pass = std::getenv("QUANTUM_SENTINEL_PASSWORD") ? std::getenv("QUANTUM_SENTINEL_PASSWORD") : "";
+
+            conninfo_str = "host=" + std::string(db_host) +
+                           " port=" + std::string(db_port) +
+                           " dbname=" + std::string(db_name) +
+                           " user=" + std::string(db_user) +
+                           " password=" + std::string(db_pass) +
+                           " connect_timeout=5";
+        }
+
+        std::wcout << L"[SENTINEL] Connecting to PostgreSQL persistence layer...\n";
+        
+        conn = PQconnectdb(conninfo_str.c_str());
+        if (PQstatus(conn) != CONNECTION_OK) {
+            std::cerr << "[DB ERROR] Connection failed: " << PQerrorMessage(conn) << "\n";
+            PQfinish(conn);
+            conn = nullptr;
+        } else {
+            std::wcout << L"[SENTINEL] Database connection established. Role: quantum_sentinel (Append-Only).\n";
+        }
     }
 
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        std::cerr << "[SENTINEL] socket() failed: " << strerror(errno) << std::endl;
-        SSL_CTX_free(ctx);
-        return false;
+    ~SentinelEngine() {
+        if (conn) {
+            PQfinish(conn);
+            conn = nullptr;
+        }
+        std::wcout << L"[SENTINEL] Engine shut down safely.\n";
     }
 
-    struct sockaddr_in serv_addr{};
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(ATHENA_PORT);
-    inet_pton(AF_INET, ATHENA_HOST, &serv_addr.sin_addr);
+    void persist_event(const std::string& xml_payload) {
+        auto now = std::chrono::system_clock::now();
+        auto usec = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+        std::string timestamp_str = std::to_string(usec);
+        std::string node_id = "yoga-win11-master";
 
-    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "[SENTINEL] connect() failed to " << ATHENA_HOST << ":" << ATHENA_PORT
-                  << " — " << strerror(errno) << std::endl;
-        close(sockfd);
-        SSL_CTX_free(ctx);
-        return false;
+        std::wcout << L"\n[TELEMETRY CAPTURED] Node: " << node_id.c_str() 
+                   << L" | Timestamp: " << timestamp_str.c_str() << L"\n";
+        std::cout << "Payload Preview: " << xml_payload.substr(0, 180) << "...\n";
+
+        if (conn && PQstatus(conn) == CONNECTION_OK) {
+            const char* paramValues[3] = { node_id.c_str(), timestamp_str.c_str(), xml_payload.c_str() };
+            int paramLengths[3] = { (int)node_id.length(), (int)timestamp_str.length(), (int)xml_payload.length() };
+            int paramFormats[3] = { 0, 0, 0 }; // Text format
+
+            const char* query = "INSERT INTO quantum_telemetry_channel (node_id, timestamp, payload) VALUES ($1, $2::BIGINT, $3);";
+            PGresult* res = PQexecParams(conn, query, 3, NULL, paramValues, paramLengths, paramFormats, 0);
+
+            if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+                std::cerr << "[DB ERROR] Insertion failed: " << PQerrorMessage(conn) << "\n";
+            } else {
+                std::wcout << L"[PERSISTENCE] Telemetry row successfully committed to quantum_telemetry_channel.\n" << std::flush;
+            }
+            PQclear(res);
+        } else {
+            std::wcerr << L"[WARN] Database connection not ready. Payload bypassed storage.\n" << std::flush;
+        }
     }
 
-    SSL *ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, sockfd);
+    static DWORD WINAPI SubscriptionCallback(
+        EVT_SUBSCRIBE_NOTIFY_ACTION action,
+        PVOID pContext,
+        EVT_HANDLE hEvent
+    ) {
+        if (action == EvtSubscribeActionDeliver) {
+            SentinelEngine* engine = static_cast<SentinelEngine*>(pContext);
+            DWORD bufferSize = 0;
+            DWORD bufferUsed = 0;
+            DWORD propertyCount = 0;
 
-    if (SSL_connect(ssl) <= 0) {
-        std::cerr << "[SENTINEL] SSL_connect failed\n";
-        ERR_print_errors_fp(stderr);
-        SSL_free(ssl);
-        close(sockfd);
-        SSL_CTX_free(ctx);
-        return false;
+            EvtRender(NULL, hEvent, EvtRenderEventXml, bufferSize, NULL, &bufferUsed, &propertyCount);
+            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+                bufferSize = bufferUsed;
+                std::vector<wchar_t> buffer(bufferSize / sizeof(wchar_t) + 1);
+                if (EvtRender(NULL, hEvent, EvtRenderEventXml, bufferSize, buffer.data(), &bufferUsed, &propertyCount)) {
+                    int size_needed = WideCharToMultiByte(CP_UTF8, 0, buffer.data(), -1, NULL, 0, NULL, NULL);
+                    std::string utf8_xml(size_needed, 0);
+                    WideCharToMultiByte(CP_UTF8, 0, buffer.data(), -1, &utf8_xml[0], size_needed, NULL, NULL);
+
+                    if (engine) {
+                        engine->persist_event(utf8_xml);
+                    }
+                }
+            }
+        }
+        return ERROR_SUCCESS;
     }
 
-    SSL_write(ssl, payload.c_str(), payload.length());
-    std::cout << "[SENTINEL] Transmitted " << payload.length() << " bytes to Athena.\n";
+    void start_monitoring() {
+        std::wcout << L"[SENTINEL] Subscribing to Windows Event Log (Channel: Application, XPath: *)...\n";
 
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
-    close(sockfd);
-    SSL_CTX_free(ctx);
-    return true;
-}
+        EVT_HANDLE hSub = EvtSubscribe(
+            NULL,
+            NULL,
+            L"Application",
+            L"*",
+            NULL,
+            this,
+            (EVT_SUBSCRIBE_CALLBACK)SubscriptionCallback,
+            EvtSubscribeToFutureEvents
+        );
 
-int main() {
-    sd_journal *j;
-    int r = sd_journal_open(&j, SD_JOURNAL_LOCAL_ONLY);
-    if (r < 0) {
-        std::cerr << "Failed to open journal: " << strerror(-r) << "\n";
+        if (!hSub) {
+            DWORD err = GetLastError();
+            std::wcerr << L"[CRITICAL ERROR] EvtSubscribe failed. Error Code: " << err << L"\n";
+            return;
+        }
+
+        std::wcout << L"[SENTINEL] Pipeline active. Intercepting live OS telemetry stream.\n" << std::flush;
+
+        // Block on stop event until signaled
+        WaitForSingleObject(g_hStopEvent, INFINITE);
+
+        EvtClose(hSub);
+        std::wcout << L"[SENTINEL] Subscription closed.\n" << std::flush;
+    }
+
+private:
+    PGconn* conn = nullptr;
+};
+
+int wmain() {
+    g_hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    SetConsoleCtrlHandler(ConsoleHandler, TRUE);
+
+    try {
+        SentinelEngine engine;
+        engine.start_monitoring();
+    } catch (const std::exception& e) {
+        std::cerr << "[FATAL EXCEPTION] " << e.what() << "\n";
+        CloseHandle(g_hStopEvent);
         return 1;
     }
 
-    sd_journal_add_match(j, "_SYSTEMD_UNIT=sshd.service", 0);
-    sd_journal_seek_tail(j);
-    sd_journal_previous(j);
-
-    std::cout << "[SENTINEL] Monitoring sshd.service -> Pushing to Athena ("
-              << ATHENA_HOST << ":" << ATHENA_PORT << ")...\n";
-
-    while (true) {
-        r = sd_journal_next(j);
-        if (r < 0) break;
-        if (r == 0) {
-            sd_journal_wait(j, (uint64_t)-1);
-            continue;
-        }
-
-        const void *data;
-        size_t length;
-        if (sd_journal_get_data(j, "MESSAGE", &data, &length) >= 0) {
-            std::string log_entry((const char*)data, length);
-            std::cout << "\n[LIF SPIKE DETECTED] " << log_entry << std::endl << std::flush;
-            push_to_athena(log_entry);
-        }
-    }
-
-    sd_journal_close(j);
+    CloseHandle(g_hStopEvent);
     return 0;
 }

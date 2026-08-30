@@ -1,17 +1,17 @@
-# NATIVE PQC-AGILITY SUPERVISOR: CNSA 2.0 & CMMC 2.0 ARCHITECTURE
-**Autonomous Algorithmic Migration & Continuous Cryptographic Policy Enforcement**
+# REFERENCE PATTERN: CRYPTO-AGILITY SUPERVISOR & CONTINUOUS POLICY ENFORCEMENT
+**Autonomous Algorithmic Fallback & Control-Plane Policy Verification**
 
 *Author:* Rahshaun Chambers (FinallyFungus LLC / QuantumFlex Systems)  
 *Date:* August 2026  
-*Classification:* Technical Whitepaper & Architectural Reference
+*Classification:* Technical Reference Pattern & Architectural Prototype
 
 ---
 
-## 1. Executive Summary & Regulatory Catalyst
+## 1. Executive Summary & Context
 
-The defense and federal supply chain faces a compressed convergence of cryptographic mandates. The **January 1, 2027 CNSA 2.0 procurement gate** strictly requires ML-KEM-1024 and ML-DSA-87 for all new National Security Systems (NSS) acquisitions, with no waiver queue. In parallel, **CMMC 2.0 Phase 2 assessments begin November 10, 2026**, demanding verifiable, FIPS-validated cryptography. While **OMB Memorandum M-26-15** primarily targets federal agencies (setting an October 22, 2026 deadline for agency migration plans), it drives immediate downstream pressure into procurement specifications and RFP security questionnaires.
+The cryptographic landscape is transitioning toward post-quantum standards under guidance from NIST (FIPS 203/204/205), NSA CNSA 2.0 timelines, and federal migration planning memos (e.g., OMB M-26-15). Organizations face the challenge of designing crypto-agile architectures capable of responding to algorithmic vulnerabilities without requiring destructive code refactoring or scheduled application rebuilds.
 
-Traditional static cryptographic migrations require destructive code refactoring, manual certificate reissuance, and scheduled process downtime. This whitepaper introduces the **Native PQC-Agility Supervisor**, a cross-platform Python-based, zero-restart cryptographic control plane. By combining CycloneDX-shaped active algorithm self-inventories and an Open Policy Agent (OPA) policy engine, the system autonomously executes **atomic algorithmic fallback** (e.g., `ML-KEM-768` $\rightarrow$ `FrodoKEM-976-AES` $\rightarrow$ `X25519`) without interrupting live worker processes.
+This document presents an **Engineering Reference Pattern for a Crypto-Agility Supervisor**: a lightweight, cross-platform control plane that combines CycloneDX-shaped active algorithm self-inventories with an Open Policy Agent (OPA) declarative policy engine. The supervisor autonomously evaluates cryptographic health and executes **fail-secure atomic configuration updates** (e.g., `ML-KEM-768` $\rightarrow$ `FrodoKEM-976-AES` $\rightarrow$ `X25519` $\rightarrow$ `HALT`) without restarting the supervisor process.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────┐
@@ -60,11 +60,48 @@ The CBOM payload is evaluated over high-speed local loopback against declarative
   - `ML-KEM-1024` (NIST Level 5) $\rightarrow$ `FrodoKEM-1344-AES`
   - `FrodoKEM` Exhaustion $\rightarrow$ `X25519` (Hybrid Fail-Safe)
 
-### 2.3 Atomic Vein Collapse (Zero-Downtime Migration)
-Upon receiving a `TOXIC` verdict from OPA, the supervisor executes an **Atomic Vein Collapse**:
+### 2.3 Atomic Configuration Rollover (Control-Plane Migration)
+Upon receiving a `TOXIC` verdict from OPA, the supervisor executes an **Atomic Configuration Rollover**:
 1. Generates an updated `crypto_provider.conf` within a secure staging buffer.
 2. Performs an atomic file system swap (`os.replace` / POSIX `rename`) to prevent partial reads.
-3. Worker processes, monitoring via native inode/mtime watchers (`ConfigWatcher`), detect the swap and autonomously renegotiate subsequent TLS/PQC handshakes using the fallback algorithm—**zero restarts, zero session drops**.
+3. Worker processes, monitoring via native inode/mtime watchers (`ConfigWatcher`) or POSIX `SIGHUP`, detect the swap and adopt the fallback algorithm for subsequent session negotiations — **zero process restarts, zero rebuilds**.
+4. *Protocol Boundary:* In-band mid-stream socket re-framing (epoch tracking, framed record markers) is a separate worker data-plane protocol design milestone and is distinct from this supervisor control plane.
+
+### 2.4 Self-Healing Quarantine Architecture (Circuit Breaker)
+
+The supervisor implements a **three-state circuit breaker** to distinguish *transient environmental failures* (OPA briefly unreachable, policy bundle not yet mounted) from *structural cryptographic threats* (genuine `TOXIC` verdict). This prevents a 2-second network timeout from permanently halting the node.
+
+```
+OPA unreachable /       Circuit Breaker     max_retries        Terminal
+empty response  ------> QUARANTINE      --> exhausted      --> COLLAPSE
+                                                               (exit 1)
+                        |
+                        | OPA returns COMPLIANT before max_retries
+                        v
+                        RECOVERY --> ACTIVE (circuit breaker reset)
+```
+
+**State definitions:**
+
+| State | Trigger | Action |
+|:---|:---|:---|
+| `ACTIVE` | OPA returns `COMPLIANT` | Normal polling continues |
+| `QUARANTINE` | OPA unreachable / empty / untrusted (within retry budget) | Atomically writes `safe_mode_cipher`; waits `quarantine_delay_ms`; retries |
+| `COLLAPSED` | `max_retries` failures within `timeout_window_sec` | Terminal `execute_vein_collapse()` then `exit 1` |
+
+**OPA as single source of truth for recovery parameters** — circuit breaker configuration is never hardcoded in Python. At startup the daemon queries `GET /v1/data/membrane/health/recovery_map` and builds the `CircuitBreaker` from the authoritative Rego values:
+
+```rego
+recovery_map := {
+    "max_retries": 3,
+    "timeout_window_sec": 60,
+    "quarantine_delay_ms": 5000,
+    "safe_mode_cipher": "FrodoKEM-976-AES",
+    "quarantine_action": "isolate_and_hold",
+}
+```
+
+To adjust retry behavior for a specific tactical deployment (e.g., contested-environment edge sensors with higher transient failure rates), update the `.rego` file — not the Python binary.
 
 ---
 
@@ -83,21 +120,45 @@ The architecture was validated via a live-fire integration suite simulating an u
 7. State: COMPLIANT | Invariant Maintained.
 ```
 
+Automated test suite verification (12 invariants, all passing):
+
+```
+PASS: execute_vein_collapse() rewrote crypto_provider.conf and updated state
+PASS: exhausted fallback chain raises SystemExit and halts without rewriting config
+PASS: [D-1] daemon starts with default config path (--once --dry-run)
+PASS: [D-2] empty OPA result returns None (fail-secure trigger)
+PASS: [D-2] unexpected/unknown node_status triggers fail-secure fallback
+PASS: [D-3] unknown algorithm does not downgrade silently
+PASS: [D-4] worker PID tracking functional
+PASS: [SINGLE SOURCE OF TRUTH] OPA (.rego) authoritative fallback chain verified
+PASS: [Q-1] circuit breaker quarantine -> recover lifecycle verified
+PASS: [Q-2] circuit breaker trips after max_retries (3) consecutive failures
+PASS: [Q-3] quarantine atomically applies safe-mode cipher to config
+PASS: [Q-4] recovery_map loaded from rego (single source of truth) verified
+
+[ALL 12 SECURITY, COMPLIANCE & SELF-HEALING INVARIANTS 100% VERIFIED]
+```
+
 ---
 
 ## 4. Scope and Limitations
 
-- **No Cryptography Performed:** The supervisor is a control-plane component that performs no cryptography at all. It contains no cryptographic module, validated or otherwise, and performs no key establishment, encryption, or signing. It is designed to sit *around* a customer's FIPS-validated modules.
-- **KEM-Scoped Rollover:** Automated fallback is currently scoped to key-establishment algorithms. Signature schemes are evaluated and reported, but not automatically rotated.
+- **Control Plane Only (No Cryptography Performed):** The supervisor is a control-plane orchestration component that performs no cryptography directly. It contains no cryptographic module, validated or otherwise, and performs no key establishment, encryption, or signing. It is designed to sit *around* an organization's existing cryptographic modules.
+- **Reference Pattern, Not Certification:** This work represents an engineering reference pattern and prototype. It is not an accredited 3PAO/C3PAO compliance certificate.
+- **KEM-Scoped Rollover:** Automated fallback is currently scoped to key-establishment algorithms. Signature schemes are evaluated and reported in the CBOM, but not automatically rotated.
+- **Session Boundary:** Algorithm updates take effect for new sessions established under the rewritten provider configuration. Mid-stream in-flight socket rollover is a separate protocol specification.
+- **Supervisor Restart Required:** `exit 1` on `COLLAPSED` is intentional fail-loud design. The daemon must be supervised (systemd `Restart=on-failure` on Linux; Task Scheduler on Windows) to achieve full self-healing without operator intervention.
 
 ---
 
-## 5. Enterprise Advisory & Integration Scope
+## 5. Enterprise Advisory & Prototyping Scope
 
-For defense contractors subject to **CNSA 2.0** and **CMMC 2.0 (Level 2/3)**, FinallyFungus LLC delivers rapid architectural prototyping and compliance enablement:
+For engineering teams planning crypto-agility roadmaps:
 - **Phase 1: Cryptographic Inventory & CBOM Automated Pipeline Setup**
 - **Phase 2: OPA Policy Customization & Threat Feed Integration**
-- **Phase 3: Daemon Hardening & Zero-Downtime Fallback Verification**
-- **Phase 4: Technical Evidence Artifacts for 3PAO/C3PAO Assessment**
+- **Phase 3: Daemon Hardening & Fail-Secure Fallback Verification**
+- **Phase 4: Technical Evidence Artifacts for Internal Governance**
+- **Phase 5: Self-Healing Quarantine & Circuit Breaker Integration** — deploying `recovery_map`-driven quarantine, sliding-window failure tracking, and AMARA telemetry bus integration for autonomous recovery in contested/degraded environments.
 
 *Contact:* advisory@finallyfungus.com | Enterprise Architectural Services
+
