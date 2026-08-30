@@ -1,0 +1,43 @@
+# =============================================================================
+# Pavilion (qflex / 100.64.1.15) overlay for docker-compose.kafka.yml
+#
+# Additive override -- does not modify the base file. Apply with:
+#   docker compose -f docker-compose.kafka.yml -f docker-compose.kafka.pavilion.yml up -d
+#
+# Fixes two things the base file gets wrong for mesh deployment, and adds
+# memory limits sized for the node's actual hardware (Celeron 450, 1 core, 1.9 GB).
+# =============================================================================
+
+services:
+  kafka:
+    # FIX 1: base advertises PLAINTEXT_HOST://127.0.0.1:9092, which tells any
+    # off-box client to reconnect to its OWN loopback. Must be the mesh IP.
+    # FIX 2: publish on the Tailscale interface only -- not 0.0.0.0, which
+    # would also expose an unauthenticated PLAINTEXT broker to the LAN.
+    ports:
+      - "100.64.1.15:9092:9092"
+      - "100.64.1.15:29092:29092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://100.64.1.15:9092'
+      # Confluent images default to a ~1 GB heap. On a 1.9 GB box that leaves
+      # nothing for the OS and guarantees swap thrash on a single core.
+      KAFKA_HEAP_OPTS: '-Xmx512m -Xms512m'
+    deploy:
+      resources:
+        limits:
+          memory: 900M
+    restart: unless-stopped
+
+  kafka-ui:
+    # Second JVM on a single-core box. Held behind a profile so it does NOT
+    # start by default; bring it up only when you actually need the console:
+    #   docker compose -f docker-compose.kafka.yml -f docker-compose.kafka.pavilion.yml --profile ui up -d
+    profiles: ["ui"]
+    ports:
+      - "100.64.1.15:8090:8080"
+    environment:
+      JAVA_OPTS: '-Xmx256m'
+    deploy:
+      resources:
+        limits:
+          memory: 400M
