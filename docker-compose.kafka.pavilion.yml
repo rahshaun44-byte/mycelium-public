@@ -47,7 +47,7 @@ services:
     container_name: qf-kafka-ui
     profiles: ["ui"]
     ports:
-      - "8090:8080"
+      - "100.64.1.15:8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: quantum-flex-mesh
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
