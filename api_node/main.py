@@ -11,18 +11,46 @@ from pathlib import Path
 from datetime import datetime
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.exceptions import InvalidSignature
+from kafka import KafkaProducer
 
 app = FastAPI(title="Quantum Flex Core Node & Gateway API", version="2.1.0")
 
 # Correct paths for this host
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Auto-load .env if present
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, _, v = line.partition("=")
+            os.environ.setdefault(k.strip(), v.strip())
+
 ORCHESTRATOR = str(BASE_DIR / "run_sentinel.py")
 ATHENA_URL = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
 DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
 DB_PORT = int(os.environ.get("DB_PORT", 5432))
-DB_NAME = os.environ.get("DB_NAME", "quantum_flex")
+DB_NAME = os.environ.get("QUANTUM_DB_NAME", "quantum_flex")
 DB_USER = os.environ.get("QUANTUM_SENTINEL_USER", "quantum_sentinel")
-DB_PASS = os.environ.get("QUANTUM_SENTINEL_PASSWORD", "")
+DB_PASS = os.environ.get("QUANTUM_SENTINEL_PASSWORD", os.environ.get("POSTGRES_PASSWORD", os.environ.get("SENTINEL_DB_PASSWORD", "")))
+
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "100.64.1.15:9092")
+KAFKA_PRODUCER = None
+
+def get_kafka_producer():
+    global KAFKA_PRODUCER
+    if KAFKA_PRODUCER is None:
+        KAFKA_PRODUCER = KafkaProducer(
+            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(","),
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            key_serializer=lambda k: k.encode("utf-8"),
+            acks="all",
+            request_timeout_ms=5000,
+            max_block_ms=5000,
+            api_version=(3, 6, 0)
+        )
+    return KAFKA_PRODUCER
 
 INGEST_CONCURRENCY_LIMIT = int(os.environ.get("INGEST_CONCURRENCY_LIMIT", "4"))
 _ingest_semaphore = asyncio.Semaphore(INGEST_CONCURRENCY_LIMIT)
@@ -102,20 +130,17 @@ async def submit_telemetry(req: TelemetryPayload):
     # 4. Anti-Replay & Trust Score Calculation
     trust_score = 100
 
-    # 5. Append-Only Database Commit
+    # 5. Kafka Stream Publish (Decoupled Ingestion)
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO quantum_telemetry_channel (node_id, timestamp, payload)
-                    VALUES (%s, %s, %s);
-                    """,
-                    (req.node_id, req.timestamp, req.payload)
-                )
-                conn.commit()
+        producer = get_kafka_producer()
+        future = producer.send(
+            "quantum-telemetry-raw",
+            key=req.node_id,
+            value=req.dict()
+        )
+        future.get(timeout=5.0)  # Synchronously wait for message acknowledgment
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Immutability commit failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Kafka stream ingestion failed: {e}")
 
     return VerifiedReceipt(
         status="VERIFIED",
@@ -176,5 +201,7 @@ async def query_athena(request: Request):
 if __name__ == "__main__":
     import uvicorn
     api_port = int(os.environ.get("API_NODE_PORT", 8080))
-    # Bind to 0.0.0.0 so Tailscale mesh (100.64.1.29) and localhost (127.0.0.1) can reach it
-    uvicorn.run(app, host="0.0.0.0", port=api_port)
+    # Zero-Trust Mesh Lockdown: Bind strictly to the Tailscale overlay IP
+    bind_host = os.environ.get("BIND_HOST", os.environ.get("TAILNET_IP", "100.64.1.29"))
+    print(f"[*] Zero-Trust Gateway binding exclusively to mesh interface: {bind_host}:{api_port}")
+    uvicorn.run(app, host=bind_host, port=api_port)
