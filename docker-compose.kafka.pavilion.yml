@@ -1,14 +1,14 @@
 # =============================================================================
-# Standalone Docker Compose configuration for the HP Pavilion node (qflex)
+# Pavilion (qflex / 100.64.1.15) -- STANDALONE Kafka deployment.
 #
-# Configured specifically for:
-#   - 100.64.1.15 (Tailscale interface only)
-#   - Memory caps matching the 1.9 GB Celeron hardware limits.
-#
-# Run with:
+# This file is SELF-CONTAINED. Run it alone:
 #   docker compose -f docker-compose.kafka.pavilion.yml up -d
-# Or with Kafka UI:
-#   docker compose -f docker-compose.kafka.pavilion.yml --profile ui up -d
+#
+# Do NOT combine it with docker-compose.kafka.yml via "-f base -f this".
+# Compose APPENDS port lists on merge, so the base file's 0.0.0.0 bindings
+# would be re-added alongside these, silently re-exposing the broker to the LAN.
+#
+# Tuned for the node's real hardware: Intel Celeron 450, 1 core, 1.9 GB RAM.
 # =============================================================================
 
 services:
@@ -16,8 +16,10 @@ services:
     image: confluentinc/cp-kafka:7.6.0
     container_name: qf-kafka-broker
     ports:
-      - "9092:9092"
-      - "29092:29092"
+      # Publish ONLY on the Tailscale interface. Docker bypasses INPUT-chain
+      # firewalls (it DNATs and traverses FORWARD), so binding is the control
+      # that actually works. 29092 is inter-broker only -- not published.
+      - "100.64.1.15:9092:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
