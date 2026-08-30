@@ -3,7 +3,7 @@ import requests
 import json
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-GATEWAY_URL = "http://127.0.0.1:8080/api/v1/telemetry/submit"
+GATEWAY_URL = "http://100.64.1.29:8080/api/v1/telemetry/submit"
 
 def test_gateway():
     print("[*] Testing Layer 2 / Layer 3 Ingestion Gateway Verification Pipeline...")

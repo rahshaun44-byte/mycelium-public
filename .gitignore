@@ -1,6 +1,8 @@
 # Quantum Flex Operational Exclusions
 *.isolated
 *.log
+*.trace.json
+*.flight_trace.json
 api_threat.txt
 api_env/
 .env*
