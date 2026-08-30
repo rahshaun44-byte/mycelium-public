@@ -71,8 +71,6 @@ def main():
             group_id=KAFKA_GROUP,
             auto_offset_reset='earliest',
             enable_auto_commit=True,
-            value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-            key_deserializer=lambda m: m.decode('utf-8') if m else None,
             api_version=(3, 6, 0)
         )
         logger.info(f"[+] Subscribed successfully to topic: {KAFKA_TOPIC}")
@@ -86,9 +84,16 @@ def main():
     cur = None
     try:
         for message in consumer:
-            data = message.value
-            logger.info(f"[*] Received message: partition={message.partition}, offset={message.offset}, key={message.key}")
+            logger.info(f"[*] Received message: partition={message.partition}, offset={message.offset}")
             
+            # Safe JSON deserialization
+            try:
+                raw_value = message.value.decode('utf-8') if message.value else ""
+                data = json.loads(raw_value)
+            except Exception as parse_err:
+                logger.warning(f"[-] Failed to deserialize JSON payload at offset {message.offset}: {parse_err}")
+                continue
+                
             node_id = data.get("node_id")
             timestamp = data.get("timestamp")
             payload = data.get("payload")
