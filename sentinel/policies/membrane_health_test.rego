@@ -16,7 +16,7 @@ test_healthy_ml_kem if {
     } with data.threat_flags as {}
     
     result.node_status == "COMPLIANT"
-    count(result.toxic_findings) == 0  # Verify through verdict
+    result.toxic_count == 0  # Verify through verdict
 }
 
 # Test: ML-KEM-768 flagged as compromised

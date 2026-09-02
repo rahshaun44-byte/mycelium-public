@@ -29,7 +29,7 @@ $opaProc = Get-Process -Name "opa" -ErrorAction SilentlyContinue
 if (-not $opaProc) {
     $policyPath = "$Root\sentinel\policies"
     if (-not (Test-Path $policyPath)) { $policyPath = "$Root\pqc-immune-daemon" }
-    Start-Process -FilePath "$env:LOCALAPPDATA\Programs\OPA\opa.exe" -ArgumentList "run -s --addr 127.0.0.1:8181 `"$policyPath`"" -WindowStyle Hidden
+    Start-Process -FilePath "$env:LOCALAPPDATA\Programs\OPA\opa.exe" -ArgumentList "run -s --addr 127.0.0.1:8181 --ignore=*_test.rego `"$policyPath`"" -WindowStyle Hidden
     Start-Sleep -Seconds 2
 }
 Write-Host "  [+] OPA Sidecar active at http://127.0.0.1:8181" -ForegroundColor Green
