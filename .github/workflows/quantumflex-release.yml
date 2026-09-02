@@ -1,0 +1,88 @@
+name: QuantumFlex Verified Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  assurance-runner-a:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 1.20.1
+      - name: Run Tests & AST Mutation
+        run: |
+          opa test -v .
+          python3 scripts/ast_mutation_engine.py membrane_health.rego
+      - name: Generate Policy Evidence
+        run: python3 scripts/generate_policy_evidence.py
+      - name: Upload Evidence A
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-a
+          path: policy_evidence.json
+
+  assurance-runner-b:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 1.20.1
+      - name: Run Tests & AST Mutation
+        run: |
+          opa test -v .
+          python3 scripts/ast_mutation_engine.py membrane_health.rego
+      - name: Generate Policy Evidence
+        run: python3 scripts/generate_policy_evidence.py
+      - name: Upload Evidence B
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-b
+          path: policy_evidence.json
+
+  bind-and-sign:
+    needs: [assurance-runner-a, assurance-runner-b]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for Sigstore OIDC
+      contents: read
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      
+      - name: Download Evidence
+        uses: actions/download-artifact@v4
+        
+      - name: Verify Determinism (E_A == E_B)
+        run: |
+          if ! cmp -s evidence-a/policy_evidence.json evidence-b/policy_evidence.json; then
+            echo "HARD STOP: Nondeterministic verification detected."
+            exit 1
+          fi
+          cp evidence-a/policy_evidence.json policy_evidence.json
+          
+      - name: Build Payload Archive
+        run: |
+          mkdir -p bundle
+          cp membrane_health.rego membrane_health_test.rego release/MANIFEST.json bundle/
+          tar -czf quantumflex-bundle.tar.gz -C bundle .
+          
+      - name: Generate Release Attestation
+        run: python3 scripts/generate_release_attestation.py quantumflex-bundle.tar.gz
+        
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        
+      - name: Sign Attestation
+        run: cosign sign-blob --yes release_attestation.json --bundle signature.bundle

@@ -51,3 +51,8 @@ sentinel/ceremony/
 
 # Excluded intentionally — do not re-add.
 sentinel/neutralize.sh
+
+# Generated release attestation artifacts
+*.tar.gz
+policy_evidence.json
+release_attestation.json

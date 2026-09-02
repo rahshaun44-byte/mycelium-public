@@ -1,18 +1,18 @@
-# 🎯 DAF SBIR 26.BZ RELEASE 5 — VOLUME 2 TECHNICAL PITCH DECK
+# 🎯 DAF / DOW SBIR OPEN TOPIC — VOLUME 2 TECHNICAL PITCH DECK
 ## BLOCK 1: SLIDES 1 THROUGH 5 (THE TECHNICAL CORE)
 
 ---
 
 ### SLIDE 1: Title & Corporate Identification
 
-* **Header:** DEPARTMENT OF THE AIR FORCE (DAF) SBIR 26.BZ — OPEN TOPIC CSO
+* **Header:** DEPARTMENT OF THE AIR FORCE (DAF) / DOW SBIR — OPEN TOPIC CSO PHASE I
 * **Project Title:** Autonomous Post-Quantum Cryptographic Agility & Dynamic Policy Sidecar for National Security Systems
-* **Topic Pathway:** DAF Open Topic Commercial Solutions Opening (CSO) Phase I
+* **Topic Pathway:** Open Topic Commercial Solutions Opening (CSO) Phase I ($75,000 Fixed)
 * **Company Name:** FINALLYFUNGUS LLC (PA Entity ID: 13706513) DBA QuantumFlex
 * **Principal Investigator (PI):** Rahshaun Chambers (Founder & Systems Architect)
-* **Corporate Details:** Active SAM.gov Registered | Small Business Concern (SBC)
+* **Corporate Status:** Small Business Concern (SBC) | SAM.gov Registration In-Progress (Active PA LLC)
 * **Contact:** quant@quantumflex.network | Philadelphia, PA
-* **Visual Anchor:** Clean enterprise badge featuring NIST FIPS 203/204/205 & OMB M-26-15 compliance seals.
+* **Visual Anchor:** Enterprise badge featuring NIST FIPS 203/204/205 & OMB M-26-15 compliance seals.
 
 ---
 
@@ -53,15 +53,15 @@
 
 ---
 
-### SLIDE 5: Empirical Prototype Evidence & Measured Flight Benchmarks
+### SLIDE 5: Empirical Prototype Evidence & Laboratory Benchmarks
 
 * **Headline:** Working TRL-4 Reference Implementation Benchmarked with Sub-50ms Hot-Swap Latencies & 100% Determinism
-* **Empirical Flight Test Data (Measured August 30, 2026 — 6/6 Consecutive Runs at 8/8):**
-  * **Atomic Configuration Write Latency ($T_{\text{write}}$):** **`32 ms`** (Sub-50ms atomic swap on decision)
-  * **Startup Fault Tolerance:** Handles sequential 2.0s socket timeouts (~4.2s startup envelope) without process failure or data corruption.
-  * **Quarantine Safety Backoff:** Gated by a deliberate 5.0s hold (`quarantine_delay_sec`) before probing auto-recovery.
-  * **D-2 Fail-Secure Gate (Corrupt Payload / `{}`):** **`218–250 ms`** rejection (100% fail-secure compliance, zero fail-open anomalies).
-  * **Deterministic Pass Rate:** **`8 / 8 Invariants Passing (6/6 consecutive test runs)`**
+* **Empirical Laboratory Benchmarks (Verified Execution across 14 Invariants):**
+  * **Atomic Configuration Write Latency ($T_{\text{write}}$):** **`< 35 ms`** (Sub-50ms atomic swap on decision)
+  * **Startup Fault Tolerance:** Handles sequential 2.0s socket timeouts without process failure or unhandled exceptions.
+  * **Quarantine Safety Backoff:** Gated by a deliberate 5.0s hold (`quarantine_delay_ms = 5000`) before probing auto-recovery.
+  * **D-2 Fail-Secure Gate (Corrupt / Empty `{}` Payload):** Rejects invalid verdicts and feeds the circuit breaker (100% fail-secure compliance, zero fail-open anomalies).
+  * **Deterministic Pass Rate:** **`14 / 14 Unit & Integration Invariants Passing`**
 * **Verified State Transition Sequence:**
-  $$\text{ACTIVE (ML-KEM-768)} \longrightarrow \text{QUARANTINE (FrodoKEM-976-AES)} \longrightarrow \text{COLLAPSED (X25519)} \longrightarrow \text{AUTO-RESTORED (ML-KEM-768)}$$
+  $$\text{ACTIVE (ML-KEM-768)} \longrightarrow \text{QUARANTINE (FrodoKEM-976-AES)} \longrightarrow \text{COLLAPSED (X25519)} \longrightarrow \text{HALT (NONE)}$$
 * **Open-Source Reference:** Publicly verifiable reference implementation published under Apache-2.0 at `github.com/rahshaun44-byte/pqc-immune-daemon`.

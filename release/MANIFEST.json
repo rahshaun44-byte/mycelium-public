@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.5.0",
+  "bundle_name": "quantumflex-policy-bundle",
+  "files": {
+    "membrane_health.rego": {
+      "sha256": "b3622ab6155284b8d99282ee8efff4e72b234119bc9cfa3daa3fc47ddc2f8b05",
+      "purpose": "OPA policy decision rules & fallback map"
+    },
+    "membrane_health_test.rego": {
+      "sha256": "106de15115e5b7b870fb40eebd5fbbc41d524cf15134ccc99c183865a13f9848",
+      "purpose": "Rego unit test assertions & fault injection scenarios"
+    }
+  }
+}
