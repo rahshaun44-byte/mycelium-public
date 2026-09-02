@@ -39,11 +39,54 @@ def package():
         dll_count += 1
     print(f"    [+] Packaged {dll_count} native runtime DLLs.")
 
-    # 3. Copy PKI identities
+    # 3. Copy PKI trust anchors — PUBLIC CERTIFICATES ONLY.
+    #
+    # This previously did copytree(ROOT_DIR/"pki"), which shipped ca.key,
+    # server.key and client.key to every node operator. ca.key is the root
+    # that signed both leaf certs, so anyone holding a bundle could mint a
+    # certificate for any node and impersonate the gateway. .gitignore hides
+    # *.key from git but does nothing to shutil.
+    #
+    # A node needs the CA certificate to verify the server, and its own
+    # per-node keypair — which must be generated at install time on the
+    # operator's machine, never shipped and never shared between nodes.
+    pki_src = ROOT_DIR / "pki"
     pki_dest = DIST_DIR / "pki"
-    if (ROOT_DIR / "pki").exists():
-        shutil.copytree(ROOT_DIR / "pki", pki_dest, dirs_exist_ok=True)
-        print("    [+] Embedded mTLS PKI cryptographic certificates.")
+    if pki_src.exists():
+        copied, skipped = 0, []
+        for src in pki_src.rglob("*"):
+            if src.is_dir():
+                continue
+            if src.suffix.lower() in {".key", ".pem", ".p12", ".pfx"}:
+                skipped.append(src.name)
+                continue
+            rel = src.relative_to(pki_src)
+            dst = pki_dest / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(src, dst)
+            copied += 1
+        print(f"    [+] Embedded {copied} public mTLS certificate(s).")
+        if skipped:
+            print(f"    [!] Excluded {len(skipped)} private key file(s) from the "
+                  f"bundle: {', '.join(sorted(skipped))}")
+
+    # 3b. Fail closed: never emit a bundle containing private key material.
+    leaked = [p for p in DIST_DIR.rglob("*")
+              if p.is_file() and p.suffix.lower() in {".key", ".pem", ".p12", ".pfx"}]
+    if not leaked:
+        for p in DIST_DIR.rglob("*"):
+            if p.is_file() and p.stat().st_size < 65536:
+                try:
+                    if "PRIVATE KEY" in p.read_text(errors="ignore"):
+                        leaked.append(p)
+                except OSError:
+                    pass
+    if leaked:
+        shutil.rmtree(DIST_DIR, ignore_errors=True)
+        raise SystemExit(
+            "ABORT: private key material found in the staged bundle "
+            f"({', '.join(str(p.name) for p in leaked)}). Bundle discarded; nothing packaged."
+        )
 
     # 4. Generate Node Operator Agreement (Legal P0 Shield)
     agreement_file = DIST_DIR / "NODE_OPERATOR_AGREEMENT.txt"
