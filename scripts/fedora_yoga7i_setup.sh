@@ -405,6 +405,7 @@ WorkingDirectory=${daemon_root}
 ExecStart=${venv_path}/bin/python3 ${sample_worker}
 Restart=always
 RestartSec=5s
+Environment=PYTHONDONTWRITEBYTECODE=1
 
 ProtectSystem=strict
 ProtectHome=yes
@@ -448,10 +449,10 @@ echo "==> [1/4] Provisioning isolated bridge network ($NET_NAME)..."
 podman network exists "$NET_NAME" || podman network create --subnet "$SUBNET" "$NET_NAME"
 
 echo "==> [2/4] Deploying Gatekeeper node..."
-podman run -d --rm --name gatekeeper-node --network "$NET_NAME" alpine sleep 45
+podman run -d --rm --name gatekeeper-node --network "$NET_NAME" busybox:latest sleep 45
 
 echo "==> [3/4] Deploying Ghost node..."
-podman run -d --rm --name ghost-node --network "$NET_NAME" alpine sleep 45
+podman run -d --rm --name ghost-node --network "$NET_NAME" busybox:latest sleep 45
 
 echo "==> [4/4] Verifying packet transmission across isolated bridge..."
 GHOST_IP=$(podman inspect ghost-node --format '{{.NetworkSettings.Networks.'"$NET_NAME"'.IPAddress}}')
