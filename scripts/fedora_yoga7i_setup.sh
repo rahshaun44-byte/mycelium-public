@@ -33,6 +33,7 @@ REPO_ROOT="${REPO_ROOT:-$REPO_ROOT_DEFAULT}"
 STUDENT_USER="${STUDENT_USER:-student}"
 OPERATOR_USER="${OPERATOR_USER:-operator}"
 LMS_URL="${LMS_URL:-https://canvas.instructure.com}"
+OPERATOR_WHEEL="${OPERATOR_WHEEL:-0}"
 
 log_info "Initializing setup for target user: ${BOLD}${TARGET_USER}${NC} (Home: ${TARGET_HOME})"
 
@@ -183,6 +184,7 @@ SYSCTL
 
     systemctl enable --now firewalld.service || true
     firewall-cmd --permanent --new-zone=qf-tailscale >/dev/null 2>&1 || true
+    firewall-cmd --permanent --zone=qf-tailscale --add-source=100.64.0.0/10 || true
     firewall-cmd --permanent --zone=qf-tailscale --add-interface=tailscale0 || true
     firewall-cmd --permanent --zone=qf-tailscale --add-masquerade || true
     firewall-cmd --reload || true
@@ -198,7 +200,10 @@ configure_role_separation_and_school_controls() {
     ensure_local_user "$STUDENT_USER" "/bin/bash"
     ensure_local_user "$OPERATOR_USER" "/bin/bash"
 
-    usermod -aG wheel "$OPERATOR_USER" || true
+    if [[ "$OPERATOR_WHEEL" == "1" ]]; then
+        usermod -aG wheel "$OPERATOR_USER" || true
+        log_info "Operator user added to wheel group (OPERATOR_WHEEL=1)."
+    fi
 
     local student_home
     local operator_home

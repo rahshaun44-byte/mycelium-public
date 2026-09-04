@@ -23,9 +23,10 @@ Primary provisioning entrypoint:
   - `power-profiles-daemon`
   - `/usr/local/bin/yoga-battery-conservation`
   - `/etc/modprobe.d/yoga-audio.conf`
-- Tailscale + forwarding + firewalld trusted-zone setup
+- Tailscale + forwarding + firewalld `qf-tailscale` zone setup
 - Role separation and school workflow controls
   - users: `student`, `operator`
+  - optional operator sudo delegation only when `OPERATOR_WHEEL=1`
   - directories: `/home/student/School`, `/home/operator/Projects`
   - focus utility: `/usr/local/bin/qf-school-focus`
   - session launcher: `/usr/local/bin/qf-school-session`
@@ -166,7 +167,7 @@ ssh <hp-host> "free -h; lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL; lscpu | head -
 Deployment is accepted when all statements are true:
 1. `student` and `operator` exist with isolated working roots.
 2. School launcher, focus utility, and backup timer are functioning.
-3. Tailscale + forwarding + firewalld trusted interface are active.
+3. Tailscale + forwarding are active and `tailscale0` is bound to `qf-tailscale` with masquerade enabled.
 4. `mesh-daemon.service` runs under `pyworker` with hardening controls.
 5. Podman harness succeeds on isolated bridge network.
 6. Python control-plane services start cleanly before C++ engine promotion.
