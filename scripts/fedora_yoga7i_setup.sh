@@ -182,10 +182,11 @@ SYSCTL
     log_success "Kernel forwarding rules configured."
 
     systemctl enable --now firewalld.service || true
-    firewall-cmd --permanent --zone=trusted --add-interface=tailscale0 || true
-    firewall-cmd --permanent --zone=trusted --add-masquerade || true
+    firewall-cmd --permanent --new-zone=qf-tailscale >/dev/null 2>&1 || true
+    firewall-cmd --permanent --zone=qf-tailscale --add-interface=tailscale0 || true
+    firewall-cmd --permanent --zone=qf-tailscale --add-masquerade || true
     firewall-cmd --reload || true
-    log_success "Firewalld trusted-zone rules configured for tailscale0."
+    log_success "Firewalld qf-tailscale zone configured for tailscale0 with masquerade."
 
     systemctl enable --now tailscaled.service || true
     log_success "tailscaled service initialized."
@@ -449,10 +450,10 @@ echo "==> [1/4] Provisioning isolated bridge network ($NET_NAME)..."
 podman network exists "$NET_NAME" || podman network create --subnet "$SUBNET" "$NET_NAME"
 
 echo "==> [2/4] Deploying Gatekeeper node..."
-podman run -d --rm --name gatekeeper-node --network "$NET_NAME" busybox:latest sleep 45
+podman run -d --rm --name gatekeeper-node --network "$NET_NAME" alpine:3.20 sh -c "apk add --no-cache iputils >/dev/null 2>&1 && sleep 45"
 
 echo "==> [3/4] Deploying Ghost node..."
-podman run -d --rm --name ghost-node --network "$NET_NAME" busybox:latest sleep 45
+podman run -d --rm --name ghost-node --network "$NET_NAME" alpine:3.20 sleep 45
 
 echo "==> [4/4] Verifying packet transmission across isolated bridge..."
 GHOST_IP=$(podman inspect ghost-node --format '{{.NetworkSettings.Networks.'"$NET_NAME"'.IPAddress}}')

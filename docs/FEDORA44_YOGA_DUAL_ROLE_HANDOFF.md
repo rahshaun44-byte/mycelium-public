@@ -106,7 +106,7 @@ Run and pass all gates:
 systemctl status iio-sensor-proxy.service
 systemctl status power-profiles-daemon.service
 sysctl net.ipv4.ip_forward net.ipv6.conf.all.forwarding
-firewall-cmd --zone=trusted --list-interfaces
+firewall-cmd --zone=qf-tailscale --list-interfaces
 systemctl status tailscaled.service
 sudo systemctl status mesh-daemon.service
 /usr/local/share/mesh-test-harness/run_route_test.sh
@@ -170,4 +170,3 @@ Deployment is accepted when all statements are true:
 4. `mesh-daemon.service` runs under `pyworker` with hardening controls.
 5. Podman harness succeeds on isolated bridge network.
 6. Python control-plane services start cleanly before C++ engine promotion.
-
