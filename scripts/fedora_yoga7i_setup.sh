@@ -3,7 +3,7 @@
 # Script: fedora_yoga7i_setup.sh
 # Target: Lenovo Yoga 7i (Intel Platform) on Fedora Linux (Workstation/Silverblue)
 # Purpose: Idempotent provisioning for hardware drivers, Tailscale mesh routing,
-#          sandboxed Python daemons, and Podman test harness deployment.
+#          school/operator role separation, sandboxed Python daemons, and Podman harness.
 # ==============================================================================
 
 set -euo pipefail
@@ -28,6 +28,11 @@ fi
 
 TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+readonly REPO_ROOT_DEFAULT="/home/runner/work/mycelium/mycelium"
+REPO_ROOT="${REPO_ROOT:-$REPO_ROOT_DEFAULT}"
+STUDENT_USER="${STUDENT_USER:-student}"
+OPERATOR_USER="${OPERATOR_USER:-operator}"
+LMS_URL="${LMS_URL:-https://canvas.instructure.com}"
 
 log_info "Initializing setup for target user: ${BOLD}${TARGET_USER}${NC} (Home: ${TARGET_HOME})"
 
@@ -35,6 +40,45 @@ IS_OSTREE=0
 if [[ -f /run/ostree-booted ]]; then
     IS_OSTREE=1
 fi
+
+ensure_local_user() {
+    local username="$1"
+    local shell_path="${2:-/bin/bash}"
+
+    if id "$username" &>/dev/null; then
+        log_info "User exists: $username"
+        return
+    fi
+
+    useradd -m -s "$shell_path" "$username"
+    log_success "Created user: $username"
+}
+
+configure_dnf() {
+    if [[ ${IS_OSTREE} -eq 1 ]]; then
+        log_info "Skipping DNF tuning on OSTree host."
+        return
+    fi
+
+    log_info "Optimizing DNF package management engine..."
+    local dnf_conf="/etc/dnf/dnf.conf"
+
+    if grep -q '^max_parallel_downloads=' "$dnf_conf"; then
+        sed -i 's/^max_parallel_downloads=.*/max_parallel_downloads=10/' "$dnf_conf"
+    else
+        echo "max_parallel_downloads=10" >> "$dnf_conf"
+    fi
+
+    if grep -q '^fastestmirror=' "$dnf_conf"; then
+        sed -i 's/^fastestmirror=.*/fastestmirror=True/' "$dnf_conf"
+    else
+        echo "fastestmirror=True" >> "$dnf_conf"
+    fi
+
+    if ! dnf repolist | grep -q "tailscale"; then
+        dnf config-manager --add-repo https://pkgs.tailscale.com/stable/fedora/tailscale.repo || true
+    fi
+}
 
 install_packages() {
     local packages=(
@@ -62,42 +106,17 @@ install_packages() {
         jq
         htop
         tuned
+        rsync
         tailscale
     )
 
     if [[ ${IS_OSTREE} -eq 1 ]]; then
         log_info "OSTree host detected. Layering packages with rpm-ostree..."
         rpm-ostree install "${packages[@]}" || true
-        log_warn "If packages were layered, reboot is required before continuing runtime checks."
+        log_warn "If new layers were added, reboot before final verification."
     else
         log_info "Installing packages with DNF..."
         dnf install -y --setopt=install_weak_deps=False "${packages[@]}"
-    fi
-}
-
-configure_dnf() {
-    if [[ ${IS_OSTREE} -eq 1 ]]; then
-        log_info "Skipping DNF tuning on OSTree host."
-        return
-    fi
-
-    log_info "Optimizing DNF package management engine..."
-    local dnf_conf="/etc/dnf/dnf.conf"
-
-    if grep -q '^max_parallel_downloads=' "$dnf_conf"; then
-        sed -i 's/^max_parallel_downloads=.*/max_parallel_downloads=10/' "$dnf_conf"
-    else
-        echo "max_parallel_downloads=10" >> "$dnf_conf"
-    fi
-
-    if grep -q '^fastestmirror=' "$dnf_conf"; then
-        sed -i 's/^fastestmirror=.*/fastestmirror=True/' "$dnf_conf"
-    else
-        echo "fastestmirror=True" >> "$dnf_conf"
-    fi
-
-    if ! dnf repolist | grep -q "tailscale"; then
-        dnf config-manager --add-repo https://pkgs.tailscale.com/stable/fedora/tailscale.repo || true
     fi
 }
 
@@ -170,6 +189,145 @@ SYSCTL
 
     systemctl enable --now tailscaled.service || true
     log_success "tailscaled service initialized."
+}
+
+configure_role_separation_and_school_controls() {
+    log_info "Configuring school/operator role separation controls..."
+
+    ensure_local_user "$STUDENT_USER" "/bin/bash"
+    ensure_local_user "$OPERATOR_USER" "/bin/bash"
+
+    usermod -aG wheel "$OPERATOR_USER" || true
+
+    local student_home
+    local operator_home
+    student_home="$(getent passwd "$STUDENT_USER" | cut -d: -f6)"
+    operator_home="$(getent passwd "$OPERATOR_USER" | cut -d: -f6)"
+
+    install -d -m 0750 -o "$STUDENT_USER" -g "$STUDENT_USER" "$student_home/School"
+    install -d -m 0750 -o "$OPERATOR_USER" -g "$OPERATOR_USER" "$operator_home/Projects"
+
+    local focus_script="/usr/local/bin/qf-school-focus"
+    cat <<'FOCUS' > "$focus_script"
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: qf-school-focus {on|off}"
+    exit 1
+fi
+
+case "$1" in
+    on)
+        gsettings set org.gnome.desktop.notifications show-banners false || true
+        gsettings set org.gnome.desktop.screensaver lock-enabled true || true
+        echo "School focus mode enabled."
+        ;;
+    off)
+        gsettings set org.gnome.desktop.notifications show-banners true || true
+        echo "School focus mode disabled."
+        ;;
+    *)
+        echo "Usage: qf-school-focus {on|off}"
+        exit 1
+        ;;
+esac
+FOCUS
+    chmod +x "$focus_script"
+
+    local school_session_script="/usr/local/bin/qf-school-session"
+    cat <<EOF_SESSION > "$school_session_script"
+#!/usr/bin/env bash
+set -euo pipefail
+
+qf-school-focus on || true
+xdg-open "${LMS_URL}" >/dev/null 2>&1 || true
+xdg-open "https://calendar.google.com" >/dev/null 2>&1 || true
+if command -v gnome-text-editor >/dev/null 2>&1; then
+    gnome-text-editor "\$HOME/School" >/dev/null 2>&1 || true
+fi
+echo "School session launched."
+EOF_SESSION
+    chmod +x "$school_session_script"
+
+    local profile_modes="/etc/profile.d/qf-role-modes.sh"
+    cat <<EOF_PROFILE > "$profile_modes"
+#!/usr/bin/env bash
+school-mode() {
+  qf-school-session
+}
+
+ops-mode() {
+  cd "${REPO_ROOT}" || return 1
+  qf-school-focus off || true
+  echo "Operator mode ready in ${REPO_ROOT}"
+}
+EOF_PROFILE
+    chmod +x "$profile_modes"
+
+    local student_autostart_dir="$student_home/.config/autostart"
+    install -d -m 0755 -o "$STUDENT_USER" -g "$STUDENT_USER" "$student_autostart_dir"
+
+    cat > "$student_autostart_dir/qf-school-lms.desktop" <<EOF_LMS
+[Desktop Entry]
+Type=Application
+Name=School LMS
+Exec=/usr/local/bin/qf-school-session
+X-GNOME-Autostart-enabled=true
+Comment=Launch school-mode apps
+EOF_LMS
+
+    chown "$STUDENT_USER:$STUDENT_USER" "$student_autostart_dir/qf-school-lms.desktop"
+    chmod 0644 "$student_autostart_dir/qf-school-lms.desktop"
+
+    local backup_script="/usr/local/bin/school-backup"
+    cat <<EOF_BACKUP > "$backup_script"
+#!/usr/bin/env bash
+set -euo pipefail
+
+SRC="/home/${STUDENT_USER}/School/"
+LOCAL_DST="/home/${STUDENT_USER}/.local/share/school-backups/latest/"
+EXT_DST="/run/media/${STUDENT_USER}/SchoolBackup/student-school/"
+
+mkdir -p "\$LOCAL_DST"
+rsync -a --delete "\$SRC" "\$LOCAL_DST"
+
+if [[ -d "\$(dirname "\$EXT_DST")" ]]; then
+  mkdir -p "\$EXT_DST"
+  rsync -a --delete "\$SRC" "\$EXT_DST"
+fi
+EOF_BACKUP
+    chmod +x "$backup_script"
+
+    local backup_service="/etc/systemd/system/student-school-backup.service"
+    cat <<EOF_BSVC > "$backup_service"
+[Unit]
+Description=Student school data backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=${STUDENT_USER}
+Group=${STUDENT_USER}
+ExecStart=/usr/local/bin/school-backup
+EOF_BSVC
+
+    local backup_timer="/etc/systemd/system/student-school-backup.timer"
+    cat <<'EOF_BTMR' > "$backup_timer"
+[Unit]
+Description=Daily school backup timer
+
+[Timer]
+OnCalendar=*-*-* 19:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF_BTMR
+
+    systemctl daemon-reload
+    systemctl enable --now student-school-backup.timer
+    log_success "Role separation, school focus tooling, and backup timer configured."
 }
 
 configure_python_daemon_scaffold() {
@@ -318,6 +476,7 @@ main() {
     install_packages
     configure_hardware_tweaks
     configure_tailscale_network
+    configure_role_separation_and_school_controls
     configure_python_daemon_scaffold
     configure_podman_test_harness
 
@@ -327,8 +486,9 @@ main() {
     echo -e " 2. Start Daemon:            ${BOLD}sudo systemctl enable --now mesh-daemon.service${NC}"
     echo -e " 3. Verify Accelerometer:    ${BOLD}monitor-sensor${NC}"
     echo -e " 4. Run Podman Harness:      ${BOLD}/usr/local/share/mesh-test-harness/run_route_test.sh${NC}"
+    echo -e " 5. School backup timer:     ${BOLD}systemctl status student-school-backup.timer${NC}"
     if [[ ${IS_OSTREE} -eq 1 ]]; then
-        echo -e " 5. Reboot host (rpm-ostree layered packages): ${BOLD}systemctl reboot${NC}"
+        echo -e " 6. Reboot host if layers changed: ${BOLD}systemctl reboot${NC}"
     fi
     echo -e "${BOLD}====================================================${NC}"
 }
