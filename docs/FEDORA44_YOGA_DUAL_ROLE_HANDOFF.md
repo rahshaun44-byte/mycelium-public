@@ -20,7 +20,7 @@ Primary provisioning entrypoint:
 - Fedora package install and DNF optimization (or rpm-ostree layering on OSTree hosts)
 - Lenovo Yoga hardware prep
   - `iio-sensor-proxy`
-  - `power-profiles-daemon`
+  - power profile service (`power-profiles-daemon` or `tuned-ppd`, host-dependent)
   - `/usr/local/bin/yoga-battery-conservation`
   - `/etc/modprobe.d/yoga-audio.conf`
 - Tailscale + forwarding + firewalld `qf-tailscale` zone setup
@@ -105,7 +105,7 @@ Boundary objective: no profile/tooling drift between academic and ops contexts.
 Run and pass all gates:
 ```bash
 systemctl status iio-sensor-proxy.service
-systemctl status power-profiles-daemon.service
+systemctl status power-profiles-daemon.service || systemctl status tuned-ppd.service
 sysctl net.ipv4.ip_forward net.ipv6.conf.all.forwarding
 firewall-cmd --zone=qf-tailscale --list-interfaces
 systemctl status tailscaled.service

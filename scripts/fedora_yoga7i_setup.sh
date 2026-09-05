@@ -91,7 +91,6 @@ install_packages() {
         intel-media-driver
         libva-utils
         vulkan-intel
-        power-profiles-daemon
         iptables-nft
         firewalld
         podman
@@ -121,11 +120,41 @@ install_packages() {
     fi
 }
 
+install_power_profile_provider() {
+    if systemctl list-unit-files | grep -q '^power-profiles-daemon.service'; then
+        return
+    fi
+    if systemctl list-unit-files | grep -q '^tuned-ppd.service'; then
+        return
+    fi
+
+    log_info "Installing power profile provider..."
+    if [[ ${IS_OSTREE} -eq 1 ]]; then
+        rpm-ostree install power-profiles-daemon || rpm-ostree install tuned-ppd || log_warn "No power profile provider installed; continue manually."
+    else
+        dnf install -y power-profiles-daemon || dnf install -y tuned-ppd || log_warn "No power profile provider installed; continue manually."
+    fi
+}
+
+enable_power_profile_service() {
+    if systemctl list-unit-files | grep -q '^power-profiles-daemon.service'; then
+        systemctl enable --now power-profiles-daemon.service || log_warn "power-profiles-daemon enable failed."
+        return
+    fi
+    if systemctl list-unit-files | grep -q '^tuned-ppd.service'; then
+        systemctl enable --now tuned-ppd.service || log_warn "tuned-ppd enable failed."
+        return
+    fi
+
+    log_warn "No power profile systemd unit found (power-profiles-daemon/tuned-ppd)."
+}
+
 configure_hardware_tweaks() {
     log_info "Configuring Yoga hardware modules, sensors, and power profile daemon..."
 
+    install_power_profile_provider
     systemctl enable --now iio-sensor-proxy.service || log_warn "iio-sensor-proxy deferred."
-    systemctl enable --now power-profiles-daemon.service || true
+    enable_power_profile_service
 
     local conservation_script="/usr/local/bin/yoga-battery-conservation"
     cat <<'BAT' > "$conservation_script"
