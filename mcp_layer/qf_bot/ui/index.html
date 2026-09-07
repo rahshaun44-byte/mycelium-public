@@ -1,282 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#07090e" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <title>Quantum Flex // Mobile Tactical Console</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>QuantumFlex Mobile Node</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-layout">
-    <!-- Top Tactical Telemetry Bar -->
-    <header class="top-nav">
-      <div class="brand-group">
-        <div class="brand-badge-pulse">
-          <span class="glyph">⬡</span>
-        </div>
-        <div class="brand-text">
-          <div class="brand-title">QUANTUM FLEX <span class="brand-sub">TACTICAL</span></div>
-          <div class="brand-caption">Host: Yoga 7 (Fedora) // Tailscale Mesh</div>
-        </div>
+  <div class="app-container">
+    <header class="top-bar">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span class="brand-title">QUANTUMFLEX</span>
       </div>
-
-      <div class="header-telemetry-strip" id="telemetryStrip">
-        <div class="telemetry-pill" id="pillDrive">
-          <span class="pill-dot green"></span>
-          <span class="pill-label">DRIVE D:</span>
-          <span class="pill-value" id="valDrive">447.1 OPTIMAL</span>
-        </div>
-        <div class="telemetry-pill" id="pillTpm">
-          <span class="pill-dot green"></span>
-          <span class="pill-label">TPM 2.0:</span>
-          <span class="pill-value" id="valTpm">0x1c00010 MATCHED</span>
-        </div>
-        <div class="telemetry-pill" id="pillPqc">
-          <span class="pill-dot blue"></span>
-          <span class="pill-label">PQC KEM:</span>
-          <span class="pill-value" id="valPqc">ML-KEM-768</span>
-        </div>
-      </div>
-
-      <div class="header-actions">
-        <button class="btn btn-outline btn-arm" id="btnArmAlerts" title="Arm phone notifications for alerts & authorizations">
-          <span class="btn-icon">🔔</span> <span id="armAlertsText">ARM ALERTS</span>
-        </button>
+      <div class="status-indicator">
+        <span class="badge" style="background:var(--accent-cyan); color:#000; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">SECURE MESH</span>
       </div>
     </header>
 
-    <!-- Mobile View Tab Navigation Bar (Sticky for Phone) -->
-    <nav class="mobile-tabs-bar">
-      <button class="tab-btn active" data-tab="chat">DIRECTIVES</button>
-      <button class="tab-btn" data-tab="telemetry">SITREP & VITALS</button>
-      <button class="tab-btn" data-tab="authorizations">
-        AUTHORIZATIONS <span class="badge-mini" id="tabAuthBadge">0</span>
+    <main class="tab-view active" id="tab-chat">
+      <div class="chat-feed" id="chatFeed">
+        <div class="msg-wrapper bot">
+          <div class="msg-avatar">⬡</div>
+          <div class="msg-body">
+            <div class="msg-meta">
+              <span class="msg-sender">A.M.A.R.A.</span>
+              <span class="msg-callsign">@amara</span>
+              <span class="msg-time">Just now</span>
+            </div>
+            <div class="msg-content">
+              <p><strong>Chief Architect on deck.</strong> Swarm is operational on the primary node.</p>
+              <div class="quick-prompts-grid">
+                <button class="prompt-chip" onclick="sendPrompt('SITREP')">📋 Request SITREP</button>
+                <button class="prompt-chip" onclick="sendPrompt('@sentinel verify TPM')">▲ Verify TPM 2.0</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer class="chat-input-dock">
+        <div class="bot-selector-wrap">
+          <select id="targetBotSelect">
+            <option value="">⬡ Swarm Coordination (All Units)</option>
+            <option value="amara">⬡ A.M.A.R.A. (Operations)</option>
+            <option value="sentinel">▲ SENTINEL (Defense)</option>
+            <option value="immune">☤ IMMUNE (PQC Agility)</option>
+            <option value="claw">⚙ THE CLAW (Substrate)</option>
+          </select>
+        </div>
+        <form id="chatForm" class="chat-form">
+          <textarea id="chatInput" rows="1" placeholder="Tactical directive..."></textarea>
+          <button type="submit" class="btn-send" id="btnSend">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </form>
+      </footer>
+    </main>
+
+    <section class="tab-view" id="tab-telemetry">
+      <h3 style="margin-bottom: 1rem; color:var(--text-secondary); font-size:0.8rem; letter-spacing:1px;">NODE TELEMETRY</h3>
+      <div class="vitals-grid">
+        <div class="vital-card">
+          <div class="vital-label">HOMEOSTATIC DRIVE</div>
+          <div class="vital-value-big">447.1</div>
+          <div class="vital-status green">OPTIMAL</div>
+        </div>
+        <div class="vital-card">
+          <div class="vital-label">HARDWARE TRUST</div>
+          <div class="vital-value-big">0x1c00010</div>
+          <div class="vital-status green">TPM MATCHED</div>
+        </div>
+        <div class="vital-card">
+          <div class="vital-label">PQC ALGORITHM</div>
+          <div class="vital-value-big">ML-KEM-768</div>
+          <div class="vital-status blue">FIPS 203 COMPLIANT</div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="switchTab('tab-chat', this)">
+        <span class="icon">💬</span>
+        <span>Tactical</span>
       </button>
-      <button class="tab-btn" data-tab="sweeps">SWEEPS</button>
+      <button class="nav-btn" onclick="switchTab('tab-telemetry', this)">
+        <span class="icon">📊</span>
+        <span>Telemetry</span>
+      </button>
     </nav>
-
-    <!-- Main Workspace -->
-    <div class="main-body">
-      <!-- Left Sidebar: Tactical Units (Desktop / Collapsible Mobile) -->
-      <aside class="sidebar-left" id="sidebarUnits">
-        <div class="sidebar-section-title">TACTICAL UNITS (5)</div>
-        <div class="teammate-list" id="teammatesContainer">
-          <!-- Populated via JS -->
-        </div>
-
-        <div class="sidebar-section-title mt-4">CORE SUBSTRATE</div>
-        <div class="system-status-box">
-          <div class="status-row">
-            <span class="muted">Primary Host:</span>
-            <span class="highlight">Yoga 7 (Fedora 44)</span>
-          </div>
-          <div class="status-row">
-            <span class="muted">Hardware Anchor:</span>
-            <span class="highlight-green">TPM 2.0 NVRAM</span>
-          </div>
-          <div class="status-row">
-            <span class="muted">PostgreSQL:</span>
-            <span class="highlight-green">telemetry (5432)</span>
-          </div>
-          <div class="status-row">
-            <span class="muted">OPA Sidecar:</span>
-            <span class="highlight-green">Port 8181 (Online)</span>
-          </div>
-          <div class="status-row">
-            <span class="muted">Neural Gateway:</span>
-            <span class="highlight-green">Ollama (11434)</span>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Center: Tactical Conversation & Directives Viewport -->
-      <main class="chat-viewport tab-view active" id="viewChat">
-        <div class="chat-thread-header">
-          <div class="thread-title-group">
-            <h2 id="currentThreadTitle">Operations Command Channel</h2>
-            <div class="thread-subtitle">Directives issued here dispatch to Amara, Sentinel, Athena, Immune, and Claw</div>
-          </div>
-          <div class="thread-badges">
-            <span class="badge badge-glow" id="activeFilterBadge">Swarm Coordination</span>
-          </div>
-        </div>
-
-        <!-- Scrollable Messages Feed -->
-        <div class="chat-messages-scroll" id="chatMessages">
-          <!-- Initial Tactical SITREP -->
-          <div class="chat-message bot-msg amara-theme">
-            <div class="msg-avatar">⬡</div>
-            <div class="msg-body">
-              <div class="msg-meta">
-                <span class="msg-sender">A.M.A.R.A.</span>
-                <span class="msg-callsign">@amara</span>
-                <span class="msg-badge">Operations Coordinator</span>
-                <span class="msg-time">Ready</span>
-              </div>
-              <div class="msg-content">
-                <p><strong>Chief Architect on deck.</strong> The Quantum Flex Tactical Swarm is operational on the primary Yoga host.</p>
-                <p>All substrates are synchronized over Tailscale mesh. Issue tactical directives below or select an action:</p>
-                <div class="quick-prompts-grid">
-                  <button class="prompt-chip" onclick="sendPrompt('SITREP')">
-                    📋 Request Full Operational SITREP
-                  </button>
-                  <button class="prompt-chip" onclick="sendPrompt('@sentinel verify TPM 2.0 hardware anchor and drive score')">
-                    ▲ @sentinel Verify TPM 2.0 & Drive Score
-                  </button>
-                  <button class="prompt-chip" onclick="sendPrompt('@immune audit active PQC ciphers against OPA membrane')">
-                    ☤ @immune Audit PQC Ciphers & OPA
-                  </button>
-                  <button class="prompt-chip" onclick="sendPrompt('@claw report status of all substrate user services')">
-                    ⚙ @claw Report Substrate Services
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Chat Input Footer -->
-        <footer class="chat-input-dock">
-          <div class="input-controls-bar">
-            <div class="bot-selector-wrap">
-              <label for="targetBotSelect">Target Unit:</label>
-              <select id="targetBotSelect" class="bot-select">
-                <option value="">⬡ Swarm Coordination (All Units)</option>
-                <option value="amara">⬡ A.M.A.R.A. (Operations Coordinator)</option>
-                <option value="sentinel">▲ SENTINEL (Perimeter & TPM Defense)</option>
-                <option value="athena">◈ A.T.H.E.N.A. (Tactical Vector Oracle)</option>
-                <option value="immune">☤ IMMUNE (PQC Agility & OPA)</option>
-                <option value="claw">⚙ THE CLAW (Substrate Operations)</option>
-              </select>
-            </div>
-          </div>
-
-          <form id="chatForm" class="chat-form">
-            <textarea
-              id="chatInput"
-              rows="1"
-              placeholder="Issue tactical directive or query... (e.g. 'SITREP' or '@sentinel inspect ledger')"
-              autocomplete="off"
-            ></textarea>
-            <button type="submit" class="btn btn-send" id="btnSend">
-              <span>Execute</span>
-              <span class="send-arrow">➔</span>
-            </button>
-          </form>
-        </footer>
-      </main>
-
-      <!-- Tab View: SITREP & Vitals (Mobile Dedicated Tab) -->
-      <section class="tab-view telemetry-tab-view" id="viewTelemetry" style="display: none;">
-        <div class="tab-panel-header">
-          <h3>HOST TELEMETRY & HARDWARE INTEGRITY</h3>
-          <button class="btn btn-xs btn-outline" onclick="loadStatus()">Refresh</button>
-        </div>
-        <div class="vitals-grid">
-          <div class="vital-card">
-            <div class="vital-label">HOMEOSTATIC DRIVE (D)</div>
-            <div class="vital-value-big" id="vitalsDriveVal">447.1</div>
-            <div class="vital-status green" id="vitalsDriveStatus">EQUILIBRIUM (OPTIMAL)</div>
-            <div class="vital-sub">Tolerance: &lt; 1000.0 (Hardstop at 1500)</div>
-          </div>
-          <div class="vital-card">
-            <div class="vital-label">HARDWARE ROOT OF TRUST</div>
-            <div class="vital-value-big" id="vitalsTpmVal">0x1c00010</div>
-            <div class="vital-status green" id="vitalsTpmStatus">MATCHED TO LEDGER TIP</div>
-            <div class="vital-sub">Physical TPM 2.0 NV-RAM Register</div>
-          </div>
-          <div class="vital-card">
-            <div class="vital-label">PQC ALGORITHM SUITE</div>
-            <div class="vital-value-big" id="vitalsPqcVal">ML-KEM-768</div>
-            <div class="vital-status blue" id="vitalsOpaStatus">OPA VERIFIED // COMPLIANT</div>
-            <div class="vital-sub">Fallback: FrodoKEM-976-AES Armed</div>
-          </div>
-          <div class="vital-card">
-            <div class="vital-label">HOST COMPUTATIONAL LOAD</div>
-            <div class="vital-value-big" id="vitalsLoadVal">0.0% CPU</div>
-            <div class="vital-status green" id="vitalsMemVal">64.8 MB RAM</div>
-            <div class="vital-sub">Platform: Fedora 44 (Lenovo Yoga 7)</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Tab View: Action Authorizations (Mobile Dedicated Tab) -->
-      <section class="tab-view authorizations-tab-view" id="viewAuthorizations" style="display: none;">
-        <div class="tab-panel-header">
-          <h3>PENDING ACTION AUTHORIZATIONS</h3>
-          <span class="badge badge-warning" id="authTabCountBadge">0</span>
-        </div>
-        <div class="drafts-feed" id="draftsFeedMobile">
-          <!-- Populated via JS -->
-        </div>
-      </section>
-
-      <!-- Tab View: Sweeps & Routines (Mobile Dedicated Tab) -->
-      <section class="tab-view sweeps-tab-view" id="viewSweeps" style="display: none;">
-        <div class="tab-panel-header">
-          <h3>TACTICAL SWEEPS & AUDIT ENGINES</h3>
-        </div>
-        <div class="sweeps-list">
-          <div class="sweep-card">
-            <div class="sweep-header">
-              <span class="sweep-icon">🌙</span>
-              <span class="sweep-name">Overnight Deep Stack Audit</span>
-            </div>
-            <div class="sweep-desc">Full-spectrum sweep: TPM 2.0 anchor, block hashes, PQC OPA membrane, and Athena executive briefing.</div>
-            <button class="btn btn-primary btn-block mt-2" onclick="runRoutine('overnight_audit')">Trigger Deep Audit</button>
-          </div>
-          <div class="sweep-card mt-3">
-            <div class="sweep-header">
-              <span class="sweep-icon">▲</span>
-              <span class="sweep-name">Sentinel Perimeter Heartbeat</span>
-            </div>
-            <div class="sweep-desc">Verifies Euclidean drive score equilibrium and matches hardware TPM NV 0x1c00010 against ledger tip.</div>
-            <button class="btn btn-outline btn-block mt-2" onclick="runRoutine('tripwire_heartbeat')">Run Heartbeat</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Right Sidebar: Authorizations & Activity (Desktop) -->
-      <aside class="sidebar-right" id="sidebarRightDesktop">
-        <div class="sidebar-section-title">
-          <span>ACTION AUTHORIZATIONS</span>
-          <span class="badge badge-warning" id="draftsCountBadge">0</span>
-        </div>
-        <div class="drafts-feed" id="draftsFeed">
-          <div class="empty-state">No pending actions requiring authorization.</div>
-        </div>
-
-        <div class="sidebar-section-title mt-4">TACTICAL ACTIVITY LOG</div>
-        <div class="activity-log-feed" id="activityFeed">
-          <div class="log-entry">
-            <span class="log-time">LIVE</span>
-            <span class="log-bot">SENTINEL</span>
-            <span class="log-msg">TPM 2.0 NV 0x1c00010 verified against ledger tip</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">LIVE</span>
-            <span class="log-bot">IMMUNE</span>
-            <span class="log-msg">OPA policy compliant: ML-KEM-768 active</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">READY</span>
-            <span class="log-bot">AMARA</span>
-            <span class="log-msg">Tactical swarm standing by on Yoga 7 host</span>
-          </div>
-        </div>
-      </aside>
-    </div>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
