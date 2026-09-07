@@ -10,7 +10,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 POD_NAME="qflex-immune-pod"
-BUNDLE_SERVER_URL="http://10.0.2.2:8182/bundle.tar.gz" # Host network from pod
+BUNDLE_SERVER_URL="http://host.containers.internal:8182" # Host network from pod
 
 echo "[$(date)] IMMUNE POD: Initializing ${POD_NAME}..."
 
@@ -43,6 +43,7 @@ bundles:
       min_delay_seconds: 1
       max_delay_seconds: 2
 EOF
+chmod 644 "${OPA_CONFIG_TMP}" 
 
 podman run -d \
     --pod "${POD_NAME}" \
