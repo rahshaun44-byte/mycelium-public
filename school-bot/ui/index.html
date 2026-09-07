@@ -10,40 +10,51 @@
     .header { background: #4a90e2; color: #fff; padding: 1.5rem; text-align: center; }
     .header h2 { margin: 0; font-weight: 500; letter-spacing: 0.5px; }
     .feed { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .msg { max-width: 80%; padding: 1rem; border-radius: 12px; line-height: 1.4; }
+    .msg { max-width: 80%; padding: 1rem; border-radius: 12px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
     .msg.bot { background: #f0f4f8; align-self: flex-start; border-bottom-left-radius: 4px; }
     .msg.user { background: #4a90e2; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .msg.system { background: #fff3cd; color: #856404; align-self: center; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 20px; font-style: italic; }
     .input-area { display: flex; padding: 1rem; background: #fff; border-top: 1px solid #eee; }
     input { flex: 1; padding: 0.8rem; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 1rem; }
     input:focus { border-color: #4a90e2; }
     button { background: #4a90e2; color: #fff; border: none; padding: 0 1.5rem; margin-left: 0.5rem; border-radius: 20px; cursor: pointer; font-weight: bold; }
     button:hover { background: #357abd; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
   </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
   <div class="chat-container">
     <div class="header">
-      <h2>📚 Independent School Assistant</h2>
-      <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">Securely decoupled from QF Mesh</div>
+      <h2>📚 Agentic School Assistant</h2>
+      <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">Access to: SNHU_Vault & SNHU_C5_Term</div>
     </div>
     <div class="feed" id="chatFeed">
-      <div class="msg bot">Hello! I am your isolated School Bot. How can I help you with your studies today? (Tip: ask me to 'check mesh status')</div>
+      <div class="msg bot">Hello! I am your isolated School Bot, powered by local AI. I can read, write, and organize files in your school folders. How can I help you?</div>
     </div>
     <div class="input-area">
       <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" onkeypress="if(event.key === 'Enter') sendMessage()">
-      <button onclick="sendMessage()">Send</button>
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
   </div>
 
   <script>
     async function sendMessage() {
       const input = document.getElementById('chatInput');
+      const btn = document.getElementById('sendBtn');
       const msg = input.value.trim();
       if (!msg) return;
       
       const feed = document.getElementById('chatFeed');
       feed.innerHTML += `<div class="msg user">${msg}</div>`;
       input.value = '';
+      input.disabled = true;
+      btn.disabled = true;
+      
+      const loadingId = 'loading-' + Date.now();
+      feed.innerHTML += `<div id="${loadingId}" class="msg system">Working... (I may be reading or writing files)</div>`;
       feed.scrollTop = feed.scrollHeight;
 
       try {
@@ -53,10 +64,17 @@
           body: JSON.stringify({message: msg})
         });
         const data = await res.json();
+        
+        document.getElementById(loadingId).remove();
         feed.innerHTML += `<div class="msg bot">${data.response}</div>`;
         feed.scrollTop = feed.scrollHeight;
       } catch(e) {
+        document.getElementById(loadingId).remove();
         feed.innerHTML += `<div class="msg bot" style="color:red">Error reaching bot backend.</div>`;
+      } finally {
+        input.disabled = false;
+        btn.disabled = false;
+        input.focus();
       }
     }
   </script>
