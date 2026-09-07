@@ -351,22 +351,31 @@ namespace quantumflex::ipc {
             auto hdr = wire::parse_frame_header(buffer.data(), static_cast<std::size_t>(bytes_read));
             if (hdr.has_value() && hdr->magic == wire::QFXK_MAGIC) {
                 const std::string session_id = "fd_" + std::to_string(client_fd);
-                wire::ReassembledMessage assembled_msg;
-                auto status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
+                while (true) {
+                    wire::ReassembledMessage assembled_msg;
+                    auto status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
 
-                while (status == wire::ReassemblyStatus::IN_PROGRESS) {
-                    bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
-                    if (bytes_read <= 0) break;
-                    status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
-                }
-
-                if (status == wire::ReassemblyStatus::COMPLETE) {
-                    handle_framed_message(assembled_msg, ssl);
-                } else {
-                    if (sentinel_) {
-                        sentinel_->record_drop();
+                    while (status == wire::ReassemblyStatus::IN_PROGRESS) {
+                        bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
+                        if (bytes_read <= 0) break;
+                        status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
                     }
-                    send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
+
+                    if (status == wire::ReassemblyStatus::COMPLETE) {
+                        handle_framed_message(assembled_msg, ssl);
+                    } else {
+                        if (sentinel_) {
+                            sentinel_->record_drop();
+                        }
+                        send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
+                        break;
+                    }
+
+                    // Check if client has another framed message on this socket
+                    bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
+                    if (bytes_read <= 0) {
+                        break;
+                    }
                 }
 
                 OPENSSL_cleanse(buffer.data(), buffer.size());

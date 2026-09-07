@@ -5,7 +5,7 @@
   "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260907",
   "version": 2,
   "metadata": {
-    "timestamp": "2026-09-07T08:20:40Z",
+    "timestamp": "2026-09-07T09:05:27Z",
     "tools": [
       {
         "vendor": "QuantumFlex Security",
@@ -27,7 +27,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "7bbd174f8821764dcb1ddae8a0d33cedad06225bb9d692c4baa5ce20f1507b0b"
+          "content": "9bf8a89a4d304b7ca40c007b922c09dadb2598bd2b2227f68b0c8f523eeb6a6c"
         }
       ],
       "properties": [
@@ -193,7 +193,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "380e55cf21be0dce61e72683655788e01024ef5da9673a97207a9091cbc28706"
+          "content": "d054167a5639ab8518fbd96a489a8d4763f8ebec70309bc7cfb777a25e15fdb8"
         }
       ]
     }

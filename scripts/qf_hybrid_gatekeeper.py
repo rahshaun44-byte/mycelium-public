@@ -283,6 +283,100 @@ def run_self_tests():
     print("\n[ALL 5 GATEKEEPER CLIENT INVARIANTS 100% VERIFIED]\n")
 
 
+import ssl
+import socket
+
+def recv_exact(sock, n: int) -> bytes:
+    buf = bytearray()
+    while len(buf) < n:
+        chunk = sock.recv(n - len(buf))
+        if not chunk:
+            raise ConnectionError("Socket closed prematurely")
+        buf.extend(chunk)
+    return bytes(buf)
+
+def recv_frame(sock) -> bytes:
+    hdr = recv_exact(sock, FRAME_HEADER_SIZE)
+    magic, msg_type, flags, seq_id, total_chunks, chunk_len = struct.unpack(">IBBHHH", hdr[:12])
+    payload = recv_exact(sock, chunk_len) if chunk_len > 0 else b""
+    return hdr + payload
+
+def perform_live_handshake(host: str, port: int, ca_file: str, cert_file: str, key_file: str) -> bool:
+    print(f"[*] Initiating mTLS connection to {host}:{port}...")
+    t0 = time.perf_counter()
+
+    ssl_ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=ca_file)
+    ssl_ctx.load_cert_chain(certfile=cert_file, keyfile=key_file)
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_REQUIRED
+
+    raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    raw_sock.settimeout(5.0)
+    tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="localhost")
+
+    try:
+        tls_sock.connect((host, port))
+        t_conn = time.perf_counter()
+        print(f"[+] mTLS socket connected in {(t_conn - t0)*1000:.2f}ms")
+
+        # Step 1: Request Server Hybrid Public Key
+        req_frame = serialize_frame(MSG_KEM_PK, 0, 1, b"")
+        tls_sock.sendall(req_frame)
+        print("[*] Sent MSG_KEM_PK request frame")
+
+        # Step 2: Receive Server Public Key chunks
+        reassembler = FrameReassembler(timeout_sec=2.0)
+        server_pk_wire = None
+        chunks_received = 0
+        while True:
+            frame = recv_frame(tls_sock)
+            chunks_received += 1
+            res = reassembler.ingest(frame)
+            if res is not None:
+                msg_type, server_pk_wire = res
+                assert msg_type == MSG_KEM_PK
+                break
+
+        t_pk = time.perf_counter()
+        print(f"[+] Received Server Hybrid PK: {len(server_pk_wire)} B across {chunks_received} chunks in {(t_pk - t_conn)*1000:.2f}ms")
+        assert len(server_pk_wire) == HYBRID_PUBLIC_KEY_BYTES
+
+        # Step 3: Encapsulate Hybrid Ciphertext & derive client shared secret
+        ct_wire, client_shared_secret = hybrid_client_encapsulate(server_pk_wire)
+        t_enc = time.perf_counter()
+        print(f"[+] Client-side Encapsulation complete in {(t_enc - t_pk)*1000:.2f}ms")
+
+        # Step 4: Transmit Ciphertext chunks
+        ct_frames = fragment_payload(MSG_KEM_CT, ct_wire, MAX_CHUNK_PAYLOAD)
+        for cf in ct_frames:
+            tls_sock.sendall(cf)
+        print(f"[*] Streamed {len(ct_wire)} B Ciphertext across {len(ct_frames)} MTU frames")
+
+        # Step 5: Receive Server Acknowledgement & Shared Secret
+        ack_reassembler = FrameReassembler(timeout_sec=2.0)
+        ack_frame = recv_frame(tls_sock)
+        ack_res = ack_reassembler.ingest(ack_frame)
+        assert ack_res is not None, "Server did not return valid ACK frame"
+        ack_type, server_shared_secret = ack_res
+        t_ack = time.perf_counter()
+
+        if ack_type == MSG_KEM_ACK:
+            assert server_shared_secret == client_shared_secret, "Derived shared secrets DO NOT MATCH!"
+            print(f"\n{chr(27)}[92m{chr(27)}[1m[PASS] LIVE-FIRE HYBRID KEM HANDSHAKE 100% SUCCESSFUL!{chr(27)}[0m")
+            print(f"       Total Elapsed Time   : {(t_ack - t0)*1000:.2f}ms")
+            print(f"       Shared Secret (HEX)  : {client_shared_secret.hex()[:32]}...")
+            print(f"       Wire Protocol Status : CFRG Dual-PRF HKDF converged over mTLS\n")
+            return True
+        elif ack_type == MSG_KEM_REJECT:
+            print(f"\n{chr(27)}[91m[FAIL] Server rejected handshake (MSG_KEM_REJECT){chr(27)}[0m\n")
+            return False
+        else:
+            print(f"\n{chr(27)}[91m[FAIL] Unexpected response type: {ack_type}{chr(27)}[0m\n")
+            return False
+
+    finally:
+        tls_sock.close()
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--test-unit", action="store_true", help="Run local framing and combiner unit tests")
@@ -297,7 +391,13 @@ def main() -> int:
         run_self_tests()
         return 0
 
-    print("Use --test-unit to run the pure-python validation harness.")
+    if args.ca and args.cert and args.key:
+        success = perform_live_handshake(args.host, args.port, args.ca, args.cert, args.key)
+        return 0 if success else 1
+
+    print("Usage:")
+    print("  python scripts/qf_hybrid_gatekeeper.py --test-unit")
+    print("  python scripts/qf_hybrid_gatekeeper.py --ca <ca.crt> --cert <client.crt> --key <client.key> [--host 127.0.0.1] [--port 9443]")
     return 0
 
 
