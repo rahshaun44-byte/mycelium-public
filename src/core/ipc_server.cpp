@@ -189,7 +189,8 @@ namespace quantumflex::ipc {
     }
 
     void IpcServer::send_framed_chunks(uint8_t msg_type, const std::vector<uint8_t>& payload, SSL* ssl) {
-        auto frames = wire::fragment_payload(msg_type, payload, wire::MAX_CHUNK_PAYLOAD);
+        auto frame = wire::serialize_frame(msg_type, 0, payload.data(), payload.size());
+        std::vector<std::vector<uint8_t>> frames = {frame};
         for (const auto& frame : frames) {
             static_cast<void>(SSL_write(ssl, frame.data(), static_cast<int>(frame.size())));
         }
@@ -347,43 +348,34 @@ namespace quantumflex::ipc {
         }
 
         // ── Branch 1: QFXK Binary Framed Wire Protocol ──────────────────────
-        if (bytes_read >= static_cast<int>(wire::FRAME_HEADER_SIZE)) {
-            auto hdr = wire::parse_frame_header(buffer.data(), static_cast<std::size_t>(bytes_read));
-            if (hdr.has_value() && hdr->magic == wire::QFXK_MAGIC) {
-                const std::string session_id = "fd_" + std::to_string(client_fd);
-                while (true) {
+        if (bytes_read >= 2 && buffer[0] == 'Q' && buffer[1] == 'F') { // Magic bytes fast check
+            const std::string session_id = "fd_" + std::to_string(client_fd);
+            
+            while (true) {
+                std::vector<uint8_t> payload;
+                uint8_t msg_type = 0;
+                
+                if (reassembly_pool_.ingest_stream(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), payload, msg_type)) {
                     wire::ReassembledMessage assembled_msg;
-                    auto status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
-
-                    while (status == wire::ReassemblyStatus::IN_PROGRESS) {
-                        bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
-                        if (bytes_read <= 0) break;
-                        status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
-                    }
-
-                    if (status == wire::ReassemblyStatus::COMPLETE) {
-                        handle_framed_message(assembled_msg, ssl);
-                    } else {
-                        if (sentinel_) {
-                            sentinel_->record_drop();
-                        }
-                        send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
-                        break;
-                    }
-
-                    // Check if client has another framed message on this socket
-                    bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
-                    if (bytes_read <= 0) {
-                        break;
-                    }
+                    assembled_msg.msg_type = msg_type;
+                    assembled_msg.payload = payload;
+                    
+                    handle_framed_message(assembled_msg, ssl);
+                    break; // Break out after handling one complete frame per connection
                 }
-
-                OPENSSL_cleanse(buffer.data(), buffer.size());
-                SSL_shutdown(ssl);
-                SSL_free(ssl);
-                close(client_fd);
-                return true;
+                
+                bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
+                if (bytes_read <= 0) {
+                    reassembly_pool_.drop_session(session_id);
+                    break;
+                }
             }
+
+            OPENSSL_cleanse(buffer.data(), buffer.size());
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+            close(client_fd);
+            return true;
         }
 
         // ── Branch 2: Legacy Line-Based Protocol ────────────────────────────

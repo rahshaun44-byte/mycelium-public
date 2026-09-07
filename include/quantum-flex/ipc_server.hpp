@@ -54,7 +54,7 @@ namespace quantumflex::ipc {
         std::unique_ptr<security::EwmaLifSentinel> sentinel_;
 
         // Hybrid KEM & Gatekeeper Wire Framing Subsystem
-        wire::GatekeeperReassemblyManager reassembly_mgr_;
+        wire::QuantumFlexReassemblyPool reassembly_pool_;
         std::unique_ptr<crypto::HybridKeyPair> hybrid_keypair_;
 
         void configure_ssl_context();

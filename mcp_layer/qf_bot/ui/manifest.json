@@ -1,0 +1,18 @@
+{
+  "name": "Quantum Flex Tactical Operations Console",
+  "short_name": "QF-Tactical",
+  "description": "Mobile Command & Tactical Operations Console for Quantum Flex",
+  "start_url": "/ui/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090e",
+  "theme_color": "#07090e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
