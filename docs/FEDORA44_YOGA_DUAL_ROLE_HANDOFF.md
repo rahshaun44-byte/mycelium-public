@@ -148,10 +148,6 @@ ops-mode
 sudo -u student /usr/local/bin/school-backup
 ```
 
-### 5.4 HP Pavilion hardware audit (remote)
-```bash
-ssh <hp-host> "free -h; lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL; lscpu | head -n 20"
-```
 
 ---
 
