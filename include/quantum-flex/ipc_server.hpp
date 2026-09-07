@@ -3,9 +3,12 @@
 
 #include "quantum-flex/local_node.hpp"
 #include "quantum-flex/ewma_lif_sentinel.hpp"
+#include "quantum-flex/hybrid_kem.hpp"
+#include "quantum-flex/wire_framing.hpp"
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -35,6 +38,10 @@ namespace quantumflex::ipc {
         [[nodiscard]] auto get_sentinel() -> security::EwmaLifSentinel& { return *sentinel_; }
         [[nodiscard]] auto get_sentinel() const -> const security::EwmaLifSentinel& { return *sentinel_; }
 
+        void initialize_hybrid_keypair();
+        [[nodiscard]] auto has_hybrid_keypair() const -> bool;
+        [[nodiscard]] auto get_hybrid_public_key() const -> const quantumflex::crypto::HybridPublicKey&;
+
     private:
         int port_;
         std::string cert_file_;
@@ -46,7 +53,13 @@ namespace quantumflex::ipc {
         SSL_CTX* ssl_ctx_{nullptr};
         std::unique_ptr<security::EwmaLifSentinel> sentinel_;
 
+        // Hybrid KEM & Gatekeeper Wire Framing Subsystem
+        wire::GatekeeperReassemblyManager reassembly_mgr_;
+        std::unique_ptr<crypto::HybridKeyPair> hybrid_keypair_;
+
         void configure_ssl_context();
+        void handle_framed_message(const wire::ReassembledMessage& msg, SSL* ssl);
+        void send_framed_chunks(uint8_t msg_type, const std::vector<uint8_t>& payload, SSL* ssl);
     };
 
 } // namespace quantumflex::ipc

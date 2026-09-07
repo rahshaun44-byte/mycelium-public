@@ -82,10 +82,18 @@ def journalctl_tail(unit="sshd"):
     host) — no root required."""
     proc = subprocess.Popen(
         ["journalctl", "-u", unit, "-f", "-n", "0"],
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
     )
-    for line in proc.stdout:
-        yield line
+    if proc.stdout:
+        for line in proc.stdout:
+            yield line
+
+    # Stream ended — determine why journalctl terminated
+    rc = proc.wait()
+    stderr_msg = proc.stderr.read().strip() if proc.stderr else ""
+    raise RuntimeError(
+        f"journalctl stream for unit '{unit}' terminated (exit code {rc}): {stderr_msg or 'EOF reached'}"
+    )
 
 def _scan(lines):
     """Core detection loop: watch a line stream for failed-login events, feed

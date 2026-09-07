@@ -32,7 +32,11 @@ namespace {
     }
 
     auto data_path(const std::string& filename) -> std::string {
-        return environment_value("QF_DATA_DIR", "/home/USERNAME/quantum-flex/data") + "/" + filename;
+        const char* val = std::getenv("QF_DATA_DIR");
+        if (val == nullptr || *val == '\0') {
+            throw std::runtime_error("FATAL: QF_DATA_DIR environment variable is not set. Fail-closed.");
+        }
+        return std::string(val) + "/" + filename;
     }
 }
 
@@ -171,7 +175,9 @@ namespace quantumflex::node {
     }
 
     void LocalNode::serialize_state(const std::string& filepath) const {
-        if (this->current_state_ != SystemState::ACTIVE) {
+        const bool active = (this->current_state_ == SystemState::ACTIVE);
+        const bool genesis = (this->current_state_ == SystemState::UNINITIALIZED);
+        if (!active && !genesis) {
             throw std::runtime_error("FATAL: Cannot serialize a locked or unverified state.");
         }
 
@@ -190,11 +196,14 @@ namespace quantumflex::node {
         const std::string payload = "STATE_ROOT|" + state_root + "\nTIMESTAMP|" + timestamp + "\n";
         
         // 2. Generate the Cryptographic Signature using the active salt
-        const std::string signature = crypto::Hasher::generate_sha256(payload + this->active_salt_);
+        const std::string signature = active
+            ? crypto::Hasher::generate_sha256(payload + this->active_salt_)
+            : std::string("UNINITIALIZED");
 
         // 3. Write to disk
         out << payload;
         out << "LEDGER_SIGNATURE|" << signature << "\n";
+        out << "STATUS|" << (active ? "ACTIVE" : "UNINITIALIZED") << "\n";
         
         out.close();
 
@@ -211,6 +220,9 @@ namespace quantumflex::node {
         if (!in_stream.is_open()) {
             std::cout << "[*] No existing ledger found at " << filepath << ". Initiating Genesis State.\n";
             this->current_state_ = SystemState::UNINITIALIZED;
+            this->state_root_ = get_node_state_root();
+            this->serialize_state(filepath);
+            std::cout << "[+] Genesis envelope written to " << filepath << "\n";
             return;
         }
 
@@ -238,6 +250,13 @@ namespace quantumflex::node {
         }
 
         in_stream.close();
+
+        if (loaded_sig == "UNINITIALIZED") {
+            this->state_root_ = loaded_root;
+            this->current_state_ = SystemState::UNINITIALIZED;
+            std::cout << "[*] Genesis envelope loaded. Engine is UNINITIALIZED. Awaiting initialize_node.\n";
+            return;
+        }
 
         // Missing critical components = tampering or corruption
         if (loaded_root.empty() || loaded_time.empty() || loaded_sig.empty()) {

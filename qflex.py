@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/quant/mycelium/venv/bin/python3
 """
 ═════════════════════════════════════════════════════════════════════
   QUANTUM FLEX: MASTER BIOLOGICAL CONTROL HUD & COMMAND CONSOLE
@@ -37,10 +37,11 @@ DIM = "\033[2m"
 RESET = "\033[0m"
 
 # Service Ports & Endpoints
-ATHENA_URL = "http://127.0.0.1:8005"
-AMARA_URL = "http://127.0.0.1:8000"
+ATHENA_URL = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
+AMARA_URL = os.environ.get("AMARA_URL", "http://127.0.0.1:8000")
 OPA_URL = os.environ.get("OPA_ENDPOINT", "http://127.0.0.1:8181")
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+MCP_URL = os.environ.get("MCP_URL", "http://127.0.0.1:9000/sse")
 N8N_URL = "http://127.0.0.1:5678"
 
 def print_banner():
@@ -83,17 +84,29 @@ def http_post(url: str, data: dict, timeout: float = 45.0):
 def check_service_health():
     """Probes all biological stratum services on loopback."""
     services = [
-        {"name": "Ollama LLM Runner", "url": f"{OLLAMA_URL}/api/tags", "port": 11434, "stratum": "Neural Inference"},
-        {"name": "Open Policy Agent", "url": f"{OPA_URL}/v1/data", "port": 8181, "stratum": "PQC Gating"},
-        {"name": "Athena Neural RAG", "url": f"{ATHENA_URL}/health", "port": 8005, "stratum": "Vector Memory"},
-        {"name": "Amara Dashboard", "url": f"{AMARA_URL}/", "port": 8000, "stratum": "Matrix HUD"},
-        {"name": "n8n Workflow Engine", "url": f"{N8N_URL}/healthz", "port": 5678, "stratum": "Automation Core"},
+        {"name": "Open Policy Agent", "url": f"{OPA_URL}/health", "port": 8181, "stratum": "Stratum 0: PQC Gating"},
+        {"name": "Amara Matrix PG", "url": None, "port": 5432, "stratum": "Stratum 1: Data Matrix"},
+        {"name": "Amara Dashboard", "url": f"{AMARA_URL}/", "port": 8000, "stratum": "Stratum 3: Matrix HUD"},
+        {"name": "Athena Neural RAG", "url": f"{ATHENA_URL}/health", "port": 8001, "stratum": "Stratum 3: Vector Memory"},
+        {"name": "API Gateway Node", "url": "http://127.0.0.1:8080/status", "port": 8080, "stratum": "Stratum 3: Core API"},
+        {"name": "Quantum Flex MCP", "url": "http://127.0.0.1:9000/sse", "port": 9000, "stratum": "Stratum 3: Model Context Protocol"},
+        {"name": "Ollama LLM Runner", "url": f"{OLLAMA_URL}/api/tags", "port": 11434, "stratum": "Neural Inference (Optional)"},
     ]
 
     print(f"\n{BOLD}{CYAN}─── [BIOLOGICAL STRATA HEALTH VITALS] ───────────────────────────{RESET}")
     for s in services:
-        res = http_get(s["url"])
-        if res is not None:
+        if s.get("url"):
+            res = http_get(s["url"])
+            online = res is not None
+        else:
+            import socket
+            try:
+                with socket.create_connection(("127.0.0.1", s["port"]), timeout=1.0):
+                    online = True
+            except Exception:
+                online = False
+
+        if online:
             status_tag = f"{GREEN}[ONLINE]{RESET}"
             details = f"Port :{s['port']} | {s['stratum']}"
         else:
@@ -177,19 +190,55 @@ def cmd_rotate_credentials():
     else:
         print(f"{RED}[!] rotate_credentials.py missing.{RESET}\n")
 
+QF_SERVICES = [
+    "amara-matrix.service",
+    "opa-immune.service",
+    "ollama.service",
+    "immune-daemon.service",
+    "amara-dashboard.service",
+    "athena-node.service",
+    "api-node.service",
+    "qflex-mcp.service",
+    "qf-monitor.service",
+    "swarm-worker.service",
+    "active-defense.service",
+    "sentinel-drive.timer",
+    "amara-predict.timer",
+    "neurogenesis.timer",
+]
+
 def cmd_start_stack():
-    """Launches full biological stack."""
-    launcher_ps = ROOT_DIR / "Start-QuantumFlexStack.ps1"
-    print(f"{BOLD}[*] Launching QuantumFlex biological stack via PowerShell...{RESET}")
-    subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(launcher_ps)], shell=True)
-    time.sleep(3)
+    """Launches full biological stack via systemd user units."""
+    print(f"{BOLD}[*] Launching QuantumFlex biological stack via systemd user units...{RESET}")
+    subprocess.run(["systemctl", "--user", "start"] + QF_SERVICES)
+    time.sleep(2)
+    check_service_health()
+
+def cmd_stop_stack():
+    """Stops all QuantumFlex services."""
+    print(f"{BOLD}[*] Stopping QuantumFlex biological stack...{RESET}")
+    subprocess.run(["systemctl", "--user", "stop"] + QF_SERVICES)
+    time.sleep(1)
+    check_service_health()
+
+def cmd_restart_stack():
+    """Restarts full biological stack."""
+    print(f"{BOLD}[*] Restarting QuantumFlex biological stack...{RESET}")
+    subprocess.run(["systemctl", "--user", "restart"] + QF_SERVICES)
+    time.sleep(2)
     check_service_health()
 
 def cmd_start_n8n():
-    """Launches n8n workflow engine."""
-    n8n_ps = ROOT_DIR / "Start-N8nNode.ps1"
-    print(f"{BOLD}[*] Launching n8n Autonomous Workflow Engine...{RESET}")
-    subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(n8n_ps)], shell=True)
+    """Launches n8n workflow engine via Podman."""
+    print(f"{BOLD}[*] Launching n8n Autonomous Workflow Engine via Podman...{RESET}")
+    subprocess.run([
+        "podman", "run", "-d",
+        "--name", "qflex-n8n",
+        "-p", "127.0.0.1:5678:5678",
+        "-v", "qflex_n8n_data:/home/node/.n8n",
+        "--restart", "unless-stopped",
+        "docker.n8n.io/n8nio/n8n"
+    ])
     time.sleep(3)
     check_service_health()
 
@@ -212,9 +261,9 @@ def interactive_hud():
         print(f"  {CYAN}[3]{RESET} Sovereign Wealth Dashboard (3-Stream Engine)")
         print(f"  {CYAN}[4]{RESET} PQC Immune Daemon & Crypto-Agility Status")
         print(f"  {CYAN}[5]{RESET} Rotate & Secure All Credentials (CSPRNG Vault)")
-        print(f"  {CYAN}[6]{RESET} Start Full Biological Stack (All Node Services)")
-        print(f"  {CYAN}[7]{RESET} Launch n8n Workflow Engine (Port 5678)")
-        print(f"  {CYAN}[8]{RESET} Backup Master Host Vault (C:\\Users\\quant\\QuantumFlex_Master_Vault)")
+        print(f"  {CYAN}[6]{RESET} Start / Restart Full Biological Stack (Systemd)")
+        print(f"  {CYAN}[7]{RESET} Stop Full Biological Stack")
+        print(f"  {CYAN}[8]{RESET} Backup Master Host Vault (~/QuantumFlex_Master_Vault)")
         print(f"  {CYAN}[0]{RESET} Exit HUD Console\n")
 
         choice = input(f"{BOLD}{MAGENTA}quantum-flex > {RESET}").strip()
@@ -240,10 +289,10 @@ def interactive_hud():
                 cmd_rotate_credentials()
             input(f"{DIM}Press Enter to continue...{RESET}")
         elif choice == "6":
-            cmd_start_stack()
+            cmd_restart_stack()
             input(f"{DIM}Press Enter to continue...{RESET}")
         elif choice == "7":
-            cmd_start_n8n()
+            cmd_stop_stack()
             input(f"{DIM}Press Enter to continue...{RESET}")
         elif choice == "8":
             cmd_backup_vault()
@@ -282,6 +331,10 @@ def main():
         cmd_rotate_credentials()
     elif cmd in ("start", "up"):
         cmd_start_stack()
+    elif cmd in ("stop", "down"):
+        cmd_stop_stack()
+    elif cmd in ("restart", "reload"):
+        cmd_restart_stack()
     elif cmd in ("n8n", "automation"):
         cmd_start_n8n()
     elif cmd in ("backup", "save", "archive"):

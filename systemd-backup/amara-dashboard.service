@@ -1,12 +1,13 @@
 [Unit]
 Description=A.M.A.R.A. Sync Dashboard
-After=network.target ghost-node-agent.service
+After=network-online.target tailscaled.service ghost-node-agent.service
+Wants=network-online.target tailscaled.service
 
 [Service]
 Environment="TZ=America/New_York"
 Type=simple
 WorkingDirectory=/home/USERNAME/mycelium/amara
-ExecStart=/home/USERNAME/mycelium/venv/bin/uvicorn dashboard:app --host 127.0.0.1 --port 8000
+ExecStart=/bin/sh -c 'BIND_IP=$$(tailscale ip -4 2>/dev/null || echo 127.0.0.1); exec /home/USERNAME/mycelium/venv/bin/uvicorn dashboard:app --host "$$BIND_IP" --port 8000'
 Restart=always
 RestartSec=5s
 StandardOutput=append:%h/.local/state/amara/dashboard.log

@@ -6,13 +6,20 @@ Supervisor that continuously evaluates cryptographic health via a
 co-located OPA sidecar and autonomously renegotiates the active KEM
 when the policy returns TOXIC — without restarting the worker process.
 
+Self-Healing Architecture (Y = f(x - h) + k):
+  - CircuitBreaker with sliding-window failure tracking
+  - Quarantine state: isolates node, applies safe-mode cipher, retries
+  - Recovery: on OPA return, validates compliance, resumes ACTIVE
+  - Terminal collapse: only after max_retries exhausted (from OPA recovery_map)
+  - k (baseline truth): OPA remains the single source of truth — always
+
 Key improvements:
   - Pure-Python atomic config rewrite (no sed, works on Windows)
   - Cross-platform signal handling with POSIX-only SIGHUP nudge
   - ConfigWatcher utility class for worker processes
   - Dynamic fallback chain traversal and loud exhaustion alerting
   - --dry-run and --once flags for safe testing
-  - Explicit fail-secure path with consecutive-failure counter
+  - CircuitBreaker quarantine → recover → collapse pipeline
   - Same OPA contract and fallback chain
 
 Environment variables (all optional):
@@ -23,6 +30,7 @@ Environment variables (all optional):
   FAIL_SECURE_THRESHOLD default 3
   PQC_DB_*              optional Postgres audit
   PQC_DASHBOARD_WEBHOOK optional webhook
+  AMARA_TELEMETRY_URL   default http://127.0.0.1:8000/api/events
 """
 
 from __future__ import annotations
@@ -31,6 +39,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -55,18 +64,18 @@ except ImportError:
 # ── Defaults & Constants ──────────────────────────────────────────
 DEFAULT_OPA = "http://127.0.0.1:8181"
 DEFAULT_VERDICT_PATH = "/v1/data/membrane/health/verdict"
+DEFAULT_FALLBACK_MAP_PATH = "/v1/data/membrane/health/fallback_map"
+DEFAULT_RECOVERY_MAP_PATH = "/v1/data/membrane/health/recovery_map"
 DEFAULT_POLL_MS = 500
 DEFAULT_FAIL_SECURE = 3
 DEFAULT_CONF = Path("crypto_provider.conf")
-FALLBACK_MAP = {
-    "ML-KEM-512": "FrodoKEM-640-AES",
-    "ML-KEM-768": "FrodoKEM-976-AES",
-    "ML-KEM-1024": "FrodoKEM-1344-AES",
-    "FrodoKEM-640-AES": "X25519",
-    "FrodoKEM-976-AES": "X25519",
-    "FrodoKEM-1344-AES": "X25519",
-    "X25519": "NONE",
-}
+DEFAULT_AMARA_URL = "http://127.0.0.1:8000/api/events"
+
+# Circuit breaker defaults (overridden by OPA recovery_map)
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_TIMEOUT_WINDOW = 60
+DEFAULT_QUARANTINE_DELAY_MS = 5000
+DEFAULT_SAFE_MODE_CIPHER = "FrodoKEM-976-AES"
 
 log = logging.getLogger("immune_daemon")
 
@@ -80,16 +89,295 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-# ── Chain Navigation ──────────────────────────────────────────────
-def next_fallback(current: str) -> str:
-    """Return the next algorithm down the chain, or NONE if exhausted."""
-    if current not in FALLBACK_MAP:
-        log.critical(
-            "Unrecognized active algorithm %r — refusing to guess a fallback. "
-            "Halting rollover; manual intervention required.", current
+# ── Authoritative Fallback Chain (OPA / Rego Single Source of Truth) ──
+def parse_rego_fallback_map(rego_content: str) -> dict[str, str]:
+    """Extract the authoritative fallback_map defined in membrane_health.rego."""
+    match = re.search(r'fallback_map\s*:?=\s*\{([^}]+)\}', rego_content, re.DOTALL)
+    if not match:
+        return {}
+    body = match.group(1)
+    entries = re.findall(r'"([^"]+)"\s*:\s*"([^"]+)"', body)
+    return dict(entries)
+
+
+def load_fallback_map_from_rego(rego_path: Path | str | None = None) -> dict[str, str]:
+    """Read and parse the authoritative fallback map directly from the .rego file on disk."""
+    candidates: list[Path] = []
+    if rego_path is not None:
+        candidates.append(Path(rego_path))
+    env_path = os.environ.get("PQC_REGO_POLICY")
+    if env_path:
+        candidates.append(Path(env_path))
+    candidates.extend([
+        Path("membrane_health.rego"),
+        Path(__file__).resolve().parent / "membrane_health.rego",
+        Path(__file__).resolve().parent.parent / "sentinel" / "policies" / "membrane_health.rego",
+        Path(__file__).resolve().parent.parent / "mycelium" / "sentinel" / "policies" / "membrane_health.rego",
+    ])
+    for path in candidates:
+        if path.is_file():
+            try:
+                content = path.read_text(encoding="utf-8")
+                mapping = parse_rego_fallback_map(content)
+                if mapping:
+                    return mapping
+            except Exception as e:
+                log.warning("Failed to read rego policy from %s: %s", path, e)
+    log.warning("No authoritative membrane_health.rego found in candidate paths")
+    return {}
+
+
+def fetch_fallback_map_from_opa(endpoint: str, timeout: float = 2.0) -> dict[str, str] | None:
+    """Query live OPA endpoint for the authoritative fallback_map rule."""
+    if requests is None:
+        return None
+    url = endpoint.rstrip("/") + DEFAULT_FALLBACK_MAP_PATH
+    try:
+        r = requests.get(url, timeout=timeout)
+        r.raise_for_status()
+        data = r.json()
+        result = data.get("result")
+        if isinstance(result, dict) and result:
+            return result
+    except Exception as e:
+        log.debug("OPA fallback_map query failed: %s", e)
+    return None
+
+
+def get_authoritative_fallback_map(opa_endpoint: str | None = None, rego_path: Path | str | None = None) -> dict[str, str]:
+    """
+    Retrieve the authoritative fallback map from OPA or membrane_health.rego.
+    Single source of truth: OPA (.rego).
+    """
+    if opa_endpoint:
+        live = fetch_fallback_map_from_opa(opa_endpoint)
+        if live:
+            return live
+    return load_fallback_map_from_rego(rego_path)
+
+
+# Dynamically initialized from authoritative .rego single source of truth
+FALLBACK_MAP = load_fallback_map_from_rego()
+
+
+# ── Authoritative Recovery Map (OPA / Rego Single Source of Truth) ──
+def parse_rego_recovery_map(rego_content: str) -> dict[str, Any]:
+    """Extract the authoritative recovery_map defined in membrane_health.rego."""
+    match = re.search(r'recovery_map\s*:?=\s*\{([^}]+)\}', rego_content, re.DOTALL)
+    if not match:
+        return {}
+    body = match.group(1)
+    result: dict[str, Any] = {}
+    # Extract string values
+    for key, val in re.findall(r'"([^"]+)"\s*:\s*"([^"]+)"', body):
+        result[key] = val
+    # Extract integer values
+    for key, val in re.findall(r'"([^"]+)"\s*:\s*(\d+)', body):
+        if key not in result:  # Don't overwrite string matches
+            result[key] = int(val)
+    return result
+
+
+def load_recovery_map_from_rego(rego_path: Path | str | None = None) -> dict[str, Any]:
+    """Read and parse the authoritative recovery map from the .rego file on disk."""
+    candidates: list[Path] = []
+    if rego_path is not None:
+        candidates.append(Path(rego_path))
+    env_path = os.environ.get("PQC_REGO_POLICY")
+    if env_path:
+        candidates.append(Path(env_path))
+    candidates.extend([
+        Path("membrane_health.rego"),
+        Path(__file__).resolve().parent / "membrane_health.rego",
+        Path(__file__).resolve().parent.parent / "sentinel" / "policies" / "membrane_health.rego",
+    ])
+    for path in candidates:
+        if path.is_file():
+            try:
+                content = path.read_text(encoding="utf-8")
+                mapping = parse_rego_recovery_map(content)
+                if mapping:
+                    return mapping
+            except Exception as e:
+                log.warning("Failed to read rego recovery_map from %s: %s", path, e)
+    log.warning("No authoritative recovery_map found — using built-in defaults")
+    return {}
+
+
+def fetch_recovery_map_from_opa(endpoint: str, timeout: float = 2.0) -> dict[str, Any] | None:
+    """Query live OPA endpoint for the authoritative recovery_map rule."""
+    if requests is None:
+        return None
+    url = endpoint.rstrip("/") + DEFAULT_RECOVERY_MAP_PATH
+    try:
+        r = requests.get(url, timeout=timeout)
+        r.raise_for_status()
+        data = r.json()
+        result = data.get("result")
+        if isinstance(result, dict) and result:
+            return result
+    except Exception as e:
+        log.debug("OPA recovery_map query failed: %s", e)
+    return None
+
+
+def get_authoritative_recovery_map(
+    opa_endpoint: str | None = None,
+    rego_path: Path | str | None = None,
+) -> dict[str, Any]:
+    """Retrieve recovery parameters from OPA or .rego file. Single source of truth."""
+    if opa_endpoint:
+        live = fetch_recovery_map_from_opa(opa_endpoint)
+        if live:
+            return live
+    return load_recovery_map_from_rego(rego_path)
+
+
+# ── Circuit Breaker (Quarantine State Machine) ────────────────────
+class CircuitBreaker:
+    """
+    Three-state circuit breaker for self-healing quarantine.
+
+    States:
+        ACTIVE      → Normal operation, OPA is reachable and returning valid verdicts.
+        QUARANTINE  → Transient failure detected; node is isolated with safe-mode cipher.
+                      Retrying OPA within sliding window.
+        COLLAPSED   → Max retries exhausted; terminal vein collapse triggered.
+
+    Parameters are loaded from OPA recovery_map (single source of truth).
+    """
+
+    def __init__(
+        self,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        timeout_window: float = DEFAULT_TIMEOUT_WINDOW,
+        quarantine_delay_ms: int = DEFAULT_QUARANTINE_DELAY_MS,
+        safe_mode_cipher: str = DEFAULT_SAFE_MODE_CIPHER,
+    ):
+        self.max_retries = max_retries
+        self.timeout_window = timeout_window
+        self.quarantine_delay_sec = quarantine_delay_ms / 1000.0
+        self.safe_mode_cipher = safe_mode_cipher
+        self.failure_timestamps: list[float] = []
+        self.state = "ACTIVE"
+        self.pre_quarantine_kem: str | None = None  # Saved for potential recovery
+
+    @classmethod
+    def from_recovery_map(cls, recovery_map: dict[str, Any]) -> "CircuitBreaker":
+        """Factory: build a CircuitBreaker from OPA-authoritative recovery parameters."""
+        return cls(
+            max_retries=int(recovery_map.get("max_retries", DEFAULT_MAX_RETRIES)),
+            timeout_window=float(recovery_map.get("timeout_window_sec", DEFAULT_TIMEOUT_WINDOW)),
+            quarantine_delay_ms=int(recovery_map.get("quarantine_delay_ms", DEFAULT_QUARANTINE_DELAY_MS)),
+            safe_mode_cipher=str(recovery_map.get("safe_mode_cipher", DEFAULT_SAFE_MODE_CIPHER)),
         )
+
+    def record_failure(self) -> bool:
+        """Record a failure. Returns True if the breaker has tripped (max retries exhausted)."""
+        now = time.time()
+        # Prune failures outside the sliding window
+        self.failure_timestamps = [
+            t for t in self.failure_timestamps if now - t < self.timeout_window
+        ]
+        self.failure_timestamps.append(now)
+
+        if len(self.failure_timestamps) >= self.max_retries:
+            self.state = "COLLAPSED"
+            return True  # Tripped — terminal collapse
+
+        self.state = "QUARANTINE"
+        return False  # Not tripped — quarantine and retry
+
+    def reset(self) -> None:
+        """Reset the breaker to ACTIVE upon successful OPA validation."""
+        self.failure_timestamps.clear()
+        self.state = "ACTIVE"
+        self.pre_quarantine_kem = None
+
+    @property
+    def failure_count(self) -> int:
+        """Number of failures within the current sliding window."""
+        now = time.time()
+        return len([t for t in self.failure_timestamps if now - t < self.timeout_window])
+
+
+# ── Quarantine Mode ───────────────────────────────────────────────
+def enter_quarantine_mode(
+    state: "ImmuneState",
+    breaker: CircuitBreaker,
+    dry_run: bool = False,
+) -> None:
+    """
+    Isolate the node by applying the safe-mode cipher from OPA recovery_map.
+    Does NOT kill the worker or call sys.exit(). The polling loop stays alive.
+    """
+    if breaker.pre_quarantine_kem is None:
+        breaker.pre_quarantine_kem = state.active_kem
+
+    log.warning(
+        "QUARANTINE: Isolating node | attempt %d/%d | applying safe_mode_cipher=%s",
+        breaker.failure_count,
+        breaker.max_retries,
+        breaker.safe_mode_cipher,
+    )
+
+    # Atomically write the safe-mode cipher — node drops to known-good state
+    if state.active_kem != breaker.safe_mode_cipher:
+        atomic_rewrite_conf(
+            state.conf_path,
+            {"active_kem": breaker.safe_mode_cipher},
+            dry_run=dry_run,
+        )
+        if not dry_run:
+            state.active_kem = breaker.safe_mode_cipher
+
+
+# ── AMARA Telemetry Notification (fire-and-forget) ────────────────
+def notify_amara(
+    event_type: str,
+    details: dict[str, Any],
+    amara_url: str | None = None,
+) -> None:
+    """Best-effort fire-and-forget notification to the local AMARA telemetry bus."""
+    url = amara_url or os.environ.get("AMARA_TELEMETRY_URL", DEFAULT_AMARA_URL)
+    if requests is None:
+        return
+
+    def _send() -> None:
+        try:
+            payload = {
+                "event_type": event_type,
+                "source": "immune_daemon",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                **details,
+            }
+            requests.post(url, json=payload, timeout=2)
+        except Exception:
+            pass  # Fire-and-forget — never block the decision loop
+
+    threading.Thread(target=_send, daemon=True).start()
+
+
+# ── Chain Navigation ──────────────────────────────────────────────
+def next_fallback(
+    current: str,
+    opa_endpoint: str | None = None,
+    rego_path: Path | str | None = None,
+    fallback_map: dict[str, str] | None = None,
+) -> str:
+    """Return the next algorithm down the chain according to OPA (.rego), or NONE if exhausted."""
+    fmap = fallback_map if fallback_map is not None else get_authoritative_fallback_map(opa_endpoint, rego_path)
+    if current in fmap:
+        return fmap[current]
+
+    if current == "X25519":
         return "NONE"
-    return FALLBACK_MAP[current]
+
+    log.critical(
+        "Unrecognized active algorithm %r — refusing to guess a fallback. "
+        "Halting rollover; manual intervention required.", current
+    )
+    return "NONE"
 
 
 # ── Config helpers & Watcher ──────────────────────────────────────
@@ -214,8 +502,8 @@ def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict
         r.raise_for_status()
         data = r.json()
         result = data.get("result")
-        if not isinstance(result, dict) or "node_status" not in result:
-            log.warning("OPA returned no usable verdict (policy not loaded?) — treating as failure")
+        if not isinstance(result, dict) or not result or "node_status" not in result:
+            log.warning("OPA returned no usable verdict (empty/missing node_status) — treating as failure")
             return None
         return result
     except Exception as e:
@@ -277,6 +565,7 @@ class ImmuneState:
         self.transition_count = 0
         self.last_transition: str | None = None
         self.worker_pid: int | None = None
+        self.quarantine_events: list[dict[str, Any]] = []  # Audit trail for quarantine transitions
 
     def refresh_from_disk(self) -> None:
         data = read_provider_conf(self.conf_path)
@@ -349,7 +638,13 @@ def decision_loop(
     once: bool,
     pg_config: dict | None,
     webhook: str | None,
+    breaker: CircuitBreaker | None = None,
 ) -> None:
+    # Initialize circuit breaker from OPA recovery_map (single source of truth)
+    if breaker is None:
+        recovery = get_authoritative_recovery_map(opa_endpoint)
+        breaker = CircuitBreaker.from_recovery_map(recovery) if recovery else CircuitBreaker()
+
     log.info(
         "Immune daemon started | conf=%s | opa=%s | poll=%.3fs | dry_run=%s | once=%s",
         state.conf_path,
@@ -358,6 +653,14 @@ def decision_loop(
         dry_run,
         once,
     )
+    log.info(
+        "CircuitBreaker initialized | max_retries=%d | timeout_window=%.0fs | "
+        "quarantine_delay=%.1fs | safe_mode_cipher=%s",
+        breaker.max_retries,
+        breaker.timeout_window,
+        breaker.quarantine_delay_sec,
+        breaker.safe_mode_cipher,
+    )
 
     while True:
         state.refresh_from_disk()
@@ -365,13 +668,23 @@ def decision_loop(
         verdict = query_opa(opa_endpoint, cbom)
 
         if verdict is None:
+            # ── OPA unreachable / empty / malformed → Circuit Breaker path ──
             state.consecutive_opa_failures += 1
-            log.warning(
-                "OPA unreachable (%d/%d)",
-                state.consecutive_opa_failures,
-                fail_secure_threshold,
-            )
-            if state.consecutive_opa_failures >= fail_secure_threshold:
+            tripped = breaker.record_failure()
+
+            if tripped:
+                # Max retries exhausted → terminal collapse
+                log.critical(
+                    "CIRCUIT BREAKER TRIPPED: %d failures in %ds window. "
+                    "Escalating to terminal vein collapse.",
+                    breaker.max_retries,
+                    int(breaker.timeout_window),
+                )
+                notify_amara("CIRCUIT_BREAKER_TRIPPED", {
+                    "active_kem": state.active_kem,
+                    "failure_count": breaker.failure_count,
+                    "breaker_state": breaker.state,
+                })
                 fallback = next_fallback(state.active_kem)
                 if fallback == "NONE":
                     log.critical(
@@ -385,21 +698,91 @@ def decision_loop(
                     execute_collapse(
                         state,
                         fallback,
-                        [{"algorithm": state.active_kem, "status": "TOXIC", "reason": "OPA unreachable"}],
+                        [{"algorithm": state.active_kem, "status": "TOXIC", "reason": "Circuit breaker tripped — OPA unreachable"}],
                         dry_run,
                         pg_config,
                         webhook,
                     )
-        else:
-            state.consecutive_opa_failures = 0
-            status = verdict.get("node_status", "COMPLIANT")
-            findings = list(verdict.get("findings") or [])
-            recommended = verdict.get("recommended_fallback", "NONE")
+            else:
+                # Not tripped yet → enter quarantine, apply safe-mode cipher, wait
+                log.warning(
+                    "OPA unreachable (%d/%d) — entering QUARANTINE",
+                    breaker.failure_count,
+                    breaker.max_retries,
+                )
+                enter_quarantine_mode(state, breaker, dry_run)
+                state.quarantine_events.append({
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "attempt": breaker.failure_count,
+                    "max_retries": breaker.max_retries,
+                    "safe_mode_cipher": breaker.safe_mode_cipher,
+                })
+                notify_amara("QUARANTINE_ENTERED", {
+                    "active_kem": state.active_kem,
+                    "attempt": breaker.failure_count,
+                    "max_retries": breaker.max_retries,
+                    "safe_mode_cipher": breaker.safe_mode_cipher,
+                })
 
-            if status == "TOXIC":
+                if not once:
+                    time.sleep(breaker.quarantine_delay_sec)
+                    continue  # Retry immediately after quarantine delay
+
+        else:
+            # ── OPA reachable → evaluate verdict ──
+            state.consecutive_opa_failures = 0
+            status = verdict.get("node_status")
+            findings = list(verdict.get("findings") or [])
+            recommended = verdict.get("recommended_fallback")
+
+            if status == "COMPLIANT":
+                if breaker.state == "QUARANTINE":
+                    # Self-healing: recovered from transient failure
+                    log.info(
+                        "RECOVERY: OPA returned COMPLIANT after quarantine. "
+                        "Resuming ACTIVE posture | kem=%s",
+                        state.active_kem,
+                    )
+                    notify_amara("QUARANTINE_RECOVERED", {
+                        "active_kem": state.active_kem,
+                        "pre_quarantine_kem": breaker.pre_quarantine_kem,
+                        "quarantine_attempts": len(state.quarantine_events),
+                    })
+                breaker.reset()
+                log.debug("COMPLIANT | active_kem=%s", state.active_kem)
+            elif status == "TOXIC":
+                # Cryptographic threat → immediate collapse (no quarantine)
+                breaker.reset()  # Clear transient state — this is a real threat
+                if not recommended or recommended == "NONE":
+                    recommended = next_fallback(state.active_kem)
                 execute_collapse(state, recommended, findings, dry_run, pg_config, webhook)
             else:
-                log.debug("COMPLIANT | active_kem=%s", state.active_kem)
+                # Unknown/untrusted status → route through circuit breaker
+                log.warning(
+                    "Non-compliant/untrusted node_status %r from OPA — routing through circuit breaker",
+                    status,
+                )
+                tripped = breaker.record_failure()
+                if tripped:
+                    log.critical(
+                        "CIRCUIT BREAKER TRIPPED on untrusted status %r. Terminal collapse.",
+                        status,
+                    )
+                    fallback = recommended if (recommended and recommended != "NONE") else next_fallback(state.active_kem)
+                    fail_findings = findings if findings else [
+                        {"algorithm": state.active_kem, "status": "TOXIC", "reason": f"Untrusted node_status: {status}"}
+                    ]
+                    execute_collapse(state, fallback, fail_findings, dry_run, pg_config, webhook)
+                else:
+                    enter_quarantine_mode(state, breaker, dry_run)
+                    state.quarantine_events.append({
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "attempt": breaker.failure_count,
+                        "reason": f"Untrusted node_status: {status}",
+                    })
+                    if not once:
+                        time.sleep(breaker.quarantine_delay_sec)
+                        continue
 
         if once:
             log.info("--once complete — exiting")

@@ -1,0 +1,89 @@
+# QuantumFlex Truth Log — Provenance Record for Hash-Based Signature Watch
+# ==============================================================================
+# Rule: Freeze the claim. Never promote paper claims to QuantumFlex measurements.
+# Epistemic state: EXTERNAL_CLAIM (local_validation: NULL).
+# Gatekeeper input: NO_INPUT until four real artifacts exist and pass Podman chamber.
+# ==============================================================================
+
+paper_id: "IACR-2025-2236"
+title: "Extending the SPHINCS+ Framework: Varying the Tree Heights and Chain Lengths"
+authors:
+  - "Zhen Qin (UCAS / State Key Lab of Cryptology)"
+  - "Siwei Sun (UCAS / State Key Lab of Cryptology)"
+  - "Fangyu Zheng (UCAS / State Key Lab of Cryptology)"
+publication_info: "Major revision of an IACR publication in ASIACRYPT 2026, rev 2026-09-06"
+
+candidate_identity:
+  canonical_local_id: "CEDRUS+C-128s-5684"
+  paper_aliases:
+    - "Table1[0x06]"
+    - "Table24[0x04]"
+    - "Table19[0x05]"
+  excluded:
+    - "Table23[0x06]"  # CRITICAL: 192-bit fast set (n=24, h=65, d=19, 30268 B) — DO NOT USE
+
+status: "EXTERNAL_CLAIM"
+local_validation: "NULL"
+
+baseline:
+  scheme: "SPHINCS+C-128s"
+  signature_bytes: 6304
+  pk_bytes: 32
+  sk_bytes: 64
+
+candidate:
+  signature_bytes: 5684
+  derived_reduction: "9.835%"
+  derivation_formula: "1 - (5684 / 6304) = 0.0983502538..."
+  derivation_label: "derived_from_published_sizes"
+
+published_metrics:
+  signing_hash_calls: 4207118  # Exact published figure; DO NOT ROUND to 4210000
+  verification_hash_calls: 5745 # ~55% reduction vs SPHINCS+C-128s (12,766)
+  target_classical_bitsec: 128
+
+parameters:
+  n: 16
+  total_h: 66
+  d: 10
+  fors_params:
+    k: 10
+    a: 12
+    a_prime: 17
+  wots_chains: 19
+  chain_lengths: "[64]^9 x [128]^10"
+  wots_counter_grind_zb: 4
+  pk_bytes: 32
+  sk_bytes: 64
+
+per_layer_parameters:
+  h_i: "NULL"  # Unresolved in paper Table 23; only total h, d published
+
+maximum_signatures_per_key:
+  h: 66  # Unchanged from SPHINCS+C-128s; not a reduced 2^24 Fluhrer-Dang set
+
+tradeoff_profile:
+  size: "5684 B (-620 B vs baseline 6304 B, -9.835%)"
+  signing_penalty: "~1.99x sign hashes (4,207,118 vs 2,110,892)"
+  verification_win: "~0.45x verify hashes (5,745 vs 12,766)"
+  suitability:
+    verify_heavy_admission: "Candidate for high-frequency OPA bundle verification"
+    sign_heavy_edge_daemon: "REJECT (excessive signer grind; use baseline or SLH-DSA)"
+
+operational_gates:
+  hertzbleed_mitigation:
+    status: "REQUIRED_BEFORE_TIMING"
+    workaround: "Performance governor + pin min=max freq + disable turbo/boost"
+    note: "Mitigates measurement confounding; does not claim hardware immunity"
+  mock_vector_policy: "BLOCKED (No synthetic mock failover in telemetry paths)"
+  artifact_preflight: "HARD_STOP_ON_MISSING"
+
+preflight_artifacts:
+  bundle_path: "BUNDLE_PATH"
+  sig_path: "SIG_PATH"
+  pubkey_path: "PUBKEY_PATH"
+  verifier_bin: "VERIFIER_BIN"
+
+gatekeeper_state:
+  status: "NO_INPUT"
+  reason: "No independently verified verifier binary on disk; Y = {Y_latency: NULL, Y_RSS: NULL, Y_correctness: NULL}"

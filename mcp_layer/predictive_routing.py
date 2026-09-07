@@ -20,9 +20,11 @@ Mathematical Model:
         → RESTORE (cpu-shares 1024)
 """
 
+import os
 import re
 import subprocess
 import logging
+import psycopg2
 from pathlib import Path
 from dotenv import load_dotenv
 

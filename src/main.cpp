@@ -27,12 +27,43 @@ namespace {
     }
 } // namespace
 
-auto main() -> int {
+auto main(int argc, char* argv[]) -> int {
+    // 1. Parse CLI arguments before touching SQLite, PKI load, or bind()
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "--help" || arg == "-h") {
+            std::cout << "Usage: quantum_flex_engine [OPTIONS]\n\n"
+                      << "Options:\n"
+                      << "  -h, --help    Print this help menu and exit.\n\n"
+                      << "Environment Variables:\n"
+                      << "  QF_DATA_DIR           Required. Path to state, PKI, and database directory.\n"
+                      << "  QF_BIND_ADDRESS       IP address to bind mTLS IPC server (default: 127.0.0.1).\n"
+                      << "  QF_BIND_PORT          TCP port for mTLS IPC server (default: 9443).\n"
+                      << "  QF_POSTGRES_CONNINFO  Optional PostgreSQL connection string.\n"
+                      << "  QF_SERVER_CERT        Path to server certificate (default: $QF_DATA_DIR/mtls/qf_server.crt).\n"
+                      << "  QF_SERVER_KEY         Path to server private key (default: $QF_DATA_DIR/mtls/qf_server.key).\n"
+                      << "  QF_ROOT_CA            Path to root CA certificate (default: $QF_DATA_DIR/mtls/qf_root_ca.pem).\n";
+            return 0;
+        } else {
+            std::cerr << "quantum_flex_engine: unrecognized option '" << arg << "'\n"
+                      << "Try 'quantum_flex_engine --help' for more information.\n";
+            return 2;
+        }
+    }
+
     // Flush every write immediately. Under systemd, stdout isn't a TTY, so
     // glibc fully-buffers it by default — without this, log lines (including
     // the shutdown sequence) wouldn't appear until the buffer filled or the
     // process exited, making `journalctl`/log-tailing misleading.
     std::cout << std::unitbuf;
+
+    // 2. Resolve QF_DATA_DIR or fail closed
+    const char* env_data_dir = std::getenv("QF_DATA_DIR");
+    if (env_data_dir == nullptr || *env_data_dir == '\0') {
+        std::cerr << "[FATAL] QF_DATA_DIR environment variable is not set. Fail-closed.\n";
+        return 1;
+    }
+    const std::string data_dir = env_data_dir;
 
     // Catch both terminal exits (SIGINT) and systemd shutdown calls (SIGTERM).
     // std::signal() on glibc installs handlers with SA_RESTART, which would
@@ -48,7 +79,6 @@ auto main() -> int {
     sigaction(SIGTERM, &shutdown_action, nullptr);
 
     quantumflex::node::LocalNode daemon;
-    const std::string data_dir = environment_value("QF_DATA_DIR", "/home/USERNAME/quantum-flex/data");
     const std::string postgres_conninfo = environment_value("QF_POSTGRES_CONNINFO", "");
 
     std::cout << "[*] Booting Quantum Flex Engine...\n";

@@ -17,6 +17,7 @@ Hash Penalty: 5000 (guarantees instant breach regardless of other vectors)
 import subprocess
 import psycopg2
 import math
+import hashlib
 import json
 import requests
 import secrets
@@ -193,6 +194,35 @@ def query_integrity_registry(current_digest):
         return conn, HASH_PENALTY_VALUE
 
 
+def anchor_to_hardware_tpm(block_hash_hex: str) -> bool:
+    """
+    Anchors the committed block_hash into Pluton TPM 2.0:
+    1. Writes the 32-byte root hash into NVRAM index 0x1c00010.
+    2. Extends PCR 15 with sha256=<block_hash_hex>.
+    """
+    if not isinstance(block_hash_hex, str) or len(block_hash_hex) != 64:
+        print("[SENTINEL] TPM anchor skipped: invalid block_hash")
+        return False
+    try:
+        raw = bytes.fromhex(block_hash_hex)
+    except ValueError:
+        print("[SENTINEL] TPM anchor skipped: non-hex block_hash")
+        return False
+    try:
+        subprocess.run(
+            ["tpm2_nvwrite", "-C", "o", "-i", "-", "0x1c00010"],
+            input=raw, check=True, capture_output=True, timeout=5,
+        )
+        subprocess.run(
+            ["tpm2_pcrextend", f"15:sha256={block_hash_hex}"],
+            check=True, capture_output=True, timeout=5,
+        )
+        return True
+    except Exception as e:
+        print(f"[SENTINEL] TPM hardware anchor warning: {e}")
+        return False
+
+
 def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
     """Commits the telemetry vector and drive calculation to the unified state-bus."""
     try:
@@ -215,14 +245,25 @@ def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
     try:
         sconn = psycopg2.connect(**DB_SENTINEL)
         scur = sconn.cursor()
+        
+        scur.execute("SELECT block_hash FROM sentinel_ledger ORDER BY id DESC LIMIT 1")
+        row = scur.fetchone()
+        previous_hash = row[0] if row and row[0] else "0" * 64
+        
+        data_str = f"{previous_hash}{ram:.1f}{cpu:.2f}{io:.2f}{hash_penalty:.0f}{drive:.2f}{status}"
+        block_hash = hashlib.sha256(data_str.encode('utf-8')).hexdigest()
+        
         scur.execute(
-            """INSERT INTO sentinel_ledger (cpu_usage, mem_usage, io_wait, hash_penalty, drive_score, status)
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (cpu, ram, io, hash_penalty, drive, status),
+            """INSERT INTO sentinel_ledger (cpu_usage, mem_usage, io_wait, hash_penalty, drive_score, status, previous_hash, block_hash)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (cpu, ram, io, hash_penalty, drive, status, previous_hash, block_hash),
         )
         sconn.commit()
         scur.close()
         sconn.close()
+        
+        # Anchor committed ledger block into Pluton TPM
+        anchor_to_hardware_tpm(block_hash)
     except Exception as e:
         print(f"[SENTINEL] Failed to commit to sentinel_ledger: {e}")
 

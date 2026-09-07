@@ -61,6 +61,11 @@ install -m 0644 "$TMP_DIR/server.crt" "$MTLS_DIR/server.crt"
 install -m 0600 "$TMP_DIR/client.key" "$MTLS_DIR/client.key"
 install -m 0644 "$TMP_DIR/client.crt" "$MTLS_DIR/client.crt"
 
+# Create compatibility symlinks for default filenames expected by src/main.cpp
+ln -sf "server.crt" "$MTLS_DIR/qf_server.crt"
+ln -sf "server.key" "$MTLS_DIR/qf_server.key"
+ln -sf "ca.crt" "$MTLS_DIR/qf_root_ca.pem" 
+
 openssl verify -purpose sslserver -CAfile "$MTLS_DIR/ca.crt" "$MTLS_DIR/server.crt"
 openssl verify -purpose sslclient -CAfile "$MTLS_DIR/ca.crt" "$MTLS_DIR/client.crt"
 echo "[+] mTLS PKI generated in $MTLS_DIR"

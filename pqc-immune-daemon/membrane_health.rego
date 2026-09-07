@@ -123,6 +123,18 @@ fallback_map := {
     "FrodoKEM-640-AES": "X25519",
     "FrodoKEM-976-AES": "X25519",
     "FrodoKEM-1344-AES": "X25519",
+    "X25519": "NONE",
+}
+
+# ── Recovery Map (Self-Healing / Quarantine Parameters) ──────────
+# Authoritative recovery parameters for the circuit breaker / quarantine state.
+# The Python daemon reads these values — they are NEVER hardcoded in the binary.
+recovery_map := {
+    "max_retries": 3,
+    "timeout_window_sec": 60,
+    "quarantine_delay_ms": 5000,
+    "safe_mode_cipher": "FrodoKEM-976-AES",
+    "quarantine_action": "isolate_and_hold",
 }
 
 active_kems contains algo if {

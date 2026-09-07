@@ -1,5 +1,8 @@
 #include "quantum-flex/ipc_server.hpp"
 #include "quantum-flex/local_node.hpp"
+#include "quantum-flex/crypto_shamir.hpp"
+#include "quantum-flex/hybrid_kem.hpp"
+#include "quantum-flex/wire_framing.hpp"
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -18,8 +21,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "quantum-flex/crypto_shamir.hpp"
 
 #include <openssl/crypto.h>
 
@@ -67,7 +68,7 @@ namespace {
     }
 
     void ssl_write_str(SSL* ssl, const std::string& msg) {
-        static_cast<void>(SSL_write(ssl, msg.c_str(), msg.length()));
+        static_cast<void>(SSL_write(ssl, msg.c_str(), static_cast<int>(msg.length())));
     }
 
     // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -159,6 +160,7 @@ namespace quantumflex::ipc {
         : port_(port), cert_file_(cert_file), key_file_(key_file), ca_file_(ca_file), bind_address_(std::move(bind_address)), node_(target_node), sentinel_(std::make_unique<security::EwmaLifSentinel>(node_, lif_config)) {
         SSL_load_error_strings();
         OpenSSL_add_ssl_algorithms();
+        initialize_hybrid_keypair();
     }
 
     IpcServer::~IpcServer() {
@@ -167,6 +169,77 @@ namespace quantumflex::ipc {
             SSL_CTX_free(ssl_ctx_);
         }
         EVP_cleanup();
+    }
+
+    void IpcServer::initialize_hybrid_keypair() {
+        if (!hybrid_keypair_) {
+            hybrid_keypair_ = std::make_unique<crypto::HybridKeyPair>(crypto::HybridKemEngine::generate_keypair());
+        }
+    }
+
+    auto IpcServer::has_hybrid_keypair() const -> bool {
+        return hybrid_keypair_ != nullptr;
+    }
+
+    auto IpcServer::get_hybrid_public_key() const -> const crypto::HybridPublicKey& {
+        if (!hybrid_keypair_) {
+            throw std::runtime_error("IpcServer::get_hybrid_public_key: keypair uninitialized");
+        }
+        return hybrid_keypair_->public_key;
+    }
+
+    void IpcServer::send_framed_chunks(uint8_t msg_type, const std::vector<uint8_t>& payload, SSL* ssl) {
+        auto frames = wire::fragment_payload(msg_type, payload, wire::MAX_CHUNK_PAYLOAD);
+        for (const auto& frame : frames) {
+            static_cast<void>(SSL_write(ssl, frame.data(), static_cast<int>(frame.size())));
+        }
+    }
+
+    void IpcServer::handle_framed_message(const wire::ReassembledMessage& msg, SSL* ssl) {
+        if (!hybrid_keypair_) {
+            initialize_hybrid_keypair();
+        }
+
+        if (msg.msg_type == wire::MSG_KEM_PK) {
+            // Client requests our Hybrid Public Key
+            auto pk_wire = hybrid_keypair_->public_key.serialize();
+            send_framed_chunks(wire::MSG_KEM_PK, pk_wire, ssl);
+            if (sentinel_) {
+                sentinel_->record_success();
+            }
+        } else if (msg.msg_type == wire::MSG_KEM_CT) {
+            // Client submits encapsulated Hybrid Ciphertext
+            try {
+                auto ct = crypto::HybridCiphertext::deserialize(msg.payload.data(), msg.payload.size());
+                std::vector<uint8_t> ss;
+                bool ok = crypto::HybridKemEngine::decapsulate_constant_time(
+                    ct, hybrid_keypair_->private_key, hybrid_keypair_->public_key, ss
+                );
+
+                if (ok) {
+                    if (sentinel_) {
+                        sentinel_->record_success();
+                    }
+                    send_framed_chunks(wire::MSG_KEM_ACK, ss, ssl);
+                } else {
+                    if (sentinel_) {
+                        sentinel_->record_drop(); // Route perturbation into Ghost Node entropy sink
+                    }
+                    send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
+                }
+                OPENSSL_cleanse(ss.data(), ss.size());
+            } catch (const std::exception& e) {
+                if (sentinel_) {
+                    sentinel_->record_drop();
+                }
+                send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
+            }
+        } else {
+            if (sentinel_) {
+                sentinel_->record_drop();
+            }
+            send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
+        }
     }
 
     void IpcServer::configure_ssl_context() {
@@ -256,13 +329,13 @@ namespace quantumflex::ipc {
             }
             SSL_free(ssl);
             close(client_fd);
-            return true; // Return true to keep the loop going for the next connection
+            return true;
         }
 
-        // Read the telemetry payload
+        // Read the initial wire frame / command
         constexpr std::size_t MAX_BUFFER_SIZE = 4096;
-        std::vector<char> buffer(MAX_BUFFER_SIZE, '\0');
-        const int bytes_read = SSL_read(ssl, buffer.data(), buffer.size() - 1);
+        std::vector<uint8_t> buffer(MAX_BUFFER_SIZE, 0);
+        int bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
         
         if (bytes_read <= 0) {
             if (sentinel_) {
@@ -273,7 +346,39 @@ namespace quantumflex::ipc {
             return true;
         }
 
-        std::string stream(buffer.data(), static_cast<std::size_t>(bytes_read));
+        // ── Branch 1: QFXK Binary Framed Wire Protocol ──────────────────────
+        if (bytes_read >= static_cast<int>(wire::FRAME_HEADER_SIZE)) {
+            auto hdr = wire::parse_frame_header(buffer.data(), static_cast<std::size_t>(bytes_read));
+            if (hdr.has_value() && hdr->magic == wire::QFXK_MAGIC) {
+                const std::string session_id = "fd_" + std::to_string(client_fd);
+                wire::ReassembledMessage assembled_msg;
+                auto status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
+
+                while (status == wire::ReassemblyStatus::IN_PROGRESS) {
+                    bytes_read = SSL_read(ssl, buffer.data(), static_cast<int>(buffer.size()));
+                    if (bytes_read <= 0) break;
+                    status = reassembly_mgr_.ingest_chunk(session_id, buffer.data(), static_cast<std::size_t>(bytes_read), assembled_msg);
+                }
+
+                if (status == wire::ReassemblyStatus::COMPLETE) {
+                    handle_framed_message(assembled_msg, ssl);
+                } else {
+                    if (sentinel_) {
+                        sentinel_->record_drop();
+                    }
+                    send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
+                }
+
+                OPENSSL_cleanse(buffer.data(), buffer.size());
+                SSL_shutdown(ssl);
+                SSL_free(ssl);
+                close(client_fd);
+                return true;
+            }
+        }
+
+        // ── Branch 2: Legacy Line-Based Protocol ────────────────────────────
+        std::string stream(reinterpret_cast<const char*>(buffer.data()), static_cast<std::size_t>(bytes_read));
 
         if (node_.get_state() == quantumflex::node::SystemState::UNINITIALIZED) {
             const std::string init_prefix = "INIT|";
@@ -332,9 +437,6 @@ namespace quantumflex::ipc {
             handle_active_telemetry(stream, ssl, node_, *sentinel_);
         }
 
-        // Cleanse the raw wire buffer — for INIT|/UNLOCK| it still holds the
-        // hex-encoded shard text even after the decoded SecretShards above
-        // have been cleansed.
         OPENSSL_cleanse(buffer.data(), buffer.size());
         if (!stream.empty()) {
             OPENSSL_cleanse(stream.data(), stream.size());

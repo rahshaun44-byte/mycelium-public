@@ -15,15 +15,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
-load_dotenv(Path.home() / ".config" / "qflex" / "secrets" / ".env")
+env_path = Path.home() / ".config" / "qflex" / "secrets" / ".env"
+if not env_path.exists():
+    env_path = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(env_path)
 
 # Superuser connection (must be able to DELETE from memory_logs)
 DB_CONFIG = {
-    "dbname": "telemetry",
-    "user": os.environ["DB_USER"],
-    "password": os.environ["DB_PASSWORD"],
-    "host": os.environ["DB_HOST"],
-    "port": os.environ["DB_PORT"],
+    "dbname": os.environ.get("DB_NAME", "telemetry"),
+    "user": os.environ.get("DB_USER", os.environ.get("GHOSTNODE_DB_USER", "ghostnode")),
+    "password": os.environ.get("DB_PASSWORD", os.environ.get("GHOSTNODE_DB_PASSWORD", "")),
+    "host": os.environ.get("DB_HOST", "127.0.0.1"),
+    "port": os.environ.get("DB_PORT", "5432"),
 }
 
 RETENTION_DAYS = 7
