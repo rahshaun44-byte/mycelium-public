@@ -1,6 +1,14 @@
+#!/usr/bin/env python3
+import os
 import socket
+from pathlib import Path
+from dotenv import load_dotenv
 
-def test_http_head(host, port, path, desc):
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+TAILNET_IP = os.environ.get("TAILNET_IP", "100.64.1.17")
+
+def test_http_get(host, port, path, desc):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.0)
@@ -20,15 +28,15 @@ print("==================================================================")
 
 endpoints = [
     ("127.0.0.1", 9000, "/sse", "MCP SSE (Local)"),
-    ("100.64.1.29", 9000, "/sse", "MCP SSE (Tailscale Mesh)"),
+    (TAILNET_IP, 9000, "/sse", "MCP SSE (Tailscale Mesh)"),
     ("127.0.0.1", 8000, "/", "AMARA Dashboard (Local)"),
-    ("100.64.1.29", 8000, "/", "AMARA Dashboard (Tailscale)"),
-    ("100.64.1.29", 8000, "/api/telemetry", "AMARA Telemetry API (Tailscale)"),
-    ("100.64.1.29", 8080, "/status", "API Gateway (Tailscale)"),
+    (TAILNET_IP, 8000, "/", "AMARA Dashboard (Tailscale)"),
+    (TAILNET_IP, 8000, "/api/telemetry", "AMARA Telemetry API (Tailscale)"),
+    (TAILNET_IP, 8080, "/status", "API Gateway (Tailscale)"),
     ("127.0.0.1", 8001, "/health", "Athena RAG Node (Local)"),
 ]
 
 for host, port, path, desc in endpoints:
-    test_http_head(host, port, path, desc)
+    test_http_get(host, port, path, desc)
 
 print("==================================================================")

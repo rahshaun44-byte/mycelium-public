@@ -7,6 +7,7 @@ Port: 8005 (127.0.0.1 loopback & Tailscale mesh accessible)
 """
 
 import os
+import subprocess
 import sys
 import gc
 import json
@@ -21,6 +22,13 @@ from pydantic import BaseModel
 import urllib.request
 import urllib.error
 
+try:
+    import psycopg2
+    import psycopg2.extras
+    PG_AVAILABLE = True
+except ImportError:
+    PG_AVAILABLE = False
+
 # Add parent directory for imports
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
@@ -33,6 +41,15 @@ EMBED_MODEL     = os.environ.get("EMBED_MODEL", "nomic-embed-text")
 CHAT_MODEL      = os.environ.get("ATHENA_MODEL", "athena:latest")
 MAX_VECTORS     = 50_000
 TOP_K_RESULTS   = 4
+
+PG_CONFIG = {
+    "host": os.environ.get("DB_HOST", "127.0.0.1"),
+    "port": int(os.environ.get("DB_PORT", 5432)),
+    "dbname": os.environ.get("DB_NAME", "telemetry"),
+    "user": os.environ.get("DB_USER", os.environ.get("GHOSTNODE_DB_USER", "ghostnode")),
+    "password": os.environ.get("DB_PASSWORD", os.environ.get("GHOSTNODE_DB_PASSWORD", "")),
+    "connect_timeout": 2,
+}
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -68,6 +85,107 @@ class IngestRequest(BaseModel):
     text: str
     source: str = "manual"
     metadata: dict = {}
+
+# ── Live Telemetry Helper ─────────────────────────────────────────────────────
+def read_tpm_nv_root() -> str | None:
+    try:
+        res = subprocess.run(
+            ["tpm2_nvread", "-C", "o", "-s", "32", "0x1c00010"],
+            capture_output=True,
+            timeout=2,
+        )
+    except Exception:
+        return None
+    if res.returncode != 0 or len(res.stdout) != 32:
+        return None
+    return res.stdout.hex()
+
+
+
+def get_live_telemetry_summary() -> str:
+    if not PG_AVAILABLE:
+        return "Live telemetry unavailable (PostgreSQL adapter missing)."
+    try:
+        conn = psycopg2.connect(**PG_CONFIG)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        cur.execute("SELECT * FROM sentinel_ledger ORDER BY id DESC LIMIT 1")
+        drive_row = cur.fetchone()
+        
+        cur.execute("SELECT * FROM integrity_registry LIMIT 1")
+        integrity_row = cur.fetchone()
+        
+        cur.execute("SELECT * FROM telemetry_log ORDER BY timestamp DESC LIMIT 1")
+        vitals_row = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        lines = []
+        if vitals_row and vitals_row.get('timestamp'):
+            ts = vitals_row.get('timestamp')
+            if isinstance(ts, str):
+                try:
+                    # Handle basic ISO formats
+                    ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                except:
+                    pass
+            if isinstance(ts, datetime):
+                from datetime import timezone
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                now = datetime.now(timezone.utc)
+                age = (now - ts).total_seconds()
+                freshness = "LIVE" if age < 30 else "STALE" if age <= 120 else "UNAVAILABLE"
+                lines.append(f"Telemetry timestamp: {ts.strftime('%Y-%m-%d %H:%M:%S %Z').strip()}")
+                lines.append(f"Telemetry age: {int(age)} seconds ({freshness})")
+                lines.append("")
+
+        if drive_row:
+            lines.append("Drive Score:")
+            lines.append(f"  Value: {drive_row.get('drive_score')}")
+            lines.append("  Definition: Sentinel's calculated Euclidean distance from baseline")
+            lines.append("  Units: dimensionless")
+            lines.append(f"  Interpretation: lower is better (optimal < 1000, max tolerance 1500). Current status: {drive_row.get('status')}")
+            lines.append("")
+            
+            lines.append("Integrity Provenance:")
+            b_hash = drive_row.get('block_hash') or 'UNVERIFIED'
+            p_hash = drive_row.get('previous_hash') or 'UNVERIFIED'
+            b_hash_disp = b_hash[:16] + "..." if len(b_hash) > 16 else b_hash
+            p_hash_disp = p_hash[:16] + "..." if len(p_hash) > 16 else p_hash
+            lines.append(f"  Block Hash: {b_hash_disp}")
+            lines.append(f"  Previous Block: {p_hash_disp}")
+            lines.append(f"  Ledger Status: {'Tamper-Evident Hash Chain Verified' if b_hash != 'UNVERIFIED' else 'Unverified / Legacy Record'}")
+            
+            nv_root = read_tpm_nv_root()
+            tip = (b_hash or "").strip().lower()
+            if nv_root is None:
+                lines.append("  Hardware Anchor: TPM unread (device, auth, or size)")
+            elif nv_root == tip and len(tip) == 64:
+                lines.append("  Hardware Anchor: NV 0x1c00010 MATCHED")
+            else:
+                lines.append(
+                    f"  Hardware Anchor: DIVERGENCE NV={nv_root[:16]}... DB={tip[:16]}..."
+                )
+            lines.append("")
+            
+            lines.append(f"CPU Usage: {drive_row.get('cpu_usage')}%")
+            lines.append(f"RAM Usage: {drive_row.get('mem_usage')}%")
+            lines.append(f"Hash Penalty: {drive_row.get('hash_penalty')}")
+            lines.append(f"IO Wait: {drive_row.get('io_wait')}")
+        if integrity_row:
+            lines.append(f"Lockout Status: {integrity_row.get('lockout_status')} (Node: {integrity_row.get('node_id')})")
+        if vitals_row:
+            lines.append(f"System CPU Load (1m): {vitals_row.get('cpu_load_1m')}")
+            
+        if not lines:
+            return "No telemetry records found in PostgreSQL."
+            
+        return "\\n".join(lines)
+    except Exception as e:
+        log.warning(f"Failed to fetch live telemetry: {e}")
+        return f"Live telemetry unavailable (Database error: {e})"
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 @app.get("/health")
@@ -122,10 +240,20 @@ async def query_rag(req: QueryRequest):
         context = "\n\n---\n\n".join(context_blocks)
         sources = list(set(r["source"] for r in results))
 
+        live_telemetry = get_live_telemetry_summary()
+
         prompt = f"""You are A.T.H.E.N.A., the tactical vector memory and oracle of QuantumFlex.
 Answer the following query with technical precision, authoritative clarity, and strategic depth using the verified context below.
 
-CONTEXT:
+LIVE SYSTEM STATE:
+{live_telemetry}
+
+LIVE SYSTEM STATE is authoritative only for values explicitly supplied in this section.
+If a requested live metric is absent, stale, or unavailable, say so.
+Never infer, estimate, or invent a current value.
+Static documentation must not be presented as current system state.
+
+STATIC DOCUMENT CONTEXT:
 {context}
 
 QUERY:

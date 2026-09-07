@@ -5,7 +5,7 @@ Quantum Flex Mobile CLI (Termux / Samsung Galaxy S23 FE)
 Lightweight, zero-overhead mobile interface to communicate with Athena RAG,
 Amara Orchestrator, and inspect biological telemetry securely over Tailscale mesh.
 
-Target Host: 100.64.1.29 (quantumflex)
+Target Host: 100.64.1.17 (quantumflex)
 """
 
 import sys
@@ -15,7 +15,7 @@ import urllib.parse
 import urllib.error
 from datetime import datetime
 
-HOST_IP = "100.64.1.29"
+HOST_IP = "100.64.1.17"
 MCP_PORT = 9000
 DASHBOARD_PORT = 8000
 API_PORT = 8080

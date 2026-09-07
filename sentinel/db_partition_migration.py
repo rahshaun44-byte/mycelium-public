@@ -77,6 +77,8 @@ def run_migration():
             hash_penalty FLOAT,
             drive_score FLOAT,
             status VARCHAR(50),
+            previous_hash VARCHAR(64),
+            block_hash VARCHAR(64),
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id, timestamp)
         ) PARTITION BY RANGE (timestamp);

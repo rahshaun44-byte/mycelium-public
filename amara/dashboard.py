@@ -59,7 +59,7 @@ except ImportError:
 
 app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
-ATHENA_URL   = os.environ.get("ATHENA_URL", "http://127.0.0.1:8005")
+ATHENA_URL   = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
 OLLAMA_URL   = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 API_NODE_URL = os.environ.get("API_NODE_URL", "http://127.0.0.1:8080")
 
