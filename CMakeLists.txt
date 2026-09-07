@@ -52,3 +52,34 @@ target_include_directories(qf_genesis_tool PRIVATE
     ${OPENSSL_INCLUDE_DIR}
 )
 target_link_libraries(qf_genesis_tool PRIVATE OpenSSL::Crypto)
+
+# ── Test Executables ────────────────────────────────────────────────────────
+add_executable(test_hybrid_kem
+    tools/test_hybrid_kem.cpp
+    src/crypto/hybrid_kem.cpp
+)
+target_include_directories(test_hybrid_kem PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_link_libraries(test_hybrid_kem PRIVATE OpenSSL::Crypto)
+
+add_executable(test_wire_framing
+    tools/test_wire_framing.cpp
+    src/core/wire_framing.cpp
+)
+target_include_directories(test_wire_framing PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_link_libraries(test_wire_framing PRIVATE OpenSSL::Crypto)
+
+add_executable(test_wire_fuzz_negative
+    tools/test_wire_fuzz_negative.cpp
+    src/core/wire_framing.cpp
+)
+target_include_directories(test_wire_fuzz_negative PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_link_libraries(test_wire_fuzz_negative PRIVATE OpenSSL::Crypto)

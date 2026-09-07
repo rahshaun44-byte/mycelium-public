@@ -3,13 +3,13 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
   "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260907",
-  "version": 1,
+  "version": 2,
   "metadata": {
-    "timestamp": "2026-09-07T03:40:00Z",
+    "timestamp": "2026-09-07T08:20:40Z",
     "tools": [
       {
         "vendor": "QuantumFlex Security",
-        "name": "pqc-immune-daemon / cbom_generator",
+        "name": "scripts/generate_cbom.py",
         "version": "2.1.0"
       }
     ],
@@ -23,11 +23,30 @@
       "bom-ref": "device:qf-alpha-node",
       "name": "QuantumFlex Alpha Node",
       "version": "2.1.0",
-      "description": "Mobile / Edge Compute Node (Samsung Galaxy / Pixel GrapheneOS / Yoga 7)",
+      "description": "Post-Quantum Edge Compute & Mobile Sentinel Node",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7bbd174f8821764dcb1ddae8a0d33cedad06225bb9d692c4baa5ce20f1507b0b"
+        }
+      ],
       "properties": [
-        {"name": "qfx:stratum", "value": "Stratum 0 / Stratum 1"},
-        {"name": "qfx:role", "value": "Mobile Sentinel & Cryptographic Control Plane"},
-        {"name": "qfx:standards_alignment", "value": "G7/CISA 3 Sep 2026 Guidance; NIST FIPS 203/204/205"}
+        {
+          "name": "qfx:stratum",
+          "value": "Stratum 0 / Stratum 1"
+        },
+        {
+          "name": "qfx:role",
+          "value": "Mobile Sentinel & Cryptographic Control Plane"
+        },
+        {
+          "name": "qfx:standards_alignment",
+          "value": "G7/CISA 3 Sep 2026 Guidance; NIST FIPS 203/204/205"
+        },
+        {
+          "name": "qfx:openssl_version",
+          "value": "OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3.5.8 25 Aug 2026)"
+        }
       ]
     }
   },
@@ -43,288 +62,179 @@
         "algorithmProperties": {
           "primitive": "kem",
           "parameterSetIdentifier": "ML-KEM-768",
-          "securityLevel": 3,
-          "implementationPlatform": "OpenSSL 3.5.8 default provider",
-          "executionEnvironment": "software",
-          "cryptoFunctions": ["encapsulate", "decapsulate", "keygen"],
-          "classicalSecurityBits": 192,
-          "quantumSecurityBits": 128
+          "curve": null,
+          "classicalSecurityLevel": 192,
+          "nistQuantumSecurityLevel": 3
         },
         "oid": "2.16.840.1.101.3.4.4.2"
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "ACTIVE_PRIMARY"},
-        {"name": "qfx:key_size_pk_bytes", "value": "1184"},
-        {"name": "qfx:ciphertext_size_bytes", "value": "1088"},
-        {"name": "qfx:shared_secret_size_bytes", "value": "32"},
-        {"name": "qfx:fips_validation_cert", "value": "NULL"}
-      ]
+      }
     },
     {
       "type": "crypto-asset",
       "bom-ref": "crypto:kem:frodokem-976-aes",
       "name": "FrodoKEM-976-AES",
-      "version": "NIST PQC Round 3 / Standalone Matrix Engine",
-      "description": "Fallback KEM 1 / Safe-Mode Cipher (Conservative Unstructured LWE)",
+      "version": "CFRG / NIST PQC Round 3",
+      "description": "Conservative Matrix LWE Key Encapsulation Mechanism without ideal lattices",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
           "primitive": "kem",
           "parameterSetIdentifier": "FrodoKEM-976-AES",
-          "securityLevel": 3,
-          "implementationPlatform": "QuantumFlex C++20 HybridKemEngine",
-          "executionEnvironment": "software",
-          "cryptoFunctions": ["encapsulate", "decapsulate_constant_time", "keygen"],
-          "classicalSecurityBits": 192,
-          "quantumSecurityBits": 128
+          "curve": null,
+          "classicalSecurityLevel": 192,
+          "nistQuantumSecurityLevel": 3
         },
-        "oid": null
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "FALLBACK_KEM_1"},
-        {"name": "qfx:circuit_breaker_quarantine_cipher", "value": "true"},
-        {"name": "qfx:key_size_pk_bytes", "value": "15632"},
-        {"name": "qfx:ciphertext_size_bytes", "value": "15744"},
-        {"name": "qfx:shared_secret_size_bytes", "value": "32"},
-        {"name": "qfx:ntt_fault_leakage_risk", "value": "ZERO (No NTT / No twiddle factors)"},
-        {"name": "qfx:fips_validation_cert", "value": "NULL"}
-      ]
+        "oid": "1.3.6.1.4.1.22554.5.2.2"
+      }
     },
     {
       "type": "crypto-asset",
       "bom-ref": "crypto:kem:x25519",
       "name": "X25519",
       "version": "RFC 7748",
-      "description": "Fallback KEM 2 / Hybrid Component (Montgomery Curve Diffie-Hellman)",
+      "description": "Classical Diffie-Hellman Key Exchange Baseline",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
           "primitive": "key-exchange",
           "curve": "Curve25519",
-          "securityLevel": 1,
-          "implementationPlatform": "OpenSSL 3.5.8 EVP",
-          "executionEnvironment": "software",
-          "cryptoFunctions": ["key_agreement", "keygen"],
-          "classicalSecurityBits": 128,
-          "quantumSecurityBits": 0
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0
         },
         "oid": "1.3.101.110"
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "FALLBACK_KEM_2"},
-        {"name": "qfx:key_size_pk_bytes", "value": "32"},
-        {"name": "qfx:ciphertext_size_bytes", "value": "32"},
-        {"name": "qfx:hndl_quantum_threat", "value": "HIGH (Vulnerable to future CRQC)"}
-      ]
-    },
-    {
-      "type": "crypto-asset",
-      "bom-ref": "crypto:combiner:cfrg-hybrid-kem",
-      "name": "CFRG Dual-PRF Hybrid Combiner (Frodo976 + X25519)",
-      "version": "draft-irtf-cfrg-hybrid-kems",
-      "description": "Context-Bound HKDF Combiner with unconditional dual decapsulation",
-      "cryptoProperties": {
-        "assetType": "protocol",
-        "algorithmProperties": {
-          "primitive": "kdf",
-          "name": "HKDF-Extract-and-Expand-SHA256",
-          "implementationPlatform": "OpenSSL 3.5.8 EVP_KDF",
-          "executionEnvironment": "software",
-          "classicalSecurityBits": 192,
-          "quantumSecurityBits": 128
-        }
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "ACTIVE_PRIMARY_WIRE"},
-        {"name": "qfx:combined_pk_bytes", "value": "15664"},
-        {"name": "qfx:combined_ct_bytes", "value": "15776"},
-        {"name": "qfx:constant_time_oracle_elimination", "value": "ENFORCED"},
-        {"name": "qfx:hndl_mitigation", "value": "DUAL_PRIMITIVE_SOUND"}
-      ]
+      }
     },
     {
       "type": "crypto-asset",
       "bom-ref": "crypto:sig:ml-dsa-65",
       "name": "ML-DSA-65",
       "version": "NIST FIPS 204",
-      "description": "Primary active Digital Signature Algorithm (Module Lattice)",
+      "description": "Primary active Module-Lattice Digital Signature Algorithm",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
           "primitive": "signature",
           "parameterSetIdentifier": "ML-DSA-65",
-          "securityLevel": 3,
-          "implementationPlatform": "OpenSSL 3.5.8 default provider",
-          "executionEnvironment": "software",
-          "cryptoFunctions": ["sign", "verify", "keygen"],
-          "classicalSecurityBits": 192,
-          "quantumSecurityBits": 128
+          "classicalSecurityLevel": 192,
+          "nistQuantumSecurityLevel": 3
         },
         "oid": "2.16.840.1.101.3.4.3.18"
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "ACTIVE_PRIMARY"},
-        {"name": "qfx:key_size_pk_bytes", "value": "1952"},
-        {"name": "qfx:signature_size_bytes", "value": "3309"},
-        {"name": "qfx:fips_validation_cert", "value": "NULL"}
-      ]
+      }
     },
     {
       "type": "crypto-asset",
-      "bom-ref": "crypto:sig:slh-dsa-shake-128s",
-      "name": "SLH-DSA-SHAKE-128s",
+      "bom-ref": "crypto:sig:slh-dsa-128s",
+      "name": "SLH-DSA-128s",
       "version": "NIST FIPS 205",
-      "description": "Fallback Signature 1 (Stateless Hash-Based Many-Time Signature)",
+      "description": "Stateless Hash-Based Digital Signature Algorithm (Conservative Fallback)",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
           "primitive": "signature",
           "parameterSetIdentifier": "SLH-DSA-SHAKE-128s",
-          "securityLevel": 1,
-          "implementationPlatform": "OpenSSL 3.5.8 default provider",
-          "executionEnvironment": "software",
-          "cryptoFunctions": ["sign", "verify", "keygen"],
-          "classicalSecurityBits": 128,
-          "quantumSecurityBits": 128
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 1
         },
-        "oid": "2.16.840.1.101.3.4.3.26"
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "FALLBACK_SIG_1"},
-        {"name": "qfx:key_size_pk_bytes", "value": "32"},
-        {"name": "qfx:signature_size_bytes", "value": "7856"},
-        {"name": "qfx:fips_validation_cert", "value": "NULL"}
-      ]
+        "oid": "2.16.840.1.101.3.4.3.23"
+      }
     },
     {
       "type": "crypto-asset",
-      "bom-ref": "crypto:sig:cedrus-c-128s-5684",
-      "name": "CEDRUS+C-128s-5684",
-      "version": "IACR ePrint 2025/2236 (ASIACRYPT 2026 Rev)",
-      "description": "Research Watch: Inhomogeneous Hypertree/Chain Hash-Based Signature",
+      "bom-ref": "crypto:sig:ed25519",
+      "name": "Ed25519",
+      "version": "RFC 8032",
+      "description": "Classical Edwards-curve Digital Signature Algorithm Baseline",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
           "primitive": "signature",
-          "parameterSetIdentifier": "CEDRUS+C-128s-5684",
-          "securityLevel": 1,
-          "implementationPlatform": "NULL (No compiled binary on disk)",
-          "executionEnvironment": "software",
-          "cryptoFunctions": ["verify"],
-          "classicalSecurityBits": 128,
-          "quantumSecurityBits": 128
+          "curve": "edwards25519",
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0
         },
-        "oid": null
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "RESEARCH_WATCH (EXTERNAL_CLAIM)"},
-        {"name": "qfx:local_validation", "value": "NULL"},
-        {"name": "qfx:gatekeeper_input", "value": "NO_INPUT"},
-        {"name": "qfx:key_size_pk_bytes", "value": "32"},
-        {"name": "qfx:signature_size_bytes", "value": "5684"},
-        {"name": "qfx:claimed_reduction", "value": "9.835% vs SPHINCS+C-128s"},
-        {"name": "qfx:signing_hash_calls", "value": "4207118"},
-        {"name": "qfx:verification_hash_calls", "value": "5745"},
-        {"name": "qfx:banned_collision_id", "value": "Table23[0x06] (30268 B CEDRUS+C-192f)"}
-      ]
+        "oid": "1.3.101.112"
+      }
     },
     {
       "type": "crypto-asset",
-      "bom-ref": "crypto:secret-sharing:shamir-gf256",
-      "name": "Shamir's Secret Sharing over GF(256)",
-      "version": "QuantumFlex C++20 Core",
-      "description": "Decentralized Genesis/Unlock Key Shard Custody (k-of-n Threshold)",
+      "bom-ref": "crypto:sss:shamir-gf256",
+      "name": "Shamir-Secret-Sharing-GF256",
+      "version": "QuantumFlex v2.0",
+      "description": "2-of-3 Threshold Secret Sharing over Galois Field GF(256) for Master Entropy Sharding",
       "cryptoProperties": {
         "assetType": "protocol",
         "algorithmProperties": {
           "primitive": "secret-sharing",
-          "parameterSetIdentifier": "Threshold 3-of-5",
-          "implementationPlatform": "quantumflex::crypto::ShamirSecretSharing",
-          "executionEnvironment": "software"
+          "parameterSetIdentifier": "k=2, n=3",
+          "classicalSecurityLevel": 256,
+          "nistQuantumSecurityLevel": 5
         }
-      },
-      "properties": [
-        {"name": "qfx:status", "value": "ACTIVE_PRIMARY_AUTH"},
-        {"name": "qfx:threshold", "value": "3"},
-        {"name": "qfx:total_shards", "value": "5"},
-        {"name": "qfx:custody_shard_1", "value": "Pixel GrapheneOS Titan M2 Enclave"},
-        {"name": "qfx:memory_cleansing", "value": "OPENSSL_cleanse on reconstruction"}
+      }
+    },
+    {
+      "type": "file",
+      "bom-ref": "file:rego:membrane-health",
+      "name": "pqc-immune-daemon/membrane_health.rego",
+      "version": "2.1.0",
+      "description": "Open Policy Agent authoritative circuit breaker & fallback ladder policy",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "58f4980440a3a16c0dd1244106cf2b55b22710993141b24e2de4bacd1f623488"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "bom-ref": "file:conf:crypto-provider",
+      "name": "mcp_layer/crypto_provider.conf",
+      "version": "2.1.0",
+      "description": "Cryptographic provider and active algorithm mapping configuration",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "380e55cf21be0dce61e72683655788e01024ef5da9673a97207a9091cbc28706"
+        }
       ]
     }
   ],
   "services": [
     {
-      "bom-ref": "service:qfx-ipc-wire",
-      "name": "QuantumFlex mTLS IPC Wire Socket",
-      "endpoints": ["tls://127.0.0.1:9443", "tls://100.64.1.29:9443"],
+      "bom-ref": "service:wire:mtls",
+      "name": "mTLS QFXK Binary IPC Wire",
+      "endpoints": [
+        "100.64.1.29:9443",
+        "127.0.0.1:9443"
+      ],
       "authenticated": true,
-      "x-trust-boundary": true,
-      "properties": [
-        {"name": "qfx:protocol", "value": "TLS 1.3 mTLS + QFXK Binary Chunked Wire Framing"},
-        {"name": "qfx:framing_magic", "value": "0x5146584B"},
-        {"name": "qfx:mtu_chunk_payload_cap_bytes", "value": "1400"},
-        {"name": "qfx:gatekeeper_reassembly_timeout_ms", "value": "1200"},
-        {"name": "qfx:gatekeeper_max_concurrent_sessions", "value": "64"},
-        {"name": "qfx:fail_closed_entropy_sink", "value": "Ghost Node Telemetry Ledger"}
-      ]
+      "x-trust-boundary": "Tailscale WireGuard Mesh & Loopback Only"
     },
     {
-      "bom-ref": "service:opa-sidecar",
-      "name": "Open Policy Agent (OPA) Sidecar",
-      "endpoints": ["http://127.0.0.1:8181/v1/data/membrane/health/verdict"],
+      "bom-ref": "service:opa:sidecar",
+      "name": "OPA Membrane Health Policy Engine",
+      "endpoints": [
+        "127.0.0.1:8181"
+      ],
       "authenticated": false,
-      "x-trust-boundary": false,
-      "properties": [
-        {"name": "qfx:bind_scope", "value": "127.0.0.1 (Strict Loopback Only)"},
-        {"name": "qfx:policy_bundle", "value": "sentinel/policies/membrane_health.rego"},
-        {"name": "qfx:poll_interval_ms", "value": "500"},
-        {"name": "qfx:unreachable_posture", "value": "FAIL_SECURE_QUARANTINE"}
-      ]
+      "x-trust-boundary": "Strict Loopback (127.0.0.1) Only - Zero External Ingress"
     },
     {
-      "bom-ref": "service:amara-dashboard",
-      "name": "AMARA Intelligence Sync Console",
-      "endpoints": ["http://100.64.1.29:8000"],
+      "bom-ref": "service:console:amara",
+      "name": "AMARA Intelligence & Telemetry Console",
+      "endpoints": [
+        "100.64.1.29:8000"
+      ],
       "authenticated": true,
-      "x-trust-boundary": true,
-      "properties": [
-        {"name": "qfx:access_tier", "value": "Tailscale WireGuard Mesh Only"},
-        {"name": "qfx:client_node", "value": "Samsung Galaxy S23 FE / Galaxy Ultra DeX"}
-      ]
-    }
-  ],
-  "dependencies": [
-    {
-      "ref": "device:qf-alpha-node",
-      "dependsOn": [
-        "service:qfx-ipc-wire",
-        "service:opa-sidecar",
-        "service:amara-dashboard"
-      ]
+      "x-trust-boundary": "Tailscale Mesh Only"
     },
     {
-      "ref": "service:qfx-ipc-wire",
-      "dependsOn": [
-        "crypto:combiner:cfrg-hybrid-kem",
-        "crypto:kem:frodokem-976-aes",
-        "crypto:kem:x25519",
-        "crypto:secret-sharing:shamir-gf256"
-      ]
-    },
-    {
-      "ref": "service:opa-sidecar",
-      "dependsOn": [
-        "crypto:kem:ml-kem-768",
-        "crypto:sig:ml-dsa-65",
-        "crypto:kem:frodokem-976-aes",
-        "crypto:sig:slh-dsa-shake-128s"
-      ]
-    }
-  ],
-  "properties": [
-    {
-      "name": "qfx:unresolved_fields",
-      "value": "FIPS_CERT_NUMBERS=NULL, CRQC_ARRIVAL_DATE=NULL, BARE_METAL_YOGA_DVFS=NULL, CEDRUS_VERIFIER_BINARY=NULL"
+      "bom-ref": "service:api:gateway",
+      "name": "QuantumFlex API Gateway",
+      "endpoints": [
+        "100.64.1.29:8080"
+      ],
+      "authenticated": true,
+      "x-trust-boundary": "Tailscale Mesh Only"
     }
   ]
 }

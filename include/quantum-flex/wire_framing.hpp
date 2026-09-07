@@ -15,6 +15,7 @@ namespace quantumflex::wire {
     constexpr uint32_t QFXK_MAGIC               = 0x5146584B; // ASCII "QFXK"
     constexpr std::size_t FRAME_HEADER_SIZE     = 16;
     constexpr std::size_t MAX_CHUNK_PAYLOAD     = 1400;       // Safe for 1500 MTU
+    constexpr std::size_t MAX_CHUNKS_PER_MESSAGE = 64;         // Hard ceiling on frame count
     constexpr std::size_t MAX_REASSEMBLY_SESSIONS = 64;       // Bounded state ceiling
     constexpr uint32_t DEFAULT_TIMEOUT_MS       = 1200;       // Strict Gatekeeper SLA
     constexpr std::size_t MAX_MESSAGE_BYTES     = 32768;      // 32 KB max message cap
@@ -99,6 +100,7 @@ namespace quantumflex::wire {
         void drop_session(const std::string& session_id);
 
         [[nodiscard]] auto active_session_count() const -> std::size_t;
+        [[nodiscard]] auto evicted_session_count() const -> std::size_t;
 
     private:
         struct SessionContext {
@@ -114,6 +116,7 @@ namespace quantumflex::wire {
         };
 
         std::size_t max_sessions_;
+        std::size_t evicted_count_{0};
         uint32_t timeout_ms_;
         std::unordered_map<std::string, SessionContext> sessions_;
     };

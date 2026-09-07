@@ -186,7 +186,8 @@ namespace quantumflex::wire {
             return ReassemblyStatus::CHECKSUM_ERROR;
         }
 
-        if (h.total_chunks == 0 || h.seq_id >= h.total_chunks) {
+        if (h.total_chunks == 0 || h.total_chunks > MAX_CHUNKS_PER_MESSAGE || 
+            h.seq_id >= h.total_chunks || h.chunk_len > MAX_CHUNK_PAYLOAD) {
             return ReassemblyStatus::PROTOCOL_ERROR;
         }
 
@@ -199,7 +200,15 @@ namespace quantumflex::wire {
                 std::vector<std::string> purged;
                 sweep_expired_sessions(purged);
                 if (sessions_.size() >= max_sessions_) {
-                    return ReassemblyStatus::CAPACITY_EXCEEDED;
+                    // Evict the oldest session to prevent state exhaustion starvation
+                    auto oldest_it = sessions_.begin();
+                    for (auto sit = sessions_.begin(); sit != sessions_.end(); ++sit) {
+                        if (sit->second.created_at < oldest_it->second.created_at) {
+                            oldest_it = sit;
+                        }
+                    }
+                    sessions_.erase(oldest_it);
+                    evicted_count_++;
                 }
             }
 
@@ -279,6 +288,10 @@ namespace quantumflex::wire {
 
     auto GatekeeperReassemblyManager::active_session_count() const -> std::size_t {
         return sessions_.size();
+    }
+
+    auto GatekeeperReassemblyManager::evicted_session_count() const -> std::size_t {
+        return evicted_count_;
     }
 
 } // namespace quantumflex::wire
