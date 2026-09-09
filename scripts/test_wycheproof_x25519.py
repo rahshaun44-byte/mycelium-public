@@ -6,7 +6,16 @@ and fail-closed error handling against adversarial public key inputs.
 """
 
 import os
-from cryptography.hazmat.primitives.asymmetric import x25519
+import sys
+from pathlib import Path
+
+try:
+    from cryptography.hazmat.primitives.asymmetric import x25519
+except ImportError:
+    venv_py = Path.home() / '.venv/qflex/bin/python3'
+    if venv_py.exists() and sys.executable != str(venv_py):
+        os.execv(str(venv_py), [str(venv_py)] + sys.argv)
+    raise
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 

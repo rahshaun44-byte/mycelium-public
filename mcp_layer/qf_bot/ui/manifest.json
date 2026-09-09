@@ -1,18 +1,32 @@
 {
-  "name": "Quantum Flex Tactical Operations Console",
-  "short_name": "QF-Tactical",
-  "description": "Mobile Command & Tactical Operations Console for Quantum Flex",
+  "name": "QuantumFlex Sovereign HUD",
+  "short_name": "QuantumFlex",
+  "description": "Sovereign Multi-Agent Tactical Command & Mesh Telemetry HUD",
   "start_url": "/ui/",
+  "scope": "/ui/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#07090e",
-  "theme_color": "#07090e",
+  "background_color": "#080c14",
+  "theme_color": "#00f5d4",
   "icons": [
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
-  ]
+  ],
+  "categories": ["utilities", "productivity"]
 }

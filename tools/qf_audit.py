@@ -104,8 +104,8 @@ PATTERNS = {
     "MD5": re.compile(r"\bMD5\b", re.IGNORECASE),
 }
 
-IGNORE_DIRS = {".git", "node_modules", "venv", "__pycache__", ".venv", "build", "build_check", "dist"}
-IGNORE_EXTS = {".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".o", ".so", ".a", ".tar.gz", ".zip"}
+IGNORE_DIRS = {".git", "node_modules", "venv", "__pycache__", ".venv", "build", "build_check", "dist", "qf-audit-output", ".gemini", ".agents"}
+IGNORE_EXTS = {".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".o", ".so", ".a", ".tar.gz", ".zip", ".db", ".sqlite", ".sqlite3", ".log"}
 
 
 def print_banner():
@@ -139,7 +139,11 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
             for f in files:
                 ext = Path(f).suffix.lower()
                 if ext not in IGNORE_EXTS:
-                    files_to_scan.append(Path(root) / f)
+                    file_path = Path(root) / f
+                    # Skip scanner itself and test policy files containing mock test vectors
+                    if f == 'qf_audit.py' or f.endswith('_test.rego'):
+                        continue
+                    files_to_scan.append(file_path)
 
     total_files = len(files_to_scan)
     buffer_vulnerabilities = []
@@ -391,13 +395,17 @@ The following static buffer allocations were detected within the AST/source code
     if not buffers:
         md_content += "| No vulnerable static buffers detected | N/A | N/A | N/A |\n"
     else:
-        for b in buffers[:50]: # Limit to top 50 to avoid massive markdown
-            md_content += f"| `{b[file]}` | {b[line]} | `{b[size]} bytes` (Critically Undersized) | `{b[code]}` |\n"
+        for b in buffers[:50]:
+            f_val = b.get("file", "")
+            l_val = b.get("line", "")
+            s_val = b.get("size", "")
+            c_val = b.get("code", "")
+            md_content += f"| `{f_val}` | {l_val} | `{s_val} bytes` (Critically Undersized) | `{c_val}` |\n"
 
     md_content += """
 ---
 
-## 4. Required Remediation Roadmap (OMB M-26-15)"""
+## 4. Required Remediation Roadmap (OMB M-26-15)
 
 1. **Replace Asymmetric Key Encapsulation**: Any classical ECDH / RSA key exchange must implement NIST FIPS 203 ML-KEM-768 or FrodoKEM-976 hybrid wrapper.
 2. **Eliminate Hardcoded Ciphers**: Migrate all hardcoded cipher suites to runtime policy evaluation via Open Policy Agent (OPA).

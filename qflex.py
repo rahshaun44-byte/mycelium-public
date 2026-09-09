@@ -17,7 +17,13 @@ import urllib.parse
 import urllib.error
 import subprocess
 from pathlib import Path
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    venv_py = Path.home() / '.venv/qflex/bin/python3'
+    if venv_py.exists() and sys.executable != str(venv_py):
+        os.execv(str(venv_py), [str(venv_py)] + sys.argv)
+    raise
 
 # Safe console rendering for Windows
 if sys.platform == "win32":
@@ -113,6 +119,16 @@ def check_service_health():
             status_tag = f"{RED}[OFFLINE]{RESET}"
             details = f"Port :{s['port']} | Not responding"
         print(f"  {status_tag} {BOLD}{s['name']:<22}{RESET} -> {details}")
+
+    # Stratum 0 Universal Invariant Gate (R >= O)
+    try:
+        from sentinel.invariant_gate import evaluate_all_invariants
+        inv = evaluate_all_invariants(evaluator="qflex_status")
+        inv_tag = f"{GREEN}[ADMIT]{RESET}" if inv["all_allowed"] else f"{RED}[DENY]{RESET}"
+        print(f"  {inv_tag} {BOLD}{'Universal Invariant':<22}{RESET} -> Stratum 0: R >= O (Digital RAM, TPM 2.0, Water)")
+    except Exception as e:
+        print(f"  {YELLOW}[CHECK]{RESET} {BOLD}{'Universal Invariant':<22}{RESET} -> OPA sidecar (:8181) pending evaluation ({e})")
+
     print(f"{CYAN}─────────────────────────────────────────────────────────────────{RESET}\n")
 
 def cmd_ask_athena(query: str):
@@ -219,6 +235,33 @@ def cmd_wealth_status():
     else:
         print(f"{RED}[!] depin_wealth_engine.py missing.{RESET}\n")
 
+def cmd_invariant_status():
+    """Evaluates the Universal Reserve Invariant (R >= O) across Digital and Physical Strata."""
+    try:
+        from sentinel.invariant_gate import evaluate_all_invariants
+        res = evaluate_all_invariants(evaluator="qflex_hud")
+        all_ok = res["all_allowed"]
+        color = GREEN if all_ok else RED
+        print(f"\n{BOLD}{CYAN}╔═══════════════════════════════════════════════════════════════════════╗{RESET}")
+        print(f"{BOLD}{CYAN}║     QUANTUM FLEX: UNIVERSAL INVARIANT GATE (R >= O) HUD               ║{RESET}")
+        print(f"{BOLD}{CYAN}╚═══════════════════════════════════════════════════════════════════════╝{RESET}")
+        print(f"  Overall Verdict: {color}{BOLD}[{res['overall_verdict']}]{RESET}")
+        print(f"  Policy Engine  : Open Policy Agent (:8181/v1/data/quantumflex/invariant)")
+        print(f"  Audit Ledger   : PostgreSQL telemetry.invariant_audit_ledger\n")
+
+        for name, ev in res["evaluations"].items():
+            ev_col = GREEN if ev["allowed"] else RED
+            p = ev["payload"]
+            print(f"  {BOLD}▶ {name.upper()}{RESET} [{ev_col}{ev['verdict']}{RESET}]")
+            print(f"    Detail   : {ev['reason']}")
+            print(f"    Measured : {p.get('reserve_measured')} (R)")
+            print(f"    Claimed  : {p.get('units_claimed')} (O)")
+            if p.get('requested_delta'):
+                print(f"    Delta    : {p.get('requested_delta')}")
+        print(f"\n{BOLD}{CYAN}───────────────────────────────────────────────────────────────────────{RESET}\n")
+    except Exception as e:
+        print(f"{RED}[!] Failed to evaluate invariant gate: {e}{RESET}\n")
+
 def cmd_rotate_credentials():
     """Executes CSPRNG credential rotation and entropy audit."""
     rot_script = ROOT_DIR / "tools" / "rotate_credentials.py"
@@ -301,6 +344,7 @@ def interactive_hud():
         print(f"  {CYAN}[6]{RESET} Start / Restart Full Biological Stack (Systemd)")
         print(f"  {CYAN}[7]{RESET} Stop Full Biological Stack")
         print(f"  {CYAN}[8]{RESET} Backup Master Host Vault (~/QuantumFlex_Master_Vault)")
+        print(f"  {CYAN}[9]{RESET} Universal Invariant Gate (R >= O HUD)")
         print(f"  {CYAN}[0]{RESET} Exit HUD Console\n")
 
         choice = input(f"{BOLD}{MAGENTA}quantum-flex > {RESET}").strip()
@@ -334,6 +378,9 @@ def interactive_hud():
         elif choice == "8":
             cmd_backup_vault()
             input(f"{DIM}Press Enter to continue...{RESET}")
+        elif choice == "9":
+            cmd_invariant_status()
+            input(f"{DIM}Press Enter to continue...{RESET}")
         elif choice in ("0", "exit", "quit", "q"):
             print(f"\n{GREEN}QuantumFlex HUD session closed. State invariant.{RESET}\n")
             break
@@ -360,6 +407,8 @@ def main():
             print("Usage: python qflex.py claw \"<your directive>\"")
         else:
             cmd_dispatch_directive(" ".join(sys.argv[2:]))
+    elif cmd in ("invariant", "gate", "solvency", "reserve"):
+        cmd_invariant_status()
     elif cmd in ("pqc", "crypto", "kem"):
         cmd_pqc_status()
     elif cmd in ("wealth", "depin", "yield"):
@@ -384,6 +433,7 @@ Usage:
   python qflex.py status         - Check health of all biological strata
   python qflex.py ask "<query>"  - Interrogate Athena Vector Memory (athena:latest)
   python qflex.py claw "<task>"  - Decompose and queue swarm directive
+  python qflex.py invariant      - Evaluate Universal Invariant Gate (R >= O)
   python qflex.py wealth         - View Sovereign Wealth Elevation Engine
   python qflex.py pqc            - Inspect post-quantum KEM/DSA agility status
   python qflex.py n8n            - Launch n8n Autonomous Workflow Engine

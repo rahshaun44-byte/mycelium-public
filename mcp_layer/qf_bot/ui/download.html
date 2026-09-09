@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#060911">
+  <title>Download QuantumFlex Sovereign App</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060911;
+      --card: rgba(13, 20, 34, 0.9);
+      --teal: #00f5d4;
+      --teal-dim: rgba(0, 245, 212, 0.12);
+      --teal-glow: rgba(0, 245, 212, 0.25);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #e2e8f0;
+      --muted: #8295b5;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .app-icon-large {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 12px auto;
+      background: #080c14;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 28px var(--teal-glow);
+    }
+    .app-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .app-sub {
+      font-size: 0.82rem;
+      color: var(--teal);
+      font-family: var(--font-mono);
+      margin-top: 4px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+    .card-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .qr-wrapper {
+      background: #fff;
+      padding: 14px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 4px auto;
+      width: fit-content;
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.2);
+    }
+    .qr-wrapper img {
+      width: 180px;
+      height: 180px;
+      display: block;
+    }
+    .qr-caption {
+      font-size: 0.75rem;
+      color: #060911;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      margin-top: 6px;
+      text-align: center;
+    }
+    .btn-action {
+      background: var(--teal);
+      color: #000;
+      border: none;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(0, 245, 212, 0.35);
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .btn-action:active { transform: scale(0.98); }
+    .btn-secondary {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 1px solid rgba(0, 245, 212, 0.35);
+      box-shadow: none;
+    }
+    .url-chip {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .url-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .url-link {
+      color: var(--teal);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .url-link:hover { text-decoration: underline; }
+    .note-box {
+      background: rgba(255, 183, 3, 0.08);
+      border: 1px solid rgba(255, 183, 3, 0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: #ffd166;
+    }
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .step-item {
+      display: flex;
+      gap: 10px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--teal-dim);
+      color: var(--teal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .footer-nav {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .footer-nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+    }
+    .footer-nav a:hover { color: var(--teal); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="app-icon-large">
+        <svg width="40" height="40" viewBox="0 0 512 512">
+          <circle cx="256" cy="256" r="180" fill="none" stroke="#00f5d4" stroke-width="22"/>
+          <polygon points="256,110 370,330 142,330" fill="none" stroke="#00f5d4" stroke-width="20"/>
+          <circle cx="256" cy="256" r="38" fill="#00f5d4"/>
+        </svg>
+      </div>
+      <div class="app-title">QuantumFlex Mobile Download</div>
+      <div class="app-sub">Sovereign Multi-Agent HUD &bull; Mobile Client</div>
+    </div>
+
+    <!-- 1. Scan with Phone Camera -->
+    <div class="card">
+      <div class="card-title">
+        <span>📷</span>
+        <span>Quick Scan with Phone Camera</span>
+      </div>
+      <div class="card-desc">
+        Point your phone's camera at this QR code to open the HUD immediately on your local Wi-Fi:
+      </div>
+      <div class="qr-wrapper">
+        <img src="/ui/qr-wifi.svg" alt="Scan to open QuantumFlex on Wi-Fi" />
+        <div class="qr-caption">LOCAL WI-FI &bull; NO VPN NEEDED</div>
+      </div>
+    </div>
+
+    <!-- 2. Direct Standalone App Download -->
+    <div class="card">
+      <div class="card-title">
+        <span>📥</span>
+        <span>Download Standalone Mobile App</span>
+      </div>
+      <div class="card-desc">
+        Download the self-contained offline application file directly to your phone. It runs full-screen in Chrome or Samsung Internet without needing continuous server internet.
+      </div>
+      <a href="/download/app" class="btn-action" download="QuantumFlex-Mobile.html">
+        <span>⚡</span> Download QuantumFlex-Mobile.html
+      </a>
+    </div>
+
+    <!-- 3. Direct Browser Links -->
+    <div class="card">
+      <div class="card-title">
+        <span>🌐</span>
+        <span>Direct Browser Addresses</span>
+      </div>
+      <div class="url-chip">
+        <div class="url-label">
+          <span>Option 1: Local Wi-Fi (Home / Simplest)</span>
+          <span style="color:var(--teal);">Recommended</span>
+        </div>
+        <a href="http://192.168.100.12:9050/ui/" class="url-link">http://192.168.100.12:9050/ui/</a>
+      </div>
+      <div class="url-chip">
+        <div class="url-label">
+          <span>Option 2: Tailscale Mesh (Anywhere / Cellular)</span>
+          <span>Requires VPN ON</span>
+        </div>
+        <a href="http://100.64.1.17:9050/ui/" class="url-link">http://100.64.1.17:9050/ui/</a>
+      </div>
+
+      <div class="note-box">
+        ⚠️ <strong>Important:</strong> Make sure to type <code>http://</code> (not <code>https://</code>). Mobile browsers often automatically try HTTPS, which will cause a connection error.
+      </div>
+    </div>
+
+    <!-- 4. Add to Home Screen Instructions -->
+    <div class="card">
+      <div class="card-title">
+        <span>📲</span>
+        <span>Add to Home Screen (No Address Bar)</span>
+      </div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div>Open either link above in <strong>Chrome</strong> or <strong>Samsung Internet</strong>.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div><strong>On Pixel / Chrome:</strong> Tap the <strong>⋮</strong> menu (top right) &rarr; select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div><strong>On Samsung:</strong> Tap the <strong>≡</strong> menu (bottom right) &rarr; select <strong>"Add page to"</strong> &rarr; <strong>"App screen"</strong>.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div>The <strong>QuantumFlex</strong> icon will appear on your phone home screen as an independent app.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Launch Live HUD -->
+    <a href="/ui/" class="btn-action btn-secondary">
+      <span>🚀</span> Open Live QuantumFlex HUD
+    </a>
+
+    <div class="footer-nav">
+      <a href="/ui/">&larr; Live HUD</a>
+      <a href="/download/app" download="QuantumFlex-Mobile.html">Download File</a>
+    </div>
+  </div>
+</body>
+</html>
