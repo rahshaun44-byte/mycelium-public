@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:37db6d95-b3b3-45e0-9bdd-2dafdc045ae0",
+  "serialNumber": "urn:uuid:89329f89-2ce3-439f-b818-6f151bd46e54",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-09T07:23:10Z",
+    "timestamp": "2026-09-09T20:21:19Z",
     "tools": [
       {
         "vendor": "FinallyFungus LLC",
@@ -127,12 +127,12 @@
             "line": 1
           },
           {
-            "location": "docs/AFWERX_SBIR_VOLUME_2_SLIDES_1_TO_5.md",
-            "line": 2
-          },
-          {
             "location": "docs/TRUTH_LOG_MASTER.md",
             "line": 1
+          },
+          {
+            "location": "docs/CRYPTOGRAPHIC_ASSURANCE_AUDIT_REPORT.md",
+            "line": 3
           }
         ]
       }
@@ -140,8 +140,8 @@
     {
       "type": "crypto-asset",
       "name": "FrodoKEM-640-AES",
-      "version": "ISO/IEC 18033-2 / Candidate",
-      "description": "Discovered cryptographic primitive across 8 file(s). Status: FALLBACK_APPROVED.",
+      "version": "Experimental / Non-ISO (draft-longa-cfrg)",
+      "description": "Discovered cryptographic primitive across 8 file(s). Status: isolated.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -167,7 +167,7 @@
           },
           {
             "location": "pqc-immune-daemon/membrane_health.rego",
-            "line": 4
+            "line": 10
           },
           {
             "location": "pqc-immune-daemon/test_immune_daemon.py",
@@ -245,7 +245,7 @@
           },
           {
             "location": "pqc-immune-daemon/membrane_health.rego",
-            "line": 4
+            "line": 6
           },
           {
             "location": "pqc-immune-daemon/test_immune_daemon.py",

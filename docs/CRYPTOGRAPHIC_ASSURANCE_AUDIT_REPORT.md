@@ -226,6 +226,15 @@ Binary: `build/test_wire_fuzz_negative` & `scripts/test_wycheproof_x25519.py`
 - **Network Resilience:** `iptables-persistent` rules preserved in `/etc/iptables/rules.v4`.
 - **Fault Recovery:** Uncontrolled power disconnect verified to trigger automatic BIOS AC recovery and headless systemd service restoration within 45 seconds.
 
+### Workstation network posture (Yoga)
+
+On the Fedora workstation, name-discovery responders (LLMNR, mDNS/Avahi,
+WSD) were disabled, application listeners were constrained to `127.0.0.1`,
+a single LAN default was pinned to USB Ethernet, and Tailscale remained
+the mesh overlay. Physical-NIC input filtering was not independently
+probe-tested. Packet-capture proof is a private host check and is not
+part of the public artifact.
+
 ---
 
 ## Conclusion & Regulatory Demarcation

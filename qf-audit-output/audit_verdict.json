@@ -1,6 +1,15 @@
 {
   "status": "SUCCESS",
   "verdict": {
+    "active_fallback_map": {
+      "FrodoKEM-1344-AES": "X25519",
+      "FrodoKEM-640-AES": "X25519",
+      "FrodoKEM-976-AES": "X25519",
+      "ML-KEM-1024": "FrodoKEM-1344-AES",
+      "ML-KEM-512": "FrodoKEM-640-AES",
+      "ML-KEM-768": "FrodoKEM-976-AES",
+      "X25519": "NONE"
+    },
     "active_kems": [],
     "all_approved": [
       "AES-256-GCM",
@@ -30,6 +39,11 @@
       "X25519"
     ],
     "compromised_algorithms": [],
+    "deny": [],
+    "experimental_fallback_map": {
+      "FrodoKEM-640-AES": "X25519",
+      "ML-KEM-512": "FrodoKEM-640-AES"
+    },
     "fallback_approved": [
       "FrodoKEM-1344-AES",
       "FrodoKEM-640-AES",
@@ -46,6 +60,13 @@
     },
     "findings": [],
     "frodokem_compromised": false,
+    "iso_fallback_map": {
+      "FrodoKEM-1344-AES": "X25519",
+      "FrodoKEM-976-AES": "X25519",
+      "ML-KEM-1024": "FrodoKEM-1344-AES",
+      "ML-KEM-768": "FrodoKEM-976-AES",
+      "X25519": "NONE"
+    },
     "ml_kem_compromised": false,
     "node_status": "COMPLIANT",
     "quantum_safe_kem": [

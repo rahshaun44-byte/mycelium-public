@@ -92,7 +92,7 @@ def setup_logging(verbose: bool = False) -> None:
 # ── Authoritative Fallback Chain (OPA / Rego Single Source of Truth) ──
 def parse_rego_fallback_map(rego_content: str) -> dict[str, str]:
     """Extract the authoritative fallback_map defined in membrane_health.rego."""
-    match = re.search(r'fallback_map\s*:?=\s*\{([^}]+)\}', rego_content, re.DOTALL)
+    match = re.search(r'(?<![a-zA-Z0-9_])fallback_map\s*:?=\s*\{([^}]+)\}', rego_content, re.DOTALL)
     if not match:
         return {}
     body = match.group(1)

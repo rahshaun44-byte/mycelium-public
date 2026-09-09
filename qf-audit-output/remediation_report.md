@@ -2,15 +2,15 @@
 **Audited Target:** `/home/quant/pqc-immune-daemon/mycelium`  
 **Issuing Authority:** FinallyFungus LLC // QuantumFlex Audit Engine  
 **Standard:** NIST FIPS 203/204/205 • OMB Memorandum M-26-15 • CycloneDX v1.5 CBOM  
-**Date:** 2026-09-09 07:23:11Z  
-**Serial ID:** `urn:uuid:37db6d95-b3b3-45e0-9bdd-2dafdc045ae0`  
+**Date:** 2026-09-09 20:21:20Z  
+**Serial ID:** `urn:uuid:89329f89-2ce3-439f-b818-6f151bd46e54`  
 
 ---
 
 ## 1. Executive Summary
 This cryptographic assessment evaluates the software and configuration boundary against the post-quantum cryptographic standards mandated by OMB M-26-15 and NIST FIPS 203/204.
 
-- **Total Files Scanned:** 268
+- **Total Files Scanned:** 276
 - **Cryptographic Assets Discovered:** 19
 - **Post-Quantum KEM Coverage:** COMPLIANT (ML-KEM-512, ML-KEM-768, ML-KEM-1024, FrodoKEM-640-AES, FrodoKEM-976-AES, FrodoKEM-1344-AES)
 - **Legacy Classical Footprint:** 3 classical algorithm family references identified.
@@ -23,7 +23,7 @@ This cryptographic assessment evaluates the software and configuration boundary 
 | **ML-KEM-512** | PQC_KEM | NIST FIPS 203 | `APPROVED` | 13 file(s) |
 | **ML-KEM-768** | PQC_KEM | NIST FIPS 203 | `APPROVED` | 34 file(s) |
 | **ML-KEM-1024** | PQC_KEM | NIST FIPS 203 | `APPROVED` | 16 file(s) |
-| **FrodoKEM-640-AES** | PQC_KEM | ISO/IEC 18033-2 / Candidate | `FALLBACK_APPROVED` | 8 file(s) |
+| **FrodoKEM-640-AES** | PQC_KEM | Experimental / Non-ISO (draft-longa-cfrg) | `isolated` | 8 file(s) |
 | **FrodoKEM-976-AES** | PQC_KEM | ISO/IEC 18033-2 / Candidate | `FALLBACK_APPROVED` | 30 file(s) |
 | **FrodoKEM-1344-AES** | PQC_KEM | ISO/IEC 18033-2 / Candidate | `FALLBACK_APPROVED` | 7 file(s) |
 | **ML-DSA-44** | PQC_SIG | NIST FIPS 204 | `APPROVED` | 3 file(s) |

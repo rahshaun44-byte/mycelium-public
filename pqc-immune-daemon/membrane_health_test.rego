@@ -84,3 +84,21 @@ test_unapproved_algorithm_rejected if {
     v.node_status == "TOXIC"
     v.toxic_count == 2
 }
+
+# ── Test 7: ISO Strict Profile Rejects FrodoKEM-640 ──────────────
+test_iso_strict_denies_frodokem_640 if {
+    input_data := {
+        "requested_profile": "iso_strict",
+        "cipher": "FrodoKEM-640-AES"
+    }
+    denials := health.deny with input as input_data
+    denials["ISO compliance violation: FrodoKEM-640 is not an ISO standard"]
+}
+
+# ── Test 8: ISO Strict Profile Omits FrodoKEM-640 from Fallback ─
+test_iso_strict_fallback_omits_frodokem_640 if {
+    cbom := object.union(make_cbom("ML-KEM-512", "ML-DSA-44"), {"requested_profile": "iso_strict"})
+    v := health.verdict with input as cbom with data.threat_flags as {"ML_KEM_COMPROMISED": true}
+    v.node_status == "TOXIC"
+    v.recommended_fallback == "NONE"
+}

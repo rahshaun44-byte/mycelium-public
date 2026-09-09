@@ -115,6 +115,34 @@ verdict := {
 }
 
 # ── Fallback Recommendation ─────────────────────────────────────
+# Verified ISO/IEC 18033-2:2006/Amd 2:2026 Profile
+iso_fallback_map := {
+    "ML-KEM-1024": "FrodoKEM-1344-AES",
+    "ML-KEM-768": "FrodoKEM-976-AES",
+    "FrodoKEM-1344-AES": "X25519",
+    "FrodoKEM-976-AES": "X25519",
+    "X25519": "NONE",
+}
+
+# Explicitly Isolated Draft/Experimental Profile
+experimental_fallback_map := {
+    "ML-KEM-512": "FrodoKEM-640-AES",
+    "FrodoKEM-640-AES": "X25519",
+}
+
+# Enforce rejection if an ISO profile attempts to negotiate 640
+deny contains "ISO compliance violation: FrodoKEM-640 is not an ISO standard" if {
+    input.requested_profile == "iso_strict"
+    input.cipher == "FrodoKEM-640-AES"
+}
+
+deny contains "ISO compliance violation: FrodoKEM-640 is not an ISO standard" if {
+    input.requested_profile == "iso_strict"
+    some comp in input.components
+    comp.type == "crypto-asset"
+    comp.cryptoProperties.algorithmProperties.algorithm == "FrodoKEM-640-AES"
+}
+
 # Dynamically match ML-KEM size variants to equivalent security-tier FrodoKEM variants
 fallback_map := {
     "ML-KEM-512": "FrodoKEM-640-AES",
@@ -144,12 +172,17 @@ active_kems contains algo if {
     algo in (quantum_safe_kem | fallback_approved)
 }
 
+# Active fallback map selection based on profile
+active_fallback_map := iso_fallback_map if {
+    input.requested_profile == "iso_strict"
+} else := fallback_map
+
 # If an active ML-KEM is toxic and FrodoKEM is healthy, pick the equivalent tier
-recommended_fallback := fallback_map[kem] if {
+recommended_fallback := active_fallback_map[kem] if {
     some kem in active_kems
     kem in compromised_algorithms
     not frodokem_compromised
-    fallback_map[kem]
+    active_fallback_map[kem]
 }
 
 # If FrodoKEM is also compromised, step down to approved classical (X25519)

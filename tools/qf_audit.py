@@ -41,7 +41,7 @@ ALGORITHM_TAXONOMY = {
     "ML-KEM-512": {"category": "PQC_KEM", "standard": "NIST FIPS 203", "status": "APPROVED", "strength": 128},
     "ML-KEM-768": {"category": "PQC_KEM", "standard": "NIST FIPS 203", "status": "APPROVED", "strength": 192},
     "ML-KEM-1024": {"category": "PQC_KEM", "standard": "NIST FIPS 203", "status": "APPROVED", "strength": 256},
-    "FrodoKEM-640-AES": {"category": "PQC_KEM", "standard": "ISO/IEC 18033-2 / Candidate", "status": "FALLBACK_APPROVED", "strength": 128},
+    "FrodoKEM-640-AES": {"category": "PQC_KEM", "cipher": "FrodoKEM-640-AES", "standard": "Experimental / Non-ISO (draft-longa-cfrg)", "status": "isolated", "strength": 128},
     "FrodoKEM-976-AES": {"category": "PQC_KEM", "standard": "ISO/IEC 18033-2 / Candidate", "status": "FALLBACK_APPROVED", "strength": 192},
     "FrodoKEM-1344-AES": {"category": "PQC_KEM", "standard": "ISO/IEC 18033-2 / Candidate", "status": "FALLBACK_APPROVED", "strength": 256},
     "Classic-McEliece": {"category": "PQC_KEM", "standard": "Round 4 Candidate", "status": "MONITORED", "strength": 128},
