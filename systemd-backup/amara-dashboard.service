@@ -1,22 +1,22 @@
 [Unit]
 Description=A.M.A.R.A. Sync Dashboard
-After=network-online.target tailscaled.service ghost-node-agent.service
-Wants=network-online.target tailscaled.service
+After=network.target amara-matrix.service
+Wants=amara-matrix.service
 
 [Service]
 Environment="TZ=America/New_York"
+EnvironmentFile=/home/quant/mycelium/.env
 Type=simple
-WorkingDirectory=/home/USERNAME/mycelium/amara
-ExecStart=/bin/sh -c 'BIND_IP=$$(tailscale ip -4 2>/dev/null || echo 127.0.0.1); exec /home/USERNAME/mycelium/venv/bin/uvicorn dashboard:app --host "$$BIND_IP" --port 8000'
+WorkingDirectory=/home/quant/mycelium/amara
+ExecStart=/home/quant/mycelium/venv/bin/uvicorn dashboard:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5s
 StandardOutput=append:%h/.local/state/amara/dashboard.log
 StandardError=inherit
 
-# Resource clamp — dashboard is a lightweight read layer
-CPUQuota=15%
-MemoryHigh=200M
-MemoryMax=300M
+CPUQuota=20%
+MemoryHigh=250M
+MemoryMax=350M
 
 [Install]
 WantedBy=default.target

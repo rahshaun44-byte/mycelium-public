@@ -1,14 +1,18 @@
 [Unit]
 Description=Quantum Flex Core API Gateway Node
 After=network.target athena-node.service
+Wants=athena-node.service
 
 [Service]
+EnvironmentFile=/home/quant/mycelium/.env
 Type=simple
-WorkingDirectory=/home/USERNAME/mycelium/api_node
-ExecStart=/home/USERNAME/mycelium/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8002
+WorkingDirectory=/home/quant/mycelium/api_node
+ExecStart=/home/quant/mycelium/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080
 Restart=always
-RestartSec=10
+RestartSec=5s
 Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:%h/.local/state/quantum-flex-mycelium/api-node.log
+StandardError=inherit
 
 [Install]
 WantedBy=default.target

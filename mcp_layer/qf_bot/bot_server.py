@@ -308,4 +308,4 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("QF_BOT_PORT", 9050))
     print(f"Starting Quantum Flex AI Teammate Server on port {port}...")
-    uvicorn.run("bot_server:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("bot_server:app", host=os.environ.get("QF_BOT_HOST", "127.0.0.1"), port=port, reload=False)

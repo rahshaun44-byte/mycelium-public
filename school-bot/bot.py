@@ -158,6 +158,18 @@ async def get_mesh_status():
         pass
     return {"error": "Mesh unreachable"}
 
+@app.post("/api/consult_sentinel")
+async def consult_sentinel_endpoint():
+    """Consults SENTINEL on QuantumFlex node: returns PQC read, leaves observation chip, denies writes."""
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            resp = await client.post("http://127.0.0.1:9050/api/consult/sentinel", json={"student_query": "Academic PQC Security Consultation"})
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        return {"error": str(e), "status": "FAILED"}
+    return {"error": "Sentinel unreachable", "status": "FAILED"}
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     msg = req.message.lower()
@@ -181,4 +193,4 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("SCHOOL_BOT_PORT", 9060))
     print(f"Starting Agentic School Bot on port {port}...")
-    uvicorn.run("bot:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("bot:app", host=os.environ.get("SCHOOL_BOT_HOST", "127.0.0.1"), port=port, reload=False)
