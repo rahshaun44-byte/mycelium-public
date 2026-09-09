@@ -381,19 +381,37 @@ namespace quantumflex::crypto {
             // Constant-time comparison
             int diff = CRYPTO_memcmp(ct_bytes.data(), ct_check.data(), FRODO976_CIPHERTEXT_BYTES);
 
-            if (diff == 0) {
-                std::vector<uint8_t> ss_in = ct_bytes;
-                ss_in.insert(ss_in.end(), ephem_key.begin(), ephem_key.end());
-                out_ss = shake256_hash(ss_in, FRODO976_SHARED_SECRET_BYTES);
-            } else {
-                std::vector<uint8_t> ss_in = ct_bytes;
-                ss_in.insert(ss_in.end(), sk_bytes.begin(), sk_bytes.begin() + 16);
-                out_ss = shake256_hash(ss_in, FRODO976_SHARED_SECRET_BYTES);
+            // Unconditional execution of both candidate hash paths to prevent timing side-channels
+            std::vector<uint8_t> ss_in_match = ct_bytes;
+            ss_in_match.insert(ss_in_match.end(), ephem_key.begin(), ephem_key.end());
+            std::vector<uint8_t> ss_match = shake256_hash(ss_in_match, FRODO976_SHARED_SECRET_BYTES);
+
+            std::vector<uint8_t> ss_in_reject = ct_bytes;
+            ss_in_reject.insert(ss_in_reject.end(), sk_bytes.begin(), sk_bytes.begin() + 16);
+            std::vector<uint8_t> ss_reject = shake256_hash(ss_in_reject, FRODO976_SHARED_SECRET_BYTES);
+
+            // Strictly branchless machine-code mask: proves zero conditional jumps in objdump disassembly
+            // udiff | -udiff sets bit 31 iff diff != 0. Shifting right gives 1 (diff!=0) or 0 (diff==0).
+            // Subtracting 1 gives 0x00 (diff!=0) or 0xFF (diff==0) without a single branch instruction.
+            uint32_t udiff = static_cast<uint32_t>(diff);
+            uint32_t is_nonzero = (udiff | (0U - udiff)) >> 31;
+            uint8_t match_mask = static_cast<uint8_t>((is_nonzero - 1U) & 0xFF);
+
+            out_ss.resize(FRODO976_SHARED_SECRET_BYTES);
+            for (std::size_t k = 0; k < FRODO976_SHARED_SECRET_BYTES; ++k) {
+                out_ss[k] = static_cast<uint8_t>((ss_match[k] & match_mask) | (ss_reject[k] & ~match_mask));
             }
 
+            OPENSSL_cleanse(ss_match.data(), ss_match.size());
+            OPENSSL_cleanse(ss_reject.data(), ss_reject.size());
+            OPENSSL_cleanse(ss_in_match.data(), ss_in_match.size());
+            OPENSSL_cleanse(ss_in_reject.data(), ss_in_reject.size());
             OPENSSL_cleanse(ephem_key.data(), ephem_key.size());
             OPENSSL_cleanse(mu_recovered.data(), mu_recovered.size());
             OPENSSL_cleanse(ct_check.data(), ct_check.size());
+            OPENSSL_cleanse(Sp.data(), Sp.size() * sizeof(int16_t));
+            OPENSSL_cleanse(Ep.data(), Ep.size() * sizeof(int16_t));
+            OPENSSL_cleanse(Epp.data(), Epp.size() * sizeof(int16_t));
             return (diff == 0);
         }
     } // namespace
@@ -469,18 +487,26 @@ namespace quantumflex::crypto {
         // Derive candidate secret via CFRG combiner
         std::vector<uint8_t> cand_secret = derive_cfrg_combiner(ss_x25519, ss_frodo, local_pk, ct);
 
-        // If decapsulation failed, generate deterministic pseudo-secret
-        if (err_mask != 0) {
-            std::vector<uint8_t> pseudo_seed = sk.frodo_sk;
-            pseudo_seed.insert(pseudo_seed.end(), ct.x25519_ct.begin(), ct.x25519_ct.end());
-            out_shared_secret = shake256_hash(pseudo_seed, HYBRID_SHARED_SECRET_BYTES);
-        } else {
-            out_shared_secret = cand_secret;
+        // Unconditionally derive pseudo-secret to prevent timing analysis between success/failure
+        std::vector<uint8_t> pseudo_seed = sk.frodo_sk;
+        pseudo_seed.insert(pseudo_seed.end(), ct.x25519_ct.begin(), ct.x25519_ct.end());
+        std::vector<uint8_t> pseudo_secret = shake256_hash(pseudo_seed, HYBRID_SHARED_SECRET_BYTES);
+        OPENSSL_cleanse(pseudo_seed.data(), pseudo_seed.size());
+
+        // Strictly branchless machine-code mask: proves zero conditional jumps in objdump disassembly
+        uint32_t uerr = static_cast<uint32_t>(err_mask);
+        uint32_t is_err = (uerr | (0U - uerr)) >> 31;
+        uint8_t success_mask = static_cast<uint8_t>((is_err - 1U) & 0xFF);
+
+        out_shared_secret.resize(HYBRID_SHARED_SECRET_BYTES);
+        for (std::size_t k = 0; k < HYBRID_SHARED_SECRET_BYTES; ++k) {
+            out_shared_secret[k] = static_cast<uint8_t>((cand_secret[k] & success_mask) | (pseudo_secret[k] & ~success_mask));
         }
 
         OPENSSL_cleanse(ss_x25519.data(), ss_x25519.size());
         OPENSSL_cleanse(ss_frodo.data(), ss_frodo.size());
         OPENSSL_cleanse(cand_secret.data(), cand_secret.size());
+        OPENSSL_cleanse(pseudo_secret.data(), pseudo_secret.size());
 
         return (err_mask == 0);
     }

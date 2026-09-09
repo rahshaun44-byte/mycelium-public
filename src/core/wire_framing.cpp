@@ -97,7 +97,7 @@ namespace quantumflex::wire {
         std::memcpy(&header, state.buffer.data(), sizeof(QFXKHeader));
         
         // Endianness conversion for header fields
-        uint32_t seq = ntohl(header.sequence_id);
+        [[maybe_unused]] uint32_t seq = ntohl(header.sequence_id);
         uint32_t payload_length = ntohl(header.length);
 
         // Validate payload length

@@ -25,6 +25,16 @@
 #include <openssl/crypto.h>
 
 namespace {
+    // RAII guard to guarantee memory zeroization even if exceptions unwind the stack
+    struct CleanseVectorOnDrop {
+        std::vector<uint8_t>& vec;
+        ~CleanseVectorOnDrop() {
+            if (!vec.empty()) {
+                OPENSSL_cleanse(vec.data(), vec.size());
+            }
+        }
+    };
+
     // Genesis/unlock shard payloads are recovered secret material with no
     // further use once consumed — cleanse them rather than leaving raw bytes
     // sitting in freed heap memory until something else happens to overwrite it.
@@ -213,6 +223,7 @@ namespace quantumflex::ipc {
             try {
                 auto ct = crypto::HybridCiphertext::deserialize(msg.payload.data(), msg.payload.size());
                 std::vector<uint8_t> ss;
+                CleanseVectorOnDrop ss_guard{ss};
                 bool ok = crypto::HybridKemEngine::decapsulate_constant_time(
                     ct, hybrid_keypair_->private_key, hybrid_keypair_->public_key, ss
                 );
@@ -228,7 +239,6 @@ namespace quantumflex::ipc {
                     }
                     send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
                 }
-                OPENSSL_cleanse(ss.data(), ss.size());
             } catch (const std::exception& e) {
                 if (sentinel_) {
                     sentinel_->record_drop();

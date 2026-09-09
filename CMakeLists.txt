@@ -77,9 +77,45 @@ target_link_libraries(test_wire_framing PRIVATE OpenSSL::Crypto)
 add_executable(test_wire_fuzz_negative
     tools/test_wire_fuzz_negative.cpp
     src/core/wire_framing.cpp
+    src/crypto/hybrid_kem.cpp
 )
 target_include_directories(test_wire_fuzz_negative PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
 )
-target_link_libraries(test_wire_fuzz_negative PRIVATE OpenSSL::Crypto)
+target_link_libraries(test_wire_fuzz_negative PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+
+add_executable(test_known_answer_vectors
+    tools/test_known_answer_vectors.cpp
+    src/crypto/hybrid_kem.cpp
+    src/crypto/crypto_shamir.cpp
+    src/crypto/crypto_hasher.cpp
+)
+target_include_directories(test_known_answer_vectors PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_link_libraries(test_known_answer_vectors PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+
+add_executable(test_zeroization
+    tools/test_zeroization.cpp
+    src/crypto/hybrid_kem.cpp
+    src/crypto/crypto_shamir.cpp
+)
+target_include_directories(test_zeroization PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_compile_options(test_zeroization PRIVATE -O3)
+target_link_libraries(test_zeroization PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+
+add_executable(test_dudect_timing
+    tools/test_dudect_timing.cpp
+    src/crypto/hybrid_kem.cpp
+)
+target_include_directories(test_dudect_timing PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_compile_options(test_dudect_timing PRIVATE -O3)
+target_link_libraries(test_dudect_timing PRIVATE OpenSSL::Crypto OpenSSL::SSL)
