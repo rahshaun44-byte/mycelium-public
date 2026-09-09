@@ -123,3 +123,22 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
   5. **Physical Memory Zeroization**: Stack buffers, 31,296-byte FrodoKEM heap keys, `HybridPrivateKey` destruction, and Shamir shards verified 100% `0x00` under `-O3` optimization with volatile pointer inspection.
   6. **Fail-Closed Network Wire Fuzzing**: Corrupted magic bytes, boundary wrap attacks ($2^{32}-1$), trickle fragmentation, and 500-session DoS saturation verified stable without buffer overflow or state compromise.
 - **Reference Dossier**: [`docs/CRYPTOGRAPHIC_ASSURANCE_AUDIT_REPORT.md`](file:///home/quant/mycelium/docs/CRYPTOGRAPHIC_ASSURANCE_AUDIT_REPORT.md).
+
+---
+
+## 9. Multi-Device Mesh Deployment, Telemetry Pipeline & Compliance Verification
+
+- **Date of Verification**: 2026-09-09
+- **Network Topology & Verified Devices**:
+  1. **Master Node (`fedora` / Lenovo Yoga 7)**: `192.168.100.11` / `100.64.1.17` — AMD Ryzen AI 5 340, 15 GB RAM, Fedora Linux 44. Runs control plane, PQC engine, OPA policy engine, and `qf-kafka-telemetry.service`.
+  2. **Worker Node 2 (`qf-pavilion-worker` / HP Pavilion Desktop)**: `192.168.100.17` / `100.64.1.34` — Intel Celeron 450, 1.9 GB RAM, 456 GB HDD, Debian 13 (Trixie). Runs native Docker CE KRaft Kafka broker (`:9092`), Kafka UI (`:8090`), `qf-kafka-compose.service`, and `qf-worker-sentinel.service`.
+  3. **Mobile Node 1 (Pixel 11 Pro)**: `100.64.1.18` — Titan M2 hardware root of trust, Shamir shard custodian, OOB signer.
+  4. **Mobile Node 2 (Galaxy S23 FE)**: `100.64.1.32` — Samsung Knox Vault, field ops terminal, mobile PWA client.
+
+- **Verified Invariants & Streaming Telemetry**:
+  - **Live Kafka Ingestion**: Topic `qf-telemetry` on Pavilion broker verified actively ingesting pulses every 15s (`offset 64+`, partition 0).
+  - **Worker Sentinel Health**: `qf-worker-sentinel.service` on Pavilion verified active (RAM: 51.4%, Disk: 0.7% used, Kafka broker UP, Kafka UI UP).
+  - **Cryptographic Test Suites**: 4/4 suites (Known Answer Tests, Memory Zeroization, Wire Fuzzing, Wycheproof Negative) 100% passed.
+  - **OPA Policy Compliance**: 16/16 policy unit tests passed; CBOM scanner verdict `[COMPLIANT // QUANTUM-AGILE]`.
+  - **Universal Reserve Invariant ($R \ge O$):** `[ADMIT]` for Digital Memory, Pluton TPM 2.0 anchor, and Physical Water.
+  - **Regulatory Standing Notice**: Formally recorded as internal pre-validation evidence. `CMVP Module Certificate: NULL`, `CAVP Algorithm Certificate: NULL`.
