@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:73fc832d-b0bd-4b7d-aabe-e1f999f95cf8",
+  "serialNumber": "urn:uuid:37db6d95-b3b3-45e0-9bdd-2dafdc045ae0",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-07T16:51:54Z",
+    "timestamp": "2026-09-09T07:23:10Z",
     "tools": [
       {
         "vendor": "FinallyFungus LLC",
@@ -49,12 +49,12 @@
             "line": 1
           },
           {
-            "location": "pqc-immune-daemon/membrane_health_test.rego",
-            "line": 2
+            "location": "docs/TRUTH_LOG_MASTER.md",
+            "line": 1
           },
           {
-            "location": "pqc-immune-daemon/README.md",
-            "line": 1
+            "location": "docs/CRYPTOGRAPHIC_ASSURANCE_AUDIT_REPORT.md",
+            "line": 3
           }
         ]
       }
@@ -63,7 +63,7 @@
       "type": "crypto-asset",
       "name": "ML-KEM-768",
       "version": "NIST FIPS 203",
-      "description": "Discovered cryptographic primitive across 32 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 34 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -131,7 +131,7 @@
             "line": 2
           },
           {
-            "location": "mcp_layer/crypto_provider.conf",
+            "location": "docs/TRUTH_LOG_MASTER.md",
             "line": 1
           }
         ]
@@ -141,7 +141,7 @@
       "type": "crypto-asset",
       "name": "FrodoKEM-640-AES",
       "version": "ISO/IEC 18033-2 / Candidate",
-      "description": "Discovered cryptographic primitive across 11 file(s). Status: FALLBACK_APPROVED.",
+      "description": "Discovered cryptographic primitive across 8 file(s). Status: FALLBACK_APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -162,16 +162,16 @@
             "line": 1
           },
           {
-            "location": "pqc-immune-daemon/membrane_health_test.rego",
-            "line": 2
-          },
-          {
             "location": "pqc-immune-daemon/README.md",
             "line": 1
           },
           {
             "location": "pqc-immune-daemon/membrane_health.rego",
             "line": 4
+          },
+          {
+            "location": "pqc-immune-daemon/test_immune_daemon.py",
+            "line": 1
           }
         ]
       }
@@ -180,7 +180,7 @@
       "type": "crypto-asset",
       "name": "FrodoKEM-976-AES",
       "version": "ISO/IEC 18033-2 / Candidate",
-      "description": "Discovered cryptographic primitive across 32 file(s). Status: FALLBACK_APPROVED.",
+      "description": "Discovered cryptographic primitive across 30 file(s). Status: FALLBACK_APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -219,7 +219,7 @@
       "type": "crypto-asset",
       "name": "FrodoKEM-1344-AES",
       "version": "ISO/IEC 18033-2 / Candidate",
-      "description": "Discovered cryptographic primitive across 10 file(s). Status: FALLBACK_APPROVED.",
+      "description": "Discovered cryptographic primitive across 7 file(s). Status: FALLBACK_APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -240,61 +240,15 @@
             "line": 1
           },
           {
-            "location": "pqc-immune-daemon/membrane_health_test.rego",
-            "line": 2
-          },
-          {
             "location": "pqc-immune-daemon/README.md",
             "line": 1
           },
           {
             "location": "pqc-immune-daemon/membrane_health.rego",
             "line": 4
-          }
-        ]
-      }
-    },
-    {
-      "type": "crypto-asset",
-      "name": "Classic-McEliece",
-      "version": "Round 4 Candidate",
-      "description": "Discovered cryptographic primitive across 1 file(s). Status: MONITORED.",
-      "cryptoProperties": {
-        "assetType": "algorithm",
-        "algorithmProperties": {
-          "algorithm": "Classic-McEliece",
-          "primitive": "PQC_KEM",
-          "classicalSecurityLevel": 128,
-          "nistQuantumSecurityLevel": 0
-        }
-      },
-      "evidence": {
-        "occurrences": [
+          },
           {
-            "location": "tools/qf_audit.py",
-            "line": 4
-          }
-        ]
-      }
-    },
-    {
-      "type": "crypto-asset",
-      "name": "HQC",
-      "version": "Round 4 Candidate",
-      "description": "Discovered cryptographic primitive across 1 file(s). Status: MONITORED.",
-      "cryptoProperties": {
-        "assetType": "algorithm",
-        "algorithmProperties": {
-          "algorithm": "HQC",
-          "primitive": "PQC_KEM",
-          "classicalSecurityLevel": 128,
-          "nistQuantumSecurityLevel": 0
-        }
-      },
-      "evidence": {
-        "occurrences": [
-          {
-            "location": "tools/qf_audit.py",
+            "location": "pqc-immune-daemon/test_immune_daemon.py",
             "line": 4
           }
         ]
@@ -304,7 +258,7 @@
       "type": "crypto-asset",
       "name": "ML-DSA-44",
       "version": "NIST FIPS 204",
-      "description": "Discovered cryptographic primitive across 6 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 3 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -317,16 +271,8 @@
       "evidence": {
         "occurrences": [
           {
-            "location": "pqc-immune-daemon/membrane_health_test.rego",
-            "line": 1
-          },
-          {
             "location": "pqc-immune-daemon/membrane_health.rego",
             "line": 1
-          },
-          {
-            "location": "sentinel/intelligence/athena_vectors.db",
-            "line": 2
           },
           {
             "location": "sentinel/knowledge_base/NIST_FIPS_PQC_GUIDELINES.md",
@@ -343,7 +289,7 @@
       "type": "crypto-asset",
       "name": "ML-DSA-65",
       "version": "NIST FIPS 204",
-      "description": "Discovered cryptographic primitive across 28 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 26 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -382,7 +328,7 @@
       "type": "crypto-asset",
       "name": "ML-DSA-87",
       "version": "NIST FIPS 204",
-      "description": "Discovered cryptographic primitive across 9 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 6 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -403,16 +349,16 @@
             "line": 1
           },
           {
-            "location": "pqc-immune-daemon/membrane_health_test.rego",
-            "line": 1
-          },
-          {
             "location": "pqc-immune-daemon/membrane_health.rego",
             "line": 1
           },
           {
-            "location": "sentinel/intelligence/athena_vectors.db",
-            "line": 4
+            "location": "sentinel/knowledge_base/NIST_FIPS_PQC_GUIDELINES.md",
+            "line": 1
+          },
+          {
+            "location": "sentinel/knowledge_base/OMB_M_26_15_CMMC_GUIDELINES.md",
+            "line": 1
           }
         ]
       }
@@ -421,7 +367,7 @@
       "type": "crypto-asset",
       "name": "SLH-DSA-SHA2-128f",
       "version": "NIST FIPS 205",
-      "description": "Discovered cryptographic primitive across 16 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 14 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -460,7 +406,7 @@
       "type": "crypto-asset",
       "name": "RSA-2048",
       "version": "NIST SP 800-56B",
-      "description": "Discovered cryptographic primitive across 3 file(s). Status: DEPRECATED_OMB_M26_15.",
+      "description": "Discovered cryptographic primitive across 1 file(s). Status: DEPRECATED_OMB_M26_15.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -475,14 +421,6 @@
           {
             "location": "docs/PQC_AGILITY_SUPERVISOR_WHITEPAPER.md",
             "line": 1
-          },
-          {
-            "location": "sentinel/intelligence/athena_vectors.db",
-            "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 3
           }
         ]
       }
@@ -491,7 +429,7 @@
       "type": "crypto-asset",
       "name": "RSA-4096",
       "version": "NIST SP 800-56B",
-      "description": "Discovered cryptographic primitive across 2 file(s). Status: DEPRECATED_OMB_M26_15.",
+      "description": "Discovered cryptographic primitive across 1 file(s). Status: DEPRECATED_OMB_M26_15.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -506,10 +444,6 @@
           {
             "location": "docs/TRUTH_LOG_MASTER.md",
             "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 3
           }
         ]
       }
@@ -518,7 +452,7 @@
       "type": "crypto-asset",
       "name": "ECDSA-P256",
       "version": "FIPS 186-4",
-      "description": "Discovered cryptographic primitive across 3 file(s). Status: DEPRECATED_OMB_M26_15.",
+      "description": "Discovered cryptographic primitive across 1 file(s). Status: DEPRECATED_OMB_M26_15.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -533,37 +467,6 @@
           {
             "location": "docs/PQC_AGILITY_SUPERVISOR_WHITEPAPER.md",
             "line": 1
-          },
-          {
-            "location": "sentinel/intelligence/athena_vectors.db",
-            "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 4
-          }
-        ]
-      }
-    },
-    {
-      "type": "crypto-asset",
-      "name": "ECDSA-P384",
-      "version": "FIPS 186-4",
-      "description": "Discovered cryptographic primitive across 1 file(s). Status: DEPRECATED_OMB_M26_15.",
-      "cryptoProperties": {
-        "assetType": "algorithm",
-        "algorithmProperties": {
-          "algorithm": "ECDSA-P384",
-          "primitive": "CLASSICAL_ASYMMETRIC",
-          "classicalSecurityLevel": 192,
-          "nistQuantumSecurityLevel": 0
-        }
-      },
-      "evidence": {
-        "occurrences": [
-          {
-            "location": "tools/qf_audit.py",
-            "line": 3
           }
         ]
       }
@@ -572,7 +475,7 @@
       "type": "crypto-asset",
       "name": "X25519",
       "version": "RFC 7748",
-      "description": "Discovered cryptographic primitive across 31 file(s). Status: TRANSITIONAL_HYBRID_ONLY.",
+      "description": "Discovered cryptographic primitive across 30 file(s). Status: TRANSITIONAL_HYBRID_ONLY.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -589,16 +492,16 @@
             "line": 1
           },
           {
-            "location": "qflex.py",
-            "line": 1
-          },
-          {
             "location": "SECURITY.md",
             "line": 6
           },
           {
             "location": "README.md",
             "line": 6
+          },
+          {
+            "location": "qflex.py",
+            "line": 1
           },
           {
             "location": "docs/MASTER_SERVICES_AGREEMENT_PQC.md",
@@ -632,16 +535,16 @@
             "line": 1
           },
           {
-            "location": "forge_pki.py",
-            "line": 9
-          },
-          {
             "location": "Forge-PKI.ps1",
             "line": 2
           },
           {
             "location": "SECURITY.md",
             "line": 3
+          },
+          {
+            "location": "forge_pki.py",
+            "line": 9
           }
         ]
       }
@@ -650,7 +553,7 @@
       "type": "crypto-asset",
       "name": "AES-256-GCM",
       "version": "NIST SP 800-38D",
-      "description": "Discovered cryptographic primitive across 4 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 3 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -673,33 +576,6 @@
           {
             "location": "sentinel/policies/membrane_health.rego",
             "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 2
-          }
-        ]
-      }
-    },
-    {
-      "type": "crypto-asset",
-      "name": "AES-128-GCM",
-      "version": "NIST SP 800-38D",
-      "description": "Discovered cryptographic primitive across 1 file(s). Status: ACCEPTABLE.",
-      "cryptoProperties": {
-        "assetType": "algorithm",
-        "algorithmProperties": {
-          "algorithm": "AES-128-GCM",
-          "primitive": "SYMMETRIC",
-          "classicalSecurityLevel": 128,
-          "nistQuantumSecurityLevel": 0
-        }
-      },
-      "evidence": {
-        "occurrences": [
-          {
-            "location": "tools/qf_audit.py",
-            "line": 2
           }
         ]
       }
@@ -708,7 +584,7 @@
       "type": "crypto-asset",
       "name": "SHA-256",
       "version": "NIST FIPS 180-4",
-      "description": "Discovered cryptographic primitive across 33 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 32 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -725,12 +601,12 @@
             "line": 1
           },
           {
-            "location": "qflex.py",
-            "line": 2
-          },
-          {
             "location": "SECURITY.md",
             "line": 1
+          },
+          {
+            "location": "qflex.py",
+            "line": 2
           },
           {
             "location": "docs/cbom_alpha_node_template.json",
@@ -738,7 +614,7 @@
           },
           {
             "location": "docs/TRUTH_LOG_MASTER.md",
-            "line": 1
+            "line": 2
           }
         ]
       }
@@ -747,7 +623,7 @@
       "type": "crypto-asset",
       "name": "SHA-384",
       "version": "NIST FIPS 180-4",
-      "description": "Discovered cryptographic primitive across 3 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 2 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -766,10 +642,6 @@
           {
             "location": "sentinel/policies/membrane_health.rego",
             "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 2
           }
         ]
       }
@@ -778,7 +650,7 @@
       "type": "crypto-asset",
       "name": "SHA-512",
       "version": "NIST FIPS 180-4",
-      "description": "Discovered cryptographic primitive across 3 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 2 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -797,64 +669,6 @@
           {
             "location": "sentinel/policies/membrane_health.rego",
             "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 2
-          }
-        ]
-      }
-    },
-    {
-      "type": "crypto-asset",
-      "name": "SHA-1",
-      "version": "DISALLOWED",
-      "description": "Discovered cryptographic primitive across 2 file(s). Status: TOXIC.",
-      "cryptoProperties": {
-        "assetType": "algorithm",
-        "algorithmProperties": {
-          "algorithm": "SHA-1",
-          "primitive": "HASH",
-          "classicalSecurityLevel": 0,
-          "nistQuantumSecurityLevel": 0
-        }
-      },
-      "evidence": {
-        "occurrences": [
-          {
-            "location": "pqc-immune-daemon/membrane_health_test.rego",
-            "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 3
-          }
-        ]
-      }
-    },
-    {
-      "type": "crypto-asset",
-      "name": "MD5",
-      "version": "DISALLOWED",
-      "description": "Discovered cryptographic primitive across 2 file(s). Status: TOXIC.",
-      "cryptoProperties": {
-        "assetType": "algorithm",
-        "algorithmProperties": {
-          "algorithm": "MD5",
-          "primitive": "HASH",
-          "classicalSecurityLevel": 0,
-          "nistQuantumSecurityLevel": 0
-        }
-      },
-      "evidence": {
-        "occurrences": [
-          {
-            "location": "sentinel/intelligence/athena_vectors.db",
-            "line": 1
-          },
-          {
-            "location": "tools/qf_audit.py",
-            "line": 3
           }
         ]
       }
