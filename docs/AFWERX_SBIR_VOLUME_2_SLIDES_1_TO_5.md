@@ -1,4 +1,8 @@
 # 🎯 DAF / DOW SBIR OPEN TOPIC — VOLUME 2 TECHNICAL PITCH DECK
+> [!WARNING]
+> **SOLICITATION STATUS: NO-BID / HOLD**
+> This draft pitch deck is preserved strictly as an internal technical architecture reference. It must NOT be submitted under 26.BZ. Identified candidate topic DAF26BZ05-DV033 is an F-16 tactical weapons insertion enclave that does not specify PQC, and award ceilings remain unverified in DSIP.
+
 ## BLOCK 1: SLIDES 1 THROUGH 5 (THE TECHNICAL CORE)
 
 ---
