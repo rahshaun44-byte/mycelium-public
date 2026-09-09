@@ -491,24 +491,52 @@ def generate_cbom(state: "ImmuneState") -> dict[str, Any]:
     }
 
 
-def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict[str, Any] | None:
-    """POST CBOM to OPA and return the verdict object, or None on failure."""
-    if requests is None:
-        log.error("requests library not installed — cannot query OPA")
-        return None
+def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
+    """POST the CBOM input to the local OPA sidecar and return the verdict.
+
+    Raises ConnectionError if OPA is unreachable OR if it answers with a
+    payload we cannot read a verdict out of. Both mean the same thing --
+    no usable health check -- and an unusable health check must never be
+    allowed to read as a healthy one.
+    """
+    import urllib.request
+    import urllib.error
+
     url = endpoint.rstrip("/") + DEFAULT_VERDICT_PATH
+    payload = json.dumps({"input": cbom}).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
     try:
-        r = requests.post(url, json={"input": cbom}, timeout=timeout)
-        r.raise_for_status()
-        data = r.json()
-        result = data.get("result")
-        if not isinstance(result, dict) or not result or "node_status" not in result:
-            log.warning("OPA returned no usable verdict (empty/missing node_status) — treating as failure")
-            return None
-        return result
-    except Exception as e:
-        log.warning("OPA query failed: %s", e)
-        return None
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        raise ConnectionError(f"OPA returned HTTP {e.code}: {e}")
+    except OSError as e:
+        # URLError, connection refused, DNS failure, socket timeout.
+        raise ConnectionError(f"OPA unreachable: {e}")
+    except (ValueError, UnicodeDecodeError) as e:
+        # json.JSONDecodeError subclasses ValueError.
+        raise ConnectionError(f"OPA returned an unparseable body: {e}")
+
+    # An undefined Rego rule -- bundle not mounted, wrong package, path typo --
+    # returns HTTP 200 with an empty object. That is a FAILED health check.
+    if not isinstance(body, dict):
+        raise ConnectionError(f"OPA returned a non-object body: {body!r}")
+
+    verdict = body.get("result")
+    if not isinstance(verdict, dict) or "node_status" not in verdict:
+        raise ConnectionError(
+            "OPA returned no usable verdict -- policy bundle not mounted? "
+            f"body was {body!r}"
+        )
+
+    return verdict
 
 
 # ── Optional async audit ──────────────────────────────────────────
@@ -643,7 +671,7 @@ def decision_loop(
     # Initialize circuit breaker from OPA recovery_map (single source of truth)
     if breaker is None:
         recovery = get_authoritative_recovery_map(opa_endpoint)
-        breaker = CircuitBreaker.from_recovery_map(recovery) if recovery else CircuitBreaker()
+        breaker = CircuitBreaker.from_recovery_map(recovery) if recovery else CircuitBreaker(max_retries=fail_secure_threshold)
 
     log.info(
         "Immune daemon started | conf=%s | opa=%s | poll=%.3fs | dry_run=%s | once=%s",
@@ -665,7 +693,11 @@ def decision_loop(
     while True:
         state.refresh_from_disk()
         cbom = generate_cbom(state)
-        verdict = query_opa(opa_endpoint, cbom)
+        try:
+            verdict = query_opa(opa_endpoint, cbom, timeout=2.0)
+        except ConnectionError as e:
+            log.warning("OPA query failed or returned invalid verdict: %s", e)
+            verdict = None
 
         if verdict is None:
             # ── OPA unreachable / empty / malformed → Circuit Breaker path ──
@@ -730,12 +762,12 @@ def decision_loop(
 
         else:
             # ── OPA reachable → evaluate verdict ──
-            state.consecutive_opa_failures = 0
             status = verdict.get("node_status")
             findings = list(verdict.get("findings") or [])
             recommended = verdict.get("recommended_fallback")
 
             if status == "COMPLIANT":
+                state.consecutive_opa_failures = 0
                 if breaker.state == "QUARANTINE":
                     # Self-healing: recovered from transient failure
                     log.info(
@@ -749,8 +781,30 @@ def decision_loop(
                         "quarantine_attempts": len(state.quarantine_events),
                     })
                 breaker.reset()
+
+                # PQC Restoration Gate: Alert and auto-restore if degraded to classical cipher
+                if state.active_kem in ("X25519", "FrodoKEM-976-AES"):
+                    log.warning(
+                        "[PQC DEGRADED] Active cipher is %s (fallback). Evaluating auto-restoration to primary standard ML-KEM-768...",
+                        state.active_kem,
+                    )
+                    probe_state = ImmuneState(state.conf_path)
+                    probe_state.active_kem = "ML-KEM-768"
+                    probe_cbom = generate_cbom(probe_state)
+                    try:
+                        probe_verdict = query_opa(opa_endpoint, probe_cbom, timeout=2.0)
+                        if probe_verdict.get("node_status") == "COMPLIANT":
+                            log.info("[PQC RESTORATION] Primary standard ML-KEM-768 verified COMPLIANT. Auto-restoring cipher baseline.")
+                            atomic_rewrite_conf(state.conf_path, {"active_kem": "ML-KEM-768"}, dry_run=dry_run)
+                            if not dry_run:
+                                state.active_kem = "ML-KEM-768"
+                                notify_amara("PQC_AUTO_RESTORED", {"active_kem": "ML-KEM-768", "previous_kem": probe_state.active_kem})
+                    except Exception as e:
+                        log.debug("PQC auto-restoration probe failed: %s", e)
+
                 log.debug("COMPLIANT | active_kem=%s", state.active_kem)
             elif status == "TOXIC":
+                state.consecutive_opa_failures = 0
                 # Cryptographic threat → immediate collapse (no quarantine)
                 breaker.reset()  # Clear transient state — this is a real threat
                 if not recommended or recommended == "NONE":
@@ -758,10 +812,12 @@ def decision_loop(
                 execute_collapse(state, recommended, findings, dry_run, pg_config, webhook)
             else:
                 # Unknown/untrusted status → route through circuit breaker
-                log.warning(
-                    "Non-compliant/untrusted node_status %r from OPA — routing through circuit breaker",
+                log.error(
+                    "Unrecognised node_status %r from OPA -- treating as a "
+                    "failed health check, not as compliant. Routing through circuit breaker.",
                     status,
                 )
+                state.consecutive_opa_failures += 1
                 tripped = breaker.record_failure()
                 if tripped:
                     log.critical(

@@ -23,6 +23,22 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import immune_daemon
+import json
+
+
+class _FakeResponse:
+    """Minimal stand-in for the object urlopen() yields as a context manager."""
+    def __init__(self, payload):
+        self._body = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
 
 
 def test_vein_collapse_rewrites_conf():
@@ -97,28 +113,58 @@ def test_daemon_starts_with_default_conf():
 
 
 def test_empty_opa_result_is_not_compliant():
-    """Guards D-2: HTTP 200 with {} must be treated as failure (None), triggering fail-secure."""
-    class MockResponse:
-        def json(self): return {}
-        def raise_for_status(self): pass
-
-    import requests
-    orig_post = requests.post
-    requests.post = lambda *args, **kwargs: MockResponse()
+    """D-2: HTTP 200 with {} must raise, never return a usable verdict."""
+    import urllib.request
+    original = urllib.request.urlopen
+    urllib.request.urlopen = lambda req, timeout=None: _FakeResponse({})
     try:
-        verdict = immune_daemon.query_opa("http://fake", {})
-        assert verdict is None, "Empty OPA response must return None to trigger fail-secure"
-        print("PASS: [D-2] empty OPA result returns None (fail-secure trigger)")
+        try:
+            immune_daemon.query_opa("http://fake", {"metadata": {}, "components": []})
+        except ConnectionError:
+            print("PASS: empty {} body raises ConnectionError (fail-secure)")
+            return
+        raise AssertionError(
+            "query_opa() accepted an empty OPA body -- this is the D-2 fail-open bug"
+        )
     finally:
-        requests.post = orig_post
+        urllib.request.urlopen = original
+
+
+def test_result_without_node_status_is_not_compliant():
+    """D-2 sibling: a result dict missing node_status must also fail secure."""
+    import urllib.request
+    original = urllib.request.urlopen
+    urllib.request.urlopen = lambda req, timeout=None: _FakeResponse({"result": {"findings": [], "toxic_count": 0}})
+    try:
+        try:
+            immune_daemon.query_opa("http://fake", {"metadata": {}, "components": []})
+        except ConnectionError:
+            print("PASS: verdict without node_status raises ConnectionError")
+            return
+        raise AssertionError(
+            "query_opa() accepted a verdict with no node_status"
+        )
+    finally:
+        urllib.request.urlopen = original
+
+
+def test_valid_verdict_still_passes_through():
+    """Guard against over-correcting: a real COMPLIANT verdict must survive."""
+    import urllib.request
+    original = urllib.request.urlopen
+    good = {"result": {"node_status": "COMPLIANT", "findings": [],
+                       "recommended_fallback": "NONE"}}
+    urllib.request.urlopen = lambda req, timeout=None: _FakeResponse(good)
+    try:
+        verdict = immune_daemon.query_opa("http://fake", {"metadata": {}, "components": []})
+        assert verdict["node_status"] == "COMPLIANT", verdict
+        print("PASS: a well-formed COMPLIANT verdict is returned unchanged")
+    finally:
+        urllib.request.urlopen = original
 
 
 def test_opa_unknown_status_fails_secure():
-    """Guards D-2: verdict with non-COMPLIANT node_status routes through circuit breaker.
-
-    With quarantine architecture: 1st unknown status enters QUARANTINE (not immediate collapse).
-    On the 3rd consecutive failure, the circuit breaker trips and triggers terminal collapse.
-    """
+    """Guards D-2: verdict with non-COMPLIANT node_status routes through circuit breaker."""
     with tempfile.TemporaryDirectory() as tmp:
         conf_path = Path(tmp) / "crypto_provider.conf"
         conf_path.write_text("active_kem=ML-KEM-768\nactive_sig=ML-DSA-65\n")
@@ -132,42 +178,40 @@ def test_opa_unknown_status_fails_secure():
             safe_mode_cipher="FrodoKEM-976-AES",
         )
 
-        class MockVerdictResponse:
-            def json(self):
-                return {
-                    "result": {
-                        "node_status": "UNKNOWN",
-                        "recommended_fallback": "FrodoKEM-976-AES"
-                    }
-                }
-            def raise_for_status(self): pass
-
-        import requests
-        orig_post = requests.post
-        orig_get = getattr(requests, 'get', None)
-        requests.post = lambda *args, **kwargs: MockVerdictResponse()
-        # Mock GET for recovery_map to avoid timeout
-        requests.get = lambda *args, **kwargs: (_ for _ in ()).throw(Exception("mocked"))
+        import urllib.request
+        orig_urlopen = urllib.request.urlopen
+        urllib.request.urlopen = lambda req, timeout=None: _FakeResponse({
+            "result": {
+                "node_status": "UNKNOWN",
+                "recommended_fallback": "FrodoKEM-976-AES"
+            }
+        })
         try:
-            immune_daemon.decision_loop(
-                state=state,
-                opa_endpoint="http://fake",
-                poll_sec=0.01,
-                fail_secure_threshold=1,
-                dry_run=False,
-                once=True,
-                pg_config=None,
-                webhook=None,
-                breaker=breaker,
-            )
-            assert state.active_kem == "FrodoKEM-976-AES", (
-                f"Expected fail-secure collapse to FrodoKEM-976-AES, but got {state.active_kem}"
-            )
-            print("PASS: [D-2] unexpected/unknown node_status triggers fail-secure fallback")
+            # We mock requests.get for fallback/recovery map fetches because decision_loop does that at start
+            import requests
+            orig_get = getattr(requests, 'get', None)
+            requests.get = lambda *args, **kwargs: (_ for _ in ()).throw(Exception("mocked"))
+            try:
+                immune_daemon.decision_loop(
+                    state=state,
+                    opa_endpoint="http://fake",
+                    poll_sec=0.01,
+                    fail_secure_threshold=1,
+                    dry_run=False,
+                    once=True,
+                    pg_config=None,
+                    webhook=None,
+                    breaker=breaker,
+                )
+                assert state.active_kem == "FrodoKEM-976-AES", (
+                    f"Expected fail-secure collapse to FrodoKEM-976-AES, but got {state.active_kem}"
+                )
+                print("PASS: [D-2] unexpected/unknown node_status triggers fail-secure fallback")
+            finally:
+                if orig_get is not None:
+                    requests.get = orig_get
         finally:
-            requests.post = orig_post
-            if orig_get is not None:
-                requests.get = orig_get
+            urllib.request.urlopen = orig_urlopen
 
 
 def test_unknown_algorithm_does_not_downgrade():
@@ -363,14 +407,46 @@ def test_recovery_map_loaded_from_rego():
     print("PASS: [Q-4] recovery_map loaded from rego (single source of truth) verified")
 
 
+def test_worker_pid_sighup_signal():
+    """Verify that os.kill is called with SIGHUP when worker_pid is set and SIGHUP is supported."""
+    with tempfile.TemporaryDirectory() as tmp:
+        conf_path = Path(tmp) / "crypto_provider.conf"
+        conf_path.write_text("active_kem=ML-KEM-768\nactive_sig=ML-DSA-65\n")
+        state = immune_daemon.ImmuneState(conf_path)
+        state.worker_pid = 12345
+
+        # Patch signal and os.kill
+        with patch("immune_daemon.signal") as mock_signal, \
+             patch("immune_daemon.os.kill") as mock_kill:
+            
+            # Ensure SIGHUP attribute exists on mocked signal module
+            mock_signal.SIGHUP = 1
+            
+            immune_daemon.execute_collapse(
+                state=state,
+                recommended="FrodoKEM-976-AES",
+                findings=[],
+                dry_run=False,
+                pg_config=None,
+                webhook=None
+            )
+            
+            # Verify os.kill was called with PID and SIGHUP
+            mock_kill.assert_called_once_with(12345, 1)
+            print("PASS: [D-4] SIGHUP signal sent to worker PID successfully")
+
+
 if __name__ == "__main__":
     test_vein_collapse_rewrites_conf()
     test_all_algorithms_exhausted_halts()
     test_daemon_starts_with_default_conf()
     test_empty_opa_result_is_not_compliant()
+    test_result_without_node_status_is_not_compliant()
+    test_valid_verdict_still_passes_through()
     test_opa_unknown_status_fails_secure()
     test_unknown_algorithm_does_not_downgrade()
     test_worker_pid_tracking()
+    test_worker_pid_sighup_signal()
     test_authoritative_rego_fallback_chain()
 
     # Self-Healing / Quarantine Architecture Tests
@@ -379,4 +455,4 @@ if __name__ == "__main__":
     test_quarantine_applies_safe_mode_cipher()
     test_recovery_map_loaded_from_rego()
 
-    print("\n[ALL 12 SECURITY, COMPLIANCE & SELF-HEALING INVARIANTS 100% VERIFIED]")
+    print("\n[ALL 15 SECURITY, COMPLIANCE & SELF-HEALING INVARIANTS 100% VERIFIED]")
