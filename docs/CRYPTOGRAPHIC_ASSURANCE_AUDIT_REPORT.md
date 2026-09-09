@@ -1,17 +1,26 @@
-# Quantum Flex Cryptographic Engineering Assurance & FIPS 140-3 Pre-Validation Dossier
+# Quantum Flex Cryptographic Engineering Assurance Report
+### Internal Technical Verification & FIPS 140-3 Alignment Analysis
 
 **Date:** September 9, 2026  
 **Auditor / Team:** Quantum Flex Cryptographic Engineering (`FinallyFungus LLC`)  
 **Target Scope:** `mycelium` / `pqc-immune-daemon`  
 **Standards Reference:** NIST FIPS 140-3 (Design Alignment) / FIPS 203 (ML-KEM) / RFC 7748 (X25519) / RFC 5869 (HKDF) / CFRG draft-irtf-cfrg-hybrid-kems / Project Wycheproof  
-**Status:** **100% INTERNAL INVARIANTS PASSED (25/25 Verification Invariants)**
+**Internal Invariant Status:** **100% INTERNAL INVARIANTS PASSED (22/22 Verification Invariants)**
 
 ---
 
-> [!IMPORTANT]
-> **Formal CMVP Validation Status Notice (No Deceptive Marketing Policy):**  
-> This dossier documents an *internal cryptographic engineering assurance audit* and pre-validation test harness. It demonstrates assembly-verified branchless execution, physical memory zeroization under `-O3`, statistical timing indistinguishability via `dudect` Welch $t$-testing, and bit-exact mathematical conformity to NIST and IETF specifications.  
-> **This document does NOT constitute or claim a formal NIST CMVP certificate number.** Formal FIPS 140-3 validation requires accredited NVLAP laboratory evaluation ($75,000–$150,000 cost, 12–18 month evaluation timeline). Per the Quantum Flex Equation of Truth ($Y = f(x - h) + k$), unverified claims remain strictly `CMVP Certificate: NULL`.
+> [!WARNING]
+> **REGULATORY DEMARCATION: NOT A FIPS 140-3 VALIDATED MODULE**  
+> **1. Critical Distinction — Pre-Validation Evidence vs. Formal Certification:**  
+> FIPS 140-3 "documentation", design alignment, and pre-validation engineering evidence are **not** equivalent to a FIPS 140-3 validation or certification. A cryptographic module is only "FIPS 140-3 Validated" once it has undergone formal evaluation by an accredited third-party NVLAP laboratory and received an official certificate issued by the NIST/CCCS Cryptographic Module Validation Program (CMVP).  
+> **2. Current Regulatory Standing:**  
+> This software has **not** completed CMVP validation. The formal regulatory status of this implementation is:  
+> - **CMVP Module Validation Certificate:** `NULL` (Unvalidated)  
+> - **CAVP Algorithm Validation Certificate:** `NULL` (Internal KAT verification; uncertified)  
+> - **CMVP Implementation Under Test (IUT) Listing:** `NOT LISTED`  
+> - **CMVP Modules In Process (MIP) Listing:** `NOT LISTED`  
+> **3. Authorized Scope & Intended Use:**  
+> This dossier represents an *internal cryptographic engineering assurance audit*. It provides empirical evidence of branchless machine code generation, physical memory zeroization under `-O3`, statistical timing indistinguishability via `dudect` Welch $t$-testing, and bit-exact conformity to NIST/IETF specifications. This evidence is prepared as technical due-diligence and pre-validation documentation for potential future third-party lab evaluation. It must **not** be presented to clients, enterprise procurement officers, or federal entities as a government-certified or FIPS-validated module.
 
 ---
 
@@ -124,7 +133,8 @@ The arithmetic selection mask was compiled and disassembled across multiple opti
 
 Binary: `build/test_known_answer_vectors`
 
-1. **NIST FIPS 203 ML-KEM Standard Verification Suite (KAT 5/5):**
+1. **NIST FIPS 203 ML-KEM Reference Vector Verification (KAT 5/5 — Internal Test Harness):**
+   - *CAVP Regulatory Notice*: Verified bit-exact against published NIST FIPS 203 mathematical reference vectors via native OpenSSL 3.5.8 provider. This demonstrates algorithmic correctness; it does not constitute an official NIST CAVP algorithm certificate.
    - **ML-KEM-512**: Public key = 800 B, Ciphertext = 768 B, Shared secret = 32 B **[MATCH]**
    - **ML-KEM-768**: Public key = 1184 B, Ciphertext = 1088 B, Shared secret = 32 B **[MATCH]**
    - **ML-KEM-1024**: Public key = 1568 B, Ciphertext = 1568 B, Shared secret = 32 B **[MATCH]**
@@ -218,8 +228,33 @@ Binary: `build/test_wire_fuzz_negative` & `scripts/test_wycheproof_x25519.py`
 
 ---
 
-## Conclusion & Assurance Assessment
+## Conclusion & Regulatory Demarcation
 
-The Quantum Flex codebase demonstrates mature secure-coding practices, verified branchless machine-code execution for hybrid decapsulation across all compiler optimization levels (`-O0` through `-O3`), statistical timing indistinguishability via `dudect` ($|t| = 2.16 < 4.5$), bit-exact mathematical conformity to NIST FIPS 203 (ML-KEM), RFC 7748, and RFC 5869, physical zeroization under compiler optimization, and strict fail-closed network framing.
+### 1. Explicit Distinction: Pre-Validation Engineering vs. Formal CMVP Certification
+To ensure complete technical precision, avoid misleading procurement statements, and strictly demarcate internal engineering controls from government certifications:
 
-While formal NIST CMVP certificate numbers remain `NULL` pending commercial laboratory evaluation, this engineering dossier satisfies the technical and pre-validation criteria expected of a high-assurance post-quantum cryptographic architecture.
+| Evaluation Dimension | Internal Engineering Assurance (This Dossier) | Formal NIST FIPS 140-3 Validation / Certification |
+| :--- | :--- | :--- |
+| **Evaluating Authority** | Internal Cryptographic Engineering Team (`FinallyFungus LLC`) | Independent Third-Party NVLAP-Accredited CST Laboratory + NIST/CCCS CMVP |
+| **Testing Standard** | Internal test harness, `dudect` statistical analysis, and assembly inspection | Formal FIPS 140-3 Derived Test Requirements (DTR) & ACVP protocol |
+| **Legal / Federal Status** | Internal engineering due-diligence & quality assurance | Statutory Federal Standard Compliance (FIPS PUB 140-3) |
+| **CMVP Certificate** | **`NULL`** (None issued; none claimed) | Official Certificate Number published on the NIST CSRC CMVP database |
+| **CAVP Algorithm Testing** | Self-administered KAT suite against published NIST reference vectors | Automated Cryptographic Validation Protocol (ACVP) testing with CAVP Certificate |
+| **CMVP Listing Status** | **NOT LISTED** (Not on IUT or MIP lists) | Listed on NIST CMVP Active / Validated Modules List |
+| **Procurement Eligibility** | Technical due-diligence artifact; **cannot** fulfill federal FIPS-mandated clauses alone | Satisfies statutory federal procurement mandates (OMB M-26-15, FISMA, FedRAMP High) |
+
+### 2. Precise Boundary of Claims
+- **What This Dossier Demonstrates:**
+  - Mature secure-coding practices and verified branchless machine-code execution for hybrid decapsulation across all compiler optimization levels (`-O0` through `-O3`).
+  - Empirical statistical timing indistinguishability via `dudect` ($|t| = 2.1606 < 4.5$).
+  - Bit-exact mathematical conformity to NIST FIPS 203 (ML-KEM-512, ML-KEM-768, ML-KEM-1024), RFC 7748, and RFC 5869 reference vectors.
+  - Physical volatile memory zeroization verified under `-O3` compiler optimization with volatile pointer inspection.
+  - Strict fail-closed network framing, boundary bounds, and hostile wire fuzzing resistance.
+
+- **What This Dossier Does NOT Constitute:**
+  - **This software is NOT a FIPS 140-3 certified or validated cryptographic module.**
+  - **This software has NOT been submitted to, tested by, or approved by an accredited NVLAP laboratory or the NIST/CCCS Cryptographic Module Validation Program (CMVP).**
+  - The phrase "FIPS 140-3 aligned", "pre-validation evidence", or "security assurance artifact" refers exclusively to internal engineering design patterns and self-administered test suites. It does not confer, imply, or substitute for formal federal certification.
+  - **Formal Regulatory Standing:** `CMVP Module Certificate: NULL` | `CAVP Algorithm Certificate: NULL` | `IUT / MIP Status: NONE`.
+
+This dossier serves strictly as an internal engineering assurance artifact and pre-validation technical evidence package prepared for potential future third-party accredited laboratory assessment.

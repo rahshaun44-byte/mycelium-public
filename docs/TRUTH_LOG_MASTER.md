@@ -102,17 +102,19 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 
 ## 7. Residual Uncertainty Register (`NULL` Index)
 
-1. **CMVP FIPS 203/204/205 Certificate Numbers**: `NULL` (Pending formal NIST module validation).
+1. **CMVP FIPS 140-3 Module Certificate Number**: `NULL` (Unvalidated; internal engineering assurance only).
+2. **CAVP FIPS 203/204/205 Algorithm Certificate Numbers**: `NULL` (Self-tested against NIST reference vectors; pending formal NVLAP lab ACVP testing).
 2. **CEDRUS Local Execution Profiles**: `NULL` (Awaiting physical binary release).
 3. **Hardware Immunity Against DVFS Side-Channels**: `PARTIAL` (Performance pinning active; microarchitectural isolation depends on physical CPU silicon).
 
 ---
 
-## 8. Cryptographic Core Verification & Assurance Audit (FIPS 140-3 Pre-Validation)
+## 8. Cryptographic Core Verification & Assurance Audit (FIPS 140-3 Alignment Dossier)
 
 - **Date of Verification**: 2026-09-09
 - **Audited Target**: `quantumflex::crypto` (`src/crypto/hybrid_kem.cpp`, `src/core/wire_framing.cpp`, `src/core/ipc_server.cpp`)
 - **Compilation Environment**: GCC 16.2.1 (`-std=c++20 -O3`), OpenSSL 3.5.8, Linux `7.1.13-200.fc44.x86_64` (AMD Ryzen AI 5 340).
+- **CMVP Validation Status**: `NULL` (Pre-validation evidence / internal engineering verification only; not a formal FIPS 140-3 validation or certification).
 - **Core Verification Invariants (22/22 PASSED)**:
   1. **Assembly Branchless Decapsulation**: Bitwise sign-bit propagation `((udiff | -udiff) >> 31) - 1U` generates zero conditional jump instructions (`has_jumps=False`) across `-O0`, `-O1`, `-O2`, `-O3`, and `-Os`.
   2. **`dudect` Empirical Timing Indistinguishability**: 5,000 interleaved decapsulations measured via hardware cycle counter `__rdtscp` yielded Welch $t$-statistic $|t| = 2.1606 < 4.5$, proving the null hypothesis of identical execution distributions is not rejected.

@@ -62,9 +62,9 @@ Active Primary (FIPS Modern)        Fallback 1 (Conservative LWE)       Fallback
 
 Per the QuantumFlex Equation of Truth ($Y = f(x - h) + k$), unverified or unmeasured fields are strictly recorded as `NULL`:
 
-1. **FIPS Validation Certificates**:
+1. **FIPS 140-3 Module & CAVP Algorithm Validation Certificates**:
    * *Status*: `NULL`
-   * *Rationale*: OpenSSL 3.5.8 default provider contains native FIPS 203/204/205 implementations, but formal NIST CMVP certificate numbers are pending publication.
+   * *Rationale*: OpenSSL 3.5.8 default provider contains native implementations of FIPS 203/204/205 algorithms, but neither the host application nor the integration has completed formal third-party NVLAP laboratory testing or NIST CMVP validation. Formal certificate numbers are strictly `NULL` (Pre-validation internal evidence is not equivalent to CMVP certification).
 2. **CEDRUS+C-128s-5684 Local Validation**:
    * *Status*: `local_validation: NULL` / `gatekeeper_state: NO_INPUT`
    * *Rationale*: External academic paper claim (IACR 2025/2236) with published hash counts (4,207,118 sign / 5,745 verify). Unresolved table collisions (`Table 23 [0x06]` is 192-bit fast). No compiled reference binary on disk. Hard Stop gate enforced by `scripts/cedrus_artifact_gate.py`.
