@@ -33,9 +33,9 @@
 
 ---
 
-## 3. Alpha Node Runtime & Engine Ground Truth
+## 3. Alpha Node Runtime & Engine Ground Truth (Yoga 7 Host)
 
-- **Process Status**: `quantum_flex_engine` running on loopback `127.0.0.1:9443`
+- **Process Status**: `quantum_flex_engine` running on loopback `127.0.0.1:9443` / `127.0.0.1:9444`
 - **Data Directory**: `/home/quant/quantum-flex/data`
 - **Genesis Ledger**: `/home/quant/quantum-flex/data/ledger.dat` (193 bytes, sealed)
 - **Engine State**: **`LOCKED`** (Ledger suspended in memory; awaiting operator Shamir Secret Sharing `UNLOCK|` token payload)
@@ -61,10 +61,46 @@
   - Security flags enforced: `no-new-privileges: true`, resource limits clamped (2 GB RAM / 1.5 CPU).
   - Cleaned up failed service states (`sentinel-drive.service` reset).
 - `[2026-09-07 05:23]`: Clean restart of `quantum_flex_engine` bound to `/home/quant/quantum-flex/data` on `127.0.0.1:9443`. Verified sealed state `LOCKED`.
+- `[2026-09-09 01:34]`: Automated headless bootstrap of Worker Node 2 (`qf-pavilion-worker`) over local Wi-Fi. Authorized passwordless Ed25519 root SSH key.
+- `[2026-09-09 01:38]`: Worker Node 2 joined to Tailscale zero-trust mesh (`100.64.1.34`).
+- `[2026-09-09 01:43]`: Deployed native Docker CE 29.8.0 and Layer 4 KRaft Kafka cluster on Worker Node 2. Ports isolated strictly to Tailscale interface.
 
 ---
 
-## 5. Residual Uncertainty Register (`NULL` Index)
+## 5. Distributed Worker Node Registry (Worker Node 2 — HP Pavilion Desktop Tower)
+
+- **Device Identifier**: `qf-pavilion-worker`
+- **Hardware Architecture**: HP Pavilion Desktop Tower (Intel Celeron 450 @ 2.20 GHz, 1.9 GB DDR RAM, 456 GB SATA HDD)
+- **Operating System**: Debian GNU/Linux 13 (Trixie) minimal netinst (Kernel 6.12.94+deb13-amd64)
+- **Network Boundaries**:
+  - Local LAN IP: `192.168.100.17` (ens33)
+  - Tailscale Mesh IP: `100.64.1.34` (tailscale0)
+- **Authentication**: Ed25519 passwordless SSH key authorized exclusively for Yoga 7 master node.
+- **Active Workloads**:
+  - `qf-kafka-broker`: Confluent Kafka 7.6.0 running in KRaft mode (Listener: `100.64.1.34:9092`, heap: 512M, limit: 900M).
+  - `qf-kafka-ui`: Provectus Kafka UI (Listener: `100.64.1.34:8090`, heap: 256M, limit: 400M).
+- **Power & Auto-Recovery Posture**:
+  - `HandleLidSwitch=ignore` configured in `systemd-logind`.
+  - Systemd service persistence: `tailscaled.service`, `docker.service`, `ssh.service` enabled.
+  - Container auto-restart: `restart: unless-stopped` active on both containers.
+  - Routing persistence: `iptables-persistent` installed and rules saved.
+  - Hardware AC Recovery: Set to `Power On` in HP BIOS Setup for unattended cold-boot recovery.
+
+---
+
+## 6. Track C Universal Reserve Invariant Status ($R \ge O$)
+
+Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`):
+
+| Subsystem | Metric | Reserve Measured ($R$) | Obligations / Claims ($O$) | Invariant State | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Digital Memory** | Yoga 7 Host RAM | **15,127.88 MB** | 7,564.06 MB | $R \ge O$ (50% headroom) | **[ADMIT]** |
+| **Pluton TPM 2.0** | NVRAM Index `0x1c00010` | `105e7998...787e` | `105e7998...787e` | Exact Root Match | **[ADMIT]** |
+| **Physical Water** | Solvency | **500.0 gal** | 350.0 gal (+50 gal $\Delta$) | $R \ge O + \Delta$ | **[ADMIT]** |
+
+---
+
+## 7. Residual Uncertainty Register (`NULL` Index)
 
 1. **CMVP FIPS 203/204/205 Certificate Numbers**: `NULL` (Pending formal NIST module validation).
 2. **CEDRUS Local Execution Profiles**: `NULL` (Awaiting physical binary release).
