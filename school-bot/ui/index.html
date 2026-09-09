@@ -2,59 +2,320 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School Bot Interface</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
-    .chat-container { width: 100%; max-width: 600px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
-    .header { background: #4a90e2; color: #fff; padding: 1.5rem; text-align: center; }
-    .header h2 { margin: 0; font-weight: 500; letter-spacing: 0.5px; }
-    .feed { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .msg { max-width: 80%; padding: 1rem; border-radius: 12px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
-    .msg.bot { background: #f0f4f8; align-self: flex-start; border-bottom-left-radius: 4px; }
-    .msg.user { background: #4a90e2; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
-    .msg.system { background: #fff3cd; color: #856404; align-self: center; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 20px; font-style: italic; }
-    .input-area { display: flex; padding: 1rem; background: #fff; border-top: 1px solid #eee; }
-    input { flex: 1; padding: 0.8rem; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 1rem; }
-    input:focus { border-color: #4a90e2; }
-    button { background: #4a90e2; color: #fff; border: none; padding: 0 1.5rem; margin-left: 0.5rem; border-radius: 20px; cursor: pointer; font-weight: bold; }
-    button:hover { background: #357abd; }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-  </style>
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1329">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Lyceum Academic Assistant — Read-Only Peer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-core: #070c18;
+      --bg-surface: #0e1628;
+      --bg-card: rgba(18, 28, 50, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #e2b714;
+      --accent-teal: #00f5d4;
+      --text-main: #e6edf8;
+      --text-muted: #8295b5;
+      --badge-readonly: rgba(255, 180, 0, 0.15);
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg-core);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .top-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      font-size: 1.4rem;
+      background: rgba(226, 183, 20, 0.15);
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid rgba(226, 183, 20, 0.3);
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .brand-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .readonly-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--badge-readonly);
+      color: #ffd043;
+      border: 1px solid rgba(226, 183, 20, 0.4);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+    .readonly-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ffd043;
+    }
+    .control-ribbon {
+      background: rgba(14, 22, 40, 0.9);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .btn-ribbon {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-ribbon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-consult {
+      border-color: rgba(0, 245, 212, 0.4);
+      color: var(--accent-teal);
+      background: rgba(0, 245, 212, 0.08);
+    }
+    .btn-consult:hover {
+      background: rgba(0, 245, 212, 0.2);
+    }
+    .switch-link {
+      margin-left: auto;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+    }
+    .switch-link:hover { color: var(--accent-teal); }
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .chat-msg.bot {
+      align-self: flex-start;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #1d335a, #162642);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-bottom-right-radius: 4px;
+      color: #fff;
+    }
+    .chat-msg.observation {
+      align-self: center;
+      max-width: 95%;
+      background: rgba(0, 245, 212, 0.06);
+      border: 1px solid rgba(0, 245, 212, 0.25);
+      color: #b3fff2;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      border-radius: 10px;
+    }
+    .input-dock {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .dock-input {
+      flex: 1;
+      background: rgba(7, 12, 24, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 12px 18px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .dock-input:focus { border-color: var(--accent); }
+    .btn-send {
+      background: linear-gradient(135deg, var(--accent), #b38f0d);
+      border: none;
+      color: #000;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      transition: transform 0.1s;
+    }
+    .btn-send:active { transform: scale(0.95); }
+  </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="header">
-      <h2>📚 Agentic School Assistant</h2>
-      <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">Access to: SNHU_Vault & SNHU_C5_Term</div>
+  <header class="top-header">
+    <div class="brand-group">
+      <div class="brand-icon">🏛️</div>
+      <div>
+        <div class="brand-title">LYCEUM</div>
+        <div class="brand-sub">Sovereign Academic Surface</div>
+      </div>
     </div>
-    <div class="feed" id="chatFeed">
-      <div class="msg bot">Hello! I am your isolated School Bot, powered by local AI. I can read, write, and organize files in your school folders. How can I help you?</div>
+    <div class="readonly-badge">
+      <span class="readonly-dot"></span>
+      READ-ONLY PEER (WRITES DENIED)
     </div>
-    <div class="input-area">
-      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" onkeypress="if(event.key === 'Enter') sendMessage()">
-      <button id="sendBtn" onclick="sendMessage()">Send</button>
-    </div>
+  </header>
+
+  <div class="control-ribbon">
+    <button class="btn-ribbon btn-consult" id="btnConsult" onclick="consultSentinel()">
+      <span>▲</span> Consult SENTINEL
+    </button>
+    <button class="btn-ribbon" onclick="sendQuick('Check mesh status')">
+      <span>🌐</span> Mesh Status
+    </button>
+    <button class="btn-ribbon" onclick="sendQuick('List SNHU coursework directories')">
+      <span>📚</span> SNHU Vault
+    </button>
+    <a href="http://100.64.1.17:9050/ui/" class="switch-link" title="Open QuantumFlex HUD">
+      <span>QuantumFlex ↗</span>
+    </a>
   </div>
 
+  <main class="chat-area" id="chatFeed">
+    <div class="chat-msg bot">
+      <strong>Welcome to Lyceum.</strong> I am your isolated academic companion with filesystem agency in your coursework vault (<code>~/SNHU_Vault</code>).
+      <br><br>
+      <em>Security Posture:</em> I can read mesh vitals and consult SENTINEL for post-quantum validation, but I have <strong>zero write access</strong> to the QuantumFlex mesh or host daemon configurations.
+    </div>
+  </main>
+
+  <footer class="input-dock">
+    <input type="text" class="dock-input" id="chatInput" placeholder="Coursework inquiry or academic directive..." onkeypress="if(event.key==='Enter') sendMessage()" />
+    <button class="btn-send" onclick="sendMessage()">➤</button>
+  </footer>
+
   <script>
+    async function consultSentinel() {
+      const feed = document.getElementById('chatFeed');
+      const btn = document.getElementById('btnConsult');
+      btn.disabled = true;
+      btn.innerText = "Consulting...";
+
+      feed.innerHTML += `
+        <div class="chat-msg user">Consult SENTINEL for post-quantum cryptographic posture</div>
+      `;
+      feed.scrollTop = feed.scrollHeight;
+
+      try {
+        const res = await fetch('/api/consult_sentinel', { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.status === 'SUCCESS') {
+          const p = data.pqc_read;
+          feed.innerHTML += `
+            <div class="chat-msg observation">
+              <strong>[OBSERVATION CHIP // SENTINEL POSTURE]</strong><br>
+              • Active KEM: ${p.active_kem}<br>
+              • Signature : ${p.active_sig}<br>
+              • OPA Status: ${p.opa_verdict}<br>
+              • Hardware  : ${p.tpm_status}<br>
+              • Invariant : ${p.solvency}<br>
+              <em style="color:#ffd043;">Handoff registered on QuantumFlex node as an observation. Mesh writes denied.</em>
+            </div>
+          `;
+        } else {
+          feed.innerHTML += `
+            <div class="chat-msg bot" style="border-color:#ff4444; color:#ff9999;">
+              Failed to consult Sentinel: ${data.error || 'Endpoint unreachable'}
+            </div>
+          `;
+        }
+      } catch (err) {
+        feed.innerHTML += `
+          <div class="chat-msg bot" style="color:#ff7777;">
+            Consultation error: ${err.message}
+          </div>
+        `;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>▲</span> Consult SENTINEL";
+        feed.scrollTop = feed.scrollHeight;
+      }
+    }
+
+    function sendQuick(txt) {
+      document.getElementById('chatInput').value = txt;
+      sendMessage();
+    }
+
     async function sendMessage() {
       const input = document.getElementById('chatInput');
-      const btn = document.getElementById('sendBtn');
       const msg = input.value.trim();
       if (!msg) return;
-      
+
       const feed = document.getElementById('chatFeed');
-      feed.innerHTML += `<div class="msg user">${msg}</div>`;
+      feed.innerHTML += `<div class="chat-msg user">${msg}</div>`;
       input.value = '';
-      input.disabled = true;
-      btn.disabled = true;
-      
-      const loadingId = 'loading-' + Date.now();
-      feed.innerHTML += `<div id="${loadingId}" class="msg system">Working... (I may be reading or writing files)</div>`;
       feed.scrollTop = feed.scrollHeight;
 
       try {
@@ -64,18 +325,11 @@
           body: JSON.stringify({message: msg})
         });
         const data = await res.json();
-        
-        document.getElementById(loadingId).remove();
-        feed.innerHTML += `<div class="msg bot">${data.response}</div>`;
-        feed.scrollTop = feed.scrollHeight;
+        feed.innerHTML += `<div class="chat-msg bot">${data.response}</div>`;
       } catch(e) {
-        document.getElementById(loadingId).remove();
-        feed.innerHTML += `<div class="msg bot" style="color:red">Error reaching bot backend.</div>`;
-      } finally {
-        input.disabled = false;
-        btn.disabled = false;
-        input.focus();
+        feed.innerHTML += `<div class="chat-msg bot" style="color:#ff6666;">Lyceum gateway error: ${e.message}</div>`;
       }
+      feed.scrollTop = feed.scrollHeight;
     }
   </script>
 </body>

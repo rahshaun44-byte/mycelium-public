@@ -4,6 +4,16 @@ import asyncio
 import httpx
 import os
 import sys
+import time
+from pathlib import Path
+
+# Universal Invariant Gate (R >= O)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+try:
+    from sentinel.invariant_gate import evaluate_invariant, evaluate_all_invariants
+except Exception as e:
+    evaluate_invariant = None
+    evaluate_all_invariants = None
 from pathlib import Path
 from datetime import datetime
 
@@ -64,6 +74,17 @@ async def system_status():
             nodes["ollama"] = {"status": "ONLINE", "models": models}
     except Exception as e:
         nodes["ollama"] = {"status": "OFFLINE", "error": str(e)}
+
+    if evaluate_all_invariants:
+        try:
+            inv = evaluate_all_invariants(evaluator="api_node_status")
+            nodes["invariant_gate"] = {
+                "status": "ONLINE" if inv["all_allowed"] else "RESTRICTED",
+                "overall_verdict": inv["overall_verdict"],
+                "all_allowed": inv["all_allowed"]
+            }
+        except Exception as e:
+            nodes["invariant_gate"] = {"status": "OFFLINE", "error": str(e)}
 
     return {
         "timestamp": datetime.now().isoformat(),
@@ -146,6 +167,46 @@ async def webhook_ingest(request: Request):
             except Exception:
                 pass
         return {"status": "fatal", "error": str(e)}
+
+
+@app.get("/api/invariant")
+async def get_invariant_status():
+    """Returns real-time Universal Invariant Gate status (R >= O) for Digital and Physical Strata."""
+    if not evaluate_all_invariants:
+        return {"status": "error", "message": "Invariant gate module unavailable"}
+    try:
+        res = evaluate_all_invariants(evaluator="api_node_rest")
+        return {
+            "status": "success",
+            "invariant": res
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/invariant/evaluate")
+async def evaluate_custom_invariant(request: Request):
+    """
+    Submits a custom or physical telemetry vector to the OPA Invariant Gate.
+    Supports mobile operator checks (Termux / PWA) and automated IoT sensors (FinallyFungus tanks).
+    """
+    if not evaluate_invariant:
+        return {"status": "error", "message": "Invariant gate module unavailable"}
+    try:
+        data = await request.json()
+        if "telemetry_timestamp" not in data or not data["telemetry_timestamp"]:
+            data["telemetry_timestamp"] = int(time.time())
+        if "max_staleness_seconds" not in data or not data["max_staleness_seconds"]:
+            data["max_staleness_seconds"] = 60
+
+        evaluator = request.headers.get("X-Operator-ID", "api_node_mobile")
+        result = evaluate_invariant(data, evaluator=evaluator)
+        return {
+            "status": "success",
+            "result": result
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 if __name__ == "__main__":

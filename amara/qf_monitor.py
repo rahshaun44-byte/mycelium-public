@@ -26,6 +26,14 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / "sentinel" / ".env")
 
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+try:
+    from sentinel.invariant_gate import check_digital_memory, evaluate_invariant
+except Exception:
+    check_digital_memory = None
+    evaluate_invariant = None
+
 # ── PostgreSQL connection (psycopg2 if available, else SQLite fallback) ──────
 try:
     import psycopg2
@@ -288,6 +296,20 @@ def main():
             alerts.append(msg)
             status   = "CRITICAL"
             critical = True
+
+        # Stratum 0 Universal Invariant Gate Check (R >= O)
+        if evaluate_invariant and check_digital_memory:
+            try:
+                mem_payload = check_digital_memory()
+                inv_res = evaluate_invariant(mem_payload, evaluator="qf_monitor_daemon")
+                if not inv_res["allowed"]:
+                    msg = f"[CRITICAL] Invariant Breach (R < O): {inv_res['reason']}"
+                    log.critical(msg)
+                    alerts.append(msg)
+                    status = "CRITICAL"
+                    critical = True
+            except Exception as e:
+                log.warning(f"Invariant evaluation warning: {e}")
 
         # Evaluate RAM
         if metrics["ram_used_pct"] > THRESHOLDS["ram_used_pct"]:

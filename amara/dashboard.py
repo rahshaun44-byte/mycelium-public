@@ -32,6 +32,11 @@ try:
 except ImportError:
     def update_opa_threat_flag(alg, status): pass
 
+try:
+    from sentinel.invariant_gate import evaluate_all_invariants
+except Exception:
+    evaluate_all_invariants = None
+
 # ── PostgreSQL (optional — falls back gracefully) ─────────────────────────────
 try:
     import psycopg2
@@ -226,7 +231,14 @@ async def get_telemetry():
     throttle = get_throttle_events(5)
     sentinel = get_sentinel_history(10)
     integrity = get_integrity_status()
+    inv_data = None
+    if evaluate_all_invariants:
+        try:
+            inv_data = evaluate_all_invariants(evaluator="amara_dashboard_api")
+        except Exception:
+            pass
     return {
+        "invariant":         inv_data,
         "drive":             drive,
         "integrity":         integrity,
         "athena":            athena,
@@ -394,6 +406,19 @@ async def index():
     throttle   = get_throttle_events(5)
     sentinel   = get_sentinel_history(8)
     integrity  = get_integrity_status()
+
+    inv_data = None
+    if evaluate_all_invariants:
+        try:
+            inv_data = evaluate_all_invariants(evaluator="amara_dashboard_hud")
+        except Exception:
+            pass
+    inv_overall = inv_data.get("overall_verdict", "UNKNOWN") if inv_data else "UNKNOWN"
+    inv_col = "var(--green)" if inv_overall == "ADMIT" else "var(--red)"
+    inv_evals = inv_data.get("evaluations", {}) if inv_data else {}
+    mem_ev = inv_evals.get("digital_memory", {})
+    tpm_ev = inv_evals.get("tpm_anchor", {})
+    wat_ev = inv_evals.get("physical_water", {})
 
     # Extract live metrics from the unified state-bus
     drive_score = float(drive_data.get("drive_score", 0) or 0)
@@ -839,6 +864,47 @@ async def index():
       <div class="metric-label">V4 · Hash Integrity</div>
       <div class="metric-value" style="color:{'var(--green)' if hash_pen == 0 else 'var(--red)'}">{"VALID" if hash_pen == 0 else "BREACH"}</div>
       <div class="metric-unit">penalty: {hash_pen:.0f}</div>
+    </div>
+  </div>
+
+  <!-- Universal Invariant Gate (R >= O) -->
+  <p class="section-header">Universal Invariant Gate (R &ge; O Solvency)</p>
+  <div class="immune-panel">
+    <div class="immune-card glass-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="color:var(--accent); font-size:1rem;">Stratum 0 Solvency Gate</h3>
+        <span style="font-family:'JetBrains Mono',monospace; font-weight:bold; color:{inv_col}; font-size:1rem;">[{inv_overall}]</span>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom: 8px;">Fail-secure physical and digital solvency verification (OPA :8181).</p>
+      <div class="immune-data-row">
+        <span>Digital RAM Solvency (R &ge; O)</span>
+        <span class="immune-val" style="color:{'var(--green)' if mem_ev.get('allowed') else 'var(--red)'}; font-size:0.9rem;">{mem_ev.get('verdict', 'N/A')}</span>
+      </div>
+      <div class="immune-data-row">
+        <span>Pluton TPM 2.0 Anchor (0x1c00010)</span>
+        <span class="immune-val" style="color:{'var(--green)' if tpm_ev.get('allowed') else 'var(--red)'}; font-size:0.9rem;">{tpm_ev.get('verdict', 'N/A')}</span>
+      </div>
+      <div class="immune-data-row">
+        <span>FinallyFungus Water Reservoir</span>
+        <span class="immune-val" style="color:{'var(--green)' if wat_ev.get('allowed') else 'var(--red)'}; font-size:0.9rem;">{wat_ev.get('verdict', 'N/A')}</span>
+      </div>
+    </div>
+    
+    <div class="immune-card glass-panel">
+      <h3 style="color:var(--accent); font-size:1rem;">Invariant Audit Vitals</h3>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom: 8px;">Live cryptographic anchor & operational reserve balances.</p>
+      <div class="immune-data-row">
+        <span>TPM Root Tip</span>
+        <span style="font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--accent);">{str(tpm_ev.get('payload', {}).get('reserve_measured', 'N/A'))[:16]}...</span>
+      </div>
+      <div class="immune-data-row">
+        <span>Physical Water Balance</span>
+        <span style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--green);">{wat_ev.get('payload', {}).get('reserve_measured', 0)} gal (Claims: {wat_ev.get('payload', {}).get('units_claimed', 0)} gal)</span>
+      </div>
+      <div class="immune-data-row">
+        <span>Freshness SLA Window</span>
+        <span style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--accent);">60s Fail-Secure</span>
+      </div>
     </div>
   </div>
 
