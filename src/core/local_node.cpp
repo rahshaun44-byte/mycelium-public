@@ -123,7 +123,7 @@ namespace quantumflex::node {
         }
 
         if (!harvester_pub_key_->verify_payload(raw_payload, signature_hex)) {
-            quarantine_node(QuarantineReason::InvalidProof);
+            throw std::runtime_error("Invalid telemetry proof or signature verification failed");
         }
 
         // 1. Generate 32 bytes of cryptographically secure salt
