@@ -1,4 +1,5 @@
 # Quantum Flex Cryptographic Engineering Assurance Report
+
 ### Internal Technical Verification & FIPS 140-3 Alignment Analysis
 
 **Date:** September 9, 2026  
@@ -15,6 +16,7 @@
 > FIPS 140-3 "documentation", design alignment, and pre-validation engineering evidence are **not** equivalent to a FIPS 140-3 validation or certification. A cryptographic module is only "FIPS 140-3 Validated" once it has undergone formal evaluation by an accredited third-party NVLAP laboratory and received an official certificate issued by the NIST/CCCS Cryptographic Module Validation Program (CMVP).  
 > **2. Current Regulatory Standing:**  
 > This software has **not** completed CMVP validation. The formal regulatory status of this implementation is:  
+>
 > - **CMVP Module Validation Certificate:** `NULL` (Unvalidated)  
 > - **CAVP Algorithm Validation Certificate:** `NULL` (Internal KAT verification; uncertified)  
 > - **CMVP Implementation Under Test (IUT) Listing:** `NOT LISTED`  
@@ -22,7 +24,8 @@
 > **3. Authorized Scope & Intended Use:**  
 > This dossier represents an *internal cryptographic engineering assurance audit*. It provides empirical evidence of branchless machine code generation, physical memory zeroization under `-O3`, statistical timing indistinguishability via `dudect` Welch $t$-testing, and bit-exact conformity to NIST/IETF specifications. This evidence is prepared as technical due-diligence and pre-validation documentation for potential future third-party lab evaluation. It must **not** be presented to clients, enterprise procurement officers, or federal entities as a government-certified or FIPS-validated module.
 
----
+--u-
+u
 
 ## 1. Reproducibility & Build Environment Metadata
 
@@ -83,24 +86,30 @@ Audit_Date         = 2026-09-09T02:40:00-04:00
 ### 2. Pillar 1: Source Code & Machine Assembly Line-Audit
 
 #### Assembly Inspection Finding & Remediation
+
 During initial review, the expression:
+
 ```cpp
 uint8_t match_mask = static_cast<uint8_t>(static_cast<uint32_t>(diff == 0) * 0xFFU);
 ```
+
 was disassembled using `objdump -d`. GCC emitted a conditional branch on the secret difference:
+
 ```assembly
 404aa6: cmpl $0x0, -0xac(%rbp)
 404aad: jne  404ab5            # Conditional jump on secret outcome!
 ```
 
 To eliminate microarchitectural branch prediction leakage, this was replaced with arithmetic two's-complement sign-bit propagation:
+
 ```cpp
 uint32_t udiff = static_cast<uint32_t>(diff);
 uint32_t is_nonzero = (udiff | (0U - udiff)) >> 31;
 uint8_t match_mask = static_cast<uint8_t>((is_nonzero - 1U) & 0xFF);
 ```
 
-#### Disassembly Verification (`build/test_hybrid_kem @ 404aa6`):
+#### Disassembly Verification (`build/test_hybrid_kem @ 404aa6`)
+
 ```assembly
 404aa6:  mov    -0xac(%rbp),%eax      # Load diff from CRYPTO_memcmp
 404aac:  mov    %eax,-0xb0(%rbp)
@@ -115,6 +124,7 @@ uint8_t match_mask = static_cast<uint8_t>((is_nonzero - 1U) & 0xFF);
 ```
 
 #### Optimization Level Matrix Testing
+
 The arithmetic selection mask was compiled and disassembled across multiple optimization levels to test for conditional branch regressions:
 
 | Compiler | Version | Optimization | Disassembly Status | Conditional Jumps |
@@ -184,13 +194,15 @@ To empirically verify constant-time behavior beyond static assembly inspection, 
 Binary: `build/test_zeroization` (Compiled under `-O3`)
 
 #### `OPENSSL_cleanse` Rationale & Defense-in-Depth
+
 - **Why `OPENSSL_cleanse`:** Implemented via a volatile function pointer and compiler memory barrier in OpenSSL 3.x, preventing compiler dead-store elimination (DSE) across all optimization levels (`-O0` through `-O3`).
 - **Standard Alternatives:** Serves the role filled by `explicit_bzero` (glibc/BSD) or C23 `memset_explicit`. Because Quantum Flex links `libcrypto`, `OPENSSL_cleanse` guarantees portable memory scrubbing without requiring external OS-specific symbols.
 - **Memory Dump & Swap Protections:**
   - `CleanseVectorOnDrop` RAII guard guarantees stack-unwinding zeroization on exceptions.
   - Core dump memory scraping is prevented by configuring `RLIMIT_CORE = 0` and applying `madvise(MADV_DONTDUMP)` to long-lived key buffers.
 
-#### Zeroization Test Results:
+#### Zeroization Test Results
+
 1. **Stack Buffers (64 B):** Populated with entropy $\to$ `OPENSSL_cleanse` $\to$ volatile pointer verified 100% `0x00`.
 2. **Heap Buffers (31,296 B):** Large secret key buffer $\to$ `OPENSSL_cleanse` under `-O3` $\to$ volatile pointer verified 100% `0x00`.
 3. **Key Destruction Lifecycle:** `HybridPrivateKey` (`x25519_sk`, `frodo_sk`) verified non-zero $\to$ destructor/cleanse $\to$ physical memory wiped with `0x00`.
@@ -216,10 +228,12 @@ Binary: `build/test_wire_fuzz_negative` & `scripts/test_wycheproof_x25519.py`
 *Note: Operational resilience and fault-tolerant infrastructure are distinguished from mathematical cryptographic validation.*
 
 ### 1. CPU Frequency & DVFS Side-Channel Defense
+
 - **Audit Findings:** On the master host (AMD Ryzen AI 5 340), CPU scaling governor is `powersave` with operating temperatures at 40.0 °C.
 - **Operational Hardening:** `scripts/set_yoga_power_policy.sh` configures systemd power policies and allows operator locking to `performance` to eliminate frequency scaling jitter during intensive cryptographic operations.
 
 ### 2. Power Loss & Node Failure Recovery (HP Pavilion Worker Node 2)
+
 - **Node Profile:** HP Pavilion Desktop Tower (Debian GNU/Linux 13 *Trixie*, Intel Celeron 450 @ 2.20 GHz, 1.9 GB RAM).
 - **Tailscale Mesh IP:** `100.64.1.34` (`qf-pavilion-worker`).
 - **Container Resilience:** Docker CE running Kafka broker (`qf-kafka-broker`) and UI (`qf-kafka-ui`) configured with `restart: unless-stopped`.
@@ -240,6 +254,7 @@ part of the public artifact.
 ## Conclusion & Regulatory Demarcation
 
 ### 1. Explicit Distinction: Pre-Validation Engineering vs. Formal CMVP Certification
+
 To ensure complete technical precision, avoid misleading procurement statements, and strictly demarcate internal engineering controls from government certifications:
 
 | Evaluation Dimension | Internal Engineering Assurance (This Dossier) | Formal NIST FIPS 140-3 Validation / Certification |
@@ -253,6 +268,7 @@ To ensure complete technical precision, avoid misleading procurement statements,
 | **Procurement Eligibility** | Technical due-diligence artifact; **cannot** fulfill federal FIPS-mandated clauses alone | Satisfies statutory federal procurement mandates (OMB M-26-15, FISMA, FedRAMP High) |
 
 ### 2. Precise Boundary of Claims
+
 - **What This Dossier Demonstrates:**
   - Mature secure-coding practices and verified branchless machine-code execution for hybrid decapsulation across all compiler optimization levels (`-O0` through `-O3`).
   - Empirical statistical timing indistinguishability via `dudect` ($|t| = 2.1606 < 4.5$).

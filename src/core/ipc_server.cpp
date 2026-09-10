@@ -91,9 +91,15 @@ namespace {
         
         if (stream.starts_with(set_key_prefix)) {
             const std::string hex_key = stream.substr(set_key_prefix.length());
-            node.set_harvester_key(hex_key);
-            sentinel.record_success();
-            ssl_write_str(ssl, "ACK|HARVESTER_KEY_SET\n");
+            try {
+                node.set_harvester_key(hex_key);
+                sentinel.record_success();
+                ssl_write_str(ssl, "ACK|HARVESTER_KEY_SET\n");
+            } catch (const std::exception& e) {
+                sentinel.record_drop();
+                const std::string err = std::string("ERR|") + e.what() + "\n";
+                ssl_write_str(ssl, err);
+            }
         } else if (stream.starts_with(telemetry_prefix)) {
             const std::string payload_block = stream.substr(telemetry_prefix.length());
             const std::size_t last_pipe = payload_block.rfind('|');

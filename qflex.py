@@ -182,7 +182,25 @@ def cmd_pqc_status():
     print(f"{BOLD}{CYAN}╚═══════════════════════════════════════════════════════════════════════╝{RESET}")
 
     print(f"\n{BOLD}{MAGENTA}[1] CRYPTOGRAPHIC PRIMITIVE INVENTORY & AGILITY LADDER{RESET}")
-    if conf_path.exists():
+    # 1. LIVE TRUTH PROBE: Check the host OS Gatekeeper directly
+    pqc_live_status = False
+    try:
+        # We ping the physical OpenSSL layer to verify execution capability
+        probe = subprocess.run(
+            ["openssl", "list", "-kem-algorithms", "-provider", "oqsprovider"],
+            capture_output=True, text=True
+        )
+        if "Frodo" in probe.stdout or "FrodoKEM" in probe.stdout:
+            pqc_live_status = True
+    except Exception:
+        pass
+
+    # 2. ENFORCE THE EQUATION: Y = f(x - h) + k
+    if not pqc_live_status:
+        print(f"  {RED}{BOLD}* PQ_MEMBRANE        : CLOSED (OPENSSL_FRODO976=NULL){RESET}")
+        print(f"  {YELLOW}* ACTIVE_ROUTING     : TAILSCALE WIREGUARD (X25519 FALLBACK){RESET}")
+        print(f"  {CYAN}* SYSTEM_STATE       : OS-Level liboqs Compilation Required{RESET}")
+    elif conf_path.exists():
         with open(conf_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -193,7 +211,7 @@ def cmd_pqc_status():
                     elif "fallback" in k:
                         print(f"  {YELLOW}  {k:<18} : {v:<22} [POLICY FALLBACK]{RESET}")
     else:
-        print(f"  {RED}[!] crypto_provider.conf not found.{RESET}")
+        print(f"  {RED}[!] crypto_provider.conf not found and PQC host is NULL.{RESET}")
 
     print(f"\n{BOLD}{MAGENTA}[2] WIRE PROTOCOL & GATEKEEPER SPECIFICATION (v1.0){RESET}")
     print(f"  * Protocol Magic     : {CYAN}0x5146584B (QFXK){RESET}")
