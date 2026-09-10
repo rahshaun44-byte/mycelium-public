@@ -19,6 +19,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace quantumflex::crypto {
@@ -34,13 +35,28 @@ namespace quantumflex::crypto {
             return stream.str();
         }
 
-        // Helper: Convert Hex string to raw bytes
-        [[nodiscard]] auto from_hex(const std::string& hex) -> std::vector<unsigned char> {
+        [[nodiscard]] inline auto hex_char_to_byte(char c) noexcept -> int {
+            if (c >= '0' && c <= '9') return c - '0';
+            if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+            if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+            return -1;
+        }
+
+        // Helper: Convert Hex string to raw bytes (branchless/robust, constant-time)
+        [[nodiscard]] auto from_hex(std::string_view hex) -> std::vector<unsigned char> {
+            if (hex.length() % 2 != 0) {
+                return {};
+            }
             std::vector<unsigned char> bytes;
             bytes.reserve(hex.length() / 2);
-            constexpr int HEX_BASE = 16;
+
             for (std::size_t i = 0; i < hex.length(); i += 2) {
-                bytes.push_back(static_cast<unsigned char>(std::stoul(hex.substr(i, 2), nullptr, HEX_BASE)));
+                const int hi = hex_char_to_byte(hex[i]);
+                const int lo = hex_char_to_byte(hex[i + 1]);
+                if (hi < 0 || lo < 0) {
+                    return {}; // Malformed packet / invalid hex
+                }
+                bytes.push_back(static_cast<unsigned char>((hi << 4) | lo));
             }
             return bytes;
         }
@@ -61,6 +77,9 @@ namespace quantumflex::crypto {
 
     Ed25519Signer::Ed25519Signer(const std::string& hex_public_key) {
         const std::vector<unsigned char> raw_key = from_hex(hex_public_key);
+        if (raw_key.size() != 32) {
+            throw std::runtime_error("Invalid Ed25519 public key length (expected 32 bytes)");
+        }
         pkey_ = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, raw_key.data(), raw_key.size());
         if (pkey_ == nullptr) {
             throw std::runtime_error("Failed to import Ed25519 public key");
@@ -252,18 +271,7 @@ namespace quantumflex::crypto {
     }
 
     auto HybridSigner::hex_to_bytes(const std::string& hex) -> std::vector<unsigned char> {
-        std::vector<unsigned char> bytes;
-        if (hex.length() % 2 != 0) {
-            return bytes;
-        }
-        bytes.reserve(hex.length() / 2);
-        constexpr int HEX_BASE = 16;
-        for (size_t i = 0; i < hex.length(); i += 2) {
-            const std::string byteString = hex.substr(i, 2);
-            const auto byte = static_cast<unsigned char>(std::stoul(byteString, nullptr, HEX_BASE));
-            bytes.push_back(byte);
-        }
-        return bytes;
+        return from_hex(hex);
     }
 
     auto HybridSigner::bytes_to_hex(const unsigned char* data, size_t len) -> std::string {

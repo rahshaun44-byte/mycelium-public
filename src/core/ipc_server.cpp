@@ -50,11 +50,22 @@ namespace {
     // this wire format uses — so payloads are always hex-encoded in transit
     // (see tools/genesis_tool.cpp, the only current producer of INIT|/UNLOCK|
     // lines). Decode back to raw bytes before handing shards to LocalNode.
+    [[nodiscard]] inline auto hex_char_val(char c) noexcept -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
+    }
+
     auto hex_decode(const std::string& hex) -> std::string {
+        if (hex.length() % 2 != 0) return {};
         std::string raw;
         raw.reserve(hex.length() / 2);
-        for (std::size_t i = 0; i + 1 < hex.length(); i += 2) {
-            raw.push_back(static_cast<char>(std::stoi(hex.substr(i, 2), nullptr, 16)));
+        for (std::size_t i = 0; i < hex.length(); i += 2) {
+            const int hi = hex_char_val(hex[i]);
+            const int lo = hex_char_val(hex[i + 1]);
+            if (hi < 0 || lo < 0) return {};
+            raw.push_back(static_cast<char>((hi << 4) | lo));
         }
         return raw;
     }
@@ -396,6 +407,9 @@ namespace quantumflex::ipc {
 
         // ── Branch 2: Legacy Line-Based Protocol ────────────────────────────
         std::string stream(reinterpret_cast<const char*>(buffer.data()), static_cast<std::size_t>(bytes_read));
+        while (!stream.empty() && (stream.back() == '\r' || stream.back() == '\n')) {
+            stream.pop_back();
+        }
 
         if (node_.get_state() == quantumflex::node::SystemState::UNINITIALIZED) {
             const std::string init_prefix = "INIT|";

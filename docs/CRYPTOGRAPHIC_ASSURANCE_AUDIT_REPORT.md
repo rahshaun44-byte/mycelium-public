@@ -24,8 +24,7 @@
 > **3. Authorized Scope & Intended Use:**  
 > This dossier represents an *internal cryptographic engineering assurance audit*. It provides empirical evidence of branchless machine code generation, physical memory zeroization under `-O3`, statistical timing indistinguishability via `dudect` Welch $t$-testing, and bit-exact conformity to NIST/IETF specifications. This evidence is prepared as technical due-diligence and pre-validation documentation for potential future third-party lab evaluation. It must **not** be presented to clients, enterprise procurement officers, or federal entities as a government-certified or FIPS-validated module.
 
---u-
-u
+---
 
 ## 1. Reproducibility & Build Environment Metadata
 
