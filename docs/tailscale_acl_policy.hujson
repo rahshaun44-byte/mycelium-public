@@ -1,5 +1,3 @@
-// Tailscale Access Control List (ACL) Policy for QuantumFlex Zero-Trust Mesh
-// Paste this directly into: https://login.tailscale.com/admin/acls
 {
   "acls": [
     // 1. Mobile Nodes (Pixel 11 Pro & Galaxy S23 FE) -> Master Node (Yoga 7) HTTP/HUD Ports
