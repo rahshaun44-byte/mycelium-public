@@ -1,0 +1,14 @@
+[Unit]
+Description=QuantumFlex Kafka Telemetry Consumer (AMARA/Athena Ingestion)
+After=network.target athena-node.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/mycelium
+ExecStart=%h/.venv/qflex/bin/python3 api_node/kafka_consumer.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
