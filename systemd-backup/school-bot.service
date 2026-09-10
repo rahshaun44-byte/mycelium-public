@@ -1,0 +1,15 @@
+[Unit]
+Description=Independent School Assistant Bot (Isolated)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/mycelium/school-bot
+ExecStart=%h/mycelium/venv/bin/python3 %h/mycelium/school-bot/bot.py
+Restart=on-failure
+RestartSec=5
+Environment=SCHOOL_BOT_PORT=9060
+Environment=SCHOOL_BOT_HOST=0.0.0.0
+
+[Install]
+WantedBy=default.target

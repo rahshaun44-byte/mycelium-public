@@ -1,0 +1,18 @@
+[Unit]
+Description=Quantum Flex AI Teammates (QF-Bot) Server
+After=network.target qflex-mcp.service ollama.service
+
+[Service]
+EnvironmentFile=/home/quant/mycelium/.env
+Type=simple
+WorkingDirectory=/home/quant/mycelium/mcp_layer
+ExecStart=/home/quant/mycelium/venv/bin/python3 -u -m uvicorn qf_bot.bot_server:app --host 0.0.0.0 --port 9050
+Restart=always
+RestartSec=5s
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/home/quant/mycelium/mcp_layer:/home/quant/mycelium
+StandardOutput=append:%h/.local/state/quantum-flex-mycelium/qf-bot.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target
