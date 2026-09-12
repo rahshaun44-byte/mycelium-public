@@ -1,26 +1,76 @@
 {
+  // Quantum Flex tailnet policy — documented source of truth.
+  // The machine-readable twin is tailscale_acl_policy.json (same semantics, no comments);
+  // paste THAT into the admin console. Keep the two in sync when either changes.
+  //
+  // Tailnet: rahshaun44-byte.github  (MagicDNS: example-tailnet.ts.net)
+  //
+  // Ground truth on 2026-09-12 (tailscale status --json / ss -lntH on fedora):
+  //   fedora              100.64.1.17  Yoga 7, master   — every QF listener is 127.0.0.1-only;
+  //                                                          engine 9444 mTLS is loopback, 9443 is retired
+  //   qf-pavilion-worker  100.64.1.34   Pavilion, worker — Kafka KRaft broker :9092, Kafka UI :8090, SSH :22 (rocky)
+  //   pixel-11-pro        100.64.1.18   phone
+  //   rahshauns-s23-fe    100.64.1.32   phone            — holds Shamir shard 2 (moved by offline QR, not Taildrop)
+  //   Serve / Funnel: none configured, so no Yoga port is reachable over the tailnet.
+  //
+  // Design:
+  //   * Yoga + phones stay USER-OWNED (untagged). Taildrop and Tailscale SSH only work between
+  //     same-owner devices, so tagging a phone would break shard logistics.
+  //   * Pavilion is TAGGED tag:worker so it falls outside autogroup:self. Every path to or from it
+  //     must be written down here. Kafka is the only genuinely network-exposed service in the system.
+  //   * Data flows one way: Yoga -> Pavilion:9092. Both qf-kafka-telemetry (producer) and
+  //     qf-kafka-consumer run ON the Yoga and dial out, so the Pavilion needs no inbound path.
+  //   * The engine is never a tailnet destination. Unlock is a local session on the Yoga.
+  //
+  // Superseded policy (pre-2026-09-12) granted autogroup:owner -> autogroup:self:* while the
+  // Pavilion was still untagged, which silently gave both phones full access to the Kafka broker
+  // and SSH. It also referenced ports 9443 and 9060, neither of which has a listener.
+  //
+  // Apply: admin console -> Access controls -> paste the .json -> Save (tests run on save).
+  // Then:  Machines -> qf-pavilion-worker -> Edit ACL tags -> tag:worker.
+
   "tagOwners": {
-    "tag:worker": ["autogroup:owner"]
+    "tag:worker": ["autogroup:owner"],
   },
+
   "hosts": {
-    "yoga": "100.64.1.17",
+    "yoga":     "100.64.1.17",
     "pavilion": "100.64.1.34",
-    "pixel": "100.64.1.18",
-    "s23": "100.64.1.32"
+    "pixel":    "100.64.1.18",
+    "s23":      "100.64.1.32",
   },
+
   "acls": [
-    { "action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self:*"] },
-    { "action": "accept", "src": ["yoga"], "dst": ["tag:worker:9092", "tag:worker:8090", "tag:worker:22"] },
-    { "action": "accept", "src": ["pixel", "s23"], "dst": ["tag:worker:8090"] }
+    // 1. Owner devices <-> each other (Yoga, Pixel, S23): all ports. Needed for Taildrop and
+    //    Tailscale SSH. Exposes nothing on the Yoga today because every QF service binds
+    //    127.0.0.1; a port only becomes reachable if `tailscale serve` is deliberately configured.
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self:*"]},
+
+    // 2. Yoga -> Pavilion: Kafka broker, Kafka UI, operator SSH.
+    {"action": "accept", "src": ["yoga"], "dst": ["tag:worker:9092", "tag:worker:8090", "tag:worker:22"]},
+
+    // 3. Phones -> Pavilion: Kafka UI only (read-only console). No broker, no SSH.
+    {"action": "accept", "src": ["pixel", "s23"], "dst": ["tag:worker:8090"]},
+
+    // 4. Pavilion -> Yoga: nothing. Deliberately absent (default deny).
   ],
+
   "ssh": [
-    { "action": "check", "checkPeriod": "12h", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot"] },
-    { "action": "accept", "src": ["autogroup:member"], "dst": ["tag:worker"], "users": ["rocky"] }
+    // Owner devices -> Yoga as a non-root user. `check` forces browser re-auth every 12h because a
+    // quant shell on the Yoga can read shard 1. Note: SELinux is Enforcing here and Tailscale warns
+    // that Tailscale SSH may not work at all on this host — this rule is the intended posture, not
+    // a load-bearing control.
+    {"action": "check", "checkPeriod": "12h", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot"]},
+
+    // Owner devices -> Pavilion as rocky only. Root login never permitted.
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:worker"], "users": ["rocky"]},
   ],
+
+  // Executable statements of the design. The console refuses to save a policy that violates these.
   "tests": [
-    { "src": "yoga", "accept": ["pavilion:9092", "pavilion:8090", "pavilion:22"] },
-    { "src": "pixel", "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"] },
-    { "src": "s23", "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"] },
-    { "src": "pavilion", "deny": ["yoga:9444", "yoga:8080", "yoga:8000", "yoga:9050", "yoga:22"] }
-  ]
+    {"src": "yoga",     "accept": ["pavilion:9092", "pavilion:8090", "pavilion:22"]},
+    {"src": "pixel",    "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"]},
+    {"src": "s23",      "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"]},
+    {"src": "pavilion", "deny":   ["yoga:9444", "yoga:8080", "yoga:8000", "yoga:9050", "yoga:22"]},
+  ],
 }

@@ -10,8 +10,10 @@ This checklist defines mandatory preflight, provisioning, key management, and in
   - Run `scripts/hertzbleed-gate.sh` to confirm CPU governor posture (`performance` or fixed frequency) to mitigate microarchitectural DVFS leakage.
   - Record baseline frequencies: `cur_freq`, `min_freq`, `max_freq`.
 - [ ] **OpenSSL Provider Alignment**:
-  - Verify OpenSSL 3.5.8+ default and fips providers are active.
-  - Execute `openssl list -kem-algorithms` and confirm support for `ML-KEM-768` and `X25519MLKEM768`.
+  - This host runs OpenSSL **3.5.8 default provider only**. The FIPS provider is **not** loaded (`openssl list -providers` shows `default`).
+  - PQC KEMs (`ML-KEM-768`, `X25519MLKEM768`) live in the **default** provider. X25519 is **not** a FIPS-approved curve, so do not require FIPS mode and `X25519MLKEM768` at the same time — that check fails by design.
+  - FIPS-legal hybrids (if you ever enable the FIPS provider) are `SecP256r1MLKEM768` / `SecP384r1MLKEM1024`.
+  - Live research posture: `openssl list -kem-algorithms` must show `ML-KEM-768` and `X25519MLKEM768` **@ default**. Do not claim FIPS 140-3 module validation.
 - [ ] **Memory Protection & Swapping**:
   - Ensure swap is disabled or encrypted (`swapoff -a`).
   - Verify `mlock` permissions for the `quantum_flex_engine` process to prevent secret key paging.

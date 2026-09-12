@@ -11,6 +11,7 @@
 
 #include "quantum-flex/crypto_shamir.hpp"
 
+#include <openssl/crypto.h>
 #include <openssl/rand.h>
 
 #include <cstdint>
@@ -53,6 +54,15 @@ auto get_flag(int argc, char** argv, const std::string& name, const std::string&
     return fallback;
 }
 
+auto has_flag(int argc, char** argv, const std::string& name) -> bool {
+    for (int i = 2; i < argc; ++i) {
+        if (name == argv[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 auto build_shard_line(const std::vector<quantumflex::crypto::SecretShard>& shards) -> std::string {
     std::ostringstream out;
     for (std::size_t i = 0; i < shards.size(); ++i) {
@@ -78,6 +88,9 @@ auto cmd_split(int argc, char** argv) -> int {
     }
 
     const auto shards = quantumflex::crypto::ShamirSecretSharing::split_secret(secret, total, threshold);
+    OPENSSL_cleanse(secret.data(), secret.size());
+
+    const bool quiet = has_flag(argc, argv, "--quiet");
 
     std::cout << "[+] Generated genesis secret. total=" << static_cast<int>(total)
               << " threshold=" << static_cast<int>(threshold) << "\n";
@@ -93,14 +106,16 @@ auto cmd_split(int argc, char** argv) -> int {
         std::cout << "    -> wrote " << path << "\n";
     }
 
-    std::vector<quantumflex::crypto::SecretShard> preview(shards.begin(), shards.begin() + threshold);
-    std::cout << "\n[*] Distribute the shard_*.txt files to separate custodians/locations.\n"
-              << "[*] Any " << static_cast<int>(threshold) << " of the " << static_cast<int>(total)
-              << " are sufficient to genesis or unlock the node — keep them apart from each other\n"
-              << "[*] and apart from QF_DATA_DIR, so a compromise of the running engine's filesystem\n"
-              << "[*] access alone can't also recover the secret.\n\n"
-              << "[*] Example INIT line (first " << static_cast<int>(threshold) << " shards):\n"
-              << "INIT|" << build_shard_line(preview) << "\n";
+    if (!quiet) {
+        std::vector<quantumflex::crypto::SecretShard> preview(shards.begin(), shards.begin() + threshold);
+        std::cout << "\n[*] Distribute the shard_*.txt files to separate custodians/locations.\n"
+                  << "[*] Any " << static_cast<int>(threshold) << " of the " << static_cast<int>(total)
+                  << " are sufficient to genesis or unlock the node — keep them apart from each other\n"
+                  << "[*] and apart from QF_DATA_DIR, so a compromise of the running engine's filesystem\n"
+                  << "[*] access alone can't also recover the secret.\n\n"
+                  << "[*] Example INIT line (first " << static_cast<int>(threshold) << " shards):\n"
+                  << "INIT|" << build_shard_line(preview) << "\n";
+    }
 
     return 0;
 }
@@ -142,10 +157,16 @@ auto cmd_recover(int argc, char** argv) -> int {
 
     // Local dry-run reconstruction, purely for operator confidence before sending
     // the UNLOCK| line — the engine performs its own independent recovery.
-    const std::string recovered = quantumflex::crypto::ShamirSecretSharing::recover_secret(shards, threshold);
-    std::cout << "[+] Local reconstruction succeeded. Recovered secret (hex): " << to_hex(recovered) << "\n\n"
-              << "[*] Send this line over the mTLS IPC socket:\n"
-              << "UNLOCK|" << build_shard_line(shards) << "\n";
+    std::string recovered = quantumflex::crypto::ShamirSecretSharing::recover_secret(shards, threshold);
+    const bool quiet = has_flag(argc, argv, "--quiet");
+    if (quiet) {
+        std::cout << "UNLOCK|" << build_shard_line(shards) << "\n";
+    } else {
+        std::cout << "[+] Local reconstruction succeeded. Recovered secret (hex): " << to_hex(recovered) << "\n\n"
+                  << "[*] Send this line over the mTLS IPC socket:\n"
+                  << "UNLOCK|" << build_shard_line(shards) << "\n";
+    }
+    OPENSSL_cleanse(recovered.data(), recovered.size());
 
     return 0;
 }
@@ -155,8 +176,8 @@ auto cmd_recover(int argc, char** argv) -> int {
 auto main(int argc, char** argv) -> int {
     if (argc < 2) {
         std::cerr << "Usage:\n"
-                  << "  qf_genesis_tool split [--total N] [--threshold K] [--out-dir DIR]\n"
-                  << "  qf_genesis_tool recover --shards f1,f2,f3 [--threshold K]\n";
+                  << "  qf_genesis_tool split [--total N] [--threshold K] [--out-dir DIR] [--quiet]\n"
+                  << "  qf_genesis_tool recover --shards f1,f2,f3 [--threshold K] [--quiet]\n";
         return 1;
     }
 

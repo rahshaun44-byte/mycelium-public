@@ -1,84 +1,26 @@
 {
-  "acls": [
-    {
-      "action": "accept",
-      "src": [
-        "100.64.1.18",
-        "100.64.1.32"
-      ],
-      "dst": [
-        "100.64.1.17:8000",
-        "100.64.1.17:8080",
-        "100.64.1.17:9050",
-        "100.64.1.17:9060",
-        "100.64.1.17:9443"
-      ]
-    },
-    {
-      "action": "accept",
-      "src": [
-        "100.64.1.18",
-        "100.64.1.32"
-      ],
-      "dst": [
-        "100.64.1.34:8090"
-      ]
-    },
-    {
-      "action": "accept",
-      "src": [
-        "100.64.1.17"
-      ],
-      "dst": [
-        "100.64.1.34:9092",
-        "100.64.1.34:8090",
-        "100.64.1.34:22"
-      ]
-    },
-    {
-      "action": "accept",
-      "src": [
-        "100.64.1.34"
-      ],
-      "dst": [
-        "100.64.1.17:8080",
-        "100.64.1.17:9443"
-      ]
-    },
-    {
-      "action": "accept",
-      "src": [
-        "autogroup:owner"
-      ],
-      "dst": [
-        "autogroup:self:*"
-      ]
-    }
-  ],
   "tagOwners": {
-    "tag:master": [
-      "autogroup:owner"
-    ],
-    "tag:worker": [
-      "autogroup:owner"
-    ],
-    "tag:mobile": [
-      "autogroup:owner"
-    ]
+    "tag:worker": ["autogroup:owner"]
   },
+  "hosts": {
+    "yoga": "100.64.1.17",
+    "pavilion": "100.64.1.34",
+    "pixel": "100.64.1.18",
+    "s23": "100.64.1.32"
+  },
+  "acls": [
+    { "action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self:*"] },
+    { "action": "accept", "src": ["yoga"], "dst": ["tag:worker:9092", "tag:worker:8090", "tag:worker:22"] },
+    { "action": "accept", "src": ["pixel", "s23"], "dst": ["tag:worker:8090"] }
+  ],
   "ssh": [
-    {
-      "action": "accept",
-      "src": [
-        "autogroup:owner"
-      ],
-      "dst": [
-        "autogroup:self"
-      ],
-      "users": [
-        "rocky",
-        "autogroup:nonroot"
-      ]
-    }
+    { "action": "check", "checkPeriod": "12h", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot"] },
+    { "action": "accept", "src": ["autogroup:member"], "dst": ["tag:worker"], "users": ["rocky"] }
+  ],
+  "tests": [
+    { "src": "yoga", "accept": ["pavilion:9092", "pavilion:8090", "pavilion:22"] },
+    { "src": "pixel", "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"] },
+    { "src": "s23", "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"] },
+    { "src": "pavilion", "deny": ["yoga:9444", "yoga:8080", "yoga:8000", "yoga:9050", "yoga:22"] }
   ]
 }

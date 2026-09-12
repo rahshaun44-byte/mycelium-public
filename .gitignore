@@ -66,3 +66,6 @@ venv/
 venv
 sentinel/bundle_server/
 sentinel/ledger/
+liboqs/
+.cursor/
+*.code-workspace
