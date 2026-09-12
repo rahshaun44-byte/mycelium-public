@@ -6,7 +6,7 @@
 **Auditor / Team:** Quantum Flex Cryptographic Engineering (`FinallyFungus LLC`)  
 **Target Scope:** `mycelium` / `pqc-immune-daemon`  
 **Standards Reference:** NIST FIPS 140-3 (Design Alignment) / FIPS 203 (ML-KEM) / RFC 7748 (X25519) / RFC 5869 (HKDF) / CFRG draft-irtf-cfrg-hybrid-kems / Project Wycheproof  
-**Internal Invariant Status:** **100% INTERNAL INVARIANTS PASSED (22/22 Verification Invariants)**
+> **Snapshot:** The 22/22 table and dudect `|t|=2.1606` apply to commit `08ee1159` on kernel `7.1.13` (audit 2026-09-09). HEAD and kernel have moved; do not cite 22/22 as a live re-score without re-running the binaries under `build/`.
 
 ---
 
@@ -73,7 +73,7 @@ Audit_Date         = 2026-09-09T02:40:00-04:00
    - Implements **ML-KEM** (Kyber family: ML-KEM-512, ML-KEM-768, ML-KEM-1024) via native OpenSSL 3.5 cryptographic provider.
    - **ML-KEM-768** serves as the default operational primary post-quantum KEM primitive ($pk=1184$ B, $ct=1088$ B, $ss=32$ B).
 2. **FrodoKEM-976-AES:**
-   - Conservative post-quantum algorithm based on un編ed Learning With Errors (plain LWE).
+   - Conservative post-quantum algorithm based on unstructured Learning With Errors (plain LWE).
    - FrodoKEM is an ISO/IEC 18033-2 candidate and is **not** standardized under FIPS 203. It is deployed strictly as an emergency fallback hedge when structured lattice assumptions require algorithmic hedging.
 3. **RFC 7748 (Curve25519 / X25519):**
    - Classical Diffie-Hellman asymmetric key exchange.
@@ -143,7 +143,7 @@ The arithmetic selection mask was compiled and disassembled across multiple opti
 Binary: `build/test_known_answer_vectors`
 
 1. **NIST FIPS 203 ML-KEM Reference Vector Verification (KAT 5/5 — Internal Test Harness):**
-   - *CAVP Regulatory Notice*: Verified bit-exact against published NIST FIPS 203 mathematical reference vectors via native OpenSSL 3.5.8 provider. This demonstrates algorithmic correctness; it does not constitute an official NIST CAVP algorithm certificate.
+   - *CAVP Regulatory Notice*: OpenSSL 3.5.8 provider **size + encapsulate/decapsulate round-trip + implicit rejection** for ML-KEM-512/768/1024. This is **not** an official NIST CAVP / ACVP known-answer certificate and is not bit-exact against published NIST ACVP test vectors.
    - **ML-KEM-512**: Public key = 800 B, Ciphertext = 768 B, Shared secret = 32 B **[MATCH]**
    - **ML-KEM-768**: Public key = 1184 B, Ciphertext = 1088 B, Shared secret = 32 B **[MATCH]**
    - **ML-KEM-1024**: Public key = 1568 B, Ciphertext = 1568 B, Shared secret = 32 B **[MATCH]**

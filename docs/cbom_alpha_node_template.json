@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260907",
-  "version": 2,
+  "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260911",
+  "version": 3,
   "metadata": {
-    "timestamp": "2026-09-07T09:05:27Z",
+    "timestamp": "2026-09-12T03:39:17Z",
     "tools": [
       {
         "vendor": "QuantumFlex Security",
@@ -27,7 +27,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "9bf8a89a4d304b7ca40c007b922c09dadb2598bd2b2227f68b0c8f523eeb6a6c"
+          "content": "0d72789e10c0c50f055228b795598f327ebd3d7e186943b81ee0ba4400ccb75a"
         }
       ],
       "properties": [
@@ -123,19 +123,19 @@
     },
     {
       "type": "crypto-asset",
-      "bom-ref": "crypto:sig:slh-dsa-128s",
-      "name": "SLH-DSA-128s",
+      "bom-ref": "crypto:sig:slh-dsa-sha2-128f",
+      "name": "SLH-DSA-SHA2-128f",
       "version": "NIST FIPS 205",
-      "description": "Stateless Hash-Based Digital Signature Algorithm (Conservative Fallback)",
+      "description": "Stateless Hash-Based Digital Signature Algorithm (conf fallback_sig_1)",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
           "primitive": "signature",
-          "parameterSetIdentifier": "SLH-DSA-SHAKE-128s",
+          "parameterSetIdentifier": "SLH-DSA-SHA2-128f",
           "classicalSecurityLevel": 128,
           "nistQuantumSecurityLevel": 1
         },
-        "oid": "2.16.840.1.101.3.4.3.23"
+        "oid": "2.16.840.1.101.3.4.3.21"
       }
     },
     {
@@ -160,12 +160,12 @@
       "bom-ref": "crypto:sss:shamir-gf256",
       "name": "Shamir-Secret-Sharing-GF256",
       "version": "QuantumFlex v2.0",
-      "description": "2-of-3 Threshold Secret Sharing over Galois Field GF(256) for Master Entropy Sharding",
+      "description": "Threshold secret sharing over GF(256). Live unlock uses threshold 3 on three shard files; five shard files exist (k=3, n=5 split).",
       "cryptoProperties": {
         "assetType": "protocol",
         "algorithmProperties": {
           "primitive": "secret-sharing",
-          "parameterSetIdentifier": "k=2, n=3",
+          "parameterSetIdentifier": "k=3, n=5",
           "classicalSecurityLevel": 256,
           "nistQuantumSecurityLevel": 5
         }
@@ -180,7 +180,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "58f4980440a3a16c0dd1244106cf2b55b22710993141b24e2de4bacd1f623488"
+          "content": "008f19269a92d4c09868c458909a7b4f53d35d9dcd360d04d89c4316c54195ed"
         }
       ]
     },
@@ -203,11 +203,10 @@
       "bom-ref": "service:wire:mtls",
       "name": "mTLS QFXK Binary IPC Wire",
       "endpoints": [
-        "100.64.1.29:9443",
-        "127.0.0.1:9443"
+        "127.0.0.1:9444"
       ],
       "authenticated": true,
-      "x-trust-boundary": "Tailscale WireGuard Mesh & Loopback Only"
+      "x-trust-boundary": "Loopback mTLS only (not advertised on Tailscale)"
     },
     {
       "bom-ref": "service:opa:sidecar",
@@ -222,19 +221,19 @@
       "bom-ref": "service:console:amara",
       "name": "AMARA Intelligence & Telemetry Console",
       "endpoints": [
-        "100.64.1.29:8000"
+        "127.0.0.1:8000"
       ],
       "authenticated": true,
-      "x-trust-boundary": "Tailscale Mesh Only"
+      "x-trust-boundary": "Loopback bind; optional Tailscale Serve publication"
     },
     {
       "bom-ref": "service:api:gateway",
       "name": "QuantumFlex API Gateway",
       "endpoints": [
-        "100.64.1.29:8080"
+        "127.0.0.1:8080"
       ],
       "authenticated": true,
-      "x-trust-boundary": "Tailscale Mesh Only"
+      "x-trust-boundary": "Loopback bind; optional Tailscale Serve publication"
     }
   ]
 }

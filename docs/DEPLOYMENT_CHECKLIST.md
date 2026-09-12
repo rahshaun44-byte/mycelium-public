@@ -24,7 +24,7 @@ This checklist defines mandatory preflight, provisioning, key management, and in
   - Root CA (`CN=QuantumFlex-Root-CA`) must be generated inside an offline workstation or hardware security module using Ed25519 or ML-DSA-65.
   - **Zero Key Shipping Invariant**: Under no circumstances should `ca.key` or node private keys be packaged into distributable bundles (`package_alpha_node.py` enforces this guard).
 - [ ] **Shamir Master Secret Distribution**:
-  - Fracture master unlock entropy into 3 shards ($k=2, n=3$ threshold):
+  - Fracture master unlock entropy with genesis tool default **k=3, n=5**. Live Yoga unlock presents three files (`~/qfx-shards/shard_{1,2,3}.txt`) at threshold 3. Do not document k=2 unless that split is regenerated.
     - Shard #1: Stored on Pixel GrapheneOS Titan M2 enclave (`/data/secure/shard1.qfx`).
     - Shard #2: Stored on Samsung Galaxy Ultra Knox Vault enclave (`/data/secure/shard2.qfx`).
     - Shard #3: Stored on physical host secure vault (`/etc/quantum-flex/vault/shard3.qfx`).
@@ -37,10 +37,10 @@ This checklist defines mandatory preflight, provisioning, key management, and in
 ## 3. Network Surface & Boundary Confinement
 
 - [ ] **Port Exposure Verification**:
-  - `9443/tcp`: mTLS wire protocol confined to Tailscale WireGuard mesh interface (`100.64.0.0/10`).
-  - `8181/tcp`: Open Policy Agent sidecar bound strictly to `127.0.0.1` (loopback only). Zero external exposure.
-  - `8000/tcp`: AMARA Intelligence Console bound to Tailscale mesh only.
-  - `8080/tcp`: API Node rate-limited telemetry ingress bound to Tailscale mesh only.
+  - `9444/tcp`: mTLS engine IPC bound strictly to `127.0.0.1`.
+  - `8181/tcp`: Open Policy Agent sidecar bound strictly to `127.0.0.1`.
+  - `8000/tcp`: AMARA console bound to `127.0.0.1` (publish with Tailscale Serve if needed).
+  - `8080/tcp`: API node bound to `127.0.0.1` (publish with Tailscale Serve if needed).
 - [ ] **Firewall & Packet Filters**:
   - Ensure `nftables` or `iptables` drops any packet arriving on external physical NICs (`eth0`, `wlan0`) targeting internal daemon ports.
 

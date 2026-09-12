@@ -7,7 +7,7 @@ Wants=athena-node.service
 EnvironmentFile=/home/quant/mycelium/.env
 Type=simple
 WorkingDirectory=/home/quant/mycelium/api_node
-ExecStart=/home/quant/mycelium/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8080
+ExecStart=/home/quant/mycelium/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080
 Restart=always
 RestartSec=5s
 Environment=PYTHONUNBUFFERED=1

@@ -6,13 +6,15 @@
 
 ## I. Proof-of-Work Screen Capture Script (3-Minute Demo)
 
-When demonstrating technical competence or providing video evidence to defense subcontractors, follow this 3-terminal recording sequence:
+Use the **already running** Fedora user units. Do **not** start a second `immune_daemon.py`, and do **not** run `tools/live_fire_immune_test.py` against this host: that harness is Windows-oriented (`LOCALAPPDATA` OPA), binds its own `:8181`, and asserts **ML-KEM-512 → FrodoKEM-640-AES** (experimental ladder), not production **ML-KEM-768 → FrodoKEM-976-AES**.
+
+Decision-loop period is `POLL_INTERVAL_MS=500` (up to 500 ms to detect). `os.replace` is atomic; that is not a measured sub-0.5 ms SLA. Live `immune-daemon.service` does not set `WORKER_PID`, so SIGHUP / zero-drop is **not** demonstrated on this Yoga.
 
 | Terminal / View | Active Process | Key Visual Element |
 |---|---|---|
-| **Terminal 1 (Active Worker)** | `python pqc-immune-daemon/immune_daemon.py` | Active worker processing telemetry across `active_kem=ML-KEM-768` and `active_sig=ML-DSA-65`. |
-| **Terminal 2 (Policy Injection)**| `curl -X PUT http://127.0.0.1:8181/v1/data/threat_flags -d '{"ML_KEM_COMPROMISED": true}'` | Real-time threat flag injection simulating zero-day lattice compromise. |
-| **Terminal 3 (Live Output)** | `python tools/live_fire_immune_test.py` | Shows OPA HTTP 200 `TOXIC` verdict, sub-0.5ms atomic config rewrite to `FrodoKEM-976-AES`, and zero dropped connections. |
+| **Terminal 1 (Supervisor log)** | `journalctl --user -u immune-daemon -f` | Existing daemon; `active_kem=ML-KEM-768`, `active_sig=ML-DSA-65` in `mcp_layer/crypto_provider.conf`. |
+| **Terminal 2 (Policy injection)** | `curl -X PUT http://127.0.0.1:8181/v1/data/threat_flags -H 'Content-Type: application/json' -d '{"ML_KEM_COMPROMISED": true}'` | Threat flag on the live OPA sidecar. Restore the flag and conf before ending the recording. |
+| **Terminal 3 (Conf / log)** | `tail -f ~/.local/state/quantum-flex-mycelium/immune-daemon.log` and `grep active_kem mcp_layer/crypto_provider.conf` | TOXIC path collapsing **ML-KEM-768 → FrodoKEM-976-AES**. |
 
 ---
 

@@ -57,7 +57,7 @@ The table below summarizes the operational baseline achieved across all deployme
 | **Vector 1** | Memory Cleansing | Heap/Stack Zeroization Post-Shamir Reconstruction | **0 errors / 0 bytes leaked** (37 allocs / 37 frees) | **PASS** |
 | **Vector 2** | Shock Absorber | Live Kafka Cadence Under Forged Signature Attack | **15.01s interval** (Nominal: 15.00s; $\Delta < 0.1\%$) | **PASS** |
 | **Vector 3** | Shamir Unlock | Threshold State Transition Latency (`LOCKED -> ACTIVE`) | **4.651 ms** transition latency | **PASS** |
-| **Vector 4** | Mobile Edge Mesh | Cross-Mesh Zero-Trust Ingress (`0.0.0.0` over Tailscale) | **100% Invariant Admission** (`overall_verdict: ADMIT`) | **PASS** |
+| **Vector 4** | Mobile Edge Mesh | Cross-Mesh Zero-Trust Ingress (loopback + Tailscale Serve) | **100% Invariant Admission** (`overall_verdict: ADMIT`) | **PASS** |
 | **Vector 5** | Cognitive Ingestion | Dual Persistence to AMARA Ledger & Athena Vector Store | **Synchronous dual-anchor** (IDs 5858–5862 / 166 vectors) | **PASS** |
 
 ---
@@ -139,7 +139,7 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ### Vector 3: Shamir Unlock Ceremony & Constant-Time Hardening
 
 * **Target Scope:** Engine state machine (`src/core/ipc_server.cpp`) and PQC decapsulation layer (`src/crypto/crypto_signer.cpp`).
-* **Operational Invariant:** Multi-party 3-of-5 threshold transition from `LOCKED` to `ACTIVE` must execute in sub-10 ms while maintaining strict constant-time branchless execution.
+* **Operational Invariant:** Live unlock uses threshold 3 with three shard files. The KAT binary separately proves 3-of-5 reconstruction.
 * **Timing & Statistical Evidence:**
   - **Threshold Ceremony Latency:** **4.651 ms** from shard reception to active cryptographic readiness.
   - **Constant-Time Verification:** Replaced non-constant standard library parsing with bitwise branchless routines; evaluated via `dudect` Welch $t$-test ($|t| = 2.1606 < 4.5$), proving statistical timing indistinguishability between valid and forged credentials.
@@ -148,7 +148,7 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 [IPC Server] Shard 1/3 validated (Fingerprint: 7b8a...)
 [IPC Server] Shard 2/3 validated (Fingerprint: 3c91...)
 [IPC Server] Shard 3/3 validated (Fingerprint: a4f0...)
-[IPC Server] 3-of-5 threshold satisfied. Commencing Shamir reconstruction...
+[IPC Server] 3-of-3 presented shards (threshold=3). Commencing Shamir reconstruction...
 [IPC Server] Transition state: LOCKED -> ACTIVE
 [IPC Server] Ceremony duration: 4.651 ms. Master hybrid key active.
 ```
@@ -158,7 +158,7 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ### Vector 4: Zero-Trust Mobile Edge Admission
 
 * **Target Scope:** Sovereign Mobile HUD (`:9050`), API Gateway (`:8080`), and Open Policy Agent (`:8181`).
-* **Network Topology:** Services bound to `0.0.0.0` but strictly segregated by `firewalld`. Interface `tailscale0` assigned to dedicated `qf-tailscale` zone (`target: ACCEPT`), leaving physical LAN interfaces dark.
+* **Network Topology:** Services bound to `127.0.0.1`. `tailscale0` is in firewalld `qf-tailscale`. Physical LAN has no application listeners.
 * **Mobile Endpoints Admitted:**
   - **Pixel 11 Pro (`100.64.1.18`):** Ping round-trip latency: **124 ms**
   - **Galaxy S23 FE (`100.64.1.32`):** Ping round-trip latency: **264 ms**

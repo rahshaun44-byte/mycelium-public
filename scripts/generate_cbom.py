@@ -54,8 +54,8 @@ def generate_cbom(output_path: str = "docs/cbom_alpha_node_template.json"):
         "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260907",
-        "version": 2,
+        "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260911",
+        "version": 3,
         "metadata": {
             "timestamp": iso_timestamp,
             "tools": [
@@ -158,19 +158,19 @@ def generate_cbom(output_path: str = "docs/cbom_alpha_node_template.json"):
             },
             {
                 "type": "crypto-asset",
-                "bom-ref": "crypto:sig:slh-dsa-128s",
-                "name": "SLH-DSA-128s",
+                "bom-ref": "crypto:sig:slh-dsa-sha2-128f",
+                "name": "SLH-DSA-SHA2-128f",
                 "version": "NIST FIPS 205",
-                "description": "Stateless Hash-Based Digital Signature Algorithm (Conservative Fallback)",
+                "description": "Stateless Hash-Based Digital Signature Algorithm (conf fallback_sig_1)",
                 "cryptoProperties": {
                     "assetType": "algorithm",
                     "algorithmProperties": {
                         "primitive": "signature",
-                        "parameterSetIdentifier": "SLH-DSA-SHAKE-128s",
+                        "parameterSetIdentifier": "SLH-DSA-SHA2-128f",
                         "classicalSecurityLevel": 128,
                         "nistQuantumSecurityLevel": 1
                     },
-                    "oid": "2.16.840.1.101.3.4.3.23"
+                    "oid": "2.16.840.1.101.3.4.3.21"
                 }
             },
             {
@@ -195,12 +195,12 @@ def generate_cbom(output_path: str = "docs/cbom_alpha_node_template.json"):
                 "bom-ref": "crypto:sss:shamir-gf256",
                 "name": "Shamir-Secret-Sharing-GF256",
                 "version": "QuantumFlex v2.0",
-                "description": "2-of-3 Threshold Secret Sharing over Galois Field GF(256) for Master Entropy Sharding",
+                "description": "Threshold secret sharing over GF(256). Live unlock uses threshold 3 on three shard files; five shard files exist (k=3, n=5 split).",
                 "cryptoProperties": {
                     "assetType": "protocol",
                     "algorithmProperties": {
                         "primitive": "secret-sharing",
-                        "parameterSetIdentifier": "k=2, n=3",
+                        "parameterSetIdentifier": "k=3, n=5",
                         "classicalSecurityLevel": 256,
                         "nistQuantumSecurityLevel": 5
                     }
@@ -231,9 +231,9 @@ def generate_cbom(output_path: str = "docs/cbom_alpha_node_template.json"):
             {
                 "bom-ref": "service:wire:mtls",
                 "name": "mTLS QFXK Binary IPC Wire",
-                "endpoints": ["100.64.1.29:9443", "127.0.0.1:9443"],
+                "endpoints": ["127.0.0.1:9444"],
                 "authenticated": True,
-                "x-trust-boundary": "Tailscale WireGuard Mesh & Loopback Only"
+                "x-trust-boundary": "Loopback mTLS only (not advertised on Tailscale)"
             },
             {
                 "bom-ref": "service:opa:sidecar",
@@ -245,16 +245,16 @@ def generate_cbom(output_path: str = "docs/cbom_alpha_node_template.json"):
             {
                 "bom-ref": "service:console:amara",
                 "name": "AMARA Intelligence & Telemetry Console",
-                "endpoints": ["100.64.1.29:8000"],
+                "endpoints": ["127.0.0.1:8000"],
                 "authenticated": True,
-                "x-trust-boundary": "Tailscale Mesh Only"
+                "x-trust-boundary": "Loopback bind; optional Tailscale Serve publication"
             },
             {
                 "bom-ref": "service:api:gateway",
                 "name": "QuantumFlex API Gateway",
-                "endpoints": ["100.64.1.29:8080"],
+                "endpoints": ["127.0.0.1:8080"],
                 "authenticated": True,
-                "x-trust-boundary": "Tailscale Mesh Only"
+                "x-trust-boundary": "Loopback bind; optional Tailscale Serve publication"
             }
         ]
     }

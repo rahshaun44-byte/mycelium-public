@@ -28,10 +28,12 @@ fi
 
 TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
-readonly REPO_ROOT_DEFAULT="/home/runner/work/mycelium/mycelium"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT_DEFAULT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="${REPO_ROOT:-$REPO_ROOT_DEFAULT}"
 STUDENT_USER="${STUDENT_USER:-student}"
-OPERATOR_USER="${OPERATOR_USER:-operator}"
+# Never default to the reserved system account "operator" (uid 11 on Fedora).
+OPERATOR_USER="${OPERATOR_USER:-qf-operator}"
 LMS_URL="${LMS_URL:-https://canvas.instructure.com}"
 OPERATOR_WHEEL="${OPERATOR_WHEEL:-0}"
 
@@ -223,9 +225,24 @@ SYSCTL
     log_success "tailscaled service initialized."
 }
 
+refuse_system_account() {
+    local username="$1"
+    if ! id "$username" &>/dev/null; then
+        return 0
+    fi
+    local uid home
+    uid="$(id -u "$username")"
+    home="$(getent passwd "$username" | cut -d: -f6)"
+    if [[ "${uid}" -lt 1000 ]] || [[ "${home}" == "/root" ]]; then
+        log_error "Refusing to reuse system account '${username}' (uid=${uid}, home=${home}). Set OPERATOR_USER=qf-operator."
+        exit 1
+    fi
+}
+
 configure_role_separation_and_school_controls() {
     log_info "Configuring school/operator role separation controls..."
 
+    refuse_system_account "$OPERATOR_USER"
     ensure_local_user "$STUDENT_USER" "/bin/bash"
     ensure_local_user "$OPERATOR_USER" "/bin/bash"
 

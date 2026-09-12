@@ -35,14 +35,16 @@
 
 ## 3. Alpha Node Runtime & Engine Ground Truth (Yoga 7 Host)
 
-- **Process Status**: `quantum_flex_engine` running on loopback `127.0.0.1:9443` / `127.0.0.1:9444`
-- **Data Directory**: `/home/quant/quantum-flex/data`
-- **Genesis Ledger**: `/home/quant/quantum-flex/data/ledger.dat` (193 bytes, sealed)
-- **Engine State**: **`LOCKED`** (Ledger suspended in memory; awaiting operator Shamir Secret Sharing `UNLOCK|` token payload)
-- **Keystore**: `/home/quant/quantum-flex/data/mtls/`
-  - `ca.crt`: QuantumFlex Root CA (SHA-256 / RSA-4096)
-  - `server.crt`: Validated against `ca.crt` (`OK`)
-  - `client.crt`: Validated against `ca.crt` (`OK`)
+Verified 2026-09-11. Historical 9443 / `~/quantum-flex/data` entries below remain in the log as prior boots.
+
+- **Process Status**: mycelium engine on loopback **`127.0.0.1:9444`** only (`quantum-flex-engine-mycelium.service`). Nothing listens on `9443` on this host.
+- **Data Directory**: `/home/quant/.local/share/quantum-flex-mycelium`
+- **Genesis Ledger**: `/home/quant/.local/share/quantum-flex-mycelium/ledger.dat`
+- **Engine State**: boots **`LOCKED`**; unseal with `scripts/unlock_engine.sh` (mTLS + Shamir, live threshold **3** using `~/qfx-shards/shard_{1,2,3}.txt`). Five shard files exist; this is not `k=2,n=3`.
+- **Keystore**: `/home/quant/.local/share/quantum-flex-mycelium/mtls/`
+  - `ca.crt`: QuantumFlex Root CA
+  - `server.crt`: Validated against `ca.crt`
+  - `client.crt`: Validated against `ca.crt`
 - **CPU Posture**:
   - Governor: `performance`
   - Boost / Turbo: `0` (pinned to eliminate DVFS / Hertzbleed side-channel timing leakage)

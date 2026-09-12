@@ -1,9 +1,11 @@
 # ⚖️ LEGAL COMPLIANCE AUDIT — QUANTUM FLEX
 
-**Date:** 2026-03-25 | **Status:** ACTIVE — Review before Phase 1 launch  
+**Date:** 2026-03-25 (original draft) | **Reviewed:** 2026-09-11  
+**Status:** ACTIVE — personal research deployment on Fedora (`quant`); **not** a token, marketplace, or paying-customer launch  
+**Entity (live docs):** FINALLYFUNGUS LLC (PA Entity ID: 13706513) DBA QuantumFlex — **not** an unincorporated sole proprietorship  
 **Root Architect:** Rahshaun Chambers  
 
-> **DISCLAIMER:** This is a structured legal risk analysis, not legal advice. Quantum Flex must retain a crypto-specialized attorney before token launch, data marketplace launch, or onboarding paying customers. This document is a roadmap to get there safely.
+> **DISCLAIMER:** This is a structured legal risk analysis, not legal advice. Quantum Flex must retain a crypto-specialized attorney before token launch, data marketplace launch, or onboarding paying customers. This document is a roadmap to get there safely. **As of 2026-09-11, $QFX distribution and the data marketplace are not live** — they remain planned; do not read this audit as evidence they are currently operating.
 
 ---
 
@@ -132,25 +134,16 @@ Before distributing the SDK beyond internal testing, every operator must sign a 
 ---
 
 ## 5. Business Entity
-**Verdict:** 🔴 **INCORPORATE NOW**
+**Verdict:** 🟡 **PA LLC EXISTS — Wyoming DAO is optional, not “incorporate now”**
 
-Operating Quantum Flex as an individual (sole proprietorship) exposes ROOT personally to all legal liability — lawsuits, regulatory fines, contract disputes. This is unacceptable risk.
+Due-diligence materials identify **FINALLYFUNGUS LLC (Pennsylvania, Entity ID 13706513) DBA QuantumFlex**. Do not treat the project as a bare sole proprietorship. Confirm with counsel that contracts, banking, and any future token or marketplace activity flow through that LLC (or a successor), not through Rahshaun personally.
 
-### Recommended Structure: Wyoming DAO LLC
-Specifically designed for decentralized organizations with token governance (under Wyoming W.S. 17-31-101):
-- Limited liability protection (personal assets protected).
-- Recognized legal entity for contracts and banking.
-- DAO-friendly operating agreement recognizing smart contracts.
-- No state income tax in Wyoming; low annual fee (~$100/year).
-- Increasingly accepted by the crypto-native legal ecosystem.
+A Wyoming DAO LLC remains an **optional** later structure for token governance (W.S. 17-31-101). It is not the current P0 “form an entity from zero” task.
 
-### Formation Steps:
-1. File Articles of Organization with Wyoming Secretary of State (~$100).
-2. Draft Operating Agreement (include DAO governance provisions).
-3. Obtain EIN from IRS (free, online).
-4. Open business bank account (Mercury or Relay for crypto-friendly banking).
-5. All Quantum Flex contracts, agreements, and token operations flow through the LLC — not through ROOT personally.  
-*Estimated Cost:* ~$500 total.
+### If counsel later recommends a Wyoming DAO successor
+- Limited liability and a recognized contracting entity
+- DAO-friendly operating agreement
+- All Quantum Flex contracts still must not run in a personal name
 
 ---
 
@@ -158,7 +151,7 @@ Specifically designed for decentralized organizations with token governance (und
 
 | Priority | Action | Target Milestone | Est. Cost | Status |
 |---|---|---|---|---|
-| 🔴 **P0** | Form Wyoming DAO LLC | NOW — before token or alpha | ~$500 | 🔲 Target |
+| 🔴 **P0** | Confirm PA LLC (FinallyFungus) is the contracting entity; Wyoming DAO only if counsel recommends a successor | Before token / paying customers | Counsel | 🔲 Confirm |
 | 🔴 **P0** | Draft Node Operator Agreement | Before 5-node alpha | ~$500 review | 🔲 Target |
 | 🔴 **P0** | Add `_optout` SSID filter to SDK | Immediate Sprint | Free | ✅ **BUILT & TESTED** (`src/privacy_filter.py`) |
 | 🔴 **P0** | Draft Privacy Policy | Before public-facing release | Template / ~$300 | 🔲 Target |

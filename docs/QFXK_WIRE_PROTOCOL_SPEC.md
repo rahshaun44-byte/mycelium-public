@@ -3,7 +3,8 @@
 **Status**: Release Specification  
 **Protocol Identifier**: `0x5146584B` (`"QFXK"`)  
 **Associated Primitives**: FrodoKEM-976-AES + X25519 (CFRG Hybrid KEM)  
-**Carrier Requirement**: TLS 1.3 / mTLS (Port 9443) on Tailscale WireGuard Mesh  
+**Carrier Requirement (live Yoga):** TLS 1.3 / mTLS on **`127.0.0.1:9444`**. Not bound to Tailscale or `9443`.  
+**Carrier Requirement (spec intent):** same protocol may be published onto the Tailscale mesh later; do not treat `100.x:9443` as current.  
 
 ---
 
@@ -22,6 +23,8 @@ The **QFXK** framing protocol provides:
 ## 2. Binary Frame Header Layout
 
 Every QFXK wire frame begins with a fixed 16-byte binary header, followed immediately by the chunk payload. All multi-byte numeric fields are encoded in **network byte order (Big-Endian)**.
+
+**Live `QFXKHeader` (this repo):** `uint8_t magic[2]` (`'Q','F'`), `version`, `msg_type`, then `uint32_t sequence_id`, `length`, `flags` (`include/quantum-flex/wire_framing.hpp`). The diagram below is the four-byte-magic layout; it is **not** what `serialize_frame` currently writes. Option A payload cap remains `MAX_PAYLOAD_SIZE = 16384` on the payload field only.
 
 ```
  0                   1                   2                   3
@@ -92,7 +95,7 @@ stateDiagram-v2
    - If `seq_id >= 0xFFFFFFFE` ($2^{32}-2$), the Gatekeeper closes the session and requires client re-initialization. **Silent sequence wraparound to zero is strictly forbidden**.
 4. **Framing Integrity vs Cryptographic Authenticity**:
    - The 32-bit CRC in the header provides **link-level transport integrity** to detect packet fragmentation damage.
-   - It is **not** a cryptographic MAC. True payload authentication and tamper-resistance are provided by wrapping QFXK inside an **mTLS session** (Port 9443) or via the HKDF-derived application AEAD cipher.
+   - It is **not** a cryptographic MAC. True payload authentication and tamper-resistance are provided by wrapping QFXK inside an **mTLS session** (live: `127.0.0.1:9444`) or via the HKDF-derived application AEAD cipher.
 
 ---
 
