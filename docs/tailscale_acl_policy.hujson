@@ -1,70 +1,26 @@
 {
-  "acls": [
-    // 1. Mobile Nodes (Pixel 11 Pro & Galaxy S23 FE) -> Master Node (Yoga 7) HTTP/HUD Ports
-    {
-      "action": "accept",
-      "src": ["100.64.1.18", "100.64.1.32"], // pixel-11-pro, rahshauns-s23-fe
-      "dst": [
-        "100.64.1.17:8000", // AMARA Biological Dashboard
-        "100.64.1.17:8080", // Core API Gateway (/api/invariant, /status)
-        "100.64.1.17:9050", // QuantumFlex Sovereign Mobile HUD
-        "100.64.1.17:9060", // Lyceum Academic Surface (Read-Only)
-        "100.64.1.17:9443"  // QuantumFlex Engine mTLS IPC
-      ]
-    },
-
-    // 2. Mobile Nodes -> Worker Node (Pavilion) Monitoring UI
-    {
-      "action": "accept",
-      "src": ["100.64.1.18", "100.64.1.32"],
-      "dst": [
-        "100.64.1.34:8090" // Kafka UI Stream Console
-      ]
-    },
-
-    // 3. Master Node (Yoga 7) -> Worker Node (Pavilion) Stream Pipeline & Management
-    {
-      "action": "accept",
-      "src": ["100.64.1.17"], // fedora
-      "dst": [
-        "100.64.1.34:9092", // Kafka KRaft Telemetry Broker
-        "100.64.1.34:8090", // Kafka UI
-        "100.64.1.34:22"    // Operator SSH (rocky@qf-pavilion)
-      ]
-    },
-
-    // 4. Worker Node (Pavilion) -> Master Node Telemetry Ingestion
-    {
-      "action": "accept",
-      "src": ["100.64.1.34"], // qf-pavilion-worker
-      "dst": [
-        "100.64.1.17:8080", // API Node Telemetry Ingestion
-        "100.64.1.17:9443"  // Engine mTLS
-      ]
-    },
-
-    // 5. Allow owner self-management for all devices
-    {
-      "action": "accept",
-      "src": ["autogroup:owner"],
-      "dst": ["autogroup:self:*"]
-    }
-  ],
-
-  // Node Tag Owners (Optional for tag-based management)
   "tagOwners": {
-    "tag:master": ["autogroup:owner"],
-    "tag:worker": ["autogroup:owner"],
-    "tag:mobile": ["autogroup:owner"]
+    "tag:worker": ["autogroup:owner"]
   },
-
-  // SSH Access Policy (Zero Root Direct Logins Enforced via Identities)
+  "hosts": {
+    "yoga": "100.64.1.17",
+    "pavilion": "100.64.1.34",
+    "pixel": "100.64.1.18",
+    "s23": "100.64.1.32"
+  },
+  "acls": [
+    { "action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self:*"] },
+    { "action": "accept", "src": ["yoga"], "dst": ["tag:worker:9092", "tag:worker:8090", "tag:worker:22"] },
+    { "action": "accept", "src": ["pixel", "s23"], "dst": ["tag:worker:8090"] }
+  ],
   "ssh": [
-    {
-      "action": "accept",
-      "src": ["autogroup:owner"],
-      "dst": ["autogroup:self"],
-      "users": ["rocky", "autogroup:nonroot"]
-    }
+    { "action": "check", "checkPeriod": "12h", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot"] },
+    { "action": "accept", "src": ["autogroup:member"], "dst": ["tag:worker"], "users": ["rocky"] }
+  ],
+  "tests": [
+    { "src": "yoga", "accept": ["pavilion:9092", "pavilion:8090", "pavilion:22"] },
+    { "src": "pixel", "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"] },
+    { "src": "s23", "accept": ["pavilion:8090"], "deny": ["pavilion:9092", "pavilion:22"] },
+    { "src": "pavilion", "deny": ["yoga:9444", "yoga:8080", "yoga:8000", "yoga:9050", "yoga:22"] }
   ]
 }
