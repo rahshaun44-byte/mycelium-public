@@ -3,8 +3,19 @@ import requests
 import json
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-GATEWAY_URL = "http://100.64.1.29:8080/api/v1/telemetry/submit"
+import os
+import pytest
 
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://100.64.1.29:8080/api/v1/telemetry/submit")
+
+def is_gateway_reachable():
+    try:
+        r = requests.get(GATEWAY_URL.replace("/api/v1/telemetry/submit", "/status"), timeout=1.0)
+        return r.status_code < 500
+    except Exception:
+        return False
+
+@pytest.mark.skipif(not is_gateway_reachable(), reason="Remote gateway endpoint unreachable")
 def test_gateway():
     print("[*] Testing Layer 2 / Layer 3 Ingestion Gateway Verification Pipeline...")
 
