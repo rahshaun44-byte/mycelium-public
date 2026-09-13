@@ -507,7 +507,7 @@ echo "==> [3/4] Deploying Ghost node..."
 podman run -d --rm --name ghost-node --network "$NET_NAME" alpine:3.20 sleep 45
 
 echo "==> [4/4] Verifying packet transmission across isolated bridge..."
-GHOST_IP=$(podman inspect ghost-node --format '{{.NetworkSettings.Networks.'"$NET_NAME"'.IPAddress}}')
+GHOST_IP=$(podman inspect ghost-node --format '{{(index .NetworkSettings.Networks "'"$NET_NAME"'").IPAddress}}')
 podman exec gatekeeper-node ping -c 3 "$GHOST_IP"
 
 echo "==> Cleaning up test containers..."
