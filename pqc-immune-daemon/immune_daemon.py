@@ -50,6 +50,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 try:
     import requests
 except ImportError:
@@ -146,10 +150,21 @@ def fetch_fallback_map_from_opa(endpoint: str, timeout: float = 2.0) -> dict[str
 
 def get_authoritative_fallback_map(opa_endpoint: str | None = None, rego_path: Path | str | None = None) -> dict[str, str]:
     """
-    Retrieve the authoritative fallback map from OPA or membrane_health.rego.
-    Single source of truth: OPA (.rego).
+    Retrieve the authoritative fallback map from Wasm, OPA, or membrane_health.rego.
+    Single source of truth: OPA (.rego / .wasm).
     """
-    if opa_endpoint:
+    if opa_endpoint == "wasm" or (os.environ.get("PQC_FORCE_HTTP") != "1" and opa_endpoint != "http://fake"):
+        try:
+            from sentinel.policies.wasm_gatekeeper import get_membrane_wasm_gatekeeper
+            wasm_gate = get_membrane_wasm_gatekeeper()
+            if wasm_gate is not None:
+                m = wasm_gate.get_fallback_map()
+                if m:
+                    return m
+        except Exception:
+            pass
+
+    if opa_endpoint and opa_endpoint != "wasm":
         live = fetch_fallback_map_from_opa(opa_endpoint)
         if live:
             return live
@@ -225,8 +240,19 @@ def get_authoritative_recovery_map(
     opa_endpoint: str | None = None,
     rego_path: Path | str | None = None,
 ) -> dict[str, Any]:
-    """Retrieve recovery parameters from OPA or .rego file. Single source of truth."""
-    if opa_endpoint:
+    """Retrieve recovery parameters from Wasm, OPA, or .rego file. Single source of truth."""
+    if opa_endpoint == "wasm" or (os.environ.get("PQC_FORCE_HTTP") != "1" and opa_endpoint != "http://fake"):
+        try:
+            from sentinel.policies.wasm_gatekeeper import get_membrane_wasm_gatekeeper
+            wasm_gate = get_membrane_wasm_gatekeeper()
+            if wasm_gate is not None:
+                m = wasm_gate.get_recovery_map()
+                if m:
+                    return m
+        except Exception:
+            pass
+
+    if opa_endpoint and opa_endpoint != "wasm":
         live = fetch_recovery_map_from_opa(opa_endpoint)
         if live:
             return live
@@ -492,13 +518,27 @@ def generate_cbom(state: "ImmuneState") -> dict[str, Any]:
 
 
 def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
-    """POST the CBOM input to the local OPA sidecar and return the verdict.
+    """POST the CBOM input to the local OPA sidecar or evaluate via in-process Wasm gatekeeper.
 
     Raises ConnectionError if OPA is unreachable OR if it answers with a
     payload we cannot read a verdict out of. Both mean the same thing --
     no usable health check -- and an unusable health check must never be
     allowed to read as a healthy one.
     """
+    # Zero-Friction Gatekeeper fast path (microsecond in-process execution)
+    if endpoint == "wasm" or (os.environ.get("PQC_FORCE_HTTP") != "1" and endpoint != "http://fake"):
+        try:
+            from sentinel.policies.wasm_gatekeeper import get_membrane_wasm_gatekeeper
+            wasm_gate = get_membrane_wasm_gatekeeper()
+            if wasm_gate is not None:
+                verdict = wasm_gate.evaluate_verdict(cbom)
+                if isinstance(verdict, dict) and "node_status" in verdict:
+                    return verdict
+        except Exception as e:
+            if endpoint == "wasm":
+                raise ConnectionError(f"Zero-Friction Wasm Gatekeeper failed: {e}")
+        if endpoint == "wasm":
+            raise ConnectionError("Zero-Friction Wasm Gatekeeper unavailable (policy or wasmtime missing)")
     import urllib.request
     import urllib.error
 
@@ -852,6 +892,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="PQC Crypto-Agility Immune Daemon")
     parser.add_argument("--conf", type=Path, default=None, help="Path to crypto_provider.conf")
     parser.add_argument("--opa", default=None, help="OPA base URL")
+    parser.add_argument("--wasm", action="store_true", help="Enforce in-process Zero-Friction WebAssembly policy engine")
     parser.add_argument("--poll-ms", type=int, default=None, help="Poll interval in milliseconds")
     parser.add_argument("--fail-secure", type=int, default=None, help="Consecutive OPA failures before fail-secure")
     parser.add_argument("--dry-run", action="store_true", help="Log actions but do not rewrite config or signal")
@@ -862,7 +903,7 @@ def main() -> int:
     setup_logging(args.verbose)
 
     conf_path = args.conf or Path(os.environ.get("PQC_PROVIDER_CONF", str(DEFAULT_CONF)))
-    opa = args.opa or os.environ.get("OPA_ENDPOINT", DEFAULT_OPA)
+    opa = "wasm" if args.wasm else (args.opa or os.environ.get("OPA_ENDPOINT", DEFAULT_OPA))
     poll_ms = args.poll_ms or int(os.environ.get("POLL_INTERVAL_MS", DEFAULT_POLL_MS))
     fail_secure = args.fail_secure or int(os.environ.get("FAIL_SECURE_THRESHOLD", DEFAULT_FAIL_SECURE))
 

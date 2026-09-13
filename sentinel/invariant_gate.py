@@ -103,7 +103,18 @@ def log_invariant_audit(
 
 
 def query_opa_invariant(payload: Dict[str, Any]) -> Tuple[bool, str, str]:
-    """Sends telemetry vector to OPA sidecar and returns (allowed, verdict, reason)."""
+    """Evaluates telemetry vector against Universal Invariant (R >= O) via Wasm or OPA sidecar."""
+    # Zero-Friction Gatekeeper: Attempt in-process Wasm evaluation first (<100 µs)
+    if os.environ.get("FORCE_HTTP_OPA") != "1":
+        try:
+            from sentinel.policies.wasm_gatekeeper import get_reserve_wasm_gatekeeper
+            wasm_gate = get_reserve_wasm_gatekeeper()
+            if wasm_gate is not None:
+                return wasm_gate.evaluate_invariant(payload)
+        except Exception:
+            pass
+
+    # Fallback: Loopback HTTP query to OPA sidecar (127.0.0.1:8181)
     try:
         req_data = json.dumps({"input": payload}).encode("utf-8")
         req = urllib.request.Request(
