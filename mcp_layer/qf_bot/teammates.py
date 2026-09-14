@@ -80,7 +80,7 @@ class MyceliaTeammate(BaseTeammate):
             avatar="🍄",
             model="qwen2.5-coder:1.5b",
             system_prompt="""You are MYCELIA, the sovereign network interconnect and mesh routing agent of QuantumFlex.
-You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), mobile operators (qfx-pixel, qfx-edge), and read-only peers (lyceum).
+You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), mobile operators (qfx-pixel, qfx-edge), and edge workers.
 Report network topology, node reachability, and peer latency crisply and objectively.""",
         )
 
@@ -91,7 +91,6 @@ Report network topology, node reachability, and peer latency crisply and objecti
             "qf-pavilion": {"ip": "100.64.1.34", "role": "Stream Compute / Kafka Broker", "status": "ONLINE", "latency": "0.8ms"},
             "qfx-pixel": {"ip": "100.64.1.18", "role": "Mobile Operator", "status": "ONLINE", "latency": "12ms"},
             "qfx-edge": {"ip": "100.64.1.32", "role": "Field Operator", "status": "ONLINE", "latency": "14ms"},
-            "lyceum-peer": {"ip": "127.0.0.1:9060", "role": "Read-Only Academic", "status": "ISOLATED", "latency": "0.2ms"},
         }
         return nodes
 

@@ -244,9 +244,9 @@ async function loadSwarmData() {
     if (data.observations) {
       const obsList = document.getElementById('obsList');
       obsList.innerHTML = data.observations.map(obs => `
-        <div class="obs-card ${obs.source === 'lyceum-peer' ? 'read-only' : ''}">
+        <div class="obs-card ">
           <div class="obs-header">
-            <span class="obs-source ${obs.source === 'lyceum-peer' ? 'lyceum' : ''}">${escapeHtml(obs.source.toUpperCase())}</span>
+            <span class="obs-source ">${escapeHtml(obs.source.toUpperCase())}</span>
             <span class="obs-time">${obs.timestamp ? obs.timestamp.substring(11, 19) : ''}</span>
           </div>
           <div class="obs-title">${escapeHtml(obs.title)}</div>

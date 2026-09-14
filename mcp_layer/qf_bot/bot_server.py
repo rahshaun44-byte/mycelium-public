@@ -162,17 +162,6 @@ async def get_mesh_nodes():
                 "hardware_trust": "WireGuard P2P Direct",
                 "solvency": "AUTHENTICATED",
                 "pqc_cipher": "ML-KEM-768 Session"
-            },
-            {
-                "id": "lyceum-peer",
-                "name": "Lyceum Academic Peer",
-                "ip": "127.0.0.1:9060",
-                "role": "Isolated Study Surface",
-                "status": "READ-ONLY",
-                "latency": "0.2ms",
-                "hardware_trust": "Biba Integrity Locked",
-                "solvency": "WRITES DENIED",
-                "pqc_cipher": "Read-Only Observation"
             }
         ]
     }
@@ -182,33 +171,7 @@ async def get_observations():
     """Returns the observation ledger (e.g. handoffs from Lyceum consultations)."""
     return {"observations": orchestrator.observations}
 
-@app.post("/api/consult/sentinel")
-async def consult_sentinel_from_lyceum(req: ConsultRequest):
-    """
-    Read-only consultation endpoint called by Lyceum (School Bot).
-    Reads Sentinel PQC and TPM posture. Writes to the mesh are DENIED.
-    Generates an observation chip back on QuantumFlex.
-    """
-    detail = f"Academic query: '{req.student_query[:60]}...' — Verified PQC status: ML-KEM-768 / ML-DSA-65." if req.student_query else "General PQC posture check from Lyceum academic interface."
-    obs = orchestrator.record_observation(
-        source="lyceum-peer",
-        title="Lyceum Consulted SENTINEL",
-        detail=f"{detail} [Mutation attempt: DENIED - READ-ONLY SURFACE]"
-    )
 
-    return {
-        "status": "SUCCESS",
-        "permission": "READ_ONLY",
-        "pqc_read": {
-            "active_kem": "ML-KEM-768 (NIST FIPS 203)",
-            "active_sig": "ML-DSA-65 (NIST FIPS 204)",
-            "opa_verdict": "COMPLIANT",
-            "tpm_status": "MATCHED (0x1c00010)",
-            "solvency": "R >= O [ADMIT]",
-        },
-        "observation_chip": obs,
-        "note": "Handoff successfully registered as an observation. Mesh writes are denied by sovereign policy."
-    }
 
 @app.get("/api/alerts")
 async def get_alerts():

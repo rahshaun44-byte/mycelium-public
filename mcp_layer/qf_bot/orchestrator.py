@@ -120,16 +120,7 @@ class QFBotOrchestrator:
             "athena": self.athena,
         }
 
-        self.observations: List[Dict[str, Any]] = [
-            {
-                "id": "OBS-101",
-                "source": "lyceum-peer",
-                "type": "READ_ONLY_CONSULT",
-                "title": "Lyceum Academic Observer Bound",
-                "detail": "Lyceum peer bound on port 9060. Writes denied. PQC reads authorized.",
-                "timestamp": datetime.now().isoformat()
-            }
-        ]
+        self.observations: List[Dict[str, Any]] = []
 
         self.draft_queue = DraftQueue()
         self.routine_runner = RoutineRunner()
@@ -174,7 +165,7 @@ DEFCON / POSTURE    : EQUILIBRIUM (SYSTEM OPTIMAL)
 HARDWARE ANCHOR     : TPM 2.0 NV 0x1c00010 {tpm_str}
 HOMEOSTATIC DRIVE   : D = {drive_str}
 INVARIANT GATE      : R >= O [ADMIT] (Digital Host RAM, Pluton TPM 2.0, Physical Water)
-MESH STATUS         : 3 Active P2P Nodes (qfx-yoga, qfx-pixel, qfx-edge) + 1 Isolated (lyceum-peer)
+MESH STATUS         : 4 Active P2P Nodes (qfx-yoga, qf-pavilion, qfx-pixel, qfx-edge)
 ACTIVE AGENTS       : 4 Sovereign Units (MYCELIA, SENTINEL, ARIA, ATHENA)
 PENDING ACTIONS     : {len([d for d in self.draft_queue.list_drafts() if d['status'] == 'PENDING_APPROVAL'])} Authorization(s) Required"""
         return sitrep
@@ -225,9 +216,9 @@ STATUS             : {hs_data['posture']}"""
             mesh_nodes = self.mycelia.inspect_mesh()
             resp_text = f"""[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]
 ● qfx-yoga    : 100.64.1.17 | Host Engine | ONLINE (0.1ms) | TPM 2.0 Matched
+● qf-pavilion : 100.64.1.34  | Worker (Kafka Stream) | ONLINE (0.8ms) | P2P Direct
 ● qfx-pixel   : 100.64.1.18  | Mobile (Pixel 11 Pro) | ONLINE (12ms) | P2P Direct
-● qfx-edge    : 100.64.1.32  | Operator (S23 FE) | ONLINE (14ms) | P2P Direct
-○ lyceum-peer : 127.0.0.1:9060 | Isolated School Bot | READ-ONLY (0.2ms) | Writes Denied"""
+● qfx-edge    : 100.64.1.32  | Operator (S23 FE) | ONLINE (14ms) | P2P Direct"""
             bot_msg = {
                 "id": str(uuid.uuid4()),
                 "sender": self.mycelia.name,
