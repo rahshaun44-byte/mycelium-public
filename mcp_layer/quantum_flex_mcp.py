@@ -41,6 +41,7 @@ ATHENA_URL = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
 DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "http://127.0.0.1:8000")
 API_NODE_URL = os.environ.get("API_NODE_URL", "http://127.0.0.1:8080")
 MCP_PORT = int(os.environ.get("MCP_PORT", 9000))
+MCP_HOST = os.environ.get("MCP_HOST", "127.0.0.1")
 
 KNOWN_SERVICES = {
     "Athena-Node": {"pattern": "athena_api.py", "port": 8001, "script": "mcp_layer/athena_api.py"},
@@ -299,13 +300,13 @@ def service_action(service_name: str, action: str) -> dict:
 async def main():
     log.info("=" * 60)
     log.info("Quantum Flex MCP Server v2.0 Starting")
-    log.info(f"  Bind Host : 0.0.0.0 (Tailscale Mesh Reachable)")
+    log.info(f"  Bind Host : {MCP_HOST}")
     log.info(f"  Port      : {MCP_PORT}")
-    log.info(f"  SSE URL   : http://100.64.1.29:{MCP_PORT}/sse")
+    log.info(f"  SSE URL   : http://{MCP_HOST}:{MCP_PORT}/sse")
     log.info("=" * 60)
 
-    # Run streamable HTTP / SSE async server
-    await server.run_sse_async(host="0.0.0.0", port=MCP_PORT)
+    # Loopback only. Remote access is Tailscale Serve, not 0.0.0.0.
+    await server.run_sse_async(host=MCP_HOST, port=MCP_PORT)
 
 
 if __name__ == "__main__":

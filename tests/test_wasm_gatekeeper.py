@@ -197,3 +197,58 @@ def test_wasm_speedup_benchmark(membrane_gate):
     print(f"\nWasm evaluation latency: {avg_us:.2f} µs")
     # Assert sub-millisecond execution (< 1000 µs)
     assert avg_us < 1000.0, f"Expected < 1000 µs, got {avg_us:.2f} µs"
+
+
+def test_invariant_gate_http_fallback_when_forced(monkeypatch):
+    """FORCE_HTTP_OPA=1 must skip Wasm and use the loopback OPA sidecar."""
+    import json
+    import urllib.request
+    import sentinel.invariant_gate as gate
+
+    monkeypatch.setenv("FORCE_HTTP_OPA", "1")
+    captured = {}
+
+    class FakeResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return json.dumps({
+                "result": {
+                    "allow": True,
+                    "verdict": "ADMIT",
+                    "reason": "http-fallback",
+                }
+            }).encode("utf-8")
+
+    def fake_urlopen(req, timeout=3.0):
+        captured["url"] = req.full_url
+        return FakeResp()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    allow, verdict, reason = gate.query_opa_invariant({"domain": "digital"})
+    assert allow is True
+    assert verdict == "ADMIT"
+    assert reason == "http-fallback"
+    assert captured["url"].endswith("/v1/data/quantumflex/invariant")
+
+
+def test_invariant_gate_fail_secure_when_http_unreachable(monkeypatch):
+    """If Wasm is skipped and HTTP OPA is down, the gate must DENY (never fail-open)."""
+    import urllib.error
+    import urllib.request
+    import sentinel.invariant_gate as gate
+
+    monkeypatch.setenv("FORCE_HTTP_OPA", "1")
+
+    def fake_urlopen(req, timeout=3.0):
+        raise urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    allow, verdict, reason = gate.query_opa_invariant({"domain": "digital"})
+    assert allow is False
+    assert verdict == "DENY"
+    assert "Fail-Secure" in reason

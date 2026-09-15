@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sovereign Operator Academy | QuantumFlex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060911;
+      --card-bg: rgba(13, 20, 36, 0.75);
+      --card-border: rgba(0, 240, 255, 0.18);
+      --cyan: #00f0ff;
+      --green: #00ffa3;
+      --amber: #ffb800;
+      --red: #ff4757;
+      --purple: #a855f7;
+      --text: #e2e8f0;
+      --text-muted: #8492a6;
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px 18px 80px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 16px rgba(0,240,255,0.35);
+    }
+    .brand h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .brand p {
+      font-size: 0.72rem;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .stats-pill {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .xp-val { color: var(--green); font-weight: 700; }
+    .level-val { color: var(--cyan); font-weight: 700; }
+
+    /* Progress Banner */
+    .progress-bar-wrap {
+      margin: 18px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      height: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      transition: width 0.4s ease;
+      box-shadow: 0 0 12px var(--cyan);
+    }
+
+    /* Mobile Handoff Card */
+    .handoff-box {
+      background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(168,85,247,0.12));
+      border: 1px solid rgba(0,240,255,0.3);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .handoff-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .handoff-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .handoff-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    .btn-copy {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--cyan);
+      color: #030712;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,240,255,0.35);
+    }
+    .btn-copy:active { transform: scale(0.98); }
+
+    /* Mission Modules */
+    .section-label {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+    }
+    .mission-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s ease;
+    }
+    .mission-card.completed {
+      border-color: rgba(0,255,163,0.4);
+    }
+    .mission-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .mission-badge {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(0,240,255,0.12);
+      color: var(--cyan);
+      font-weight: 600;
+    }
+    .mission-card.completed .mission-badge {
+      background: rgba(0,255,163,0.15);
+      color: var(--green);
+    }
+    .mission-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .mission-scenario {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 16px;
+      background: rgba(0,0,0,0.25);
+      padding: 12px;
+      border-radius: 10px;
+      border-left: 3px solid var(--cyan);
+    }
+    .choices-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .choice-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 13px 15px;
+      color: var(--text);
+      font-size: 0.86rem;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.4;
+      transition: all 0.2s ease;
+    }
+    .choice-btn:hover, .choice-btn:active {
+      background: rgba(0,240,255,0.1);
+      border-color: var(--cyan);
+    }
+    .choice-btn.correct {
+      background: rgba(0,255,163,0.18) !important;
+      border-color: var(--green) !important;
+      color: #fff;
+    }
+    .choice-btn.wrong {
+      background: rgba(255,71,87,0.18) !important;
+      border-color: var(--red) !important;
+      color: #fff;
+    }
+    .feedback-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      display: none;
+    }
+    .feedback-box.show { display: block; }
+    .feedback-box.success {
+      background: rgba(0,255,163,0.12);
+      border: 1px solid var(--green);
+      color: var(--green);
+    }
+    .feedback-box.error {
+      background: rgba(255,71,87,0.12);
+      border: 1px solid var(--red);
+      color: #ffa8b0;
+    }
+
+    /* Interactive Terminal Simulator */
+    .terminal-box {
+      background: #020408;
+      border: 1px solid rgba(0,240,255,0.25);
+      border-radius: 12px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      margin-top: 12px;
+    }
+    .terminal-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .t-red { background: #ff5f56; }
+    .t-yellow { background: #ffbd2e; }
+    .t-green { background: #27c93f; }
+    .terminal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--cyan);
+    }
+    .terminal-input {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      width: 100%;
+      outline: none;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0d1424;
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 999;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="badge-icon">🍄</div>
+        <div>
+          <h1>OPERATOR ACADEMY</h1>
+          <p>QuantumFlex // SOVEREIGN ENGINE</p>
+        </div>
+      </div>
+      <div class="stats-pill">
+        <div>XP: <span class="xp-val" id="xpCount">0</span></div>
+        <div>RANK: <span class="level-val" id="rankVal">INITIATE</span></div>
+      </div>
+    </header>
+
+    <!-- Progress -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Mobile Handoff to Gemini -->
+    <div class="handoff-box">
+      <div class="handoff-header">
+        <div class="handoff-title">
+          <span>📱</span> Gemini Mobile Handoff Protocol
+        </div>
+        <span style="font-size:0.75rem; color:var(--cyan); font-family:var(--font-mono);">VOICE + CHAT</span>
+      </div>
+      <p class="handoff-desc">
+        Want Gemini to coach and train you on your Pixel 11 Pro or S23 FE via voice while you walk? Tap the button below to copy your master flight-instructor prompt, then paste it into the Google Gemini mobile app!
+      </p>
+      <button class="btn-copy" id="btnCopyHandoff" onclick="copyGeminiPrompt()">
+        <span>📋</span> Copy Master Gemini Prompt
+      </button>
+    </div>
+
+    <div class="section-label">Tactical Training Missions</div>
+
+    <!-- MISSION 1 -->
+    <div class="mission-card" id="mission1">
+      <div class="mission-top">
+        <span class="mission-badge">MISSION 01</span>
+        <span style="font-size:0.8rem; color:var(--green); font-weight:700;">+100 XP</span>
+      </div>
+      <h2 class="mission-title">The Zero-Trust Perimeter</h2>
+      <div class="mission-scenario">
+        <strong>Scenario:</strong> You take your Yoga laptop to a coffee shop. You connect to their free public Wi-Fi. A malicious hacker on the same Wi-Fi starts scanning all computers on the network. Can they reach your QuantumFlex databases or bots?
+      </div>
+      <div class="choices-grid">
+        <button class="choice-btn" onclick="answer(1, false, 'Wrong: Simply having a strong password still exposes open network ports to brute-force scanners.')">
+          <span>A</span> Yes, unless you have a 30-character Wi-Fi password.
+        </button>
+        <button class="choice-btn" onclick="answer(1, true, 'Spot on! All services bind strictly to 127.0.0.1 (Loopback). To the public Wi-Fi, your laptop has zero open doors. You are invisible.')">
+          <span>B</span> No, because QuantumFlex strictly binds to 127.0.0.1 (Loopback), making ports invisible to the Wi-Fi.
+        </button>
+        <button class="choice-btn" onclick="answer(1, false, 'Wrong: Airplane mode cuts all internet, but you CAN use public Wi-Fi safely using loopback + Tailscale.')">
+          <span>C</span> Yes, anyone on the same Wi-Fi automatically has root access.
+        </button>
+      </div>
+      <div class="feedback-box" id="fb1"></div>
+    </div>
+
+    <!-- MISSION 2 -->
+    <div class="mission-card" id="mission2">
+      <div class="mission-top">
+        <span class="mission-badge">MISSION 02</span>
+        <span style="font-size:0.8rem; color:var(--green); font-weight:700;">+150 XP</span>
+      </div>
+      <h2 class="mission-title">The Shamir Custody Matrix</h2>
+      <div class="mission-scenario">
+        <strong>Scenario:</strong> A thief steals your Lenovo Yoga 7i from your car. The laptop holds Shard 1 and Shard 2. Your threshold is 3-of-5 (=3, n=5$). Can the thief reconstruct your master key and steal your ledger?
+      </div>
+      <div class="choices-grid">
+        <button class="choice-btn" onclick="answer(2, false, 'Incorrect: Shamir Secret Sharing is mathematically information-theoretic secure. Having 2 shards reveals literally zero information about the secret.')">
+          <span>A</span> Yes, having 2 out of 5 shards is enough to guess the rest with AI.
+        </button>
+        <button class="choice-btn" onclick="answer(2, true, 'Perfection! Under Shamir k=3 math, holding 2 shards yields mathematically zero bits of knowledge. The master keys remain unbroken without the USB or paper safe.')">
+          <span>B</span> No. 2 shards yield mathematically zero knowledge. They need 3 shards (USB vault or paper safe) to unlock anything.
+        </button>
+        <button class="choice-btn" onclick="answer(2, false, 'Incorrect: The master key is never stored on disk in plaintext.')">
+          <span>C</span> Yes, because the master key is always saved in ~/.bashrc.
+        </button>
+      </div>
+      <div class="feedback-box" id="fb2"></div>
+    </div>
+
+    <!-- MISSION 3 -->
+    <div class="mission-card" id="mission3">
+      <div class="mission-top">
+        <span class="mission-badge">MISSION 03</span>
+        <span style="font-size:0.8rem; color:var(--green); font-weight:700;">+200 XP</span>
+      </div>
+      <h2 class="mission-title">The Starlink Blackout Drill</h2>
+      <div class="mission-scenario">
+        <strong>Scenario:</strong> Tomorrow morning, your satellite Starlink goes dark. You have zero cash to buy new internet. What is your immediate bash sovereign failover pipeline?
+      </div>
+      <div class="choices-grid">
+        <button class="choice-btn" onclick="answer(3, true, 'Bullseye! Plug Pixel into Yoga via USB -> Turn on USB Tethering (85 Mbps) -> Set Metered Connection. Zero dollars spent, zero downtime.')">
+          <span>A</span> Plug Pixel 11 Pro into Yoga via USB -> Enable USB Tethering -> Mark connection Metered to save data.
+        </button>
+        <button class="choice-btn" onclick="answer(3, false, 'Wrong: Never compromise your integrity with illegal Wi-Fi cracking.')">
+          <span>B</span> Try to crack a neighbor's Wi-Fi network with hacking tools.
+        </button>
+        <button class="choice-btn" onclick="answer(3, false, 'Wrong: Starlink suspension does not hurt your laptop. Cellular tethering works right now.')">
+          <span>C</span> Shut down the entire business because compute is impossible without satellite.
+        </button>
+      </div>
+      <div class="feedback-box" id="fb3"></div>
+    </div>
+
+    <!-- MISSION 4 -->
+    <div class="mission-card" id="mission4">
+      <div class="mission-top">
+        <span class="mission-badge">MISSION 04</span>
+        <span style="font-size:0.8rem; color:var(--green); font-weight:700;">+250 XP</span>
+      </div>
+      <h2 class="mission-title">The Golden Rule of Wealth: R &ge; O</h2>
+      <div class="mission-scenario">
+        <strong>Scenario:</strong> You want to build serious wealth to take care of your dependents and fund your deep research. What does the Universal Invariant <code>R &ge; O</code> mean in your real life?
+      </div>
+      <div class="choices-grid">
+        <button class="choice-btn" onclick="answer(4, false, 'Wrong: That is how people stay trapped in debt cycles.')">
+          <span>A</span> Spend money on luxury assets first and hope future revenue catches up.
+        </button>
+        <button class="choice-btn" onclick="answer(4, true, 'Mastery! Liquid Reserves must strictly exceed Obligations. When R >= O holds, financial stress drops to zero and your research is permanently protected.')">
+          <span>B</span> Liquid Reserves must strictly exceed Obligations. Protect family and overhead with a permanent cash buffer before taking risk.
+        </button>
+        <button class="choice-btn" onclick="answer(4, false, 'Wrong: R >= O is the core economic invariant.')">
+          <span>C</span> It is just an abstract computer code that has nothing to do with money.
+        </button>
+      </div>
+      <div class="feedback-box" id="fb4"></div>
+    </div>
+
+    <!-- TERMINAL DRILL -->
+    <div class="mission-card" id="terminalMission">
+      <div class="mission-top">
+        <span class="mission-badge">TACTICAL DRILL</span>
+        <span style="font-size:0.8rem; color:var(--cyan); font-weight:700;">+300 XP</span>
+      </div>
+      <h2 class="mission-title">Terminal Command Simulator</h2>
+      <div class="mission-scenario">
+        <strong>Challenge:</strong> You want to put your system to bed cleanly so zero ports are listening. Type the exact shutdown command below:
+        <br><br><code>systemctl --user stop qf-bot amara-dashboard amara-matrix</code>
+      </div>
+      <div class="terminal-box">
+        <div class="terminal-bar">
+          <div class="t-dot t-red"></div>
+          <div class="t-dot t-yellow"></div>
+          <div class="t-dot t-green"></div>
+        </div>
+        <div id="terminalLog" style="color:#8492a6; margin-bottom:8px;">quant@fedora:~$ Ready for command...</div>
+        <form onsubmit="submitTerminal(event)" class="terminal-input-row">
+          <span>$</span>
+          <input type="text" id="termInput" class="terminal-input" placeholder="Type command here..." autocomplete="off" />
+        </form>
+      </div>
+      <div class="feedback-box" id="fbTerm"></div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toastBox">
+    <span id="toastIcon">⚡</span>
+    <span id="toastText">Prompt Copied!</span>
+  </div>
+
+  <script>
+    let xp = parseInt(localStorage.getItem('qf_xp') || '0');
+    let completed = JSON.parse(localStorage.getItem('qf_completed') || '[]');
+
+    const RANKS = [
+      { xp: 0, name: 'INITIATE' },
+      { xp: 100, name: 'VAULT GUARDIAN' },
+      { xp: 250, name: 'SHADOW ROUTER' },
+      { xp: 500, name: 'RESEARCH ARCHITECT' },
+      { xp: 800, name: 'SOVEREIGN MASTER' }
+    ];
+
+    function updateStats() {
+      document.getElementById('xpCount').innerText = xp;
+      let currentRank = 'INITIATE';
+      for (let r of RANKS) {
+        if (xp >= r.xp) currentRank = r.name;
+      }
+      document.getElementById('rankVal').innerText = currentRank;
+      const pct = Math.min(100, (xp / 1000) * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
+      localStorage.setItem('qf_xp', xp.toString());
+      localStorage.setItem('qf_completed', JSON.stringify(completed));
+    }
+
+    // Web Audio Synthesizer (Zero External MP3s Needed)
+    function playChime(success = true) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+        if (success) {
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+          osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2); // G5
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else {
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.15);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+      } catch(e) {}
+    }
+
+    function showToast(text, icon = '⚡') {
+      const toast = document.getElementById('toastBox');
+      document.getElementById('toastText').innerText = text;
+      document.getElementById('toastIcon').innerText = icon;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    function answer(missionNum, isCorrect, explanation) {
+      const fb = document.getElementById('fb' + missionNum);
+      const card = document.getElementById('mission' + missionNum);
+      fb.className = 'feedback-box show ' + (isCorrect ? 'success' : 'error');
+      fb.innerHTML = (isCorrect ? '<strong>✓ VERIFIED:</strong> ' : '<strong>✗ ADVISORY:</strong> ') + explanation;
+
+      if (isCorrect && !completed.includes(missionNum)) {
+        playChime(true);
+        completed.push(missionNum);
+        const addedXP = [0, 100, 150, 200, 250][missionNum];
+        xp += addedXP;
+        card.classList.add('completed');
+        showToast('+' + addedXP + ' XP: Mission ' + missionNum + ' Cleared!', '🏆');
+        updateStats();
+      } else if (!isCorrect) {
+        playChime(false);
+      }
+    }
+
+    function submitTerminal(e) {
+      e.preventDefault();
+      const input = document.getElementById('termInput');
+      const val = input.value.trim();
+      const fb = document.getElementById('fbTerm');
+      const log = document.getElementById('terminalLog');
+
+      if (val === 'systemctl --user stop qf-bot amara-dashboard amara-matrix') {
+        playChime(true);
+        log.innerHTML = 'quant@fedora:~$ ' + val + '<br><span style="color:#00ffa3;">[+] Sockets released. All ports 5432/8000/9000 CLOSED. Node Dormant.</span>';
+        fb.className = 'feedback-box show success';
+        fb.innerHTML = '<strong>✓ TERMINAL DRILL COMPLETED:</strong> You successfully executed the master shutdown syntax!';
+        if (!completed.includes('term')) {
+          completed.push('term');
+          xp += 300;
+          document.getElementById('terminalMission').classList.add('completed');
+          showToast('+300 XP: Master Terminal Drill Cleared!', '🔥');
+          updateStats();
+        }
+        input.value = '';
+      } else {
+        playChime(false);
+        fb.className = 'feedback-box show error';
+        fb.innerHTML = '<strong>✗ SYNTAX MISMATCH:</strong> Type exactly: <code>systemctl --user stop qf-bot amara-dashboard amara-matrix</code>';
+      }
+    }
+
+    function copyGeminiPrompt() {
+      const prompt = "[SYSTEM INSTRUCTION & ROLE FOR GEMINI]\n\nYou are my personal Sovereign Systems Mentor, Flight Instructor, and Coach for my company: QuantumFlex. \n\nI am shadowing you to become a confident, master operator of my private technology and wealth-building infrastructure.\n\nHere is my exact hardware and system profile:\n1. Primary Machine: Lenovo Yoga 7i laptop (AMD Ryzen 7 8840HS, 14GB RAM, Fedora Linux Workstation, LUKS encrypted).\n2. Mobile Devices: Google Pixel 11 Pro and Samsung Galaxy S23 FE.\n3. Private Network: Encrypted Tailscale WireGuard mesh connecting my laptop, phones, and worker desktop (HP Pavilion).\n4. Local AI: Ollama running Gemma 2 (2B) and Athena RAG vector memory completely offline on my Ryzen chip (no cloud subscriptions).\n5. Custody Matrix: Shamir's Secret Sharing (3-of-5 threshold). Shards 1 & 2 live on my laptop. Shards 3 & 4 live on an unmounted physical USB vault. Shard 5 is handwritten on physical paper.\n6. The Golden Rule: Universal Invariant R >= O (Reserves must always strictly exceed Obligations).\n\nMY CORE GOAL:\nI want to build and manage serious wealth so I can take care of the people who depend on me, protect myself, and have the freedom to actively research the things I care about without financial stress.\n\nHOW YOU MUST INTERACT WITH ME:\n1. Act like a patient, elite mentor / game master. Grounded, encouraging, practical, and zero buzzword jargon.\n2. Teach me through bite-sized, interactive scenarios and quizzes. Don't lecture me with giant walls of text.\n3. Keep lessons conversational: Give me 2 to 3 short sentences of concept, then give me a practical choice or scenario (e.g., 'Scenario: Your home Starlink satellite internet drops tomorrow. You have your Pixel 11 Pro plugged into your Yoga with a USB cable. What is your first command in terminal, and how do you prevent mobile data burn?').\n4. Wait for my answer before giving me feedback, score, and the next lesson.\n5. If I choose to use Voice Mode (Gemini Live), keep your spoken answers concise, natural, and punchy.\n6. Teach me the 5 Operator Masteries:\n   - Module 1: The Zero-Trust Perimeter (Why loopback 127.0.0.1 and why public Wi-Fi is safe with Tailscale).\n   - Module 2: The Physical Custody Vault (Shamir shards, why theft of the laptop exposes nothing).\n   - Module 3: Surviving Offline (Tethering, metered mode, local AI when internet drops).\n   - Module 4: The Deep Research Engine (How Athena vector memory turns papers/books into unfair advantages).\n   - Module 5: Wealth Engineering (The R >= O rule applied to personal cash flow, client services, and funding research).\n\nAcknowledge this prompt by greeting me warmly as the Operator of QuantumFlex, and kick off Module 1 with our very first interactive tactical scenario!";
+
+      navigator.clipboard.writeText(prompt).then(() => {
+        playChime(true);
+        showToast('Master Gemini Prompt Copied to Clipboard!', '📋');
+        const btn = document.getElementById('btnCopyHandoff');
+        btn.innerHTML = '<span>✓</span> Copied! Now Paste in Gemini App';
+        btn.style.background = 'var(--green)';
+        setTimeout(() => {
+          btn.innerHTML = '<span>📋</span> Copy Master Gemini Prompt';
+          btn.style.background = 'var(--cyan)';
+        }, 4000);
+      }).catch(err => {
+        showToast('Please copy manually from docs/GEMINI_MOBILE_HANDOFF.md', '⚠️');
+      });
+    }
+
+    // Init
+    updateStats();
+  </script>
+</body>
+</html>

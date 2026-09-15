@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest_cockpit.json">
+    <meta name="theme-color" content="#0b0f19">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>QuantumFlex | Operator Cockpit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(20, 25, 40, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --font-main: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+            background-attachment: fixed;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--panel-border);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
+            padding-left: 1rem;
+            background: linear-gradient(90deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-item {
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        /* Cards & Panels */
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Checklists */
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            transition: border 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .checklist-item.done {
+            border-left-color: var(--accent-green);
+            opacity: 0.8;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-green);
+            margin-top: 0.2rem;
+            cursor: pointer;
+        }
+
+        .checklist-text strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .checklist-text span {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Terminal & Code */
+        .code-block {
+            background: #000;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0.5rem 0;
+            border: 1px solid #333;
+        }
+
+        .copy-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+
+        .copy-btn.copied {
+            background: var(--accent-green);
+        }
+
+        /* Shamir Graphic */
+        .shard-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .shard {
+            flex: 1;
+            min-width: 120px;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid var(--panel-border);
+        }
+
+        .shard.on-disk { background: rgba(16, 185, 129, 0.1); border-color: var(--accent-green); color: var(--accent-green); }
+        .shard.usb { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
+        .shard.paper { background: rgba(245, 158, 11, 0.1); border-color: var(--accent-orange); color: var(--accent-orange); }
+
+        /* Drills */
+        .drill-card {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .drill-question {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .drill-answer {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--panel-border);
+            color: var(--accent-orange);
+            font-family: var(--font-code);
+            font-size: 0.95rem;
+        }
+
+        .drill-card.open .drill-answer {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Calculator */
+        .calc-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .calc-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .calc-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--panel-border);
+            color: white;
+            border-radius: 6px;
+            font-family: var(--font-code);
+            font-size: 1.1rem;
+        }
+
+        .calc-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .calc-result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .status-safe { color: var(--accent-green); border: 2px solid var(--accent-green); }
+        .status-danger { color: var(--accent-red); border: 2px solid var(--accent-red); }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .tag.red { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .tag.green { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                min-height: 100vh;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: max(0.85rem, env(safe-area-inset-top)) 1rem 0.6rem 1rem;
+                gap: 0.5rem;
+                border-right: none;
+                border-bottom: 1px solid var(--panel-border);
+                flex-shrink: 0;
+            }
+
+            .brand {
+                font-size: 1.2rem;
+                margin-bottom: 0.25rem;
+                padding-left: 0.25rem;
+            }
+
+            .nav-container {
+                flex-direction: row;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 0.5rem;
+                padding-bottom: 4px;
+            }
+
+            .nav-container::-webkit-scrollbar {
+                display: none;
+            }
+
+            .nav-item {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.82rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                border-radius: 6px;
+            }
+
+            .nav-item.active {
+                border-left: none;
+                border-bottom: 3px solid var(--accent-blue);
+            }
+
+            .main-content {
+                padding: 1.5rem 1rem max(3.5rem, calc(2rem + env(safe-area-inset-bottom))) 1rem;
+                overflow-y: auto;
+                flex: 1;
+                max-height: none;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            p.subtitle {
+                font-size: 0.95rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">QuantumFlex</div>
+        <div class="nav-container">
+            <div class="nav-item active" data-target="dashboard">
+                <span>🚀 Shift Dashboard</span>
+            </div>
+            <div class="nav-item" data-target="shamir">
+                <span>🔐 Shamir Ceremony</span>
+            </div>
+            <div class="nav-item" data-target="terminal">
+                <span>💻 Terminal Clipboard</span>
+            </div>
+            <div class="nav-item" data-target="drills">
+                <span>🎯 Scenario Drills</span>
+            </div>
+            <div class="nav-item" data-target="calculator">
+                <span>⚖️ Invariant Calc</span>
+            </div>
+            <div class="nav-item" data-target="deepwork">
+                <span>⏳ Deep Work Codex</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- 1. SHIFT DASHBOARD -->
+        <div id="dashboard" class="section active">
+            <h1>Operator Dashboard</h1>
+            <p class="subtitle">Enforce the daily lifecycle with military-grade precision.</p>
+
+            <div class="card">
+                <div class="card-header">Phase A: Shift Start & Arrival</div>
+                
+                <label class="checklist-item" onchange="toggleCheck(this)">
+                    <input type="checkbox">
+                    <div class="checklist-text">
+                        <strong>Visual & Physical Check</strong>
+                        <span>Confirm laptop privacy shutter is closed. Confirm phone USB cable is connected.</span>
+                    </div>
+                </label>
+                
+                <label class="checklist-item" onchange="toggleCheck(this)">
+                    <input type="checkbox">
+                    <div class="checklist-text">
+                        <strong>Network Reality Check</strong>
+                        <span>Check Starlink/home internet. If down: Engage USB Tethering (CDC NCM) -> Mark as Metered.</span>
+                    </div>
+                </label>
+
+                <label class="checklist-item" onchange="toggleCheck(this)">
+                    <input type="checkbox">
+                    <div class="checklist-text">
+                        <strong>Service Ignition (Loopback Only)</strong>
+                        <span><code>systemctl --user start amara-matrix amara-dashboard qf-bot</code></span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="card" style="border-color: var(--accent-green);">
+                <div class="card-header" style="color: var(--accent-green);">Phase B: Active Operations (DOs & DON'Ts)</div>
+                <ul style="padding-left: 1.5rem; line-height: 1.8; color: var(--text-muted);">
+                    <li><span class="tag green">DO</span> Enforce the Universal Invariant (R &gt;= O).</li>
+                    <li><span class="tag green">DO</span> Ingest notes via <code>ingest_vault.py</code>.</li>
+                    <li><span class="tag green">DO</span> Monitor swarm via 127.0.0.1:9000 HUD.</li>
+                    <li><span class="tag red">DON'T</span> NEVER bind any port to 0.0.0.0.</li>
+                    <li><span class="tag red">DON'T</span> NEVER leave the QFX_VAULT USB plugged in randomly.</li>
+                </ul>
+            </div>
+
+            <div class="card" style="border-color: var(--accent-orange);">
+                <div class="card-header" style="color: var(--accent-orange);">Phase C: Shift End & Clean Lockdown</div>
+                
+                <label class="checklist-item" onchange="toggleCheck(this)">
+                    <input type="checkbox">
+                    <div class="checklist-text">
+                        <strong>Freeze Tasks</strong>
+                        <span>Issue <code>/hardstop</code> or ensure queues are fully cleared.</span>
+                    </div>
+                </label>
+                
+                <label class="checklist-item" onchange="toggleCheck(this)">
+                    <input type="checkbox">
+                    <div class="checklist-text">
+                        <strong>Relock & Power Down Services</strong>
+                        <span><code>systemctl --user stop qf-bot amara-dashboard amara-matrix</code></span>
+                    </div>
+                </label>
+                
+                <label class="checklist-item" onchange="toggleCheck(this)">
+                    <input type="checkbox">
+                    <div class="checklist-text">
+                        <strong>Forensic Verification</strong>
+                        <span><code>ss -tulpn | grep -E "5432|8000|9000"</code> (Must return blank!)</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- 2. SHAMIR WIZARD -->
+        <div id="shamir" class="section">
+            <h1>Shamir Ceremony Wizard</h1>
+            <p class="subtitle">Master Custody Matrix: k=3, n=5. Holding 2 shards = 0 bits of information leaked.</p>
+
+            <div class="card">
+                <div class="card-header">Current Shard State</div>
+                <div class="shard-container">
+                    <div class="shard on-disk">Shard 1<br>(Yoga NVMe)</div>
+                    <div class="shard on-disk">Shard 2<br>(Yoga NVMe)</div>
+                    <div class="shard usb">Shard 3<br>(USB QFX_VAULT)</div>
+                    <div class="shard usb">Shard 4<br>(USB QFX_VAULT)</div>
+                    <div class="shard paper">Shard 5<br>(Paper Safe)</div>
+                </div>
+                <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+                    <strong>Rule:</strong> You ONLY unseal the Stratum 0 Engine when committing live cryptographic ledger blocks or consensus audits. Daily research and Athena queries do NOT require unlocking.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Unlocking Procedure</div>
+                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">
+                    <strong>Step 1:</strong> Insert the unmounted physical USB ext4 drive (QFX_VAULT).
+                </div>
+                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">
+                    <strong>Step 2:</strong> Run the unlock script.
+                    <div class="code-block">
+                        <span>./scripts/unlock_engine.sh</span>
+                        <button class="copy-btn" onclick="copyCode(this, './scripts/unlock_engine.sh')">Copy</button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">
+                    <strong>Step 3:</strong> Immediately shred temporary artifacts.
+                    <div class="code-block">
+                        <span>shred -u -z -n 3 /tmp/shard_3.txt</span>
+                        <button class="copy-btn" onclick="copyCode(this, 'shred -u -z -n 3 /tmp/shard_3.txt')">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. TERMINAL CLIPBOARD -->
+        <div id="terminal" class="section">
+            <h1>Terminal Clipboard</h1>
+            <p class="subtitle">1-tap verified commands for zero-error execution.</p>
+
+            <div class="card">
+                <div class="card-header">System Operations</div>
+                
+                <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Start All Services</p>
+                <div class="code-block">
+                    <span>systemctl --user start amara-matrix amara-dashboard qf-bot</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'systemctl --user start amara-matrix amara-dashboard qf-bot')">Copy</button>
+                </div>
+
+                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Stop All Services (Lockdown)</p>
+                <div class="code-block">
+                    <span>systemctl --user stop qf-bot amara-dashboard amara-matrix</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'systemctl --user stop qf-bot amara-dashboard amara-matrix')">Copy</button>
+                </div>
+
+                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Verify Zero-Trust Ports (Should output nothing on lockdown)</p>
+                <div class="code-block">
+                    <span>ss -tulpn | grep -E "5432|8000|9000"</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'ss -tulpn | grep -E &quot;5432|8000|9000&quot;')">Copy</button>
+                </div>
+                
+                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Reset Tailscale Serve State</p>
+                <div class="code-block">
+                    <span>tailscale serve reset</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'tailscale serve reset')">Copy</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Intelligence & Memory</div>
+                
+                <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Ingest New Vault Data to Vector Store</p>
+                <div class="code-block">
+                    <span>python3 ~/mycelium/scripts/ingest_vault.py</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'python3 ~/mycelium/scripts/ingest_vault.py')">Copy</button>
+                </div>
+
+                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Interrogate Local Athena Oracle</p>
+                <div class="code-block">
+                    <span>python3 ~/mycelium/scripts/ask_athena.py "What is the R >= O invariant?"</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'python3 ~/mycelium/scripts/ask_athena.py &quot;What is the R >= O invariant?&quot;')">Copy</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">eBPF / XDP Kernel Pre-Ingress Shunt</div>
+                <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Attach Shunt to tailscale0 (Drop Non-QFXK at Ring Buffer)</p>
+                <div class="code-block">
+                    <span>sudo ~/mycelium/sentinel/xdp/attach.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'sudo ~/mycelium/sentinel/xdp/attach.sh')">Copy</button>
+                </div>
+
+                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Verify Ingress Shunt State</p>
+                <div class="code-block">
+                    <span>ip link show dev tailscale0</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'ip link show dev tailscale0')">Copy</button>
+                </div>
+
+                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Detach Shunt</p>
+                <div class="code-block">
+                    <span>sudo ~/mycelium/sentinel/xdp/detach.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'sudo ~/mycelium/sentinel/xdp/detach.sh')">Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. DRILLS -->
+        <div id="drills" class="section">
+            <h1>Scenario Drills</h1>
+            <p class="subtitle">"What If?" simulations to train reflexes. Click a scenario to reveal the protocol.</p>
+
+            <div class="card drill-card" onclick="this.classList.toggle('open')">
+                <div class="drill-question">🚨 Starlink is suspended or home internet goes down. What do you do?</div>
+                <div class="drill-answer">
+                    1. Zero panic, zero downtime.<br>
+                    2. Connect Google Pixel 11 Pro via USB.<br>
+                    3. Enable USB Tethering on mobile.<br>
+                    4. Command: <code>nmcli connection modify "Wired connection 2" connection.metered yes</code><br>
+                    5. Resume operations.
+                </div>
+            </div>
+
+            <div class="card drill-card" onclick="this.classList.toggle('open')">
+                <div class="drill-question">🚨 Laptop webcam light turns on unexpectedly during a session. What do you do?</div>
+                <div class="drill-answer">
+                    1. Ensure physical privacy shutter is instantly closed manually.<br>
+                    2. Check process utilizing camera: <code>lsof /dev/video0</code><br>
+                    3. Terminate offending process immediately with <code>kill -9 [PID]</code>.<br>
+                    4. Perform rapid port scan: <code>ss -tulpn</code> to verify loopback isolation.<br>
+                    5. Initiate Hardstop if compromised.
+                </div>
+            </div>
+
+            <div class="card drill-card" onclick="this.classList.toggle('open')">
+                <div class="drill-question">🚨 An unauthorized port opens bound to 0.0.0.0. What do you do?</div>
+                <div class="drill-answer">
+                    1. Initiate Hard Lockdown immediately.<br>
+                    2. <code>systemctl --user stop amara-matrix amara-dashboard qf-bot</code><br>
+                    3. <code>tailscale serve reset</code><br>
+                    4. Disconnect physical network interfaces.<br>
+                    5. Analyze logs locally to trace the breach origin before bringing network up.
+                </div>
+            </div>
+
+            <div class="card drill-card" onclick="this.classList.toggle('open')">
+                <div class="drill-question">🚨 Malformed packet burst or DDoS attacks Tailscale interface. What do you do?</div>
+                <div class="drill-answer">
+                    1. Attach Phase 4 eBPF/XDP Pre-Ingress Shunt.<br>
+                    2. <code>sudo ~/mycelium/sentinel/xdp/attach.sh</code><br>
+                    3. Packets lacking Magic 0x5146584B are dropped at the ring buffer.<br>
+                    4. Zero OS socket allocation (sk_buff drag h -> 0).<br>
+                    5. Verify with <code>ip link show dev tailscale0</code> (xdpgeneric).
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. INVARIANT CALCULATOR -->
+        <div id="calculator" class="section">
+            <h1>Sovereign Invariant Calculator</h1>
+            <p class="subtitle">Universal Rule: Reserves (R) must strictly cover Obligations (O).</p>
+
+            <div class="card">
+                <div class="calc-group">
+                    <label>Liquid Reserves ($) [R]</label>
+                    <input type="number" id="reserves" placeholder="e.g., 50000" oninput="calculateInvariant()">
+                </div>
+                <div class="calc-group">
+                    <label>Monthly Obligations ($) [O]</label>
+                    <input type="number" id="obligations" placeholder="e.g., 5000" oninput="calculateInvariant()">
+                </div>
+
+                <div id="calcResult" class="calc-result" style="display: none;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. DEEP WORK CODEX -->
+        <div id="deepwork" class="section">
+            <h1>Deep Work Codex</h1>
+            <p class="subtitle">Cal Newport's Law: Long, unbroken attention on one demanding artifact.</p>
+
+            <div class="card">
+                <div class="card-header">The Sovereign Equation</div>
+                <p style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--accent-green); font-family: var(--font-code);">
+                    Deep Work = f(x) without h leaking into the hour
+                </p>
+                <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                    • <strong>x:</strong> The actual hard problem (Pavilion boot, ledger.dat commit, coursework).<br>
+                    • <strong>h:</strong> Narrative noise (manifestation shorts, identity physics, 4 contradictory handoffs).<br>
+                    • <strong>k:</strong> The real slice you actually execute.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">The 4 Rules of the Protected Block</div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
+                        <strong>1. One Named Object:</strong> "Rotate Shamir and confirm ledger" is a block. "Work on QuantumFlex" is not.
+                    </div>
+                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
+                        <strong>2. Zero Context Switching:</strong> Tailscale status is not part of a compile block unless the compile needs the mesh.
+                    </div>
+                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
+                        <strong>3. The Shutdown Ritual:</strong> Write the next physical step on paper so your brain stops chewing.
+                    </div>
+                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
+                        <strong>4. The Shallow Bin:</strong> Batch texts, emails, docs-to-correct into one 30-minute afternoon slot.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Host Comic Truths</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                    • <strong>The Celeron Paperweight:</strong> HP Pavilion in PA is off, pays no rent, and has zero opinions on FrodoKEM.<br>
+                    • <strong>The Quantum Shark:</strong> Don't treat a metaphor as a lab result. Texting collapses your wavefunction.<br>
+                    • <strong>The Gym-Membership CPU:</strong> Performance mode in /sys resets on reboot. Make the discipline permanent.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Navigation Logic
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Update active nav
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Show target section
+                const targetId = item.getAttribute('data-target');
+                document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // Checklist Logic
+        function toggleCheck(labelElement) {
+            const checkbox = labelElement.querySelector('input');
+            if(checkbox.checked) {
+                labelElement.classList.add('done');
+            } else {
+                labelElement.classList.remove('done');
+            }
+        }
+
+        // Copy Logic
+        function copyCode(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Calculator Logic
+        function calculateInvariant() {
+            const rInput = document.getElementById('reserves').value;
+            const oInput = document.getElementById('obligations').value;
+            const resultDiv = document.getElementById('calcResult');
+
+            if(!rInput || !oInput || oInput <= 0) {
+                resultDiv.style.display = 'none';
+                return;
+            }
+
+            const r = parseFloat(rInput);
+            const o = parseFloat(oInput);
+            const months = (r / o).toFixed(1);
+
+            resultDiv.style.display = 'block';
+
+            if(r >= o) {
+                resultDiv.className = 'calc-result status-safe';
+                resultDiv.innerHTML = `✅ INVARIANT MET<br><span style="font-size: 1rem; font-weight: normal; margin-top: 0.5rem; display: block;">Runway: ${months} Months</span>`;
+            } else {
+                resultDiv.className = 'calc-result status-danger';
+                resultDiv.innerHTML = `🚨 CRITICAL ALERT: R < O<br><span style="font-size: 1rem; font-weight: normal; margin-top: 0.5rem; display: block;">Reserves do not cover 1 month of obligations.</span>`;
+            }
+        }
+
+        // Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw_cockpit.js')
+                    .then(registration => console.log('Cockpit ServiceWorker registered.'))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+</html>

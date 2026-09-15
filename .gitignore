@@ -69,3 +69,18 @@ sentinel/ledger/
 liboqs/
 .cursor/
 *.code-workspace
+
+# Certificates
+*.crt
+
+# Mobile & Capacitor Build Artifacts
+node_modules/
+.gradle/
+*.apk
+*.aab
+
+# Compiled Objects
+*.o
+*.so
+
+!sentinel/xdp/Makefile

@@ -212,4 +212,5 @@ async def evaluate_custom_invariant(request: Request):
 if __name__ == "__main__":
     import uvicorn
     api_port = int(os.environ.get("API_NODE_PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=api_port)
+    api_host = os.environ.get("API_NODE_HOST", "127.0.0.1")
+    uvicorn.run(app, host=api_host, port=api_port)
