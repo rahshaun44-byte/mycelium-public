@@ -1,3 +1,5 @@
+> **2026-09-15 strict-policy update:** Default profile is `fips_strict` (algorithm policy, not FIPS 140-3 validation). Non-dry operation requires a supervised `WORKER_PID`; policy failure stops that worker instead of switching algorithms. See [migration notes](../docs/MLKEM_STRICT_MIGRATION.md). Older fallback examples require explicit `--profile agility`.
+
 # PQC Crypto-Agility Immune Daemon
 
 A supervisor daemon that monitors the cryptographic posture of a post-quantum-capable worker environment and executes autonomous, fail-secure configuration rollover when an Open Policy Agent (OPA) policy engine flags an active algorithm as compromised.

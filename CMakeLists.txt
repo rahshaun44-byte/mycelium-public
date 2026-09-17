@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(QuantumFlex VERSION 2.1.0 LANGUAGES CXX)
+project(QuantumFlex VERSION 2.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,10 +10,10 @@ pkg_check_modules(PQXX REQUIRED libpqxx)
 pkg_check_modules(SQLITE3 REQUIRED sqlite3)
 pkg_check_modules(SYSTEMD REQUIRED libsystemd)
 
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL 3.5 REQUIRED)
 find_package(Threads REQUIRED)
 
-file(GLOB ENGINE_CORE_SOURCES CONFIGURE_DEPENDS "src/core/*.cpp")
+file(GLOB ENGINE_CORE_SOURCES CONFIGURE_DEPENDS "src/core/*.cpp" "src/core/*.c")
 file(GLOB ENGINE_CRYPTO_SOURCES CONFIGURE_DEPENDS "src/crypto/*.cpp")
 
 add_executable(quantum_flex_engine
@@ -119,3 +119,19 @@ target_include_directories(test_dudect_timing PRIVATE
 )
 target_compile_options(test_dudect_timing PRIVATE -O3)
 target_link_libraries(test_dudect_timing PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+
+# Native ML-KEM IPC migration checks (not a FIPS validation test).
+add_executable(test_mlkem768 tools/test_mlkem768.cpp src/crypto/hybrid_kem.cpp src/core/wire_framing.cpp)
+target_include_directories(test_mlkem768 PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(test_mlkem768 PRIVATE OpenSSL::Crypto)
+
+# Verified Core Formal Invariants test harness
+add_executable(test_verified_core
+    tools/test_verified_core.cpp
+    src/core/verified_core.c
+)
+target_include_directories(test_verified_core PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
+)
+target_link_libraries(test_verified_core PRIVATE OpenSSL::Crypto)

@@ -80,8 +80,8 @@ namespace quantumflex::node {
         proof.volume_purged_bytes = payload.size();
         proof.timestamp = static_cast<int64_t>(std::time(nullptr));
 
-        if (!proof.verify_proof()) {
-            throw std::runtime_error("AuditProof failed structural verification for partition: " + partition_name);
+        if (!proof.verify_proof() || !signer_.verify_payload(base_hash, signature)) {
+            throw std::runtime_error("AuditProof failed cryptographic verification for partition: " + partition_name);
         }
 
         txn.exec(

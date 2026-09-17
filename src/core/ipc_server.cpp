@@ -80,9 +80,18 @@ namespace {
         while (std::getline(share_stream, share_token, ',')) {
             const size_t colon_pos = share_token.find(':');
             if (colon_pos != std::string::npos) {
-                const uint8_t shard_id = static_cast<uint8_t>(std::stoi(share_token.substr(0, colon_pos)));
-                const std::string data = hex_decode(share_token.substr(colon_pos + 1));
-                shards.push_back(quantumflex::crypto::SecretShard{.id = shard_id, .payload = data});
+                try {
+                    const int id_val = std::stoi(share_token.substr(0, colon_pos));
+                    if (id_val >= 1 && id_val <= 255) {
+                        const uint8_t shard_id = static_cast<uint8_t>(id_val);
+                        const std::string data = hex_decode(share_token.substr(colon_pos + 1));
+                        if (!data.empty()) {
+                            shards.push_back(quantumflex::crypto::SecretShard{.id = shard_id, .payload = data});
+                        }
+                    }
+                } catch (const std::exception&) {
+                    // Fail closed on malformed shard without throwing unhandled exceptions
+                }
             }
         }
         return shards;
@@ -101,6 +110,23 @@ namespace {
         const std::string gossub_prefix = "GOSSUB|";
         
         if (stream.starts_with(set_key_prefix)) {
+            // Restrict key replacement to authorized operator identities
+            char peer_cn[256] = {0};
+            X509* cert = SSL_get_peer_certificate(ssl);
+            bool authorized = false;
+            if (cert != nullptr) {
+                X509_NAME_get_text_by_NID(X509_get_subject_name(cert), NID_commonName, peer_cn, sizeof(peer_cn));
+                X509_free(cert);
+                const std::string cn_str(peer_cn);
+                if (cn_str == "quantum-admin" || cn_str == "operator" || cn_str == "127.0.0.1" || cn_str == "localhost") {
+                    authorized = true;
+                }
+            }
+            if (!authorized) {
+                sentinel.record_drop();
+                ssl_write_str(ssl, "ERR|UNAUTHORIZED_HARVESTER_MUTATION\n");
+                return;
+            }
             const std::string hex_key = stream.substr(set_key_prefix.length());
             try {
                 node.set_harvester_key(hex_key);
@@ -187,7 +213,8 @@ namespace quantumflex::ipc {
         : port_(port), cert_file_(cert_file), key_file_(key_file), ca_file_(ca_file), bind_address_(std::move(bind_address)), node_(target_node), sentinel_(std::make_unique<security::EwmaLifSentinel>(node_, lif_config)) {
         SSL_load_error_strings();
         OpenSSL_add_ssl_algorithms();
-        initialize_hybrid_keypair();
+        const char* properties = std::getenv("QF_KEM_PROPERTIES");
+        kem_ = std::make_unique<crypto::MLKem768Engine>(properties ? properties : "");
     }
 
     IpcServer::~IpcServer() {
@@ -196,23 +223,6 @@ namespace quantumflex::ipc {
             SSL_CTX_free(ssl_ctx_);
         }
         EVP_cleanup();
-    }
-
-    void IpcServer::initialize_hybrid_keypair() {
-        if (!hybrid_keypair_) {
-            hybrid_keypair_ = std::make_unique<crypto::HybridKeyPair>(crypto::HybridKemEngine::generate_keypair());
-        }
-    }
-
-    auto IpcServer::has_hybrid_keypair() const -> bool {
-        return hybrid_keypair_ != nullptr;
-    }
-
-    auto IpcServer::get_hybrid_public_key() const -> const crypto::HybridPublicKey& {
-        if (!hybrid_keypair_) {
-            throw std::runtime_error("IpcServer::get_hybrid_public_key: keypair uninitialized");
-        }
-        return hybrid_keypair_->public_key;
     }
 
     void IpcServer::send_framed_chunks(uint8_t msg_type, const std::vector<uint8_t>& payload, SSL* ssl) {
@@ -224,48 +234,20 @@ namespace quantumflex::ipc {
     }
 
     void IpcServer::handle_framed_message(const wire::ReassembledMessage& msg, SSL* ssl) {
-        if (!hybrid_keypair_) {
-            initialize_hybrid_keypair();
-        }
-
-        if (msg.msg_type == wire::MSG_KEM_PK) {
-            // Client requests our Hybrid Public Key
-            auto pk_wire = hybrid_keypair_->public_key.serialize();
-            send_framed_chunks(wire::MSG_KEM_PK, pk_wire, ssl);
-            if (sentinel_) {
-                sentinel_->record_success();
+        try {
+            if (msg.msg_type == wire::MSG_MLKEM768_PK && msg.payload.empty()) {
+                send_framed_chunks(wire::MSG_MLKEM768_PK, kem_->public_key(), ssl);
+            } else if (msg.msg_type == wire::MSG_MLKEM768_CT) {
+                auto secret = kem_->decapsulate(msg.payload);
+                CleanseVectorOnDrop guard{secret};
+                const char* properties = std::getenv("QF_KEM_PROPERTIES");
+                const auto tag = crypto::MLKem768Engine::confirmation(secret, msg.payload, properties ? properties : "");
+                send_framed_chunks(wire::MSG_MLKEM768_CONFIRM, tag, ssl);
+            } else {
+                // Includes legacy Frodo message IDs; there is no fallback here.
+                throw std::runtime_error("Unsupported KEM message");
             }
-        } else if (msg.msg_type == wire::MSG_KEM_CT) {
-            // Client submits encapsulated Hybrid Ciphertext
-            try {
-                auto ct = crypto::HybridCiphertext::deserialize(msg.payload.data(), msg.payload.size());
-                std::vector<uint8_t> ss;
-                CleanseVectorOnDrop ss_guard{ss};
-                bool ok = crypto::HybridKemEngine::decapsulate_constant_time(
-                    ct, hybrid_keypair_->private_key, hybrid_keypair_->public_key, ss
-                );
-
-                if (ok) {
-                    if (sentinel_) {
-                        sentinel_->record_success();
-                    }
-                    send_framed_chunks(wire::MSG_KEM_ACK, ss, ssl);
-                } else {
-                    if (sentinel_) {
-                        sentinel_->record_drop(); // Route perturbation into Ghost Node entropy sink
-                    }
-                    send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
-                }
-            } catch (const std::exception& e) {
-                if (sentinel_) {
-                    sentinel_->record_drop();
-                }
-                send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
-            }
-        } else {
-            if (sentinel_) {
-                sentinel_->record_drop();
-            }
+        } catch (const std::exception&) {
             send_framed_chunks(wire::MSG_KEM_REJECT, {}, ssl);
         }
     }
@@ -346,6 +328,13 @@ namespace quantumflex::ipc {
             return false;
         }
 
+        // Apply strict socket deadlines to prevent unauthenticated slowloris / connection stalls
+        struct timeval tv{};
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+        setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
         SSL* ssl = SSL_new(ssl_ctx_);
         SSL_set_fd(ssl, client_fd);
 
@@ -375,6 +364,12 @@ namespace quantumflex::ipc {
         }
 
         // ── Branch 1: QFXK Binary Framed Wire Protocol ──────────────────────
+        if (bytes_read == 1 && buffer[0] == 'Q') {
+            const int extra = SSL_read(ssl, buffer.data() + 1, static_cast<int>(buffer.size() - 1));
+            if (extra > 0) {
+                bytes_read += extra;
+            }
+        }
         if (bytes_read >= 2 && buffer[0] == 'Q' && buffer[1] == 'F') { // Magic bytes fast check
             const std::string session_id = "fd_" + std::to_string(client_fd);
             

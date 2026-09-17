@@ -1,3 +1,4 @@
+import hmac
 #!/usr/bin/env python3
 """
 A.M.A.R.A. Sync Dashboard — Quantum Flex
@@ -61,6 +62,14 @@ try:
     embedding_engine = SentenceTransformer('BAAI/bge-small-en-v1.5')
 except ImportError:
     embedding_engine = None
+
+
+def check_dashboard_api_key(x_api_key: Optional[str]):
+    expected_key = os.environ.get("DASHBOARD_API_KEY")
+    if not expected_key:
+        raise HTTPException(status_code=503, detail="Server misconfiguration: DASHBOARD_API_KEY unset.")
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected_key):
+        raise HTTPException(status_code=403, detail="Invalid API Key. Zero-Trust Violation.")
 
 app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
@@ -265,9 +274,7 @@ async def proxy_query(request: Request):
 @app.post("/api/threat_flag")
 async def toggle_threat(request: Request, x_api_key: str = Header(None)):
     """Interactive Kill Switch. Requires strict API Key auth."""
-    expected_key = os.environ.get("DASHBOARD_API_KEY", "quantum-admin-2026")
-    if x_api_key != expected_key:
-        raise HTTPException(status_code=403, detail="Invalid API Key. Zero-Trust Violation.")
+    check_dashboard_api_key(x_api_key)
     
     data = await request.json()
     algorithm = data.get("algorithm", "ML-KEM-768")
@@ -305,9 +312,7 @@ async def get_manifest():
 
 @app.post("/api/mobile/action")
 async def mobile_action(request: Request, x_api_key: str = Header(None)):
-    expected_key = os.environ.get("DASHBOARD_API_KEY", "quantum-admin-2026")
-    if x_api_key != expected_key:
-        raise HTTPException(status_code=403, detail="Invalid API Key.")
+    check_dashboard_api_key(x_api_key)
     
     data = await request.json()
     action = data.get("action")
@@ -327,11 +332,30 @@ async def mobile_action(request: Request, x_api_key: str = Header(None)):
             subprocess.Popen([sys.executable, str(script), directive], creationflags=0x00000008 | 0x00000200 if sys.platform == "win32" else 0)
             return {"success": True, "message": f"Directive Dispatched: {directive}"}
         elif action == "cli":
-            command = data.get("command", "")
-            if not command:
-                return JSONResponse(status_code=400, content={"error": "Empty command"})
+            command = data.get("command", "").strip()
+            ALLOWED_CLI = {
+                "status": ["status"],
+                "health": ["health"],
+                "vitals": ["vitals"],
+                "invariant": ["invariant"],
+                "wealth": ["wealth"],
+                "pqc": ["pqc"],
+            }
+            if command not in ALLOWED_CLI:
+                return JSONResponse(
+                    status_code=400, 
+                    content={"error": f"Command not permitted. Allowed operations: {sorted(list(ALLOWED_CLI.keys()))}"}
+                )
             try:
-                res = subprocess.run(f'"{sys.executable}" qflex.py {command}', shell=True, capture_output=True, text=True, timeout=30, cwd=str(Path(__file__).parent.parent))
+                cmd_args = [sys.executable, "qflex.py"] + ALLOWED_CLI[command]
+                res = subprocess.run(
+                    cmd_args,
+                    shell=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    cwd=str(Path(__file__).parent.parent)
+                )
                 output = res.stdout if res.returncode == 0 else res.stderr
                 return {"success": True, "output": output}
             except Exception as e:

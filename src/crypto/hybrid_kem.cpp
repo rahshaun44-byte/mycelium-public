@@ -582,3 +582,94 @@ namespace quantumflex::crypto {
     }
 
 } // namespace quantumflex::crypto
+
+namespace quantumflex::crypto {
+namespace {
+using KemContext = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
+struct WipeOnException {
+    std::vector<uint8_t>& bytes;
+    bool release = false;
+    ~WipeOnException() { if (!release && !bytes.empty()) OPENSSL_cleanse(bytes.data(), bytes.size()); }
+};
+void kem_check(bool ok, const char* operation) {
+    if (!ok) throw std::runtime_error(std::string("ML-KEM-768: ") + operation);
+}
+}
+
+MLKem768Engine::MLKem768Engine(std::string properties) : properties_(std::move(properties)) {
+    KemContext ctx(EVP_PKEY_CTX_new_from_name(nullptr, "ML-KEM-768", properties_.c_str()), EVP_PKEY_CTX_free);
+    kem_check(ctx != nullptr, "provider unavailable");
+    kem_check(EVP_PKEY_keygen_init(ctx.get()) > 0, "keygen init failed");
+    EVP_PKEY* raw = nullptr;
+    const int result = EVP_PKEY_generate(ctx.get(), &raw);
+    key_.reset(raw);
+    kem_check(result > 0 && key_ != nullptr, "keygen failed");
+}
+
+auto MLKem768Engine::public_key() const -> std::vector<uint8_t> {
+    std::vector<uint8_t> result(MLKEM768_PUBLIC_KEY_BYTES);
+    size_t size = 0;
+    kem_check(EVP_PKEY_get_octet_string_param(key_.get(), OSSL_PKEY_PARAM_PUB_KEY,
+              result.data(), result.size(), &size) > 0 && size == result.size(), "public key export failed");
+    return result;
+}
+
+auto MLKem768Engine::encapsulate(const std::vector<uint8_t>& public_key, const std::string& properties)
+    -> std::pair<std::vector<uint8_t>, std::vector<uint8_t>> {
+    kem_check(public_key.size() == MLKEM768_PUBLIC_KEY_BYTES, "invalid public key length");
+    KemContext import(EVP_PKEY_CTX_new_from_name(nullptr, "ML-KEM-768", properties.c_str()), EVP_PKEY_CTX_free);
+    kem_check(import != nullptr && EVP_PKEY_fromdata_init(import.get()) > 0, "public key import init failed");
+    OSSL_PARAM params[] = {
+        OSSL_PARAM_construct_octet_string(OSSL_PKEY_PARAM_PUB_KEY, const_cast<uint8_t*>(public_key.data()), public_key.size()),
+        OSSL_PARAM_construct_end()
+    };
+    EVP_PKEY* raw = nullptr;
+    const int imported = EVP_PKEY_fromdata(import.get(), &raw, EVP_PKEY_PUBLIC_KEY, params);
+    std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(raw, EVP_PKEY_free);
+    kem_check(imported > 0 && key != nullptr, "public key import failed");
+    KemContext ctx(EVP_PKEY_CTX_new_from_pkey(nullptr, key.get(), properties.c_str()), EVP_PKEY_CTX_free);
+    kem_check(ctx != nullptr && EVP_PKEY_encapsulate_init(ctx.get(), nullptr) > 0, "encapsulation init failed");
+    size_t ct_size = 0, ss_size = 0;
+    kem_check(EVP_PKEY_encapsulate(ctx.get(), nullptr, &ct_size, nullptr, &ss_size) > 0 &&
+              ct_size == MLKEM768_CIPHERTEXT_BYTES && ss_size == MLKEM768_SHARED_SECRET_BYTES, "invalid provider output sizes");
+    std::vector<uint8_t> ct(ct_size), ss(ss_size);
+    WipeOnException guard{ss};
+    kem_check(EVP_PKEY_encapsulate(ctx.get(), ct.data(), &ct_size, ss.data(), &ss_size) > 0 &&
+              ct_size == ct.size() && ss_size == ss.size(), "encapsulation failed");
+    guard.release = true;
+    return {std::move(ct), std::move(ss)};
+}
+
+auto MLKem768Engine::decapsulate(const std::vector<uint8_t>& ciphertext) const -> std::vector<uint8_t> {
+    kem_check(ciphertext.size() == MLKEM768_CIPHERTEXT_BYTES, "invalid ciphertext length");
+    KemContext ctx(EVP_PKEY_CTX_new_from_pkey(nullptr, key_.get(), properties_.c_str()), EVP_PKEY_CTX_free);
+    kem_check(ctx != nullptr && EVP_PKEY_decapsulate_init(ctx.get(), nullptr) > 0, "decapsulation init failed");
+    size_t size = MLKEM768_SHARED_SECRET_BYTES;
+    std::vector<uint8_t> secret(size);
+    WipeOnException guard{secret};
+    kem_check(EVP_PKEY_decapsulate(ctx.get(), secret.data(), &size, ciphertext.data(), ciphertext.size()) > 0 &&
+              size == secret.size(), "decapsulation failed");
+    guard.release = true;
+    return secret;
+}
+
+auto MLKem768Engine::confirmation(const std::vector<uint8_t>& secret, const std::vector<uint8_t>& ciphertext,
+                                   const std::string& properties) -> std::vector<uint8_t> {
+    kem_check(secret.size() == MLKEM768_SHARED_SECRET_BYTES && ciphertext.size() == MLKEM768_CIPHERTEXT_BYTES,
+              "invalid confirmation input");
+    std::unique_ptr<EVP_MAC, decltype(&EVP_MAC_free)> mac(EVP_MAC_fetch(nullptr, "HMAC", properties.c_str()), EVP_MAC_free);
+    kem_check(mac != nullptr, "HMAC unavailable");
+    std::unique_ptr<EVP_MAC_CTX, decltype(&EVP_MAC_CTX_free)> ctx(EVP_MAC_CTX_new(mac.get()), EVP_MAC_CTX_free);
+    kem_check(ctx != nullptr, "HMAC context unavailable");
+    char digest[] = "SHA256";
+    OSSL_PARAM params[] = {OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, digest, 0), OSSL_PARAM_construct_end()};
+    constexpr char label[] = "QuantumFlex-ML-KEM-768-server-confirm-v1";
+    std::vector<uint8_t> tag(32);
+    size_t size = 0;
+    kem_check(EVP_MAC_init(ctx.get(), secret.data(), secret.size(), params) > 0 &&
+              EVP_MAC_update(ctx.get(), reinterpret_cast<const unsigned char*>(label), sizeof(label) - 1) > 0 &&
+              EVP_MAC_update(ctx.get(), ciphertext.data(), ciphertext.size()) > 0 &&
+              EVP_MAC_final(ctx.get(), tag.data(), &size, tag.size()) > 0 && size == tag.size(), "confirmation failed");
+    return tag;
+}
+} // namespace quantumflex::crypto

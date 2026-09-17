@@ -6,9 +6,37 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <memory>
+#include <openssl/evp.h>
 
 namespace quantumflex::crypto {
 
+    // Production IPC KEM. Algorithm implementation != FIPS 140-3 module validation.
+    constexpr std::size_t MLKEM768_PUBLIC_KEY_BYTES = 1184;
+    constexpr std::size_t MLKEM768_CIPHERTEXT_BYTES = 1088;
+    constexpr std::size_t MLKEM768_SHARED_SECRET_BYTES = 32;
+
+    class MLKem768Engine {
+    public:
+        explicit MLKem768Engine(std::string properties = {});
+        MLKem768Engine(const MLKem768Engine&) = delete;
+        auto operator=(const MLKem768Engine&) -> MLKem768Engine& = delete;
+        [[nodiscard]] auto public_key() const -> std::vector<uint8_t>;
+        [[nodiscard]] static auto encapsulate(const std::vector<uint8_t>& public_key,
+                                             const std::string& properties = {})
+            -> std::pair<std::vector<uint8_t>, std::vector<uint8_t>>;
+        // ML-KEM uses implicit rejection: a correctly sized corrupt ciphertext may
+        // return a different secret, not an error. Confirm possession separately.
+        [[nodiscard]] auto decapsulate(const std::vector<uint8_t>& ciphertext) const -> std::vector<uint8_t>;
+        [[nodiscard]] static auto confirmation(const std::vector<uint8_t>& secret,
+                                              const std::vector<uint8_t>& ciphertext,
+                                              const std::string& properties = {}) -> std::vector<uint8_t>;
+    private:
+        std::string properties_;
+        std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key_{nullptr, EVP_PKEY_free};
+    };
+
+    // Legacy research implementation below is not selected by the IPC server.
     // ── Parameter Specification ─────────────────────────────────────────────
     // FrodoKEM-976-AES / FrodoKEM-976-SHAKE: n=976, q=65536 (2^16), n_bar=8
     // Wire sizes strictly match NIST submission & RFC draft specifications

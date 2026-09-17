@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import uuid
 """
 =====================================================================
   QUANTUM FLEX // SENTINEL ORCHESTRATOR (Thermodynamic Ghost Node)
@@ -57,12 +58,16 @@ def deploy_to_chamber(target_file_path: str) -> bool:
         print(f"[-] FATAL: Unable to create volatile RAM airlock at {VOLATILE_HOST_AIRLOCK}: {e}")
         return False
 
+    req_id = uuid.uuid4().hex[:12]
+    req_airlock = VOLATILE_HOST_AIRLOCK / req_id
+    req_airlock.mkdir(parents=True, exist_ok=True, mode=0o700)
+    
     base_name = target_path.name
-    staged_payload_path = VOLATILE_HOST_AIRLOCK / base_name
+    staged_payload_path = req_airlock / base_name
     container_payload_path = f"{CONTAINER_AIRLOCK}/{base_name}"
 
     try:
-        # 2. Stage Payload exclusively into volatile RAM
+        # 2. Stage Payload exclusively into isolated volatile RAM request slot
         shutil.copy2(target_path, staged_payload_path)
         print(f"[+] Payload staged to volatile RAM airlock: {staged_payload_path} (0 NVMe SSD writes)")
 
@@ -82,21 +87,21 @@ def deploy_to_chamber(target_file_path: str) -> bool:
             "--cap-drop=ALL",
             "--read-only",
             "--tmpfs", f"{CONTAINER_QUARANTINE}:rw,size=64m,noexec,nosuid,nodev",
-            "-v", f"{VOLATILE_HOST_AIRLOCK}:{CONTAINER_AIRLOCK}:ro,Z",
+            "-v", f"{req_airlock}:{CONTAINER_AIRLOCK}:ro,Z",
         ]
 
         if image == ENGINE_IMAGE:
             podman_cmd.extend([image, container_payload_path])
         else:
-            # Alpine fallback: Hash, neutralize, and store isolated copy strictly inside volatile tmpfs
+            # Alpine fallback: Positional arguments prevent container command injection
             cmd_script = (
-                f"sha256sum {container_payload_path} && "
-                f"cp {container_payload_path} {CONTAINER_QUARANTINE}/{base_name}.isolated && "
-                f"chmod 000 {CONTAINER_QUARANTINE}/{base_name}.isolated && "
-                f"echo '[+] Neutralized into volatile tmpfs sink: {CONTAINER_QUARANTINE}/{base_name}.isolated' && "
-                f"df -h {CONTAINER_QUARANTINE}"
+                'sha256sum "$1" && '
+                'cp "$1" "$2/isolated.bin" && '
+                'chmod 000 "$2/isolated.bin" && '
+                'echo "[+] Neutralized into volatile tmpfs sink: $2/isolated.bin" && '
+                'df -h "$2"'
             )
-            podman_cmd.extend([image, "sh", "-c", cmd_script])
+            podman_cmd.extend([image, "sh", "-c", cmd_script, "sh", container_payload_path, CONTAINER_QUARANTINE])
 
         print(f"[>>] Detonating Chamber: {' '.join(podman_cmd)}")
 
@@ -115,7 +120,8 @@ def deploy_to_chamber(target_file_path: str) -> bool:
         # 6. Landauer Thermodynamic Dissipation: Zero-wipe and purge RAM airlock
         if staged_payload_path.exists():
             secure_zero_wipe(staged_payload_path)
-            print(f"[+] Thermodynamic Dissipation: Volatile payload purged from RAM.")
+        shutil.rmtree(req_airlock, ignore_errors=True)
+        print(f"[+] Thermodynamic Dissipation: Volatile payload purged from RAM.")
 
 
 if __name__ == "__main__":

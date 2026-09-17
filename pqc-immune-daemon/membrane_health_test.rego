@@ -102,3 +102,38 @@ test_iso_strict_fallback_omits_frodokem_640 if {
     v.node_status == "TOXIC"
     v.recommended_fallback == "NONE"
 }
+
+# ── Test 9: FIPS Strict Profile (NIST FIPS 203) Disallows Non-FIPS Fallback ──
+test_fips_strict_disallows_non_fips_fallback if {
+    cbom := object.union(make_cbom("ML-KEM-512", "ML-DSA-44"), {"requested_profile": "fips_strict"})
+    v := health.verdict with input as cbom with data.threat_flags as {"ML_KEM_COMPROMISED": true}
+    v.node_status == "TOXIC"
+    v.recommended_fallback == "NONE"
+}
+
+# Strict-profile denial must affect the actual endpoint, not just a deny set.
+test_incomplete_inventory_denied if {
+    every inventory in [{}, {"components": []}, {"components": [{"type": "library"}]}, {"components": [{"type": "crypto-asset"}]}] {
+        cbom := object.union(inventory, {"requested_profile": "fips_strict", "metadata": {"timestamp": "2026-09-16T00:00:00Z"}})
+        v := health.verdict with input as cbom
+        v.node_status == "TOXIC"
+        v.total_components == 0
+        v.recommended_fallback == "NONE"
+    }
+}
+
+test_strict_frodo_verdict if {
+    cbom := object.union(make_cbom("FrodoKEM-976-AES", "ML-DSA-65"), {"requested_profile": "fips_strict"})
+    v := health.verdict with input as cbom
+    v.node_status == "TOXIC"
+    v.recommended_fallback == "NONE"
+}
+
+test_strict_all_mlkem_variants_stop if {
+    every kem in ["ML-KEM-512", "ML-KEM-768", "ML-KEM-1024"] {
+        cbom := object.union(make_cbom(kem, "ML-DSA-65"), {"requested_profile": "fips_strict"})
+        v := health.verdict with input as cbom with data.threat_flags as {"ML_KEM_COMPROMISED": true, "FRODOKEM_COMPROMISED": true}
+        v.node_status == "TOXIC"
+        v.recommended_fallback == "NONE"
+    }
+}

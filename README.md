@@ -1,3 +1,5 @@
+> **Cryptographic posture update (2026-09-15):** `fips_strict` is an algorithm policy, not a FIPS 140-3 validation claim. Migrated C++ IPC uses native ML-KEM-768; legacy Frodo message types are rejected. Runtime deployment and module validation must be verified separately. See [migration and verification notes](docs/MLKEM_STRICT_MIGRATION.md). Older walkthroughs and benchmark claims are historical, not current attestations.
+
 # Quantum Flex — PQC Hybrid KEM Gateway & Cryptographic Agility Framework
 
 ## Overview

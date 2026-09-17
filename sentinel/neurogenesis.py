@@ -20,7 +20,7 @@ if not env_path.exists():
     env_path = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(env_path)
 
-# Superuser connection (must be able to DELETE from memory_logs)
+# Scoped runtime connection for operational log retention (memory_logs)
 DB_CONFIG = {
     "dbname": os.environ.get("DB_NAME", "telemetry"),
     "user": os.environ.get("DB_USER", os.environ.get("GHOSTNODE_DB_USER", "ghostnode")),
@@ -102,10 +102,24 @@ def prune_truth_log():
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
 
-        tables_to_manage = ["memory_logs", "sentinel_ledger", "telemetry_log"]
+        # Only operational log tables are pruned; sentinel_ledger and invariant_audit_ledger
+        # are append-only audit records and are strictly excluded from deletion.
+        cur.execute("""
+            SELECT relname, relkind 
+            FROM pg_class 
+            WHERE relname IN ('memory_logs', 'telemetry_log')
+        """)
+        targets = cur.fetchall()
 
-        for table in tables_to_manage:
-            manage_partitions(cur, table)
+        for table, relkind in targets:
+            if relkind == 'p':
+                manage_partitions(cur, table)
+            elif relkind == 'r':
+                cur.execute(
+                    f"DELETE FROM {table} WHERE timestamp < NOW() - (%s * INTERVAL '1 day')",
+                    (RETENTION_DAYS,)
+                )
+                print(f"[Neurogenesis] Enforced {RETENTION_DAYS}-day row retention on regular table {table} ({cur.rowcount} rows pruned).")
 
         # Log the pruning event itself
         cur.execute(
@@ -125,6 +139,8 @@ def prune_truth_log():
 
     except Exception as e:
         print(f"[{ts}] NEUROGENESIS FAILURE: {e}")
+        import sys
+        sys.exit(1)
 
 if __name__ == "__main__":
     prune_truth_log()

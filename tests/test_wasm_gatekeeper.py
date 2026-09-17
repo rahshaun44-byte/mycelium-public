@@ -37,6 +37,24 @@ def reserve_gate():
     return gate
 
 
+@pytest.mark.parametrize("inventory", [
+    {},
+    {"components": []},
+    {"components": [{"type": "library"}]},
+    {"components": [{"type": "crypto-asset"}]},
+])
+def test_inventory_without_assessed_crypto_is_rejected(membrane_gate, inventory):
+    cbom = {
+        "requested_profile": "fips_strict",
+        "metadata": {"timestamp": datetime.now(timezone.utc).isoformat()},
+        **inventory,
+    }
+    verdict = membrane_gate.evaluate_verdict(cbom)
+    assert verdict["node_status"] == "TOXIC"
+    assert verdict["total_components"] == 0
+    assert verdict["recommended_fallback"] == "NONE"
+
+
 def test_membrane_health_wasm_evaluation_compliant(membrane_gate):
     """Validates that approved quantum-safe algorithms evaluate to COMPLIANT."""
     now = datetime.now(timezone.utc).isoformat()

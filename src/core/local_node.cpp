@@ -1,3 +1,4 @@
+#include "quantum-flex/verified_core.h"
 #include "quantum-flex/local_node.hpp"
 
 #include "quantum-flex/crypto_hasher.hpp"
@@ -288,6 +289,13 @@ namespace quantumflex::node {
         // 3. HARD STOP PROTOCOL
         if (expected_sig != this->suspended_sig_) {
             quarantine_node(QuarantineReason::SecretRecoveryFailure);
+            throw std::runtime_error("FATAL: Secret recovery failure. Node quarantined.");
+        }
+
+        // Verified Core Invariant: Validate transition to ACTIVE
+        if (qf_core_eval_transition(QF_STATE_LOCKED, QF_STATE_ACTIVE, QF_CRED_SHAMIR_THRESHOLD) != QF_VERDICT_ALLOW) {
+            quarantine_node(QuarantineReason::RuntimeIntegrityFailure);
+            throw std::runtime_error("FATAL: Verified core invariant breach on LOCKED -> ACTIVE.");
         }
 
         // 4. Collapse Superposition

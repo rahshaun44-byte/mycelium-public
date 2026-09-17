@@ -18,9 +18,12 @@ struct AuditProof {
 
     /// Structural completeness check enforcing schema integrity
     [[nodiscard]] bool verify_proof() const noexcept {
+        const size_t delim = hybrid_signature.find('|');
+        if (delim == std::string::npos || delim == 0 || delim == hybrid_signature.size() - 1) {
+            return false;
+        }
         return !pre_purge_hash.empty() && 
                !k_t_ascension_hash.empty() && 
-               !hybrid_signature.empty() && 
                volume_purged_bytes > 0 && 
                timestamp > 0;
     }

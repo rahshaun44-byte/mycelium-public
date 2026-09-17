@@ -1,3 +1,5 @@
+import hmac
+from fastapi import HTTPException
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 import asyncio
@@ -16,6 +18,15 @@ except Exception as e:
     evaluate_all_invariants = None
 from pathlib import Path
 from datetime import datetime
+
+
+def verify_api_node_auth(request: Request):
+    expected_key = os.environ.get("API_NODE_KEY", os.environ.get("DASHBOARD_API_KEY"))
+    if not expected_key:
+        raise HTTPException(status_code=401, detail="Unauthorized: Service locked. API key not configured.")
+    x_api_key = request.headers.get("x-api-key")
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected_key):
+        raise HTTPException(status_code=401, detail="Unauthorized: Missing or invalid x-api-key.")
 
 app = FastAPI(title="Quantum Flex Core Node API", version="2.0.0")
 
@@ -37,6 +48,20 @@ ATHENA_URL = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
 # Without a cap, a burst of requests spawns unbounded concurrent subprocesses
 # and can exhaust host RAM/CPU. This bounds concurrent subprocess execution;
 # excess requests wait for a slot instead of each spawning immediately.
+
+ALLOWED_DIRECTORIES = [
+    (BASE_DIR / "knowledge_vault").resolve(),
+    (BASE_DIR / "docs").resolve(),
+    (BASE_DIR / "sentinel" / "knowledge_base").resolve(),
+]
+
+def assert_path_contained(target_path: Path):
+    resolved = target_path.resolve()
+    for allowed in ALLOWED_DIRECTORIES:
+        if resolved == allowed or allowed in resolved.parents:
+            return True
+    return False
+
 INGEST_CONCURRENCY_LIMIT = int(os.environ.get("INGEST_CONCURRENCY_LIMIT", "4"))
 _ingest_semaphore = asyncio.Semaphore(INGEST_CONCURRENCY_LIMIT)
 
@@ -111,11 +136,19 @@ async def query_athena(request: Request):
 @app.post("/ingest")
 async def ingest_payload(request: Request):
     """Stage a file into the Sentinel quarantine pipeline."""
+    verify_api_node_auth(request)
     data = await request.json()
     file_path = data.get("file_path")
 
     if not file_path:
         return {"status": "error", "message": "No file_path provided"}
+
+    p = Path(file_path)
+    if not assert_path_contained(p):
+        raise HTTPException(
+            status_code=403, 
+            detail="Forbidden: Ingestion target must reside within authorized knowledge directories."
+        )
 
     print(f"[>>] API Received Ingestion Request for: {file_path}")
 
@@ -132,6 +165,7 @@ async def ingest_payload(request: Request):
 
 @app.post("/webhook/ingest")
 async def webhook_ingest(request: Request):
+    verify_api_node_auth(request)
     """Stage raw HTTP POST JSON payload directly into the Sentinel sandbox."""
     try:
         data = await request.json()
@@ -139,7 +173,8 @@ async def webhook_ingest(request: Request):
         return {"status": "error", "message": f"Invalid JSON payload: {e}"}
 
     import random
-    temp_dir = os.path.expanduser("~/.gemini/antigravity-ide/scratch/quantum-flex_HIDDEN/quarantine")
+    airlock_base = "/dev/shm/qflex_airlock" if os.path.exists("/dev/shm") else "/tmp/qflex_airlock"
+    temp_dir = os.path.join(airlock_base, "webhooks")
     os.makedirs(temp_dir, exist_ok=True)
     
     filename = f"webhook_{int(datetime.now().timestamp())}_{random.randint(100, 999)}.json"

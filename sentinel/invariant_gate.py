@@ -117,8 +117,9 @@ def query_opa_invariant(payload: Dict[str, Any]) -> Tuple[bool, str, str]:
     # Fallback: Loopback HTTP query to OPA sidecar (127.0.0.1:8181)
     try:
         req_data = json.dumps({"input": payload}).encode("utf-8")
+        url = os.environ.get("OPA_INVARIANT_URL", INVARIANT_URL)
         req = urllib.request.Request(
-            INVARIANT_URL,
+            url,
             data=req_data,
             headers={"Content-Type": "application/json"}
         )
@@ -156,8 +157,9 @@ def check_digital_memory() -> Dict[str, Any]:
 
 
 def check_tpm_anchor() -> Dict[str, Any]:
-    """Reads physical TPM 2.0 NVRAM index 0x1c00010 and PostgreSQL sentinel_ledger tip."""
-    tpm_tip = "0" * 64
+    """Reads physical TPM 2.0 NVRAM index 0x1c00010 and PostgreSQL sentinel_ledger tip.
+    Fails closed by returning explicit distinct sentinel error strings if either read fails."""
+    tpm_tip = None
     try:
         res = subprocess.run(
             ["tpm2_nvread", "-C", "o", "-s", "32", "0x1c00010"],
@@ -166,9 +168,9 @@ def check_tpm_anchor() -> Dict[str, Any]:
         if res.returncode == 0 and len(res.stdout) == 32:
             tpm_tip = res.stdout.hex()
     except Exception:
-        pass
+        tpm_tip = None
 
-    ledger_tip = "0" * 64
+    ledger_tip = None
     conn = get_db_connection()
     if conn:
         try:
@@ -180,13 +182,13 @@ def check_tpm_anchor() -> Dict[str, Any]:
             cur.close()
             conn.close()
         except Exception:
-            pass
+            ledger_tip = None
 
     return {
         "domain": "digital",
         "resource_type": "TPM_ANCHOR",
-        "reserve_measured": tpm_tip,
-        "units_claimed": ledger_tip,
+        "reserve_measured": tpm_tip if tpm_tip else "UNAVAILABLE_TPM_READ_FAILED",
+        "units_claimed": ledger_tip if ledger_tip else "UNAVAILABLE_LEDGER_READ_FAILED",
         "telemetry_timestamp": int(time.time()),
         "max_staleness_seconds": 60,
     }

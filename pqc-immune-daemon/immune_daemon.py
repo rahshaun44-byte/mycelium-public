@@ -337,6 +337,9 @@ def enter_quarantine_mode(
     Isolate the node by applying the safe-mode cipher from OPA recovery_map.
     Does NOT kill the worker or call sys.exit(). The polling loop stays alive.
     """
+    if state.profile == "fips_strict":
+        execute_collapse(state, "NONE", [{"reason": "Policy unavailable"}], dry_run, None, None)
+        return
     if breaker.pre_quarantine_kem is None:
         breaker.pre_quarantine_kem = state.active_kem
 
@@ -493,6 +496,7 @@ def generate_cbom(state: "ImmuneState") -> dict[str, Any]:
     """Minimal CycloneDX-shaped CBOM for the active algorithms."""
     now = datetime.now(timezone.utc).isoformat()
     return {
+        "requested_profile": state.profile,
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
         "metadata": {"timestamp": now},
@@ -517,6 +521,28 @@ def generate_cbom(state: "ImmuneState") -> dict[str, Any]:
     }
 
 
+def fetch_threat_flags(endpoint: str = "http://127.0.0.1:8181", timeout: float = 1.0, required: bool = False) -> dict[str, bool]:
+    flags = {}
+    for env_var in ("ML_KEM_COMPROMISED", "FRODOKEM_COMPROMISED"):
+        val = os.environ.get(env_var)
+        if val is not None:
+            flags[env_var] = val.lower() in ("1", "true", "yes")
+    if endpoint.startswith("http") and endpoint != "http://fake":
+        import urllib.request
+        try:
+            url = endpoint.rstrip("/") + "/v1/data/threat_flags"
+            req = urllib.request.Request(url, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                if isinstance(data, dict) and "result" in data and isinstance(data["result"], dict):
+                    flags.update(data["result"])
+                elif required:
+                    raise ValueError("Threat data missing from policy service")
+        except Exception as exc:
+            if required:
+                raise ConnectionError("Authoritative threat data unavailable") from exc
+    return flags
+
 def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
     """POST the CBOM input to the local OPA sidecar or evaluate via in-process Wasm gatekeeper.
 
@@ -531,7 +557,8 @@ def query_opa(endpoint: str, cbom: dict[str, Any], timeout: float = 2.0) -> dict
             from sentinel.policies.wasm_gatekeeper import get_membrane_wasm_gatekeeper
             wasm_gate = get_membrane_wasm_gatekeeper()
             if wasm_gate is not None:
-                verdict = wasm_gate.evaluate_verdict(cbom)
+                threat_flags = fetch_threat_flags(endpoint if endpoint.startswith("http") else os.environ.get("OPA_ENDPOINT", DEFAULT_OPA), required=cbom.get("requested_profile") == "fips_strict")
+                verdict = wasm_gate.evaluate_verdict(cbom, threat_flags=threat_flags)
                 if isinstance(verdict, dict) and "node_status" in verdict:
                     return verdict
         except Exception as e:
@@ -621,7 +648,10 @@ def async_audit(old_kem: str, new_kem: str, findings: list, pg_config: dict | No
 
 # ── State ─────────────────────────────────────────────────────────
 class ImmuneState:
-    def __init__(self, conf_path: Path | str | None = None):
+    def __init__(self, conf_path: Path | str | None = None, profile: str | None = None):
+        self.profile = profile or os.environ.get("PQC_COMPLIANCE_PROFILE", "fips_strict")
+        if self.profile not in ("fips_strict", "iso_strict", "agility"):
+            raise ValueError("Unknown PQC compliance profile")
         if conf_path is None:
             self.conf_path = Path(os.environ.get("PQC_PROVIDER_CONF", str(DEFAULT_CONF)))
         else:
@@ -649,6 +679,34 @@ def execute_vein_collapse(state: ImmuneState, verdict: dict[str, Any]) -> None:
 
 
 # ── Core decision + action ────────────────────────────────────────
+def halt_worker(worker_pid: int, timeout: float = 2.0) -> None:
+    """Linux pidfd pins the intended process and lets us confirm termination.
+
+    Deployment must prevent a supervisor independently restarting the worker.
+    """
+    import select
+    if worker_pid <= 1 or worker_pid == os.getpid():
+        raise ValueError("Refusing unsafe worker PID")
+    try:
+        fd = os.pidfd_open(worker_pid)
+    except ProcessLookupError:
+        return  # Already stopped.
+    try:
+        try:
+            signal.pidfd_send_signal(fd, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        if not select.select([fd], [], [], timeout)[0]:
+            try:
+                signal.pidfd_send_signal(fd, signal.SIGKILL)
+            except ProcessLookupError:
+                return
+            if not select.select([fd], [], [], timeout)[0]:
+                raise RuntimeError("Worker termination could not be confirmed")
+    finally:
+        os.close(fd)
+
+
 def execute_collapse(
     state: ImmuneState,
     recommended: str,
@@ -658,15 +716,16 @@ def execute_collapse(
     webhook: str | None,
 ) -> None:
     old = state.active_kem
+    if state.profile == "fips_strict":
+        recommended = "NONE"  # No parameter downgrade or research fallback.
     if recommended in ("NONE", "", None) or recommended == old:
         log.critical("FATAL: TOXIC verdict with no usable fallback (recommended=%s). Audit event raised. Halting.", recommended)
         async_audit(old, recommended, findings, pg_config, webhook)
-        if state.worker_pid:
-            try:
-                log.critical("FATAL: Sending SIGTERM to worker PID %s to halt data path.", state.worker_pid)
-                os.kill(state.worker_pid, signal.SIGTERM)
-            except OSError as e:
-                log.error("Failed to terminate worker PID %s: %s", state.worker_pid, e)
+        if state.worker_pid and not dry_run:
+            halt_worker(state.worker_pid)
+            log.critical("Worker PID %s termination confirmed", state.worker_pid)
+        elif state.profile == "fips_strict" and not dry_run:
+            raise RuntimeError("Cannot enforce strict stop: no supervised WORKER_PID")
         sys.exit(1)
 
     log.warning("TOXIC -> collapsing %s -> %s", old, recommended)
@@ -738,6 +797,9 @@ def decision_loop(
         except ConnectionError as e:
             log.warning("OPA query failed or returned invalid verdict: %s", e)
             verdict = None
+
+        if state.profile == "fips_strict" and (verdict is None or verdict.get("node_status") != "COMPLIANT"):
+            execute_collapse(state, "NONE", list((verdict or {}).get("findings") or []), dry_run, pg_config, webhook)
 
         if verdict is None:
             # ── OPA unreachable / empty / malformed → Circuit Breaker path ──
@@ -828,7 +890,7 @@ def decision_loop(
                         "[PQC DEGRADED] Active cipher is %s (fallback). Evaluating auto-restoration to primary standard ML-KEM-768...",
                         state.active_kem,
                     )
-                    probe_state = ImmuneState(state.conf_path)
+                    probe_state = ImmuneState(state.conf_path, profile=state.profile)
                     probe_state.active_kem = "ML-KEM-768"
                     probe_cbom = generate_cbom(probe_state)
                     try:
@@ -843,12 +905,12 @@ def decision_loop(
                         log.debug("PQC auto-restoration probe failed: %s", e)
 
                 log.debug("COMPLIANT | active_kem=%s", state.active_kem)
-            elif status == "TOXIC":
+            elif status in ("TOXIC", "DENIED"):
                 state.consecutive_opa_failures = 0
                 # Cryptographic threat → immediate collapse (no quarantine)
                 breaker.reset()  # Clear transient state — this is a real threat
-                if not recommended or recommended == "NONE":
-                    recommended = next_fallback(state.active_kem)
+                if not recommended:
+                    recommended = "NONE"
                 execute_collapse(state, recommended, findings, dry_run, pg_config, webhook)
             else:
                 # Unknown/untrusted status → route through circuit breaker
@@ -892,6 +954,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="PQC Crypto-Agility Immune Daemon")
     parser.add_argument("--conf", type=Path, default=None, help="Path to crypto_provider.conf")
     parser.add_argument("--opa", default=None, help="OPA base URL")
+    parser.add_argument("--profile", choices=("fips_strict", "iso_strict", "agility"),
+                        default=os.environ.get("PQC_COMPLIANCE_PROFILE", "fips_strict"))
     parser.add_argument("--wasm", action="store_true", help="Enforce in-process Zero-Friction WebAssembly policy engine")
     parser.add_argument("--poll-ms", type=int, default=None, help="Poll interval in milliseconds")
     parser.add_argument("--fail-secure", type=int, default=None, help="Consecutive OPA failures before fail-secure")
@@ -919,11 +983,15 @@ def main() -> int:
 
     webhook = os.environ.get("PQC_DASHBOARD_WEBHOOK")
 
-    state = ImmuneState(conf_path)
+    state = ImmuneState(conf_path, profile=args.profile)
 
     worker_pid_env = os.environ.get("WORKER_PID")
     if worker_pid_env and worker_pid_env.isdigit():
         state.worker_pid = int(worker_pid_env)
+
+    if state.profile == "fips_strict" and not args.dry_run:
+        if not state.worker_pid or state.worker_pid <= 1 or state.worker_pid == os.getpid():
+            parser.error("fips_strict requires WORKER_PID for the supervised data-path worker; use --dry-run for inspection")
 
     try:
         decision_loop(

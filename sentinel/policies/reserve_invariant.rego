@@ -34,8 +34,9 @@ is_anchor_valid if {
     input.resource_type == "TPM_ANCHOR"
     input.reserve_measured != null
     input.units_claimed != null
-    count(input.reserve_measured) == 64
-    count(input.units_claimed) == 64
+    regex.match("^[0-9a-fA-F]{64}$", input.reserve_measured)
+    regex.match("^[0-9a-fA-F]{64}$", input.units_claimed)
+    input.reserve_measured != "0000000000000000000000000000000000000000000000000000000000000000"
     lower(input.reserve_measured) == lower(input.units_claimed)
 }
 
@@ -48,6 +49,8 @@ is_numeric_solvent if {
     is_numeric_resource
     input.reserve_measured != null
     input.units_claimed != null
+    input.reserve_measured >= 0
+    input.units_claimed >= 0
     input.reserve_measured >= input.units_claimed
     
     # Check post-transaction headroom if requested_delta is specified

@@ -1,3 +1,4 @@
+import hmac
 #!/usr/bin/env python3
 """
 Quantum Flex AI Teammates: REST & Web API Server (QF-Bot)
@@ -43,9 +44,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+        "http://127.0.0.1:9000",
+        "http://localhost:9000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -203,8 +211,15 @@ async def list_drafts():
     return {"drafts": orchestrator.draft_queue.list_drafts()}
 
 @app.post("/api/drafts/{draft_id}/approve")
-async def approve_draft(draft_id: str):
+async def approve_draft(draft_id: str, request: Request):
     """Executes a staged draft action upon operator sign-off."""
+    expected_key = os.environ.get("QFBOT_API_KEY", os.environ.get("DASHBOARD_API_KEY"))
+    if not expected_key:
+        raise HTTPException(status_code=401, detail="Unauthorized: Service locked. API key not configured.")
+    x_api_key = request.headers.get("x-api-key")
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected_key):
+        raise HTTPException(status_code=401, detail="Unauthorized: Operator authentication required.")
+    operator = request.headers.get("x-operator-id", "authenticated_operator")
     res = await orchestrator.draft_queue.approve_draft(draft_id)
     if "error" in res and res.get("status") == "NOT_FOUND":
         raise HTTPException(status_code=404, detail=res["error"])

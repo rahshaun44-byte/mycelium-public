@@ -169,81 +169,52 @@ def cmd_dispatch_directive(directive: str):
     print()
 
 def cmd_pqc_status():
-    """Inspects post-quantum crypto-agility, wire protocol, and audit assurance status."""
-    conf_path = ROOT_DIR / "mcp_layer" / "crypto_provider.conf"
-    if not conf_path.exists():
-        conf_path = ROOT_DIR / "pqc-immune-daemon" / "crypto_provider.conf"
-
-    cbom_path = ROOT_DIR / "docs" / "cbom_alpha_node_template.json"
-    engine_bin = ROOT_DIR / "build_check" / "quantum_flex_engine"
-
-    print(f"\n{BOLD}{CYAN}╔═══════════════════════════════════════════════════════════════════════╗{RESET}")
-    print(f"{BOLD}{CYAN}║     QUANTUM FLEX: POST-QUANTUM CRYPTO CONTROL & AUDIT HUD             ║{RESET}")
-    print(f"{BOLD}{CYAN}╚═══════════════════════════════════════════════════════════════════════╝{RESET}")
-
-    print(f"\n{BOLD}{MAGENTA}[1] CRYPTOGRAPHIC PRIMITIVE INVENTORY & AGILITY LADDER{RESET}")
-    # 1. LIVE TRUTH PROBE: Check the host OS Gatekeeper directly
-    pqc_live_status = False
-    try:
-        # We ping the physical OpenSSL layer to verify execution capability
-        probe = subprocess.run(
-            ["openssl", "list", "-kem-algorithms", "-provider", "oqsprovider"],
-            capture_output=True, text=True
-        )
-        if "Frodo" in probe.stdout or "FrodoKEM" in probe.stdout:
-            pqc_live_status = True
-    except Exception:
-        pass
-
-    # 2. ENFORCE THE EQUATION: Y = f(x - h) + k
-    if not pqc_live_status:
-        print(f"  {RED}{BOLD}* PQ_MEMBRANE        : CLOSED (OPENSSL_FRODO976=NULL){RESET}")
-        print(f"  {YELLOW}* ACTIVE_ROUTING     : TAILSCALE WIREGUARD (X25519 FALLBACK){RESET}")
-        print(f"  {CYAN}* SYSTEM_STATE       : OS-Level liboqs Compilation Required{RESET}")
-    elif conf_path.exists():
-        with open(conf_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    k, v = line.split("=", 1) if "=" in line else (line, "")
-                    if "active" in k:
-                        print(f"  {GREEN}{BOLD}* {k.upper():<18} : {v:<22} [ACTIVE PRIMARY]{RESET}")
-                    elif "fallback" in k:
-                        print(f"  {YELLOW}  {k:<18} : {v:<22} [POLICY FALLBACK]{RESET}")
-    else:
-        print(f"  {RED}[!] crypto_provider.conf not found and PQC host is NULL.{RESET}")
-
-    print(f"\n{BOLD}{MAGENTA}[2] WIRE PROTOCOL & GATEKEEPER SPECIFICATION (v1.0){RESET}")
-    print(f"  * Protocol Magic     : {CYAN}0x5146584B (QFXK){RESET}")
-    print(f"  * MTU Framing        : {GREEN}16-Byte Header | <= 1400 B Payload | IEEE 802.3 CRC32{RESET}")
-    print(f"  * State Saturation   : {GREEN}Bounded <= 64 Concurrent Sessions | 1200ms Timeout{RESET}")
-    print(f"  * Channel Boundary   : {YELLOW}mTLS (Port 9443) on Tailscale Mesh Interface{RESET}")
-
-    print(f"\n{BOLD}{MAGENTA}[3] INDEPENDENT AUDIT ASSURANCE & TEST INVARIANTS{RESET}")
-    print(f"  * Wycheproof X25519  : {GREEN}100% PASS (5/5 RFC 7748 §6.1 Degenerate Points Rejected){RESET}")
-    print(f"  * Wire Fuzzing & DoS : {GREEN}100% PASS (5/5 Invariants: CRC Tamper & Saturation Flood){RESET}")
-    print(f"  * Hybrid KEM Combiner: {GREEN}100% PASS (5/5 CFRG Dual-PRF HKDF Invariants){RESET}")
-    print(f"  * Four-Artifact Gate : {GREEN}FAIL-CLOSED ENFORCED (Hard Stop on missing vectors){RESET}")
-
-    print(f"\n{BOLD}{MAGENTA}[4] SYSTEM BILL OF MATERIALS (CBOM) & REPRODUCIBILITY{RESET}")
-    if cbom_path.exists():
+    """Read-only capability/configuration report; never a compliance attestation."""
+    def probe(*args):
         try:
-            with open(cbom_path, "r", encoding="utf-8") as f:
-                cbom = json.load(f)
-            ts = cbom.get("metadata", {}).get("timestamp", "N/A")
-            print(f"  * CycloneDX v1.5 CBOM: {GREEN}VALIDATED (Timestamp: {ts}){RESET}")
-        except Exception as e:
-            print(f"  * CycloneDX v1.5 CBOM: {RED}ERROR parsing: {e}{RESET}")
-    if engine_bin.exists():
-        import hashlib
-        h = hashlib.sha256(engine_bin.read_bytes()).hexdigest()
-        print(f"  * Engine Binary SHA256: {CYAN}{h[:24]}...{RESET}")
+            result = subprocess.run(["openssl", *args], capture_output=True, text=True, timeout=5)
+            return result.stdout if result.returncode == 0 else None
+        except (OSError, subprocess.TimeoutExpired):
+            return None
 
-    print(f"\n{BOLD}{MAGENTA}[5] WORKSTATION & UPSTREAM REPOSITORY STATUS{RESET}")
-    print(f"  * mycelium.git       : {GREEN}UP-TO-DATE (Pushed to qf/main){RESET}")
-    print(f"  * pqc-immune-daemon  : {GREEN}UP-TO-DATE (Pushed to origin/main){RESET}")
-    print(f"  * Private Key Leaks  : {GREEN}ZERO (Fail-closed scanner verified){RESET}")
-    print(f"{CYAN}═════════════════════════════════════════════════════════════════════════{RESET}\n")
+    print("\nQuantumFlex cryptographic posture")
+    print("\n[1] Host provider capabilities (this probe process only)")
+    version = probe("version")
+    print("OpenSSL:", version.strip() if version else "UNKNOWN")
+    algorithms = probe("list", "-kem-algorithms", "-provider", "default", "-propquery", "provider=default")
+    capability = "UNKNOWN" if algorithms is None else ("AVAILABLE" if "ML-KEM-768" in algorithms else "UNAVAILABLE")
+    print("Default-provider ML-KEM-768:", capability)
+    providers = probe("list", "-providers")
+    fips_loaded = providers is not None and any(line.strip() == "fips" for line in providers.splitlines())
+    print("FIPS provider in probe:", "UNKNOWN" if providers is None else ("LOADED" if fips_loaded else "NOT LISTED"))
+    print("FIPS 140-3 validation: NOT ESTABLISHED; module certificate and approved operating conditions require verification.")
+
+    print("\n[2] Configured policy (running daemon not inspected)")
+    profile = os.environ.get("PQC_COMPLIANCE_PROFILE", "fips_strict")
+    print("Profile from this environment/default:", profile)
+    print("Daemon --profile can override this value.")
+    if profile == "fips_strict":
+        print("Strict fallback: NONE on compromise, denial, or unavailable policy; no ML-KEM parameter downgrade.")
+    elif profile in ("agility", "iso_strict"):
+        print("Research/agility fallback enabled; this is not a FIPS validation claim.")
+    else:
+        print("INVALID profile; daemon startup rejects this value.")
+    conf_path = Path(os.environ.get("PQC_PROVIDER_CONF", str(ROOT_DIR / "mcp_layer" / "crypto_provider.conf")))
+    print("Configuration file:", conf_path)
+    if conf_path.is_file():
+        for line in conf_path.read_text().splitlines():
+            key, sep, value = line.partition("=")
+            if sep and key.strip() in ("active_kem", "active_sig"):
+                print(f"Configured {key.strip()}: {value.strip()} (not a negotiated-session measurement)")
+    else:
+        print("Configuration unavailable")
+
+    print("\n[3] C++ source implementation (running binary not inspected)")
+    print("IPC KEM: native OpenSSL ML-KEM-768; message types 0x12/0x13/0x14.")
+    print("Legacy Frodo + X25519: research code only; legacy KEM requests are rejected by migrated IPC.")
+    print("KEM exchange returns a confirmation tag, never the shared secret. Existing transport remains mTLS.")
+    print("Provider selection follows OpenSSL configuration and QF_KEM_PROPERTIES; validation is not inferred.")
+    print("Deployment, traffic enforcement, and test results: NOT VERIFIED by this command.\n")
 
 def cmd_wealth_status():
     """Runs DePIN wealth elevation telemetry."""

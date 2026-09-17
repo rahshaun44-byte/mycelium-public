@@ -12,7 +12,10 @@ CREATE TABLE IF NOT EXISTS quantum_telemetry_channel (
 
 CREATE INDEX IF NOT EXISTS idx_telemetry_timestamp ON quantum_telemetry_channel(timestamp);
 
-GRANT ALL PRIVILEGES ON TABLE quantum_telemetry_channel TO quantum_sentinel;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO quantum_sentinel;
-GRANT ALL PRIVILEGES ON TABLE quantum_telemetry_channel TO rahshaunchambers;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO rahshaunchambers;
+GRANT USAGE ON SCHEMA public TO quantum_sentinel;
+GRANT INSERT, SELECT ON TABLE public.quantum_telemetry_channel TO quantum_sentinel;
+GRANT USAGE, SELECT ON SEQUENCE public.quantum_telemetry_channel_id_seq TO quantum_sentinel;
+
+GRANT USAGE ON SCHEMA public TO rahshaunchambers;
+GRANT INSERT, SELECT ON TABLE public.quantum_telemetry_channel TO rahshaunchambers;
+GRANT USAGE, SELECT ON SEQUENCE public.quantum_telemetry_channel_id_seq TO rahshaunchambers;

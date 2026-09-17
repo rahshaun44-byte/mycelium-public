@@ -67,23 +67,20 @@ compromised_algorithms contains "FrodoKEM-1344-AES" if frodokem_compromised
 # ── Per-Component Evaluation ─────────────────────────────────────
 # Evaluates each cryptographic component in the CBOM
 
-component_verdict(comp) := {"algorithm": algo, "status": "TOXIC", "reason": reason} if {
+# Profile checks and compromise checks are mutually exclusive to avoid eval conflicts.
+component_verdict(comp) := {"algorithm": algo, "status": "TOXIC", "reason": "Algorithm outside fips_strict registry (FIPS 203/204/205)"} if {
+    algo := comp.cryptoProperties.algorithmProperties.algorithm
+    input.requested_profile == "fips_strict"
+    not algo in (quantum_safe_kem | quantum_safe_sig)
+} else := {"algorithm": algo, "status": "TOXIC", "reason": "Algorithm compromised"} if {
     algo := comp.cryptoProperties.algorithmProperties.algorithm
     algo in compromised_algorithms
-    reason := sprintf("Algorithm %v flagged as COMPROMISED by active threat intelligence", [algo])
-}
-
-component_verdict(comp) := {"algorithm": algo, "status": "TOXIC", "reason": reason} if {
+} else := {"algorithm": algo, "status": "TOXIC", "reason": "Unknown/deprecated algorithm"} if {
     algo := comp.cryptoProperties.algorithmProperties.algorithm
     not algo in all_approved
-    not algo in compromised_algorithms
-    reason := sprintf("Algorithm %v not in approved registry (unknown/deprecated)", [algo])
-}
-
-component_verdict(comp) := {"algorithm": algo, "status": "COMPLIANT", "reason": "Approved"} if {
+} else := {"algorithm": algo, "status": "COMPLIANT", "reason": "Approved by algorithm policy; module validation not assessed"} if {
     algo := comp.cryptoProperties.algorithmProperties.algorithm
     algo in all_approved
-    not algo in compromised_algorithms
 }
 
 # ── Aggregate Verdict ────────────────────────────────────────────
@@ -102,6 +99,7 @@ toxic_findings contains f if {
 
 default node_status := "COMPLIANT"
 node_status := "TOXIC" if count(toxic_findings) > 0
+node_status := "TOXIC" if count(deny) > 0
 
 # ── Primary Decision Endpoint ────────────────────────────────────
 # Query: POST /v1/data/membrane/health/verdict
@@ -172,13 +170,33 @@ active_kems contains algo if {
     algo in (quantum_safe_kem | fallback_approved)
 }
 
+# Strict Federal Compliance Fallback Map (FIPS 203 strict)
+# Constrains fallbacks exclusively within FIPS-approved parameters; fails closed rather than switching to non-FIPS
+fips_fallback_map := {
+    "ML-KEM-1024": "NONE",
+    "ML-KEM-768": "NONE",
+    "ML-KEM-512": "NONE",
+}
+
+deny contains "FIPS compliance violation: Non-FIPS algorithm in fips_strict profile" if {
+    input.requested_profile == "fips_strict"
+    some comp in input.components
+    comp.type == "crypto-asset"
+    algo := comp.cryptoProperties.algorithmProperties.algorithm
+    not algo in (quantum_safe_kem | quantum_safe_sig)
+}
+
 # Active fallback map selection based on profile
-active_fallback_map := iso_fallback_map if {
+active_fallback_map := fips_fallback_map if {
+    input.requested_profile == "fips_strict"
+} else := iso_fallback_map if {
     input.requested_profile == "iso_strict"
 } else := fallback_map
 
 # If an active ML-KEM is toxic and FrodoKEM is healthy, pick the equivalent tier
 recommended_fallback := active_fallback_map[kem] if {
+    object.get(input, "requested_profile", "agility") != "fips_strict"
+    count(deny) == 0
     some kem in active_kems
     kem in compromised_algorithms
     not frodokem_compromised
@@ -187,9 +205,30 @@ recommended_fallback := active_fallback_map[kem] if {
 
 # If FrodoKEM is also compromised, step down to approved classical (X25519)
 recommended_fallback := "X25519" if {
+    object.get(input, "requested_profile", "agility") != "fips_strict"
+    count(deny) == 0
     some kem in active_kems
     kem in compromised_algorithms
     frodokem_compromised
 }
 
 default recommended_fallback := "NONE"
+
+# A misspelled profile must never silently enable agility.
+deny contains "Unknown compliance profile" if {
+    not object.get(input, "requested_profile", "agility") in {"fips_strict", "iso_strict", "agility"}
+}
+
+# ── Inventory Completeness Checks ─────────────────────────────────
+deny contains "Empty inventory: CBOM contains no cryptographic components" if {
+    not input.components
+}
+
+deny contains "Empty inventory: CBOM contains no cryptographic components" if {
+    count(input.components) == 0
+}
+
+deny contains "Missing crypto-assets: CBOM contains zero assessed crypto-asset components" if {
+    count(input.components) > 0
+    count(findings) == 0
+}

@@ -49,7 +49,7 @@ def test_vein_collapse_rewrites_conf():
             "active_sig=ML-DSA-65\n"
         )
 
-        state = immune_daemon.ImmuneState(conf_path)
+        state = immune_daemon.ImmuneState(conf_path, profile="agility")
         assert state.active_kem == "ML-KEM-768", f"expected ML-KEM-768, got {state.active_kem}"
 
         verdict = {
@@ -79,7 +79,7 @@ def test_all_algorithms_exhausted_halts():
         conf_path = Path(tmp) / "crypto_provider.conf"
         conf_path.write_text("active_kem=X25519\nactive_sig=Ed25519\n")
 
-        state = immune_daemon.ImmuneState(conf_path)
+        state = immune_daemon.ImmuneState(conf_path, profile="agility")
         verdict = {"node_status": "TOXIC", "recommended_fallback": "NONE", "findings": []}
 
         try:
@@ -104,7 +104,8 @@ def test_daemon_starts_with_default_conf():
             os.chdir(tmp_path)
             (tmp_path / "crypto_provider.conf").write_text("active_kem=ML-KEM-768\n")
             sys.argv = ["immune_daemon.py", "--once", "--dry-run"]
-            ret = immune_daemon.main()
+            with patch.object(immune_daemon, "query_opa", return_value={"node_status": "COMPLIANT"}), patch.object(immune_daemon, "get_authoritative_recovery_map", return_value={}):
+                ret = immune_daemon.main()
             assert ret == 0, f"Expected return code 0, got {ret}"
             print("PASS: [D-1] daemon starts with default config path (--once --dry-run)")
         finally:
@@ -168,7 +169,7 @@ def test_opa_unknown_status_fails_secure():
     with tempfile.TemporaryDirectory() as tmp:
         conf_path = Path(tmp) / "crypto_provider.conf"
         conf_path.write_text("active_kem=ML-KEM-768\nactive_sig=ML-DSA-65\n")
-        state = immune_daemon.ImmuneState(conf_path)
+        state = immune_daemon.ImmuneState(conf_path, profile="agility")
 
         # Create a breaker with max_retries=1 to test immediate trip on unknown status
         breaker = immune_daemon.CircuitBreaker(
@@ -229,7 +230,7 @@ def test_worker_pid_tracking():
         orig_pid = os.environ.get("WORKER_PID")
         try:
             os.environ["WORKER_PID"] = "99999"
-            state = immune_daemon.ImmuneState(conf_path)
+            state = immune_daemon.ImmuneState(conf_path, profile="agility")
             state.worker_pid = int(os.environ["WORKER_PID"])
             assert state.worker_pid == 99999
             print("PASS: [D-4] worker PID tracking functional")
@@ -283,7 +284,7 @@ def test_circuit_breaker_quarantine_then_recover():
     with tempfile.TemporaryDirectory() as tmp:
         conf_path = Path(tmp) / "crypto_provider.conf"
         conf_path.write_text("active_kem=ML-KEM-768\nactive_sig=ML-DSA-65\n")
-        state = immune_daemon.ImmuneState(conf_path)
+        state = immune_daemon.ImmuneState(conf_path, profile="agility")
 
         breaker = immune_daemon.CircuitBreaker(
             max_retries=3,
@@ -341,7 +342,7 @@ def test_quarantine_applies_safe_mode_cipher():
     with tempfile.TemporaryDirectory() as tmp:
         conf_path = Path(tmp) / "crypto_provider.conf"
         conf_path.write_text("active_kem=ML-KEM-768\nactive_sig=ML-DSA-65\n")
-        state = immune_daemon.ImmuneState(conf_path)
+        state = immune_daemon.ImmuneState(conf_path, profile="agility")
 
         breaker = immune_daemon.CircuitBreaker(
             max_retries=3,
@@ -412,7 +413,7 @@ def test_worker_pid_sighup_signal():
     with tempfile.TemporaryDirectory() as tmp:
         conf_path = Path(tmp) / "crypto_provider.conf"
         conf_path.write_text("active_kem=ML-KEM-768\nactive_sig=ML-DSA-65\n")
-        state = immune_daemon.ImmuneState(conf_path)
+        state = immune_daemon.ImmuneState(conf_path, profile="agility")
         state.worker_pid = 12345
 
         # Patch signal and os.kill

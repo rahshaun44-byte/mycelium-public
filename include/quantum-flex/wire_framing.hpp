@@ -25,6 +25,10 @@ namespace quantumflex::wire {
     constexpr uint8_t MSG_KEM_PK     = 0x02; // Hybrid Public Key (15664 bytes)
     constexpr uint8_t MSG_KEM_CT     = 0x03; // Hybrid Ciphertext (15776 bytes)
     constexpr uint8_t MSG_KEM_ACK    = 0x04; // Successful session establishment
+    // Distinct IDs prevent legacy Frodo clients interpreting ML-KEM bytes.
+    constexpr uint8_t MSG_MLKEM768_PK = 0x12; // 1184-byte ek; empty request
+    constexpr uint8_t MSG_MLKEM768_CT = 0x13; // 1088-byte ciphertext
+    constexpr uint8_t MSG_MLKEM768_CONFIRM = 0x14; // 32-byte HMAC, never the secret
     constexpr uint8_t MSG_KEM_REJECT = 0x7F; // Constant-time fail-closed reject
 
     // ── Wire Frame Header (16 Bytes, Strictly Aligned) ──────────────────────

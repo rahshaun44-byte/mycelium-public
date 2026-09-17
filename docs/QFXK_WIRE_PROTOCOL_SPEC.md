@@ -1,3 +1,5 @@
+> **Legacy research protocol:** The migrated IPC handler uses native ML-KEM-768 with message IDs 0x12/0x13/0x14 and rejects the Frodo KEM request IDs described below. See [current wire and validation limits](MLKEM_STRICT_MIGRATION.md).
+
 # QFXK Binary Wire Framing Protocol Specification (v1.0)
 
 **Status**: Release Specification  

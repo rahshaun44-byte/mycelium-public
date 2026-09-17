@@ -1,3 +1,4 @@
+#include <iostream>
 #include "quantum-flex/replication_layer.hpp"
 #include "quantum-flex/crypto_hasher.hpp"
 
@@ -26,10 +27,9 @@ namespace quantumflex::replication {
     auto ReplicationLayer::enroll_peer(const std::string& node_id, const std::string& pubkey_hex, const std::string& signature) -> bool {
         const std::string to_verify = "ENROLL|" + node_id + "|" + pubkey_hex;
         
-        // Temporarily, we use our own node's signer to verify as a stub for an admin root key check
-        // In a full implementation, this should verify against a known root CA pubkey
         if (!signer_.verify_payload(to_verify, signature)) {
-            // return false; // Disabled stub for simulation purposes since we don't have the admin key in testing
+            std::cerr << "[!] ReplicationLayer: Rejected peer enrollment due to invalid signature for " << node_id << "\n";
+            return false;
         }
 
         const std::scoped_lock lock(peer_mtx_);
@@ -38,7 +38,15 @@ namespace quantumflex::replication {
         }
 
         peer_pubkeys_[node_id] = pubkey_hex;
-        return save_peers();
+        // Internal save without re-locking peer_mtx_ to prevent deadlocks
+        std::ofstream file(peers_file_);
+        if (!file) {
+            return false;
+        }
+        for (const auto& [peer_id, peer_key] : peer_pubkeys_) {
+            file << peer_id << "|" << peer_key << "\n";
+        }
+        return file.good();
     }
 
     auto ReplicationLayer::load_peers() -> bool {
@@ -144,12 +152,11 @@ namespace quantumflex::replication {
     }
 
     auto ReplicationLayer::receive_replication(const std::string& message) -> bool {
-        // Parse REPLICATE|NODE_ID|BLOCK_DATA|SIG
-        // Verify signature using peer_pubkeys_
-        // Validate chain link + quorum
-        // If valid: append and re-gossip
         static_cast<void>(this);
-        return !message.empty();
+        static_cast<void>(message);
+        // Fail closed: Do not accept unverified replication messages
+        std::cerr << "[!] ReplicationLayer: Incoming replication rejected. Cryptographic chain verification required.\n";
+        return false;
     }
 
     auto ReplicationLayer::get_latest_block() const -> std::string {

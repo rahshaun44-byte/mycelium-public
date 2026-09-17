@@ -28,8 +28,12 @@ void test_corrupted_magic_and_version() {
     uint8_t out_type = 0;
 
     bool complete = pool.ingest_stream("sess_bad_magic", frame.data(), frame.size(), out_payload, out_type);
-    assert(complete == true);
+    assert(complete == false);
+    frame = serialize_frame(MSG_MLKEM768_CT, 1, payload.data(), payload.size());
+    frame[2] = 99;
+    assert(!pool.ingest_stream("sess_bad_version", frame.data(), frame.size(), out_payload, out_type));
 
+    frame[0] = 'X';
     const auto* hdr = reinterpret_cast<const QFXKHeader*>(frame.data());
     bool magic_valid = (hdr->magic[0] == 'Q' && hdr->magic[1] == 'F');
     assert(magic_valid == false);

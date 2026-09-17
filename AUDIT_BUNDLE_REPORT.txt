@@ -1,0 +1,161 @@
+================================================================================
+QUANTUMFLEX INDEPENDENT AUDIT BUNDLE REPORT
+Generated: 2026-09-16T19:04:40Z
+Kernel: 7.2.5-200.fc44.x86_64 | User: quant (UID: 1000)
+================================================================================
+
+═══════════════════════════════════════════════════════════════════
+        QUANTUMFLEX DEPLOYED PERMISSIONS & PROCESS AUDITOR         
+═══════════════════════════════════════════════════════════════════
+
+[1] Verifying Network Socket Bindings (Local Loopback Only)...
+  [PASS] Port :5432 strictly bound to loopback (127.0.0.1:5432)
+  [PASS] Port :8000 strictly bound to loopback (127.0.0.1:8000)
+  [PASS] Port :8001 strictly bound to loopback (127.0.0.1:8001)
+  [PASS] Port :8080 strictly bound to loopback (127.0.0.1:8080)
+  [PASS] Port :8181 strictly bound to loopback (127.0.0.1:8181)
+  [PASS] Port :9000 strictly bound to loopback (127.0.0.1:9000)
+  [PASS] Port :9444 strictly bound to loopback (127.0.0.1:9444)
+  [PASS] Port :11434 strictly bound to loopback (127.0.0.1:11434)
+
+[2] Auditing Sensitive Filesystem Permissions...
+  [PASS] Shards directory /home/quant/qfx-shards permission mode is 700
+  [PASS] shard_1.txt permission mode is 600
+  [PASS] shard_2.txt permission mode is 600
+  [PASS] client.key private key mode is 600
+  [PASS] qf_server.key private key mode is 600
+  [PASS] server.key private key mode is 600
+
+[3] Auditing Process Execution Identity...
+  [PASS] Auditor executing as unprivileged user: quant (UID: 1000)
+  [PASS] amara-dashboard.service is running under user UID 1000 (PID: 61420)
+  [PASS] api-node.service is running under user UID 1000 (PID: 4147)
+  [PASS] athena-node.service is running under user UID 1000 (PID: 4146)
+  [PASS] immune-daemon.service is running under user UID 1000 (PID: 4153)
+  [PASS] opa-immune.service is running under user UID 1000 (PID: 4151)
+  [PASS] qflex-mcp.service is running under user UID 1000 (PID: 10292)
+  [PASS] quantum-flex-engine-mycelium.service is running under user UID 1000 (PID: 96551)
+
+[4] Verifying PostgreSQL Role Privileges & Ledger Immutability...
+  [PASS] Application roles (ghostnode, amara_admin, quantum_sentinel, sentinel_service) are NOSUPERUSER
+  [PASS] ghostnode attributes verified: NOSUPERUSER, NOCREATEROLE, NOCREATEDB, NOBYPASSRLS
+  [PASS] Audit ledgers immutability verified: ghostnode has INSERT/SELECT only (UPDATE=f, DELETE=f)
+═══════════════════════════════════════════════════════════════════
+AUDIT SUMMARY: 0 failures, 0 warnings
+═══════════════════════════════════════════════════════════════════
+
+--- C++ INVARIANT BINARIES ---
+PASS: native ML-KEM-768 roundtrip, implicit rejection, confirmation, provider failure, lengths and wire framing
+[TEST] ── Starting FrodoKEM-976 + X25519 Hybrid Combiner Tests ──
+[+] Keypair generated in 1ms
+[+] Encapsulation completed in 1ms
+[+] Decapsulation completed in 1ms (nominal ok=1)
+[PASS] Invariant 1: Shared secrets converged identically over hybrid wire!
+[+] Perturbed Frodo decap returned ok=0 in 1ms
+[PASS] Invariant 2: Corrupted Frodo ciphertext rejected fail-closed!
+[PASS] Invariant 3: Low-order X25519 point rejected fail-closed (RFC 7748)!
+[PASS] Invariant 4: Tampered X25519 point strictly diverges from client secret!
+[PASS] Invariant 5: Wire serialization round-trip 100% byte-accurate!
+
+[ALL 5 HYBRID KEM COMBINER INVARIANTS 100% VERIFIED]
+==================================================================
+     QUANTUM FLEX // FAIL-CLOSED STATE MACHINE FUZZ TEST SUITE    
+==================================================================
+[*] [FUZZ 1/6] Ingesting Corrupted Magic & Protocol Versions...
+    [+] Corrupted magic (XX) detected and rejected fail-closed
+[*] [FUZZ 2/6] Ingesting Oversized Payload Boundary Declarations...
+    [+] Oversized length declaration rejected fail-closed; session wiped
+    [+] Zero-length payload declaration rejected fail-closed
+[*] [FUZZ 3/6] Simulating Byte-by-Byte Stream Fragmentation Trickle...
+    [+] Reassembly pool perfectly reconstructs byte-trickled frames without buffer overflow
+[*] [FUZZ 4/6] Saturating Reassembly Pool with 500 Distinct Sessions...
+    [+] Running pool timeout enforcement on saturated pool...
+    [+] Anti-DoS LRU eviction and memory bounds verified stable
+[*] [FUZZ 5/6] Injecting Hostile Bit-Flips into FrodoKEM Lattice Matrix...
+    [+] 10/10 Hostile lattice matrix corruptions rejected fail-closed
+[*] [FUZZ 6/6] Injecting Truncated & Oversized Deserialization Buffers...
+    [+] Malformed wire deserialization strictly fails with exceptions
+
+[ALL 6 NEGATIVE WIRE FUZZ & STATE MACHINE INVARIANTS 100% PASSED]
+==================================================================
+     QUANTUM FLEX // MEMORY ZEROIZATION AUDIT TEST SUITE          
+==================================================================
+[*] [ZEROIZATION 1/3] Testing OPENSSL_cleanse Direct Buffer Scrubbing...
+    [+] Stack buffer (64 bytes): OPENSSL_cleanse verified 100% 0x00
+    [+] Heap buffer (31,296 bytes): OPENSSL_cleanse verified 100% 0x00 under -O3
+[*] [ZEROIZATION 2/3] Testing HybridPrivateKey Explicit Zeroization...
+    [+] Active HybridPrivateKey contains non-zero cryptographic entropy.
+    [+] HybridPrivateKey x25519_sk & frodo_sk: Verified 100% zeroized in memory
+[*] [ZEROIZATION 3/3] Testing Shamir Secret Shard Zeroization...
+    [+] All 5 Shamir shards physically scrubbed with 0x00 in RAM
+
+[ALL MEMORY ZEROIZATION AUDIT INVARIANTS 100% VERIFIED]
+
+--- OPA REGO TESTS ---
+PASS: 12/12
+PASS: 10/10
+
+--- ADVERSARIAL STRESS & FAILURE-MODE TESTS ---
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- /home/quant/.venv/qflex/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/quant/pqc-immune-daemon/mycelium
+plugins: anyio-4.15.0
+collecting ... collected 41 items
+
+tests/test_adversarial_failure_modes.py::test_api_node_ingest_unauthenticated PASSED [  2%]
+tests/test_adversarial_failure_modes.py::test_api_node_webhook_unauthenticated PASSED [  4%]
+tests/test_adversarial_failure_modes.py::test_athena_api_ingest_unauthenticated PASSED [  7%]
+tests/test_adversarial_failure_modes.py::test_bot_server_approval_unauthenticated PASSED [  9%]
+tests/test_adversarial_failure_modes.py::test_opa_service_unavailable_fails_closed PASSED [ 12%]
+tests/test_adversarial_failure_modes.py::test_policy_rejects_empty_cbom_inventory PASSED [ 14%]
+tests/test_adversarial_failure_modes.py::test_policy_rejects_non_hex_or_placeholder_tpm PASSED [ 17%]
+tests/test_adversarial_failure_modes.py::test_policy_rejects_negative_numeric_reserves PASSED [ 19%]
+tests/test_adversarial_failure_modes.py::test_ipc_unauthorized_mutation_rejected PASSED [ 21%]
+tests/test_adversarial_failure_modes.py::test_ipc_slowloris_stall_enforces_deadline PASSED [ 24%]
+tests/test_adversarial_failure_modes.py::test_ipc_fragmented_magic_bytes_succeeds PASSED [ 26%]
+tests/test_adversarial_failure_modes.py::test_engine_cold_restart_boots_locked PASSED [ 29%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags0-FrodoKEM-976-AES] PASSED [ 31%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags0-FrodoKEM-640-AES] PASSED [ 34%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags0-X25519] PASSED [ 36%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags0-unknown] PASSED [ 39%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags1-FrodoKEM-976-AES] PASSED [ 41%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags1-FrodoKEM-640-AES] PASSED [ 43%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags1-X25519] PASSED [ 46%]
+tests/test_strict_pqc.py::test_strict_rejects_non_approved_without_eval_conflict[flags1-unknown] PASSED [ 48%]
+tests/test_strict_pqc.py::test_family_compromise_never_downgrades[ML-KEM-512] PASSED [ 51%]
+tests/test_strict_pqc.py::test_family_compromise_never_downgrades[ML-KEM-768] PASSED [ 53%]
+tests/test_strict_pqc.py::test_family_compromise_never_downgrades[ML-KEM-1024] PASSED [ 56%]
+tests/test_strict_pqc.py::test_unknown_profile_denied PASSED             [ 58%]
+tests/test_strict_pqc.py::test_profile_selection PASSED                  [ 60%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[False-None] PASSED [ 63%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[False-verdict1] PASSED [ 65%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[False-verdict2] PASSED [ 68%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[False-verdict3] PASSED [ 70%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[False-verdict4] PASSED [ 73%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[True-None] PASSED [ 75%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[True-verdict1] PASSED [ 78%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[True-verdict2] PASSED [ 80%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[True-verdict3] PASSED [ 82%]
+tests/test_strict_pqc.py::test_strict_halts_on_first_unhealthy_verdict[True-verdict4] PASSED [ 85%]
+tests/test_strict_pqc.py::test_wasm_adapter_passes_threat_flags PASSED   [ 87%]
+tests/test_strict_pqc.py::test_missing_threat_data_fails_closed PASSED   [ 90%]
+tests/test_strict_pqc.py::test_cli_profile_overrides_environment PASSED  [ 92%]
+tests/test_strict_pqc.py::test_halt_worker_stops_owned_child PASSED      [ 95%]
+tests/test_ghost_node_tmpfs.py::test_ghost_node_container_tmpfs_boundary PASSED [ 97%]
+tests/test_ghost_node_tmpfs.py::test_run_sentinel_volatile_staging_and_dissipation PASSED [100%]
+
+=============================== warnings summary ===============================
+../../.venv/qflex/lib64/python3.14/site-packages/starlette/testclient.py:53
+  /home/quant/.venv/qflex/lib64/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 41 passed, 1 warning in 6.45s =========================
+
+--- CRYPTOGRAPHIC ARTIFACT CHECKSUMS ---
+fa8572ae48ed727710ac4de8ee4373a932b107886db7bed76099209e6bffa1b2  /home/quant/pqc-immune-daemon/mycelium/build_check/quantum_flex_engine
+cbf6e0c72e8a4bbb8978abdd9cddd54cd2f26470b8a9cb1e93aff0309c15fe8b  /home/quant/pqc-immune-daemon/mycelium/sentinel/policies/membrane_health.wasm
+8757034fd90dcd135b49d75bbe98605bd0ea1a6cc29da0afb754f243f274176e  /home/quant/pqc-immune-daemon/mycelium/sentinel/policies/reserve_invariant.wasm
+42cf1555552bbbeb9bac23241212a01b0fde30c371c97e05ffe43f5b2083a5cf  /home/quant/pqc-immune-daemon/mycelium/docs/SECURITY_TARGET_AND_PROMISES.md
+d1db4b2c7379519470ee7dff27b3c38149330aab80c3d09109eab6c73b086893  /home/quant/pqc-immune-daemon/mycelium/docs/COMPLIANCE_CONTROL_TRACEABILITY.md

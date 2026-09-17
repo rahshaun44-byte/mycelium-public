@@ -1,0 +1,109 @@
+{
+  "artifacts": {
+    "build_check/quantum_flex_engine": {
+      "blake2b": "f7f76ac81c6e85ce7f208ec3a73bb829dfc31d0229fa3d0e5d3a297ed0a3b85d0f6ef689f754fc09127b8c19afbc4708ccb0faf2f43f5d93558842839994857f",
+      "sha256": "275d25691e00efd333fda53fe9d2394db90477c699be9eac61e5ff6897eaa2ea",
+      "sha3_256": "5697ab6c6233787bf9d9da082780589aa5f0c84a0c713e4ada2604550dfda7c2",
+      "size_bytes": 1673808
+    },
+    "build_check/test_verified_core": {
+      "blake2b": "df3d9297a6d8612a5be92b7722ba171f483154f41df81aed3a8aac791ada6c45529c30741f71c71a53ab6f522e7a3a0bd2c132347b6e4da8bf5b850b5bae956f",
+      "sha256": "5effa2049adf3303824349f8fac80b3a6c51f2fb5574408ba6e1f3c9b99ee539",
+      "sha3_256": "38b0794f310ce3947f00fc8e44aa88f40ca506548d236940f80a0a29eb7ce6e1",
+      "size_bytes": 17504
+    },
+    "docs/INDEPENDENT_ASSESSMENT_GUIDE.md": {
+      "blake2b": "6982aea94dbf0e557ef386e7fc8ac0e7c67b0403aa823daa0d4cba538c6d62f38f6574429f73b21c71be56faa536a247087254bced62f94fb1ce35f988a35a8d",
+      "sha256": "e16b8c132e57cf0527e4049bbe9c516ecafbf2fcaacacd14298805c74474f867",
+      "sha3_256": "9162a49cfe9dea69cd46ae2550ed231daae72dc6bfef61d58f5beb1f94317d6d",
+      "size_bytes": 4132
+    },
+    "docs/QFXK_WIRE_PROTOCOL_SPEC.md": {
+      "blake2b": "269f9e174a0fc5e308fdeb94e6006e8b0bbcb9d79c13890d216c9b96c97b7aa1d3b9bb0e47cd392948d8d233b7675f9de4e265b58c49aaec73cddb3ae60f038f",
+      "sha256": "2bc75b62a6181541d801e1d9a3e4168621be2b63520dc2a67107d3a7c14803ef",
+      "sha3_256": "97c3fba35580028a113f625b3940a81fc61d599645edd98555557786b80833cc",
+      "size_bytes": 7631
+    },
+    "docs/SECURITY_TARGET_AND_PROMISES.md": {
+      "blake2b": "42b51e1291cc9802203552e1a95cdcd13c32e72fdbae99b256c0365630131e5c2ffeed7d0cf7ab44955dca59354ed1342e0995e86f86ddc77b7e63673a7aba97",
+      "sha256": "42cf1555552bbbeb9bac23241212a01b0fde30c371c97e05ffe43f5b2083a5cf",
+      "sha3_256": "89a90208a43665aafab305115c66ecf35c0a4412259d84748081054775fa7382",
+      "size_bytes": 10631
+    },
+    "formal/QuantumFlex_Core.fst": {
+      "blake2b": "3a4226ec6860697aba96ab810b7c292b22f17131d28dc5b8da282040c70901e3de0cada8f0716eb27c578b9a2cce445f9488e5d4c80f62fdc0e9f878d7346fc1",
+      "sha256": "723f0fe8c89cc1bf1c3ed0187b1543e861011316cd5020d037de8408bc2ba295",
+      "sha3_256": "5224717c57444ec345b6b0260f904952d6356a37bcc121593cac75f904b4add9",
+      "size_bytes": 6438
+    },
+    "include/quantum-flex/verified_core.h": {
+      "blake2b": "419f3693a6a3ef7ec310766d57a0ef313c8a8fe85088322d170ab22edcc693745e3f8f0dfba1d176f98a25a51fd5e735fe80ab36238f6ebf4a2265374eef2f36",
+      "sha256": "53141228eafeb84536b4be6d4bf235ed81545f891dcb91d877bd0b24b581bbff",
+      "sha3_256": "4ffcd055fd5a9e2f0ed28544a180ac32e1285452263d3bd23c73c45ba05ec2a5",
+      "size_bytes": 3085
+    },
+    "pqc-immune-daemon/membrane_health.rego": {
+      "blake2b": "97e76e114ad35abe1f632fbdafdf45d1c31f0014b5900e8f3d81838fbe270f0f3b7c1dbea50d6a18fd9875058a33494d4157e9d9bfcd03377f59b1f00411b166",
+      "sha256": "c41a8fe2084c1b292c2807fbca404515d75119914166759dc7e806e95e610f28",
+      "sha3_256": "9464e69eda88faa78f7ba64dc127f717d2f8dc5ab04cc516bdee98f1648a0426",
+      "size_bytes": 9099
+    },
+    "pqc-immune-daemon/membrane_health_test.rego": {
+      "blake2b": "ccae15c24ad3b1175547f0c6f4a9f6eec407697a9c588842648c60e4c97dfd013e1c9e1a503e170bee98e901055eda50ec39077f48273d17bea9ece51a8c1ed8",
+      "sha256": "bbb6865e43fcbd2b40a4de8390efc7e35b06686c3a27dcca66451107f2bd3750",
+      "sha3_256": "db5646b1fe40fc17f3509ba8520f659d5820ea97933de21093e34071b8c3fb7d",
+      "size_bytes": 5489
+    },
+    "sentinel/policies/membrane_health.wasm": {
+      "blake2b": "410ee7fb0e0b9c4078c6a8774d272a5151c670d09240167ba2bee62898dfa99ec52ac6d8903cd1ea2a3e953c8105dac7ac5540b1a975c23c6bee537cdf55f844",
+      "sha256": "cbf6e0c72e8a4bbb8978abdd9cddd54cd2f26470b8a9cb1e93aff0309c15fe8b",
+      "sha3_256": "80fc4a66e1dd076d608d7c34f65744d265a5a93614e10d939081474a99656dbe",
+      "size_bytes": 150213
+    },
+    "sentinel/policies/reserve_invariant.wasm": {
+      "blake2b": "0d4aa370b5dc95d1e9007197732422004d022818ed4f96369bef2854d5cdd9f2125740597213cc5052bc04056138cb6863b36c6a891bfe983436c58b80c92137",
+      "sha256": "8757034fd90dcd135b49d75bbe98605bd0ea1a6cc29da0afb754f243f274176e",
+      "sha3_256": "afb31648edd967b3cb7ddf85588fd3e966af47581be5da497dd24ec80cd4cbc2",
+      "size_bytes": 374338
+    },
+    "src/core/verified_core.c": {
+      "blake2b": "b19b20873e971e8335e9be09ce5a4d106171bcf712b05bd5609cd72678fa95e8188d99c2a33324f7d7762418a45400c60dfa1737cab86fa18a3bd763873b9b59",
+      "sha256": "be7c32f5d3a2d726ec957bdaa0a3a23d154c008f9f3eed77936622c5ca8ab995",
+      "sha3_256": "c497f70073e1b04c21b18b88e3d3a3c9796a46d47d9711eab028be5ac8c6ec2b",
+      "size_bytes": 4618
+    }
+  },
+  "build_definition": {
+    "build_type": "https://quantumflex.defense/build/v2",
+    "builder": {
+      "compiler": "cc (GCC) 16.2.1 20260819 (Red Hat 16.2.1-2)",
+      "hardening_flags": [
+        "-fstack-protector-strong",
+        "-D_FORTIFY_SOURCE=3",
+        "-Wl,-z,relro,-z,now",
+        "-fPIE",
+        "-pie"
+      ]
+    },
+    "security_target": {
+      "cavp_status": "NULL",
+      "cmvp_status": "UNVALIDATED_INTERNAL_ASSURANCE",
+      "fips_203_strict": true,
+      "verified_core_invariants": [
+        "PQC_DOWNGRADE_FORBIDDEN",
+        "QUARANTINE_ABSORBING_SINK",
+        "AUTHENTICATION_FAIL_CLOSED",
+        "WIRE_BOUNDS_AND_ANTI_ROLLOVER"
+      ]
+    },
+    "source": {
+      "branch": "main",
+      "commit": "2f559ec69064df5806e0288fef239e1076173227",
+      "dirty_working_tree": true,
+      "repository": "quantumflex"
+    },
+    "timestamp_utc": "2026-09-17T02:13:34.245679+00:00"
+  },
+  "predicate_type": "https://slsa.dev/provenance/v1",
+  "schema_version": "2.0.0"
+}

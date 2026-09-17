@@ -1,3 +1,4 @@
+import hmac
 #!/usr/bin/env python3
 """
 A.T.H.E.N.A. — Autonomous Tactical Hybrid Engine for Neural Architecture
@@ -16,7 +17,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request as FastAPIRequest
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import urllib.request
@@ -294,7 +295,13 @@ ANSWER:"""
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/ingest")
-async def ingest_text(req: IngestRequest):
+async def ingest_text(req: IngestRequest, request: FastAPIRequest):
+    expected_key = os.environ.get("ATHENA_API_KEY", os.environ.get("DASHBOARD_API_KEY"))
+    if not expected_key:
+        raise HTTPException(status_code=401, detail="Unauthorized: Service locked. API key not configured.")
+    x_api_key = request.headers.get("x-api-key")
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected_key):
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid API Key")
     """Directly ingests a new document/truth entry into vector memory."""
     try:
         store = get_store()

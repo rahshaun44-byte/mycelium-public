@@ -1,3 +1,5 @@
+> **Current boundary (2026-09-15):** The default `fips_strict` profile halts its configured worker on denial or unavailable policy; it does not downgrade ML-KEM parameters or switch to Frodo/X25519. Native ML-KEM support in OpenSSL's default provider does not establish FIPS 140-3 validation. The module certificate, implementation version, approved mode, and operating conditions need separate verification. See [implementation and deployment limits](docs/MLKEM_STRICT_MIGRATION.md).
+
 # Security Policy & Cryptographic Threat Model
 
 ## 1. Overview & Operational Scope
@@ -17,7 +19,7 @@ QuantumFlex assumes an active, computationally bounded classical adversary with 
 | **Harvest Now, Decrypt Later (HNDL)** | Intercepts, records, and stores encrypted network traffic today to decrypt once a CRQC becomes operational. | CFRG Hybrid KEM combining FrodoKEM-976-AES (conservative LWE) and RFC 7748 X25519. Unconditional dual decapsulation with dual-PRF HKDF extraction. | **Fail-Closed**: If either leg is broken or compromised, confidentiality reduces to the remaining unbroken primitive. |
 | **Microarchitectural Timing & Hertzbleed** | Exploits dynamic frequency/power scaling (DVFS) under data-dependent CPU workloads to leak private keys. | Constant-time execution paths for all scalar multiplications and matrix operations. Bitwise error accumulation (`err_mask |= x25519_err \| frodo_err`) eliminates early-exit timing oracles. Ephemeral memory scrubbed via `OPENSSL_cleanse`. | **Deterministic Rejection**: Constant-time synthetic secret generation upon perturbation; zero timing divergence. |
 | **Active Network Manipulation & Reassembly DoS** | Injects malformed MTU frames, duplicates fragments, or spams uncompleted handshake sessions to exhaust memory. | Bounded `QFXK` reassembly table ($\le 64$ sessions), 1200ms dead reckoning timeout, strict chunk bounds ($\le 64$ chunks, $\le 1450$ bytes/chunk), and IEEE 802.3 CRC32 integrity verification. | **Drop & Evict**: Oldest uncompleted session evicted when table is saturated; malformed frames route entropy to Ghost Node sink. |
-| **Algorithmic Downgrade Attacks** | Injects faults or blocks PQC packets to coerce fallback to unauthenticated or weak classical algorithms. | Authoritative Open Policy Agent (`membrane_health.rego`) engine. Fallback ladder is strictly unidirectional (`ML-KEM-768 -> FrodoKEM-976 -> X25519`). Unauthorized fallbacks trigger circuit breaker. | **Node Quarantine**: Node isolates network interfaces and enters forensic lockdown upon circuit breaker trip. |
+| **Algorithmic Downgrade Attacks** | Injects faults or blocks PQC packets to coerce fallback to unauthenticated or weak classical algorithms. | Authoritative Open Policy Agent (`membrane_health.rego`) engine. Strict mode has no fallback; the Frodo/X25519 ladder belongs only to explicitly selected research/agility profiles. | **Node Quarantine**: Node isolates network interfaces and enters forensic lockdown upon circuit breaker trip. |
 
 ---
 
@@ -58,7 +60,7 @@ To achieve mutual authentication and channel binding:
 
 1. **Unidirectional Agility Ladder**:
    The engine only transitions downward along the approved policy path:
-   `ML-KEM-768` $\longrightarrow$ `FrodoKEM-976-AES` $\longrightarrow$ `X25519 (Classical Fallback)`.
+   `fips_strict`: `ML-KEM compromise -> NONE (halt)`. Research/agility only: `ML-KEM -> FrodoKEM -> X25519`.
 2. **OPA Verdict Mandate**:
    No cryptographic transition occurs without an authoritative JSON verdict from the local OPA sidecar (`127.0.0.1:8181/v1/data/membrane/health/verdict`).
 3. **Halt-on-Exhaustion**:

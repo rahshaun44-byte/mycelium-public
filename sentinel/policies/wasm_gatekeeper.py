@@ -1,3 +1,4 @@
+import threading
 #!/usr/bin/env python3
 """
 =====================================================================
@@ -86,6 +87,7 @@ class OPAWasmEngine:
 
         # Cache base heap pointer to recycle between runs
         self.base_heap_ptr = self.exports["opa_heap_ptr_get"](self.store)
+        self._lock = threading.Lock()
 
     def _opa_abort(self, addr: int) -> None:
         raw = self.memory.data_ptr(self.store)
@@ -116,8 +118,9 @@ class OPAWasmEngine:
         return self.exports["opa_json_parse"](self.store, addr, len(encoded))
 
     def _dispatch_builtin(self, builtin_id: int, ctx: int, *args: int) -> int:
-        # Builtin: sprintf (ID 4)
-        if builtin_id == 4 and len(args) >= 2:
+        # IDs are assigned by the compiler and can change after every build.
+        name = next((name for name, value in self.builtins.items() if value == builtin_id), None)
+        if name == "sprintf" and len(args) >= 2:
             fmt_str = self._read_json(args[0])
             fmt_args = self._read_json(args[1])
             res = fmt_str
@@ -127,31 +130,32 @@ class OPAWasmEngine:
             return self._write_json(res)
 
         # Builtin: time.now_ns (ID 10)
-        if builtin_id == 10:
+        if name == "time.now_ns":
             return self._write_json(time.time_ns())
 
-        return 0
+        raise RuntimeError(f"Unsupported OPA builtin: {name!r}")
 
     def evaluate(self, input_data: Any, data: Optional[Dict[str, Any]] = None, entrypoint_id: int = 0) -> Any:
-        heap_snapshot = self.exports["opa_heap_ptr_get"](self.store)
-        try:
-            input_ref = self._write_json(input_data)
-            data_ref = self._write_json(data or {})
+        with self._lock:
+            heap_snapshot = self.exports["opa_heap_ptr_get"](self.store)
+            try:
+                input_ref = self._write_json(input_data)
+                data_ref = self._write_json(data or {})
 
-            ctx = self.exports["opa_eval_ctx_new"](self.store)
-            self.exports["opa_eval_ctx_set_entrypoint"](self.store, ctx, entrypoint_id)
-            self.exports["opa_eval_ctx_set_data"](self.store, ctx, data_ref)
-            self.exports["opa_eval_ctx_set_input"](self.store, ctx, input_ref)
+                ctx = self.exports["opa_eval_ctx_new"](self.store)
+                self.exports["opa_eval_ctx_set_entrypoint"](self.store, ctx, entrypoint_id)
+                self.exports["opa_eval_ctx_set_data"](self.store, ctx, data_ref)
+                self.exports["opa_eval_ctx_set_input"](self.store, ctx, input_ref)
 
-            self.exports["eval"](self.store, ctx)
-            result_ref = self.exports["opa_eval_ctx_get_result"](self.store, ctx)
-            results = self._read_json(result_ref)
-            if isinstance(results, list) and len(results) > 0 and "result" in results[0]:
-                return results[0]["result"]
-            return results
-        finally:
-            # Landauer memory reclamation: restore heap pointer to prevent memory growth
-            self.exports["opa_heap_ptr_set"](self.store, heap_snapshot)
+                self.exports["eval"](self.store, ctx)
+                result_ref = self.exports["opa_eval_ctx_get_result"](self.store, ctx)
+                results = self._read_json(result_ref)
+                if isinstance(results, list) and len(results) > 0 and "result" in results[0]:
+                    return results[0]["result"]
+                return results
+            finally:
+                # Landauer memory reclamation: restore heap pointer to prevent memory growth
+                self.exports["opa_heap_ptr_set"](self.store, heap_snapshot)
 
 
 class MembraneHealthWasmGatekeeper:

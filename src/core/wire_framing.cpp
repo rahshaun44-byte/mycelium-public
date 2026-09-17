@@ -1,3 +1,4 @@
+#include "quantum-flex/verified_core.h"
 #include "quantum-flex/wire_framing.hpp"
 
 #include <openssl/crypto.h>
@@ -97,11 +98,20 @@ namespace quantumflex::wire {
         std::memcpy(&header, state.buffer.data(), sizeof(QFXKHeader));
         
         // Endianness conversion for header fields
-        [[maybe_unused]] uint32_t seq = ntohl(header.sequence_id);
+        uint32_t seq = ntohl(header.sequence_id);
         uint32_t payload_length = ntohl(header.length);
 
-        // Validate payload length
-        if (payload_length == 0 || payload_length > MAX_PAYLOAD_SIZE) {
+        // Verified Core Invariant: Enforce anti-rollover sequence bound (Theorem 5)
+        if (seq >= QF_WIRE_MAX_SEQ_ID) {
+            pool.erase(session_id);
+            return false; // Fail closed on sequence exhaustion
+        }
+
+        // The ML-KEM public-key request is intentionally empty. Legacy empty
+        // frames remain invalid; validate the header before dispatching.
+        const bool empty_allowed = header.msg_type == MSG_MLKEM768_PK || header.msg_type == MSG_KEM_REJECT;
+        if (header.magic[0] != 'Q' || header.magic[1] != 'F' || header.version != 1 ||
+            header.flags != 0 || (payload_length == 0 && !empty_allowed) || payload_length > MAX_PAYLOAD_SIZE) {
             pool.erase(session_id);
             return false; // Fail secure
         }

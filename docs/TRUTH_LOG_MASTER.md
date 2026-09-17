@@ -144,3 +144,47 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
   - **OPA Policy Compliance**: 16/16 policy unit tests passed; CBOM scanner verdict `[COMPLIANT // QUANTUM-AGILE]`.
   - **Universal Reserve Invariant ($R \ge O$):** `[ADMIT]` for Digital Memory, Pluton TPM 2.0 anchor, and Physical Water.
   - **Regulatory Standing Notice**: Formally recorded as internal pre-validation evidence. `CMVP Module Certificate: NULL`, `CAVP Algorithm Certificate: NULL`.
+
+---
+
+## 10. Stress & Containment Assessment Truth Log (2026-09-16, Tree `2f559ec…`)
+
+**Assessment Date**: 2026-09-16  
+**Evaluated Tree**: `2f559ec69064df5806e0288fef239e1076173227` (Modified Working Tree)  
+**Host Architecture**: Fedora 44 (Lenovo Yoga 7), unprivileged user `quant` (UID 1000)  
+
+### 10.1 Equation of Truth
+
+- **$x$ (Observed Ground Truth)**: Stress report on tree `2f559ec…`. Loopback control plane strictly on `127.0.0.1`. Engine genesis sealed (`ACK|GENESIS_SECURED`), default runtime state is strictly **`LOCKED`**. Shamir 3-of-5 threshold with $\le 2$ shards on host disk (`~/qfx-shards/shard_1.txt`, `shard_2.txt` at `0600`).
+- **$h$ (Hypothesis Demarcation)**: "Alert-only" is not broken SSH. It is a deliberate, decoupled architecture between network anomaly detection and the file quarantine chamber.
+- **$k$ (Bounded Evidence Only)**: Rejection and quarantine are distinct machines. Host OpenSSL listing Frodo is NOT the engine security boundary. FIPS 203 algorithmic execution is NOT FIPS 140-3 module validation.
+
+### 10.2 "SSH Weirdness" Defined
+
+- **Network Defense vs File Ingest**:
+  - **File Ingestion** (`/ingest` $\rightarrow$ Podman chamber): Copies payload into isolated volatile tmpfs airlock, executes inspection in dropped-capability container, removes staging copy.
+  - **Network Engine** (mTLS listener $\rightarrow$ framing/KEM validation): Rejects invalid frames, closes TCP socket, logs LIF anomaly alert.
+- **Session vs File**: SSH is a socket session protocol, not an uploaded blob. SSH detection is **alert-only** by design. A malformed network input or brute-force probe being rejected and logged need not produce a quarantined file artifact to count as successful defense.
+- **Truth Log Entry**: `SSH auto-quarantine path = NULL (alert-only by design)`. Network rejects and closed sockets are first-class evidence.
+
+### 10.3 Cryptographic Plane Demarcation
+
+| Plane | Description | Host Ground Truth |
+| :--- | :--- | :--- |
+| **Plane A: Engine KEM** | In-process C++ hybrid/native ML-KEM-768 (`0x12`/`0x13`/`0x14`), frame reassembly, wire decapsulation. | Exercised: 1,000 ML-KEM roundtrips, mutated ciphertext checks, fuzzing negative suite passed. |
+| **Plane B: Host OpenSSL / Frodo** | Fedora host OpenSSL provider (`openssl list -kem-algorithms`). | **NOT** the security boundary of the engine; host NULL is normal, expected, and preferred for the Yoga. |
+| **Plane C: Fail-Closed Policy** | Strict profile denial, missing API keys, unreachable OPA $\rightarrow$ halt or 401. | Enforced: OPA downtime returns `DENY`; missing/unconfigured API keys strictly return `HTTP 401`. |
+
+### 10.4 Risk Register & Remediations (Post-Stress)
+
+| ID | Finding | Status | Remediated Implementation |
+| :--- | :--- | :--- | :--- |
+| **R1/R2** | Chamber mount mismatch (`/quarantine` vs `/opt/sentinel/quarantine`) | **RESOLVED** | `sentinel/quarantine_chamber.py` dynamically resolves `CONTAINER_QUARANTINE`, supporting both paths seamlessly. |
+| **R3** | Wasm multi-threaded evaluation abort (exit 134) | **RESOLVED** | Added `threading.Lock()` to `OPAWasmEngine::evaluate()` in `sentinel/policies/wasm_gatekeeper.py`; verified under 100 concurrent worker threads. |
+| **R4** | Policy reports COMPLIANT on empty CBOM inventory | **RESOLVED** | Added empty/missing component checks to `pqc-immune-daemon/membrane_health.rego`; empty inventories strictly trigger `node_status: TOXIC`. |
+| **R5** | API keys unconfigured $\rightarrow$ admitted in isolated test | **RESOLVED** | `api_node/main.py`, `mcp_layer/athena_api.py`, and `mcp_layer/qf_bot/bot_server.py` fail closed with `HTTP 401` if keys are missing or unconfigured. |
+| **R6** | SSH/LIF alert-only | **DOCUMENTED** | Clarified as intentional session-layer defense (reject/close socket + alert; no file quarantine). |
+| **R7** | Slowloris / socket stalls | **VERIFIED** | 5000ms `SO_RCVTIMEO` socket deadline terminates stalled connections in $\approx 5.0\text{s}$, unblocking subsequent clients. |
+| **R8** | Split `QF` magic bytes across TLS writes | **RESOLVED** | Bounded read added to `src/core/ipc_server.cpp` when `buffer[0] == 'Q'`, correctly reassembling fragmented binary headers. |
+| **R9** | Host Frodo installation pressure | **REJECTED** | Preserved host default; engine operates in-process ML-KEM-768 via OpenSSL 3.5 native EVP. |
+| **R10** | Ghost Node audit ledger mutation vulnerability | **RESOLVED** | Revoked `UPDATE` and `DELETE` on `sentinel_ledger` and `invariant_audit_ledger` from `ghostnode`; verified append-only (`ar`). |

@@ -38,9 +38,6 @@ namespace quantumflex::ipc {
         [[nodiscard]] auto get_sentinel() -> security::EwmaLifSentinel& { return *sentinel_; }
         [[nodiscard]] auto get_sentinel() const -> const security::EwmaLifSentinel& { return *sentinel_; }
 
-        void initialize_hybrid_keypair();
-        [[nodiscard]] auto has_hybrid_keypair() const -> bool;
-        [[nodiscard]] auto get_hybrid_public_key() const -> const quantumflex::crypto::HybridPublicKey&;
 
     private:
         int port_;
@@ -55,7 +52,7 @@ namespace quantumflex::ipc {
 
         // Hybrid KEM & Gatekeeper Wire Framing Subsystem
         wire::QuantumFlexReassemblyPool reassembly_pool_;
-        std::unique_ptr<crypto::HybridKeyPair> hybrid_keypair_;
+        std::unique_ptr<crypto::MLKem768Engine> kem_;
 
         void configure_ssl_context();
         void handle_framed_message(const wire::ReassembledMessage& msg, SSL* ssl);
