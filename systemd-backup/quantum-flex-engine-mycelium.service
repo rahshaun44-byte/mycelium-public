@@ -13,6 +13,8 @@ Environment=QF_SERVER_KEY=%h/.local/share/quantum-flex-mycelium/mtls/server.key
 Environment=QF_ROOT_CA=%h/.local/share/quantum-flex-mycelium/mtls/ca.crt
 Environment=QF_ED_PRIVATE_KEY=%h/.local/share/quantum-flex-mycelium/ed_priv.pem
 Environment=QF_PQC_PRIVATE_KEY=%h/.local/share/quantum-flex-mycelium/pqc_priv.pem
+# QF-R2: defendant is not the judge. Host libexec evaluates the repo.
+ExecStartPre=%h/.local/libexec/quantumflex/verify-provenance %h/mycelium/release/PROVENANCE_MANIFEST.json --repo-root %h/mycelium
 ExecStart=%h/mycelium/build_check/quantum_flex_engine
 Restart=on-failure
 RestartSec=5

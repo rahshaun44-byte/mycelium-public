@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""Host trust-anchor judge: QuantumFlex provenance verifier.
+
+Lives outside the mutable target repository. Evaluates a signed
+PROVENANCE_MANIFEST.json against a pinned Ed25519 public key sitting next to
+this file — never against a key or script inside the repo under audit.
+
+Understands the QF-A5 on-disk format this project actually signs:
+  - artifacts[path] is an object with sha256 (not a bare hex string)
+  - PROVENANCE_MANIFEST.sig is a text sidecar with SIGNATURE_B64=
+
+The in-repo copy of this file is a template. The judge is the installed
+0500 binary under ~/.local/libexec/quantumflex/.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+TRUST_ANCHOR_DIR = Path(__file__).resolve().parent
+DEFAULT_KEY_PATH = TRUST_ANCHOR_DIR / "release_signing_key.pub"
+
+
+def compute_sha256(filepath: Path) -> str:
+    digest = hashlib.sha256()
+    with filepath.open("rb") as handle:
+        while chunk := handle.read(65536):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def expected_sha256(entry: object) -> str | None:
+    if isinstance(entry, str):
+        return entry
+    if isinstance(entry, dict):
+        value = entry.get("sha256")
+        return value if isinstance(value, str) else None
+    return None
+
+
+def contained_in(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def load_signature_bytes(sig_path: Path) -> bytes:
+    raw = sig_path.read_bytes()
+    text = raw.decode("utf-8", errors="replace")
+    for line in text.splitlines():
+        if line.startswith("SIGNATURE_B64="):
+            return base64.b64decode(line.split("=", 1)[1].strip())
+    stripped = raw.strip()
+    if len(stripped) == 64:
+        return stripped
+    try:
+        decoded = base64.b64decode(stripped, validate=True)
+    except Exception as exc:
+        sys.exit(f"[!] ADMISSION DENIED: Detached signature unreadable at {sig_path}: {exc}")
+    if len(decoded) != 64:
+        sys.exit(f"[!] ADMISSION DENIED: Detached signature is not 64-byte Ed25519 ({sig_path})")
+    return decoded
+
+
+def find_signature(manifest_path: Path) -> Path:
+    candidates = [
+        manifest_path.with_suffix(".sig"),
+        manifest_path.parent / f"{manifest_path.name}.sig",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    sys.exit(f"[!] ADMISSION DENIED: Detached signature missing for {manifest_path}")
+
+
+def verify_ed25519(manifest_path: Path, sig_bytes: bytes, key_path: Path) -> None:
+    if not key_path.is_file():
+        sys.exit(f"[!] TRUST ANCHOR FAULT: Public key missing at {key_path}")
+
+    key_data = key_path.read_bytes()
+    manifest_bytes = manifest_path.read_bytes()
+
+    try:
+        from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+        from cryptography.hazmat.primitives.serialization import load_pem_public_key
+    except ImportError:
+        _verify_ed25519_openssl(manifest_path, sig_bytes, key_path)
+        return
+
+    try:
+        if b"BEGIN PUBLIC KEY" in key_data:
+            loaded = load_pem_public_key(key_data)
+            if not isinstance(loaded, Ed25519PublicKey):
+                sys.exit("[!] TRUST ANCHOR FAULT: Pinned key is not Ed25519")
+            public_key = loaded
+        else:
+            public_key = Ed25519PublicKey.from_public_bytes(base64.b64decode(key_data.strip()))
+        public_key.verify(sig_bytes, manifest_bytes)
+    except InvalidSignature:
+        sys.exit("[!] ADMISSION DENIED: Cryptographic signature mismatch over manifest bytes.")
+    except SystemExit:
+        raise
+    except Exception as exc:
+        sys.exit(f"[!] ADMISSION DENIED: Signature evaluation error: {exc}")
+
+
+def _verify_ed25519_openssl(manifest_path: Path, sig_bytes: bytes, key_path: Path) -> None:
+    with tempfile.NamedTemporaryFile("wb", delete=False) as handle:
+        handle.write(sig_bytes)
+        sig_name = handle.name
+    try:
+        result = subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-verify",
+                "-rawin",
+                "-pubin",
+                "-inkey",
+                str(key_path),
+                "-in",
+                str(manifest_path),
+                "-sigfile",
+                sig_name,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    finally:
+        try:
+            os.unlink(sig_name)
+        except OSError:
+            pass
+    if result.returncode != 0:
+        sys.exit("[!] ADMISSION DENIED: Cryptographic signature mismatch over manifest bytes.")
+
+
+def verify_manifest(manifest_path: Path, repo_root: Path | None, key_path: Path) -> int:
+    manifest_path = manifest_path.resolve()
+    if not manifest_path.is_file():
+        sys.exit(f"[!] ADMISSION DENIED: Manifest not found: {manifest_path}")
+
+    if repo_root is None:
+        repo_root = manifest_path.parent.parent.resolve()
+    else:
+        repo_root = repo_root.resolve()
+
+    sig_path = find_signature(manifest_path)
+    verify_ed25519(manifest_path, load_signature_bytes(sig_path), key_path)
+    print(f"[+] PROVENANCE: Ed25519 digital signature VALID (Key: {key_path})")
+
+    try:
+        manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        sys.exit(f"[!] ADMISSION DENIED: Manifest JSON malformed: {exc}")
+
+    artifacts = manifest_data.get("artifacts", {})
+    if not isinstance(artifacts, dict) or not artifacts:
+        sys.exit("[!] ADMISSION DENIED: Manifest contains zero declared artifacts.")
+
+    verified = 0
+    for rel_path, entry in artifacts.items():
+        if not isinstance(rel_path, str) or rel_path.startswith("/") or ".." in Path(rel_path).parts:
+            sys.exit(f"[!] TAMPER BREACH: Illegal artifact path '{rel_path}'")
+
+        expected = expected_sha256(entry)
+        if expected is None:
+            sys.exit(f"[!] ADMISSION DENIED: Artifact '{rel_path}' has no sha256")
+
+        target = (repo_root / rel_path).resolve()
+        if not contained_in(target, repo_root):
+            sys.exit(f"[!] TAMPER BREACH: Path traversal attempted in artifact '{rel_path}'")
+        if not target.is_file():
+            sys.exit(f"[!] TAMPER BREACH: Tracked artifact missing: {rel_path}")
+
+        actual = compute_sha256(target)
+        if actual != expected:
+            sys.exit(
+                f"[!] TAMPER BREACH: Hash mismatch on {rel_path}\n"
+                f"    Expected: {expected}\n"
+                f"    Actual:   {actual}"
+            )
+        verified += 1
+
+    print(f"[+] PROVENANCE: All {verified}/{len(artifacts)} artifacts byte-accurate.")
+    print("[+] VERDICT: TRUSTED -> ALLOW EXECUTION")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="External QuantumFlex provenance verifier (host trust anchor)."
+    )
+    parser.add_argument("manifest", type=Path, help="Path to PROVENANCE_MANIFEST.json")
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="Root of the target repository (default: parent of the manifest's directory)",
+    )
+    parser.add_argument(
+        "--key",
+        type=Path,
+        default=DEFAULT_KEY_PATH,
+        help="Pinned Ed25519 public key (default: sibling release_signing_key.pub)",
+    )
+    args = parser.parse_args()
+    return verify_manifest(args.manifest, args.repo_root, args.key.resolve())
+
+
+if __name__ == "__main__":
+    sys.exit(main())

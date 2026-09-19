@@ -41,8 +41,9 @@ To eliminate claim inflation and strictly distinguish between tested code, forma
                          ▼ (Ed25519 Sign with Private Key)
              PROVENANCE_MANIFEST.sig
                          │
-                         ▼ (Sentinel Startup Verification)
-             Verify with release_signing_key.pub
+                         ▼ (host ExecStartPre — outside the repo)
+     ~/.local/libexec/quantumflex/verify-provenance
+     + pinned release_signing_key.pub (0400)
                          │
             ┌────────────┴────────────┐
          MATCH                     MISMATCH
@@ -54,9 +55,15 @@ To eliminate claim inflation and strictly distinguish between tested code, forma
 1. **Single Hash Policy**: Standardizes on SHA-256 for artifact digests.
 2. **Asymmetric Digital Signature**: Manifest sealed via Ed25519 signature:
    $$\sigma = \text{Sign}_{K_{\text{private}}}(M)$$
-3. **Public Key Pinning**: Sentinel verifies against pinned `release/release_signing_key.pub`:
+3. **Public Key Pinning**: The judge and pinned key live in the host trust
+   domain (`~/.local/libexec/quantumflex/`), not beside the artifacts they
+   evaluate. `release/release_signing_key.pub` is the bootstrap copy the
+   installer reads once. `scripts/verify_provenance_manifest.py` only execs
+   the installed judge.
    $$\text{Verify}_{K_{\text{public}}}(M, \sigma) == \text{true}$$
-   An attacker who tampers with `PROVENANCE_MANIFEST.json` cannot forge $\sigma$ without the offline release signing key.
+   An attacker who tampers with `PROVENANCE_MANIFEST.json` or any in-repo
+   script cannot forge \(\sigma\) without the offline release signing key,
+   and cannot replace the host judge by editing the repository.
 
 ---
 

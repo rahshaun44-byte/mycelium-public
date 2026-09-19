@@ -8,7 +8,8 @@ Security Model & Trust Boundary:
   - Artifact Hashes: Standard SHA-256 (single hash policy)
   - Signature: Asymmetric Ed25519 digital signature over canonical manifest bytes
   - Signing Authority: External to repository runtime environment (--key or QF_RELEASE_KEY_PATH)
-  - Verification Authority: Pinned release_signing_key.pub in release/
+  - Verification Authority: Host trust anchor (~/.local/libexec/quantumflex),
+    not scripts/verify_provenance_manifest.py and not the in-repo key copy
   - Honest Assurance Matrix: QF-A1 through QF-A5 explicitly demarcated
 """
 

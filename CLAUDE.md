@@ -150,3 +150,11 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   this repo) — is intentionally disabled and not part of the running system. `sentinel/`'s own
   earlier duplicate of the same telemetry idea (`decision_gate.py`) was already removed from this
   repo (see git log: "Retire redundant Ghost Node").
+- **QF-R2 host trust anchor** lives outside git at `~/.local/libexec/quantumflex/`
+  (`verify-provenance` 0500, `release_signing_key.pub` 0400, directory 0700).
+  `scripts/verify_provenance_manifest.py` is an exec-only pointer — editing it
+  cannot change a service that already points at the libexec judge. Install
+  once from a trusted checkout: `./scripts/install_host_trust_anchor.sh`.
+  `systemd-backup/` units carry `ExecStartPre=` against that path; live Yoga
+  units under `~/.config/` are not this tree and are not edited from here.
+  See `docs/HOST_TRUST_ANCHOR.md`.

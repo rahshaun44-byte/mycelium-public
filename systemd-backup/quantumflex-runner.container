@@ -1,0 +1,57 @@
+# TEMPLATE — not a live Quadlet.
+# Copy to ~/.config/containers/systemd/ on the operator host, then
+# systemctl --user daemon-reload.
+#
+# QF-R2 is wired (ExecStartPre → host libexec). The other three gates
+# named in the execution-membrane review stay OPEN:
+#   QF-R1 SELinux label separation  — not claimed here
+#   QF-R3 image digest pin          — Image= below is a floating tag
+#   QF-R4 egress deny               — Network=none is commented, not set
+# Do not treat a prompt-supplied @sha256: digest as an audited pin.
+
+[Unit]
+Description=QuantumFlex Unified Execution Membrane (template)
+Documentation=file:///home/quant/mycelium/docs/HOST_TRUST_ANCHOR.md
+After=network.target
+
+[Container]
+ContainerName=qf-unified-runner
+# QF-R3 OPEN: pin @sha256:<audited-digest> only after you hash-verify the image.
+Image=docker.io/library/python:3.14-slim
+
+WorkingDir=/app
+Exec=python3 /app/runner.py
+
+PublishPort=127.0.0.1:5680:5680
+
+# QF-R4 OPEN: uncomment only when the runner needs no outbound path.
+# Network=none
+
+UserNS=keep-id
+NoNewPrivileges=true
+DropCapability=ALL
+ReadOnly=true
+# Do not auto-mount writable tmpfs on /run /tmp /var/tmp.
+ReadOnlyTmpfs=false
+
+Volume=/home/quant/mycelium:/app:ro
+Mount=type=tmpfs,destination=/state,tmpfs-mode=0700,tmpfs-size=64m
+Volume=/home/quant/mycelium/data:/app/data:rw
+
+Environment=PYTHONUNBUFFERED=1
+Environment=Q1_REPLAY_DB_PATH=/state/q1_replay.db
+Environment=INTAKE_DB_PATH=/app/data/intake_tickets.db
+
+StopSignal=SIGTERM
+StopTimeout=15
+
+[Service]
+# QF-R2: External Trust Anchor — the verifier lives outside the mutable repository.
+ExecStartPre=/home/quant/.local/libexec/quantumflex/verify-provenance /home/quant/mycelium/release/PROVENANCE_MANIFEST.json --repo-root /home/quant/mycelium
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=30
+TimeoutStopSec=20
+
+[Install]
+WantedBy=default.target
