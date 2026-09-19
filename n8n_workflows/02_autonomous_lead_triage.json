@@ -11,7 +11,52 @@
       "name": "Inbound Lead Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 300]
+      "position": [120, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5680/api/v1/intake",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  business_name: $json.body.business_name || $json.body.name || 'Unknown',\n  phone: $json.body.phone || 'N/A',\n  location: $json.body.location || 'Unknown',\n  message: $json.body.message || ''\n}) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "name": "Persist Ticket & Structured Ingress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [360, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 202,
+        "responseBody": "={{ JSON.stringify({\n  ticket_id: $json.ticket_id,\n  status: $json.intake_status,\n  receipt_status: $json.receipt_status,\n  is_duplicate_request: $json.is_duplicate_request,\n  customer_acknowledgment: $json.customer_acknowledgment,\n  timestamp_utc: $json.created_at_utc\n}, null, 2) }}",
+        "options": {}
+      },
+      "name": "Immediate 202 Customer Receipt",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5680/api/v1/claim",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket_id: $('Persist Ticket & Structured Ingress').first().json.ticket_id, worker_id: 'n8n-pipeline-worker' }) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "name": "Claim Pending Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 400],
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -19,66 +64,72 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"qwen2.5-coder:1.5b\",\n  \"prompt\": \"You are an elite B2B cybersecurity qualification AI. Analyze this inbound lead:\\n\\nName: {{ $json.body.name || 'Anonymous' }}\\nEmail: {{ $json.body.email || 'N/A' }}\\nMessage: {{ $json.body.message || $json.body.query }}\\nBudget: {{ $json.body.budget || 'Unspecified' }}\\n\\nOutput a JSON object with:\\n{\\n  \\\"intent\\\": \\\"HIGH\\\" | \\\"MEDIUM\\\" | \\\"LOW\\\",\\n  \\\"estimated_value_usd\\\": number,\\n  \\\"service_category\\\": \\\"PQC_AUDIT\\\" | \\\"AUTOMATION_AGENCY\\\" | \\\"SOC_CONSULTING\\\" | \\\"GENERAL\\\",\\n  \\\"summary\\\": \\\"concise 1-sentence assessment\\\",\\n  \\\"recommended_action\\\": \\\"BOOK_CALENDAR\\\" | \\\"SEND_NURTURE\\\" | \\\"DISQUALIFY\\\"\\n}\\n\\nReturn ONLY valid JSON.\",\n  \"format\": \"json\",\n  \"stream\": false\n}",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'qwen2.5-coder:7b',\n  prompt: 'You are a specialized intake assistant for a commercial mechanical contractor.\\nAnalyze this raw inbound service request and extract structured triage facts.\\n\\nRaw Request:\\nClient: ' + $('Persist Ticket & Structured Ingress').first().json.client_name + ' (' + $('Persist Ticket & Structured Ingress').first().json.location + ')\\nContact: ' + $('Persist Ticket & Structured Ingress').first().json.client_phone + '\\nMessage: ' + $('Inbound Lead Webhook').first().json.body.message + '\\n\\nOutput MUST be a single JSON object strictly matching this schema:\\n{\\n  \"urgency\": \"CRITICAL\" | \"HIGH\" | \"STANDARD\",\\n  \"trade_category\": \"COMMERCIAL_REFRIGERATION\" | \"COMMERCIAL_HVAC\" | \"PLUMBING\" | \"GENERAL\",\\n  \"requires_urgent_review\": boolean,\\n  \"incident_summary\": \"1 to 2 factual sentences summarizing the reported equipment failure\"\\n}\\nDO NOT include any estimated revenue or job values.\\nDO NOT promise arrival times or technician availability.\\nReturn ONLY valid JSON. No explanations, no markdown fences.',\n  format: 'json',\n  stream: false\n}) }}",
         "options": {
-          "timeout": 60000
+          "timeout": 20000
         }
       },
       "name": "Local Qwen Evaluation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [480, 300]
+      "position": [840, 400],
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.response;\nlet parsed = {};\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parsed = { intent: 'MEDIUM', summary: raw, recommended_action: 'REVIEW' };\n}\n\nreturn {\n  lead_name: $('Inbound Lead Webhook').first().json.body.name || 'Anonymous',\n  lead_email: $('Inbound Lead Webhook').first().json.body.email || 'N/A',\n  qualification: parsed,\n  is_high_ticket: parsed.intent === 'HIGH' || parsed.estimated_value_usd >= 1000,\n  processed_at: new Date().toISOString()\n};"
+        "jsCode": "const ingressData = $('Persist Ticket & Structured Ingress').first().json;\nconst ticketId = ingressData.ticket_id;\nconst clientName = ingressData.client_name;\nconst clientPhone = ingressData.client_phone;\nconst location = ingressData.location || 'Unknown';\nconst rawMessage = $('Inbound Lead Webhook').first().json.body.message || '';\n\nconst httpInput = $input.first().json;\nlet isValid = false;\nlet parsed = null;\nlet errorReason = null;\n\nif (httpInput.error) {\n  errorReason = 'HTTP inference failure: ' + (httpInput.error.message || JSON.stringify(httpInput.error));\n} else {\n  try {\n    let raw = httpInput.response;\n    if (typeof raw === 'string') {\n      raw = JSON.parse(raw);\n    }\n    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {\n      throw new Error('Response is not a JSON object');\n    }\n\n    const allowedKeys = ['urgency', 'trade_category', 'requires_urgent_review', 'incident_summary'];\n    const keys = Object.keys(raw);\n    const extraKeys = keys.filter(k => !allowedKeys.includes(k));\n    if (extraKeys.length > 0) {\n      throw new Error('Extra forbidden keys rejected: ' + extraKeys.join(', '));\n    }\n\n    const missingKeys = allowedKeys.filter(k => !keys.includes(k));\n    if (missingKeys.length > 0) {\n      throw new Error('Missing required keys: ' + missingKeys.join(', '));\n    }\n\n    const validUrgencies = ['CRITICAL', 'HIGH', 'STANDARD'];\n    if (!validUrgencies.includes(raw.urgency)) {\n      throw new Error('Invalid urgency enum: ' + raw.urgency);\n    }\n\n    const validTrades = ['COMMERCIAL_REFRIGERATION', 'COMMERCIAL_HVAC', 'PLUMBING', 'GENERAL'];\n    if (!validTrades.includes(raw.trade_category)) {\n      throw new Error('Invalid trade_category enum: ' + raw.trade_category);\n    }\n\n    if (typeof raw.requires_urgent_review !== 'boolean') {\n      throw new Error('requires_urgent_review must be boolean, got ' + typeof raw.requires_urgent_review);\n    }\n\n    if (typeof raw.incident_summary !== 'string' || raw.incident_summary.trim().length < 10 || raw.incident_summary.trim().length > 300) {\n      throw new Error('incident_summary must be a string between 10 and 300 characters');\n    }\n\n    parsed = {\n      urgency: raw.urgency,\n      trade_category: raw.trade_category,\n      requires_urgent_review: raw.requires_urgent_review,\n      incident_summary: raw.incident_summary.trim()\n    };\n    isValid = true;\n  } catch (e) {\n    errorReason = e.message;\n  }\n}\n\nlet classificationStatus = '';\nlet urgency = '';\nlet tradeCategory = '';\nlet requiresUrgentReview = false;\nlet incidentSummary = '';\nlet dispatchState = '';\nlet operatorAlert = null;\n\nif (isValid && parsed) {\n  classificationStatus = 'TRIAGE_SUCCESS';\n  urgency = parsed.urgency;\n  tradeCategory = parsed.trade_category;\n  requiresUrgentReview = parsed.requires_urgent_review;\n  incidentSummary = parsed.incident_summary;\n  dispatchState = 'PENDING_HUMAN_APPROVAL';\n  const isUrgent = parsed.urgency === 'CRITICAL' || parsed.urgency === 'HIGH' || parsed.requires_urgent_review;\n  const alertPrefix = isUrgent ? 'Urgent intake' : 'Standard service intake';\n  operatorAlert = '[DRAFT ALERT - NOT SENT - REQUIRES HUMAN DISPATCH APPROVAL] ' + alertPrefix + ' for ' + clientName + ' (' + location + '): ' + incidentSummary;\n} else {\n  classificationStatus = 'FALLBACK_MANUAL_REVIEW';\n  urgency = 'UNKNOWN';\n  tradeCategory = 'UNKNOWN';\n  requiresUrgentReview = true;\n  incidentSummary = 'Automated classification unavailable. Manual review required.';\n  dispatchState = 'MANUAL_REVIEW_REQUIRED';\n  operatorAlert = '[FALLBACK ALERT - MANUAL REVIEW REQUIRED] Classification failed: ' + (errorReason || 'Unknown error') + ' | Client: ' + clientName + ' (' + location + ')';\n}\n\nreturn {\n  ticket_id: ticketId,\n  intake_status: classificationStatus,\n  urgency: urgency,\n  trade_category: tradeCategory,\n  requires_urgent_review: requiresUrgentReview,\n  incident_summary: incidentSummary,\n  dispatch_state: dispatchState,\n  operator_alert_draft: operatorAlert,\n  error_reason: errorReason,\n  client_name: clientName,\n  client_phone: clientPhone,\n  location: location\n};"
       },
-      "name": "Parse Qualification Logic",
+      "name": "Strict Schema Validation & Triage Logic",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 300]
+      "position": [1080, 400]
     },
     {
       "parameters": {
-        "conditions": {
-          "boolean": [
-            {
-              "value1": "={{ $json.is_high_ticket }}",
-              "value2": true
-            }
-          ]
+        "url": "http://127.0.0.1:5680/api/v1/update-triage",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  ticket_id: $json.ticket_id,\n  intake_status: $json.intake_status,\n  urgency: $json.urgency,\n  trade_category: $json.trade_category,\n  requires_urgent_review: $json.requires_urgent_review,\n  incident_summary: $json.incident_summary,\n  dispatch_state: $json.dispatch_state,\n  operator_alert_draft: $json.operator_alert_draft,\n  error_reason: $json.error_reason\n}) }}",
+        "options": {
+          "timeout": 5000
         }
       },
-      "name": "High Value Filter",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [920, 300]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"PROCESSED\",\n  \"priority\": \"URGENT\",\n  \"qualification\": {{ JSON.stringify($json.qualification) }},\n  \"action_triggered\": \"VIP_SLACK_ALERT_AND_CALENDAR_PUSH\"\n}",
-        "options": {}
-      },
-      "name": "VIP Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1150, 200]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"PROCESSED\",\n  \"priority\": \"STANDARD\",\n  \"qualification\": {{ JSON.stringify($json.qualification) }},\n  \"action_triggered\": \"EMAIL_NURTURE_SEQUENCE\"\n}",
-        "options": {}
-      },
-      "name": "Standard Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1150, 400]
+      "name": "Persist Final Triage Outcome",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1320, 400]
     }
   ],
   "connections": {
     "Inbound Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Persist Ticket & Structured Ingress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Ticket & Structured Ingress": {
+      "main": [
+        [
+          {
+            "node": "Immediate 202 Customer Receipt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Claim Pending Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Pending Ticket": {
       "main": [
         [
           {
@@ -93,36 +144,18 @@
       "main": [
         [
           {
-            "node": "Parse Qualification Logic",
+            "node": "Strict Schema Validation & Triage Logic",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse Qualification Logic": {
+    "Strict Schema Validation & Triage Logic": {
       "main": [
         [
           {
-            "node": "High Value Filter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "High Value Filter": {
-      "main": [
-        [
-          {
-            "node": "VIP Response",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Standard Response",
+            "node": "Persist Final Triage Outcome",
             "type": "main",
             "index": 0
           }
