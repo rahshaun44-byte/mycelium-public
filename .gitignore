@@ -17,9 +17,12 @@ build_check/
 
 # Database and Logs
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 *.log
+data/
 
 # Environment and Configs
 .env

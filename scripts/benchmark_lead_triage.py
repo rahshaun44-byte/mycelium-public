@@ -100,12 +100,12 @@ def run_comprehensive_suite() -> None:
     # =========================================================================
     print("\n[+] SUITE 2: CONCURRENT WORK CLAIMING (Race Condition Prevention)")
     # Worker 1 claims ticket
-    claim_1 = store.claim_pending_ticket(ticket_id_1, worker_id="worker-alpha")
-    print(f"  Worker Alpha claim attempt on {ticket_id_1}: {claim_1}")
+    claim_1, token_1 = store.claim_pending_ticket(ticket_id_1, worker_id="worker-alpha")
+    print(f"  Worker Alpha claim attempt on {ticket_id_1}: {claim_1} (token: {token_1})")
     assert claim_1 is True, "Worker Alpha must successfully claim pending ticket"
 
     # Worker 2 attempts concurrent claim on same ticket
-    claim_2 = store.claim_pending_ticket(ticket_id_1, worker_id="worker-beta")
+    claim_2, token_2 = store.claim_pending_ticket(ticket_id_1, worker_id="worker-beta")
     print(f"  Worker Beta concurrent claim attempt:        {claim_2}")
     assert claim_2 is False, "Worker Beta must be rejected; ticket already claimed"
     print("  --> SUITE 2 PASSED: Atomic claiming prevents concurrent workers from duplicate processing.")
@@ -114,12 +114,13 @@ def run_comprehensive_suite() -> None:
     # SUITE 3: DISTINCT REPEAT INCIDENTS VS IDEMPOTENCY REUSE CONFLICT
     # =========================================================================
     print("\n[+] SUITE 3: DISTINCT INCIDENTS VS IDEMPOTENCY CONFLICTS")
-    idem_key = f"scoped-idem-{time.time_ns()}"
+    run_id = time.time_ns()
+    idem_key = f"scoped-idem-{run_id}"
     base_incident = {
-        "tenant_id": "tenant-nepa",
+        "tenant_id": f"tenant-nepa-{run_id}",
         "business_name": "Valley Cold Storage",
         "location": "Pittston, PA",
-        "phone": "(570) 555-8822",
+        "phone": f"(570) 555-{(run_id % 10000):04d}",
         "message": "Compressor #2 tripping breaker",
         "idempotency_key": idem_key,
     }
@@ -147,7 +148,7 @@ def run_comprehensive_suite() -> None:
 
     # 3D: Distinct future incident (e.g. next month / different incident date)
     future_key = compute_idempotency_key(
-        tenant_id="tenant-nepa",
+        tenant_id=base_incident["tenant_id"],
         phone=base_incident["phone"],
         location=base_incident["location"],
         message=base_incident["message"],
@@ -243,6 +244,10 @@ def run_comprehensive_suite() -> None:
     assert abandoned_record["intake_status"] == "CLAIMED_IN_TRIAGE"
     assert abandoned_record["urgency"] == "UNKNOWN"
     print(f"  Abandoned ticket verified in SQLite: Status={abandoned_record['intake_status']}, ClaimedBy={abandoned_record['claimed_by']}")
+
+    # Simulate lease expiration following worker crash
+    with store._get_connection() as conn:
+        conn.execute("UPDATE intake_tickets SET claim_expires_at_epoch = ? WHERE ticket_id = ?", (time.time() - 1.0, crash_ticket_id))
 
     # Worker 2 restarts and scans pending/abandoned queue
     print("  Worker 2 restarting: executing crash recovery scanner...")
