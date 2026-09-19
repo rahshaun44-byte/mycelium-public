@@ -210,19 +210,30 @@ def main() -> int:
             trav.stdout + trav.stderr,
         )
 
-        # Installer refuses overwrite without --replace.
-        first = run(["bash", str(INSTALLER)], env={**os.environ, "QF_TRUST_ANCHOR": str(tmp_path / "once")})
-        expect("installer first copy", first.returncode == 0, first.stdout + first.stderr)
-        second = run(["bash", str(INSTALLER)], env={**os.environ, "QF_TRUST_ANCHOR": str(tmp_path / "once")})
+        dirty_env = {**os.environ, "QF_TRUST_ANCHOR": str(tmp_path / "dirty-refuse")}
+        dirty = run(["bash", str(INSTALLER)], env=dirty_env)
+        expect(
+            "installer refuses dirty mycelium tree",
+            dirty.returncode != 0 and "Dry-run did not ALLOW" in (dirty.stdout + dirty.stderr),
+            dirty.stdout + dirty.stderr,
+        )
+
+        good_env = {
+            **os.environ,
+            "QF_TRUST_ANCHOR": str(tmp_path / "once"),
+            "QF_DRY_RUN_MANIFEST": str(manifest),
+            "QF_DRY_RUN_ROOT": str(fixture),
+            "QF_DRY_RUN_KEY": str(pub),
+        }
+        first = run(["bash", str(INSTALLER)], env=good_env)
+        expect("installer first copy after ALLOW dry-run", first.returncode == 0, first.stdout + first.stderr)
+        second = run(["bash", str(INSTALLER)], env=good_env)
         expect(
             "installer refuse overwrite",
             second.returncode != 0 and "already exists" in (second.stdout + second.stderr),
             second.stdout + second.stderr,
         )
-        replaced = run(
-            ["bash", str(INSTALLER), "--replace"],
-            env={**os.environ, "QF_TRUST_ANCHOR": str(tmp_path / "once")},
-        )
+        replaced = run(["bash", str(INSTALLER), "--replace"], env=good_env)
         expect("installer --replace", replaced.returncode == 0, replaced.stdout + replaced.stderr)
 
         once = tmp_path / "once"
@@ -262,6 +273,15 @@ def main() -> int:
             expect("live tree ALLOW (artifacts still match)", "TRUSTED -> ALLOW EXECUTION" in blob, blob)
     else:
         print("[SKIP] live ~/.local/libexec judge not installed yet")
+
+    inspect = run([sys.executable, str(WORKSPACE / "scripts" / "inspect_qfa5_release.py")])
+    expect(
+        "inspect_qfa5_release is read-only and reports this tree",
+        inspect.returncode in (0, 2) and "Independent openssl signature: VALID" in inspect.stdout,
+        inspect.stdout + inspect.stderr,
+    )
+    if inspect.returncode == 2:
+        expect("inspect HARD-STOP on dirty signed tree", "HARD-STOP" in inspect.stdout, inspect.stdout)
 
     print("[+] host trust-anchor tests complete")
     return 0

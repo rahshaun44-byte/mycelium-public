@@ -157,4 +157,7 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   once from a trusted checkout: `./scripts/install_host_trust_anchor.sh`.
   `systemd-backup/` units carry `ExecStartPre=` against that path; live Yoga
   units under `~/.config/` are not this tree and are not edited from here.
-  See `docs/HOST_TRUST_ANCHOR.md`.
+  `scripts/install_host_trust_anchor.sh` Hard-Stops unless a dry-run ALLOW's
+  the tree. This collapse branch is dirty vs the signed manifest — that
+  refuse is correct. Operator sequence:
+  `docs/QF_R2_OPERATOR_RUNBOOK.md`.

@@ -35,6 +35,17 @@ script saying "VALID" does not admit execution.
   outside the repo (`QF_RELEASE_KEY_PATH`). This change does not mint a
   new `PROVENANCE_MANIFEST.sig`.
 
+## Operator path (Yoga)
+
+Do not start with the installer. Inspect the real QF-A5 objects, dry-run
+against a known-good tree, then lock. The step-by-step is
+`docs/QF_R2_OPERATOR_RUNBOOK.md`.
+
+```bash
+python3 scripts/inspect_qfa5_release.py    # must exit 0
+./scripts/install_host_trust_anchor.sh     # refuses unless dry-run ALLOW'd
+```
+
 ## Install (once, from a tree you already trust)
 
 ```bash
