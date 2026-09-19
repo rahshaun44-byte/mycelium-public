@@ -26,10 +26,12 @@ cmake --build build_check -j"$(nproc)"
 ```
 No vcpkg, no CMake presets, no test target — this is a plain `pkg-config`-based build
 (`libpqxx`, `sqlite3`, `libsystemd`, OpenSSL) producing two binaries: `quantum_flex_engine` and
-`sentinel_push`. `CMakeLists.txt` uses `file(GLOB ... CONFIGURE_DEPENDS "src/core/*.cpp")` /
-`src/crypto/*.cpp` — new `.cpp` files in those two directories are picked up automatically on
-the next `cmake` configure, no `add_executable` edit needed. There is no test suite; "verified"
-in this repo currently means compiled clean and exercised manually against a live Postgres
+`sentinel_push`. Crypto primitives compile as the `qflex_crypto` static library
+(`src/crypto/CMakeLists.txt`, alias `qflex::crypto`) — no dependency on `src/core`. The engine
+and crypto tests *link* that library; new crypto `.cpp` files are added to
+`src/crypto/CMakeLists.txt`. `src/core/` still uses `file(GLOB ... CONFIGURE_DEPENDS)`. See
+`docs/CRYPTO_LIBRARY_CARVEOUT.md` (collapse step 1). There is no CTest suite; "verified" in
+this repo currently means compiled clean and exercised manually against a live Postgres
 instance (see `src/core/bae_node.cpp` for the pattern: build, then actually run it against
 `logistics-pg` and check the resulting row).
 
