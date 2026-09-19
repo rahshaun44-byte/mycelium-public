@@ -1,0 +1,7 @@
+FROM docker.io/fstarlang/fstar:latest
+
+# Update OPAM and install KaRaMeL and its dependencies
+RUN opam update && opam install karamel -y
+
+# Run commands within the OPAM environment so krml is in PATH
+ENTRYPOINT ["opam", "exec", "--"]

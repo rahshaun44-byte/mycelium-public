@@ -16,6 +16,8 @@ open FStar.UInt16
 
 (* --- Strata 1: Finite State Machine Invariant Types --- *)
 
+[@ CIntEnum "qf_engine_state_t" ]
+
 type engine_state =
   | StateUninitialized : engine_state
   | StateLocked        : engine_state
@@ -23,17 +25,22 @@ type engine_state =
   | StateQuarantine    : engine_state
   | StateRecovery      : engine_state
 
+[@ CIntEnum "qf_auth_cred_t" ]
+
 type auth_credential =
   | CredNone                : auth_credential
   | CredMtlsCertVerified    : auth_credential
   | CredShamirThresholdMet  : auth_credential
   | CredTwoManAttestation   : auth_credential
 
+[@ CIntEnum "qf_verdict_t" ]
+
 type transition_verdict =
   | VerdictAllow : next:engine_state -> transition_verdict
   | VerdictDeny  : transition_verdict
 
 (* Transition legality logic *)
+[@ CExport "qf_core_eval_transition" ]
 val eval_transition : current:engine_state -> target:engine_state -> cred:auth_credential -> transition_verdict
 let eval_transition current target cred =
   match current, target, cred with
@@ -74,10 +81,14 @@ let lemma_missing_auth_denies_active current = ()
 
 (* --- Strata 2: Strict PQC Algorithm Negotiation Invariant --- *)
 
+[@ CIntEnum "qf_pqc_profile_t" ]
+
 type pqc_profile =
   | ProfileStrictFips203    : pqc_profile
   | ProfileAgileTransition  : pqc_profile
   | ProfileLegacyClassical  : pqc_profile
+
+[@ CIntEnum "qf_pqc_alg_t" ]
 
 type pqc_algorithm =
   | AlgMLKEM768   : pqc_algorithm
@@ -90,6 +101,9 @@ type policy_verdict =
   | PolicyAllow : pqc_algorithm -> policy_verdict
   | PolicyDeny  : policy_verdict
 
+  | PolicyDeny  : policy_verdict
+
+[@ CExport "qf_core_eval_pqc_proposal" ]
 val eval_pqc_proposal : profile:pqc_profile -> proposal:pqc_algorithm -> policy_verdict
 let eval_pqc_proposal profile proposal =
   match profile with
@@ -127,20 +141,23 @@ type wire_frame_meta = {
   seq_id       : nat;
 }
 
+[@ CIntEnum "qf_wire_error_t" ]
+
 type frame_verdict =
   | FrameValid   : frame_verdict
-  | FrameInvalid : reason:nat -> frame_verdict
+  | FrameInvalid : reason:UInt32.t -> frame_verdict
 
+[@ CExport "qf_core_eval_wire_bounds" ]
 val eval_wire_bounds : frame:wire_frame_meta -> frame_verdict
 let eval_wire_bounds frame =
-  if frame.chunk_len = 0 || frame.chunk_len > max_chunk_len then
-    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
-  else if frame.total_chunks = 0 || frame.total_chunks > max_total_chunks then
-    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
+  if frame.chunk_len = 0ul || frame.chunk_len > max_chunk_len then
+    FrameInvalid 3ul (* ERR_CHUNK_BOUNDS *)
+  else if frame.total_chunks = 0ul || frame.total_chunks > max_total_chunks then
+    FrameInvalid 3ul (* ERR_CHUNK_BOUNDS *)
   else if frame.chunk_idx >= frame.total_chunks then
-    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
+    FrameInvalid 3ul (* ERR_CHUNK_BOUNDS *)
   else if frame.seq_id >= max_sequence_id then
-    FrameInvalid 7 (* ERR_SEQ_EXHAUSTED - silent wraparound forbidden *)
+    FrameInvalid 7ul (* ERR_SEQ_EXHAUSTED - silent wraparound forbidden *)
   else
     FrameValid
 

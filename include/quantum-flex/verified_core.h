@@ -11,7 +11,12 @@ extern "C" {
 
 /* =========================================================================
    QUANTUMFLEX VERIFIED CORE C ABI
-   Corresponds to formal mathematical specifications in formal/QuantumFlex_Core.fst
+   Formally Specified Invariants with Tested C Enforcement Implementation
+   
+   Assurance Mapping:
+     - Property Specification: QF-A3 Formally Specified (formal/QuantumFlex_Core.fst)
+     - C ABI & Implementation: QF-A1 Tested / QF-A2 Policy-Enforced
+     - KaRaMeL Machine Extraction: NULL (Gap admitted; manual C reference)
    ========================================================================= */
 
 /* --- Finite State Machine Invariants --- */

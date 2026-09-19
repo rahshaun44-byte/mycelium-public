@@ -30,9 +30,9 @@ This audit maps all active and legacy codebase components across the repository 
 ## 2. Component Mapping Breakdown
 
 ### Layer 1: Node SDK (Edge Layer)
-*   **`quantum-flex-sdk/` (Rust 1.94.0):**
-    *   *Role:* Edge daemon running on field hardware (laptops, SBCs, mobile edge).
-    *   *Functions:* `wifiscanner 0.5` RF probing, BSSID anonymization, `_optout` exclusion filter, Ed25519 keypair identity generation, payload signing.
+*   **`quantum-flex-sdk/` (Rust library):**
+    *   *Current role:* Edge-side `_optout` SSID exclusion on raw scan results before telemetry construction.
+    *   *Integration still needed:* Wi-Fi scanner, BSSID anonymization, node identity, payload signing, and transport. The library alone is not a deployed edge daemon.
 *   **`sentinel_push.exe` (C++20 MSVC):**
     *   *Role:* OS-level security sentinel.
     *   *Functions:* Real-time Windows Event Log ingestion via `wevtapi.dll` (`EvtSubscribe`), direct immutable `libpq` persistence.

@@ -83,4 +83,9 @@ node_modules/
 *.o
 *.so
 
+# Worktrees and Rust targets
+worktrees/
+quantum-flex-sdk/target/
+
 !sentinel/xdp/Makefile
+
