@@ -1,4 +1,3 @@
-#include "quantum-flex/verified_core.h"
 #include "quantum-flex/wire_framing.hpp"
 
 #include <openssl/crypto.h>
@@ -101,8 +100,10 @@ namespace quantumflex::wire {
         uint32_t seq = ntohl(header.sequence_id);
         uint32_t payload_length = ntohl(header.length);
 
-        // Verified Core Invariant: Enforce anti-rollover sequence bound (Theorem 5)
-        if (seq >= QF_WIRE_MAX_SEQ_ID) {
+        // Anti-rollover sequence bound (Theorem 5). Same numeric value as
+        // QF_WIRE_MAX_SEQ_ID in mycelium's verified_core ABI — enforced here
+        // without taking a dependency on that C header.
+        if (seq >= MAX_SEQ_ID) {
             pool.erase(session_id);
             return false; // Fail closed on sequence exhaustion
         }

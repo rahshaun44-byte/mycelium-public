@@ -1,0 +1,15 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(OpenSSL 3.5)
+
+include("${CMAKE_CURRENT_LIST_DIR}/QuantumFlexTargets.cmake")
+
+if(NOT TARGET QuantumFlex::runtime)
+    add_library(QuantumFlex::runtime INTERFACE IMPORTED)
+    set_target_properties(QuantumFlex::runtime PROPERTIES
+        INTERFACE_LINK_LIBRARIES "QuantumFlex::crypto;QuantumFlex::wire"
+    )
+endif()
+
+check_required_components(QuantumFlex)

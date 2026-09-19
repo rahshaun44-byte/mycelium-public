@@ -47,6 +47,10 @@ namespace quantumflex::wire {
     
     constexpr std::size_t MAX_PAYLOAD_SIZE = 16384; // 15792 (FrodoKEM-976-AES CT) + overhead. Represents maximum size of the payload field, NOT the entire frame.
 
+    // Anti-rollover bound (same numeric value as QF_WIRE_MAX_SEQ_ID in mycelium's
+    // verified_core C ABI). Owned here so the codec does not depend on that ABI.
+    constexpr uint32_t MAX_SEQ_ID = 0xFFFFFFFEU;
+
 
     enum class QFXKAlgorithm : uint8_t {
         FRODOKEM_976_AES = 0x01,

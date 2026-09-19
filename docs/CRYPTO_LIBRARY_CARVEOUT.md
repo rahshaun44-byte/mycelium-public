@@ -1,48 +1,40 @@
-# Crypto library carve-out (collapse step 1)
+# Crypto → QuantumFlex rehome (collapse step 2)
 
-Mycelium *governs* cryptography (provenance, admission, policy). It should not
-*implement* it. This change is the first executable layer of that split.
+Mycelium *governs* cryptography. QuantumFlex *implements* it.
 
 ## What landed
 
-`src/crypto/` is now a self-contained static library target, `qflex_crypto`
-(CMake alias `qflex::crypto`), with no upward dependency on `src/core`.
+`quantumflex/` is an independently buildable CMake package (no libpqxx, no
+sqlite, no systemd):
 
-Public headers (kept stable on purpose):
+| Target | Contents |
+| --- | --- |
+| `QuantumFlex::crypto` | hasher, shamir, hybrid signer, ML-KEM / hybrid KEM |
+| `QuantumFlex::wire` | QFXK codec (moved *with* the KEM) |
+| `QuantumFlex::runtime` | both — what `quantum_flex_engine` links |
 
-- `include/quantum-flex/hybrid_kem.hpp`
-- `include/quantum-flex/crypto_signer.hpp`
-- `include/quantum-flex/crypto_hasher.hpp`
-- `include/quantum-flex/crypto_shamir.hpp`
+Public include path is unchanged: `#include "quantum-flex/hybrid_kem.hpp"`.
 
-`quantum_flex_engine`, `qf_genesis_tool`, and the crypto test binaries link
-that library instead of compiling `src/crypto/*.cpp` into each target. New
-crypto `.cpp` files are added to `src/crypto/CMakeLists.txt` (the old
-`file(GLOB ... src/crypto/*.cpp)` into the engine is gone).
+Mycelium `find_package(QuantumFlex)` first; if no installed artifact exists it
+`add_subdirectory(quantumflex)`. That is the admission-shaped seam: an attested
+install later wins without rewriting the engine.
 
-`src/core/wire_framing.cpp` (QFXK) is still coordination-side transport. It
-moves *with* the KEM engine in a later layer, not this one.
+`qflex::crypto` remains an alias of `QuantumFlex::crypto` so the step-1 name
+still resolves.
 
-## Isolation check
+## Isolation
 
-`src/crypto/*.cpp` includes only its own headers plus OpenSSL and the C++
-standard library. `LocalNode` / `IpcServer` / `BaeNode` consume
-`HybridSigner` / `HybridKemEngine` / `Hasher` through those public headers.
+`wire_framing.cpp` previously included mycelium's `verified_core.h` solely for
+`QF_WIRE_MAX_SEQ_ID`. The codec now owns `quantumflex::wire::MAX_SEQ_ID` (same
+numeric bound). The C ABI constant stays in mycelium's verified-core header;
+the two values are documented as a pair, not a compile-time dependency.
+
+`src/crypto/` is gone. Crypto/wire tests live under `quantumflex/tests/`.
+`test_verified_core` stays in mycelium (formal C ABI).
 
 ## What this is not
 
-- Not a move into the `qflex` repo.
-- Not a `find_package` / attested artifact.
-- Not deletion of the in-repo sources.
+- Not a push to a sister GitHub repo (none is visible to this principal).
+- Not provenance attestation of the installed artifact (next layer).
+- Not deletion of mycelium coordination (`src/core/`, policies, intake).
 - Not a FIPS 140-3 claim.
-
-Those are later layers: rehome → publish attested build → mycelium admits
-the artifact → delete copies → lock `qflex → attested build → mycelium
-admission`.
-
-## Timing tests
-
-`test_zeroization` and `test_dudect_timing` used to compile a second copy of
-the crypto sources at `-O3` into the test binary. They now link `qflex_crypto`.
-When `CMAKE_BUILD_TYPE` is unset, the library is built at `-O2` so those tests
-still exercise optimized primitives rather than an accidental debug artifact.

@@ -58,7 +58,7 @@ typedef enum {
 /* --- Wire Protocol Constants & Bounds --- */
 #define QF_WIRE_MAX_CHUNK_LEN      1450
 #define QF_WIRE_MAX_TOTAL_CHUNKS   64
-#define QF_WIRE_MAX_SEQ_ID         0xFFFFFFFEU /* 2^32 - 2, no silent wraparound */
+#define QF_WIRE_MAX_SEQ_ID         0xFFFFFFFEU /* 2^32 - 2, no silent wraparound; keep equal to quantumflex::wire::MAX_SEQ_ID */
 #define QF_WIRE_MAGIC_BE           0x5146584BU /* "QFXK" */
 
 typedef enum {
