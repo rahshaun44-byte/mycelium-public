@@ -12,4 +12,4 @@ if(NOT TARGET QuantumFlex::runtime)
     )
 endif()
 
-check_required_components(QuantumFlex)
+set(QuantumFlex_ADMISSION_RECEIPT "${CMAKE_CURRENT_LIST_DIR}/QuantumFlexAdmission.json")

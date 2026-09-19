@@ -1,0 +1,60 @@
+# Runs at `cmake --install` time. CMAKE_INSTALL_PREFIX is the live prefix.
+# Hashes the installed static libs and public headers into QuantumFlexAdmission.json
+# sitting next to QuantumFlexConfig.cmake. This is a hash binding, not a
+# signature (QF-A5 signing still requires the external release key).
+
+if(NOT CMAKE_INSTALL_PREFIX)
+    message(FATAL_ERROR "EmitAdmission: CMAKE_INSTALL_PREFIX is empty")
+endif()
+
+set(QF_LIBDIR "@CMAKE_INSTALL_LIBDIR@")
+set(QF_INCLUDEDIR "@CMAKE_INSTALL_INCLUDEDIR@")
+set(QF_VERSION "@PROJECT_VERSION@")
+set(QF_OPENSSL "@OPENSSL_VERSION@")
+set(QF_SOURCE_COMMIT "@QF_SOURCE_COMMIT@")
+
+set(QF_PREFIX "${CMAKE_INSTALL_PREFIX}")
+set(QF_CMAKE_DIR "${QF_PREFIX}/${QF_LIBDIR}/cmake/QuantumFlex")
+
+set(_files
+    "${QF_LIBDIR}/libquantumflex_crypto.a"
+    "${QF_LIBDIR}/libquantumflex_wire.a"
+    "${QF_INCLUDEDIR}/quantum-flex/hybrid_kem.hpp"
+    "${QF_INCLUDEDIR}/quantum-flex/crypto_signer.hpp"
+    "${QF_INCLUDEDIR}/quantum-flex/crypto_hasher.hpp"
+    "${QF_INCLUDEDIR}/quantum-flex/crypto_shamir.hpp"
+    "${QF_INCLUDEDIR}/quantum-flex/wire_framing.hpp"
+)
+
+set(_json "{\n")
+string(APPEND _json "  \"schema\": \"QuantumFlexAdmission/v1\",\n")
+string(APPEND _json "  \"package\": \"QuantumFlex\",\n")
+string(APPEND _json "  \"version\": \"${QF_VERSION}\",\n")
+string(APPEND _json "  \"openssl_version\": \"${QF_OPENSSL}\",\n")
+string(APPEND _json "  \"source_commit\": \"${QF_SOURCE_COMMIT}\",\n")
+string(APPEND _json "  \"binding\": \"sha256\",\n")
+string(APPEND _json "  \"signed\": false,\n")
+string(APPEND _json "  \"artifacts\": [\n")
+
+set(_first TRUE)
+foreach(_rel IN LISTS _files)
+    set(_abs "${QF_PREFIX}/${_rel}")
+    if(NOT EXISTS "${_abs}")
+        message(FATAL_ERROR "EmitAdmission: missing installed artifact ${_abs}")
+    endif()
+    file(SHA256 "${_abs}" _hash)
+    file(SIZE "${_abs}" _size)
+    if(_first)
+        set(_first FALSE)
+    else()
+        string(APPEND _json ",\n")
+    endif()
+    string(APPEND _json "    {\"path\": \"${_rel}\", \"sha256\": \"${_hash}\", \"size_bytes\": ${_size}}")
+endforeach()
+
+string(APPEND _json "\n  ]\n}\n")
+
+file(MAKE_DIRECTORY "${QF_CMAKE_DIR}")
+set(_receipt "${QF_CMAKE_DIR}/QuantumFlexAdmission.json")
+file(WRITE "${_receipt}" "${_json}")
+message(STATUS "QuantumFlex admission receipt: ${_receipt}")

@@ -13,15 +13,10 @@ pkg_check_modules(SYSTEMD REQUIRED libsystemd)
 find_package(OpenSSL 3.5 REQUIRED)
 find_package(Threads REQUIRED)
 
-# Collapse step 2: prefer an installed QuantumFlex runtime (attested artifact).
-# Until that flow exists, consume the in-tree quantumflex/ package. Either path
-# exposes QuantumFlex::runtime (crypto + QFXK wire).
-find_package(QuantumFlex ${PROJECT_VERSION} QUIET CONFIG)
-if(QuantumFlex_FOUND)
-    message(STATUS "Using installed QuantumFlex ${QuantumFlex_VERSION}")
-else()
-    add_subdirectory(quantumflex)
-endif()
+# Collapse step 3: mycelium admits QuantumFlex. Tampered prefixes never link.
+# QUANTUMFLEX_REQUIRE_ATTESTED=ON is the production lock (no in-tree fallback).
+include("${CMAKE_SOURCE_DIR}/cmake/AdmitQuantumFlex.cmake")
+quantumflex_admit()
 
 file(GLOB ENGINE_CORE_SOURCES CONFIGURE_DEPENDS "src/core/*.cpp" "src/core/*.c")
 

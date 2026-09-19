@@ -35,6 +35,37 @@ the two values are documented as a pair, not a compile-time dependency.
 ## What this is not
 
 - Not a push to a sister GitHub repo (none is visible to this principal).
-- Not provenance attestation of the installed artifact (next layer).
+- Not QF-A5 Ed25519 signing of the runtime (that still needs the external release key).
 - Not deletion of mycelium coordination (`src/core/`, policies, intake).
 - Not a FIPS 140-3 claim.
+
+## Collapse step 3 — admission
+
+Mycelium *admits* QuantumFlex. A prefix that cannot present a matching hash
+receipt does not get to link.
+
+- Install writes `lib/cmake/QuantumFlex/QuantumFlexAdmission.json` (SHA-256 of
+  the two static libs and the five public headers). `signed: false` is honest:
+  this is a binding, not a signature.
+- `QUANTUMFLEX_REQUIRE_ATTESTED=ON` fail-closes unless `find_package` hits a
+  prefix whose receipt verifies. In-tree `add_subdirectory` is not an attested
+  path.
+- Default DEV still builds in-tree and writes
+  `build_check/QuantumFlexAdmission.dev.json` (source hashes — evidence, not
+  authority).
+- A found prefix with a *mismatched* receipt is FATAL even in DEV (tamper).
+- A found prefix with *no* receipt is ignored in DEV (in-tree wins) and FATAL
+  when ATTESTED.
+
+```bash
+cmake -S quantumflex -B quantumflex/build -DCMAKE_INSTALL_PREFIX=/opt/quantumflex
+cmake --build quantumflex/build
+cmake --install quantumflex/build
+
+cmake -S . -B build_check \
+    -DQUANTUMFLEX_REQUIRE_ATTESTED=ON \
+    -DCMAKE_PREFIX_PATH=/opt/quantumflex
+```
+
+`python3 scripts/test_quantumflex_admission.py` exercises DEV / ATTESTED /
+tamper.

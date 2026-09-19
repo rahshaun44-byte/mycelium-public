@@ -30,8 +30,14 @@ cmake --build quantumflex/build -j"$(nproc)"
 ```
 
 `cmake --install` writes a `QuantumFlexConfig.cmake` so a consumer can
-`find_package(QuantumFlex)`. Mycelium already prefers that path and falls back
-to `add_subdirectory(quantumflex)` when no installed copy is present.
+`find_package(QuantumFlex)`. It also writes `QuantumFlexAdmission.json` next to
+that file — SHA-256 of the installed libs and public headers. Mycelium
+`find_package`s first and **verifies the receipt** before linking. A mismatch
+is fail-closed. In-tree `add_subdirectory` is DEV only; production configures
+with `-DQUANTUMFLEX_REQUIRE_ATTESTED=ON`.
+
+The receipt is a hash binding (`signed: false`). QF-A5 Ed25519 over the receipt
+is a separate operator ceremony with the external release key.
 
 ## What this is not
 

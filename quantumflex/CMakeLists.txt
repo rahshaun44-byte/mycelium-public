@@ -152,4 +152,21 @@ if(QUANTUMFLEX_INSTALL)
         ${CMAKE_CURRENT_BINARY_DIR}/QuantumFlexConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QuantumFlex
     )
+
+    # Hash-bind the installed libs+headers. Unsigned; QF-A5 signing is a
+    # separate operator ceremony with the external release key.
+    set(QF_SOURCE_COMMIT "UNKNOWN")
+    execute_process(
+        COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE QF_SOURCE_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmitAdmission.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/EmitAdmission.cmake
+        @ONLY
+    )
+    install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/EmitAdmission.cmake)
 endif()

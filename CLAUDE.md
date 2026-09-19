@@ -27,9 +27,12 @@ cmake --build build_check -j"$(nproc)"
 No vcpkg, no CMake presets, no test target — this is a plain `pkg-config`-based build
 (`libpqxx`, `sqlite3`, `libsystemd`, OpenSSL) producing two binaries: `quantum_flex_engine` and
 `sentinel_push`. Cryptographic primitives and the QFXK wire codec live in the `quantumflex/`
-CMake package (`QuantumFlex::runtime`). Mycelium `find_package(QuantumFlex)` and falls back to
-`add_subdirectory(quantumflex)`. The package builds standalone (`cmake -S quantumflex`) with
-OpenSSL 3.5 only — no Postgres. See `quantumflex/README.md` and `docs/CRYPTO_LIBRARY_CARVEOUT.md`.
+CMake package (`QuantumFlex::runtime`). Mycelium admits that package
+(`cmake/AdmitQuantumFlex.cmake`): a verifying install receipt wins;
+`-DQUANTUMFLEX_REQUIRE_ATTESTED=ON` fail-closes without one. Default DEV still
+`add_subdirectory(quantumflex)` and writes `QuantumFlexAdmission.dev.json`.
+The package builds standalone (`cmake -S quantumflex`) with OpenSSL 3.5 only —
+no Postgres. See `quantumflex/README.md` and `docs/CRYPTO_LIBRARY_CARVEOUT.md`.
 `src/core/` still uses `file(GLOB ... CONFIGURE_DEPENDS)`. There is no CTest suite; "verified"
 in this repo currently means compiled clean and exercised manually against a live Postgres
 instance (see `src/core/bae_node.cpp` for the pattern: build, then actually run it against
