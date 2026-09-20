@@ -1,0 +1,8 @@
+{
+  "artifact": "qflex_cli.py",
+  "schema": "quantumflex-mobile-distribution-v1",
+  "sha256": "ad69588f738ca300e04e0eab0bae25535c14b81e72ef5b3fe59b3a580f971943",
+  "signed_at": 1789870243,
+  "size_bytes": 33828,
+  "version": "2.6.0-qf-m1"
+}
