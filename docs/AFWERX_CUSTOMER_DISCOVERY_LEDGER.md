@@ -1,23 +1,25 @@
 # 🛰️ QUANTUMFLEX AFWERX SBIR PHASE I CUSTOMER DISCOVERY LEDGER
-## Task 1 Stakeholder Discovery Campaign (Target: ≥30 Structured Engagements)
+## Task 1 Discovery Campaign: 30 Planned Engagement Slots (Discovery Registry)
 
 **Entity:** FINALLYFUNGUS LLC (PA Entity ID: 13706513) DBA QuantumFlex  
 **Principal Investigator:** Rahshaun Chambers  
 **Proposal Title:** QuantumFlex: Autonomous Post-Quantum Cryptographic Agility, Shock-Absorbing Telemetry & TOCTOU-Resistant Runtime Admission for National Security Systems  
 **Governing SOW Baseline:** [`docs/AFWERX_PHASE_I_WORK_PLAN.md#L55-L72`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_WORK_PLAN.md#L55-L72) (Task 1: Days 1–30)  
 **Primary Output Deliverable:** Deliverable D1 (*Tactical Interface Baseline & Customer Discovery Synthesis Report*, Day 30)  
-**Commit Baseline:** `45f8383`
+**Commit Baseline:** `564dc13`
 
 ---
 
 ## 1. Discovery Governance & Procurement Ground Rules
 
 > [!IMPORTANT]
-> **GOVERNMENT STAKEHOLDER DEMARCATION RULE**  
+> **GOVERNMENT STAKEHOLDER DEMARCATION & DISCOVERY REGISTRY RULES**  
 > In accordance with federal procurement governance and the QuantumFlex Claim Ledger ([`docs/AFWERX_CLAIM_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CLAIM_LEDGER.md)):
-> 1. All Department of the Air Force (DAF) and Department of Defense (DoD) organizations listed herein are designated as **CANDIDATE DISCOVERY STAKEHOLDERS**.
-> 2. No stakeholder, program executive office, or military command is claimed as an active customer, commercial partner, or committed transition sponsor prior to an executed Memorandum of Understanding (MOU), Memorandum of Agreement (MOA), or Letter of Intent (LOI).
-> 3. Discovery findings will directly dictate the hardware selection for the Phase I Direct Materials procurement ($15,000) under Task 2 and shape the Phase II demonstration architecture.
+> 1. **30 Registry Rows $\neq$ 30 Completed Engagements:** This document establishes a **30-target discovery campaign** maintaining **30 planned engagement slots**. An engagement is classified as **`COMPLETED`** strictly after conducting the structured interview and recording verified stakeholder feedback ("What They Actually Said").
+> 2. **Candidate Status Only:** All Department of the Air Force (DAF), Space Force, and Department of Defense (DoD) organizations listed herein are designated as **CANDIDATE DISCOVERY STAKEHOLDERS**. No organization is claimed as a customer, partner, or transition sponsor prior to an executed MOU, MOA, or LOI.
+> 3. **Hardware Determination Linkage:** Discovery findings directly dictate the selection of representative edge compute and cryptographic evaluation hardware for Phase I Direct Materials ($11,000 under FAR 31.205-26) and Compute ODC ($4,000) under Task 2, establishing the empirical requirements for Phase II operational demonstration.
+> 4. **Standard Lifecycle Statuses:** Every slot in this registry is tracked through one of five standard states:  
+>    `PLANNED` $\rightarrow$ `CONTACTED` $\rightarrow$ `SCHEDULED` $\rightarrow$ `COMPLETED` $\rightarrow$ `FOLLOW-UP`.
 
 ---
 
@@ -92,46 +94,46 @@
 
 ---
 
-## 3. Master Customer Discovery Interview Registry (Target: ≥30 Engagements)
+## 3. Master Customer Discovery Interview Registry (30 Planned Engagement Slots)
 
-The table below tracks all 30 planned structured interviews across Task 1 (Days 1–30).
+*Note: All 30 slots represent planned target engagements. Rows transition to `COMPLETED` upon interview completion and verification of testimony.*
 
-| # | Command / Org | Unit / Branch | Candidate Persona / Title | Operational Focus Area | Primary QF Vector | SWaP-C / Bus Constraints | Status | Target Date |
-| :-: | :--- | :--- | :--- | :--- | :---: | :--- | :---: | :---: |
-| **01** | AFLCMC/HN | Tactical Datalinks Division | Lead Avionics Systems Engineer | Airborne Datalink Key Rollover | Vector 1 / 4 | MIL-STD-1553 / Ethernet; <35W | Targeted | Day 5 |
-| **02** | AFLCMC/HN | Tactical Datalinks Division | Program Manager, Link 16 Mod | Contested DIL RF Retransmission | Vector 2 / 5 | Serial / IP; <64MB RAM | Targeted | Day 6 |
-| **03** | AFLCMC/HN | Cryptographic Modernization | NSA CSfC Integration Officer | Staged Post-Quantum Transition | Vector 1 / 7 | CSfC Dual-Layer Envelope | Targeted | Day 7 |
-| **04** | AFLCMC/HN | Advanced Gateways Branch | Airborne Gateway Architect | Cross-Domain Datalink Bridging | Vector 2 / 4 | OpenVPX 3U / 1GbE | Targeted | Day 8 |
-| **05** | AFLCMC/HN | Aerial Networks Division | Cyber Defense Lead | In-Flight Packet Injection Defense | Vector 2 (EWMA) | Socket saturation resilience | Targeted | Day 9 |
-| **06** | AFRL/RI | Cyber Assurance Division | Senior Research Computer Scientist | Formal Verification of PQC Primitives | Vector 1 (FIPS 203/204) | C++20 / Valgrind clean | Targeted | Day 11 |
-| **07** | AFRL/RI | Resilient Edge Computing | Lead Edge Security Researcher | TOCTOU-Resistant Runtime Launch | Vector 7 (fexecve) | Linux Kernel namespaces / seccomp | Targeted | Day 12 |
-| **08** | AFRL/RI | Secure Communications Branch | Post-Quantum Cryptography SME | Hybrid Classical-PQC Key Exchange | Vector 1 (X25519 + ML-KEM) | Low-overhead frame headers | Targeted | Day 13 |
-| **09** | AFRL/RI | Quantum Information Section | Applied Physicist / Info Theory | Memory Zeroization & Anti-Tamper | Vector 3 (Shamir + Cleanse) | Volatile SRAM zeroization | Targeted | Day 14 |
-| **10** | AFRL/RI | Embedded Systems Security | Microelectronics Security Engineer | Discrete vs Integrated TPM Bench | Vector 7 / Task 2 | ARM64 / SPI TPM 2.0 | Targeted | Day 15 |
-| **11** | ACC / A6 | Tactical Comm Operations | Tactical Communications Officer (A6) | ACE Austere Base Deployment | Vector 5 (Shamir Unlock) | Austere solar/battery power | Targeted | Day 16 |
-| **12** | ACC / A6 | Edge Network Security | Defensive Cyber Operations Lead | Forward Operating Node Tamper | Vector 3 / 7 | Zeroization under capture risk | Targeted | Day 17 |
-| **13** | ACC / A6 | Expeditionary Comm Squad | Expeditionary Network Chief | Disconnected Edge Authentication | Vector 5 / 6 | Private mesh / zero WAN | Targeted | Day 18 |
-| **14** | ACC / A6 | Agile Combat Employment | ACE Logistics & Cyber Planner | Rapid Node Commissioning | Vector 6 (Mobile CLI) | Android Titan M2 / Knox Vault | Targeted | Day 19 |
-| **15** | ACC / A6 | Air Operations Center (AOC) | Combat Communications Architect | AOC-to-Tactical Edge Telemetry | Vector 4 (Decoupled Intake) | High latency, variable jitter | Targeted | Day 20 |
-| **16** | Space Systems Cmd | Resilient Space Comm | Satcom Cyber Architect | pLEO Datalink Crypto-Agility | Vector 1 / 4 | Space-grade ARM64 / Rad-tolerant | Targeted | Day 21 |
-| **17** | Space Systems Cmd | Space Domain Awareness | Telemetry Ground Systems Lead | Shock-Absorbing Space Telemetry | Vector 2 (EWMA) | Burst telemetry streams | Targeted | Day 22 |
-| **18** | Space Systems Cmd | Defensive Cyber for Space | Space Vehicle Security Engineer | In-Orbit Firmware/Crypto Update | Vector 7 (TOCTOU) | Limited downlink bandwidth | Targeted | Day 23 |
-| **19** | AFTC / 412th TW | Electronic Warfare Test Sq | Flight Test Instrumentation Lead | Pod Instrumentation & Sidecar SWaP | Task 2 / Phase II SOW | External pod enclosure / ARINC 429 | Targeted | Day 24 |
-| **20** | AFTC / 96th TW | Cyber Test Squadron | Red Team Cyber Test Lead | Hostile Socket Injection Vector | Vector 2 / 7 | Malformed frame injection | Targeted | Day 24 |
-| **21** | 16th Air Force | Information Warfare (616 OC) | Cyber Weapon System Strategist | Defensive Sidecar Orchestration | Vector 6 (OPA Rego) | Dynamic policy reloads | Targeted | Day 25 |
-| **22** | AFWERX Ventures | Military Evaluator Roster | Defense Innovation Liaison | Phase II Transition Alignment | Task 3 (LOI/MOA) | Program Element alignment | Targeted | Day 25 |
-| **23** | Prime Integrator 1 | Tactical Avionics Division | Chief Software Architect | CCA Sensor Pod Sidecar Adapter | Vector 1 / 2 | SOSA / OpenVPX 3U | Targeted | Day 26 |
-| **24** | Prime Integrator 1 | Mission Systems Engineering | Cryptographic Hardware Lead | Discrete HSM vs Software Sidecar | Vector 1 / 3 | Weight / Thermal envelope | Targeted | Day 26 |
-| **25** | Prime Integrator 2 | Electronic Warfare Group | EW Systems Engineering Director | Datalink Shock Absorption | Vector 2 (EWMA) | Microsecond packet rejection | Targeted | Day 27 |
-| **26** | Prime Integrator 2 | Edge Computing Center | Principal Edge Software Engineer | Kernel fexecve Binary Admission | Vector 7 (TOCTOU) | Secure Boot / IMA integration | Targeted | Day 27 |
-| **27** | Prime Integrator 3 | Autonomous Systems Division | Collaborative Combat Aircraft Lead | Uncrewed System Crypto-Agility | Vector 1 / 5 | Low-cost dispensable airframe | Targeted | Day 28 |
-| **28** | DAF PEO Digital | Enterprise IT Modernization | Cloud-to-Edge Security Lead | Zero-Trust Private Mesh Transport | Vector 6 (Tailnet/Mesh) | Zero public IP exposure | Targeted | Day 28 |
-| **29** | NSA CSfC Office | CSfC Client Integration | Accredited CSfC Evaluator | Commercial Solutions for Classified | Vector 1 / Task 2 | CSfC Components List pathway | Targeted | Day 29 |
-| **30** | DAF SBIR / STTR | Technology Transition Office | SBIR Transition Program Manager | Commercialization & Dual-Use Strategy | Task 3 / Commercial | Non-defense commercial spin-in | Targeted | Day 30 |
+| Engagement ID | Organization / Unit | Candidate Role / Persona | Problem Hypothesis | Validated Feedback ("What They Actually Said") | SWaP-C / Bus Constraints | Acquisition / Transition Pathway | Evidence / Ref | Follow-Up Required | Status |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| **ENG-01** | AFLCMC/HN (Tactical Datalinks) | Lead Avionics Systems Engineer | Datalink key rollover drops active airborne RF connections | *[Pending Interview]* | MIL-STD-1553 / Ethernet; <35W | FY28 Datalink Mod Block; CSfC dual-layer | TBD | Schedule via AFRL liaison | `PLANNED` |
+| **ENG-02** | AFLCMC/HN (Tactical Datalinks) | Program Manager, Link 16 Mod | DIL link conditions desynchronize static crypto state | *[Pending Interview]* | Serial / IP; <64MB RAM | Airborne Terminal Modernization Line | TBD | Request unclassified briefing | `PLANNED` |
+| **ENG-03** | AFLCMC/HN (Crypto Modernization) | NSA CSfC Integration Officer | Lack of agile migration pathway to CNSA 2.0 PQC | *[Pending Interview]* | Dual-layer IPsec/TLS CSfC envelope | CSfC Components List qualification | TBD | Review CSfC Addendum Draft .5 | `PLANNED` |
+| **ENG-04** | AFLCMC/HN (Advanced Gateways) | Airborne Gateway Architect | Monolithic gateways cannot bridge legacy and post-quantum buses | *[Pending Interview]* | OpenVPX 3U / 1GbE copper | BACN / E-11A Gateway Tech Refresh | TBD | Coordinate via Hanscom TPOC | `PLANNED` |
+| **ENG-05** | AFLCMC/HN (Aerial Networks) | Cyber Defense Lead | Malformed packet storms crash edge datalink processors | *[Pending Interview]* | Socket saturation resilience | DAF Defensive Cyber Operations | TBD | Present EWMA socket data | `PLANNED` |
+| **ENG-06** | AFRL/RI (Cyber Assurance) | Senior Research Computer Scientist | PQC implementations introduce untested memory leakage | *[Pending Interview]* | C++20 / Valgrind clean / zero leaks | AFRL Core Research Grant / Phase II | TBD | Share zeroization test suite | `PLANNED` |
+| **ENG-07** | AFRL/RI (Resilient Edge Compute) | Lead Edge Security Researcher | Flash storage tampering bypasses static signature verification | *[Pending Interview]* | Linux Kernel namespaces / seccomp | Resilient Edge Computing Line | TBD | Demo `fexecve` test harness | `PLANNED` |
+| **ENG-08** | AFRL/RI (Secure Communications) | Post-Quantum Cryptography SME | Hybrid classical-PQC frame headers exceed packet MTU | *[Pending Interview]* | Low-overhead frame encapsulation | CSfC PQC Migration Research | TBD | Transmit ML-KEM frame profile | `PLANNED` |
+| **ENG-09** | AFRL/RI (Quantum Information) | Applied Physicist / Info Theory | Volatile key remnants survive incomplete power-down cycles | *[Pending Interview]* | Volatile SRAM zeroization timing | NSA Physical Security Standards | TBD | Provide Valgrind leak proof | `PLANNED` |
+| **ENG-10** | AFRL/RI (Embedded Security) | Microelectronics Security Engineer | Discrete TPM evaluation lacks side-channel hardening data | *[Pending Interview]* | ARM64 / SPI TPM 2.0 evaluation bus | Trusted Microelectronics Program | TBD | Inquire on candidate eval boards | `PLANNED` |
+| **ENG-11** | ACC / A6 (Tactical Operations) | Tactical Communications Officer (A6) | ACE austere bases lack secure remote master-key distribution | *[Pending Interview]* | Austere solar/battery power (<50W) | Agile Combat Employment Comm Kit | TBD | Present Shamir unlock metrics | `PLANNED` |
+| **ENG-12** | ACC / A6 (Edge Network Security) | Defensive Cyber Operations Lead | Overrun of forward node exposes platform master keys | *[Pending Interview]* | Instantaneous zeroization on tamper | Air Force Forward Base Defense | TBD | Discuss physical trigger inputs | `PLANNED` |
+| **ENG-13** | ACC / A6 (Expeditionary Comm) | Expeditionary Network Chief | Disconnected edge mesh unable to reach centralized CA | *[Pending Interview]* | Private zero-trust mesh / zero WAN | Tactical Comm Squadron Fielding | TBD | Demo Tailscale/loopback mesh | `PLANNED` |
+| **ENG-14** | ACC / A6 (ACE Logistics & Cyber) | ACE Cyber Warfare Planner | Mobile field operators have no secure node provisioning tool | *[Pending Interview]* | Android Knox Vault / Titan M2 | Expeditionary Cyber Tool Kit | TBD | Share mobile CLI role demo | `PLANNED` |
+| **ENG-15** | ACC / A6 (Air Operations Center) | Combat Communications Architect | High latency WAN telemetry stalls critical AOC situational feeds | *[Pending Interview]* | Variable latency, intermittent satcom | AOC Weapon System Modernization | TBD | Present intake 202 benchmarks | `PLANNED` |
+| **ENG-16** | Space Systems Cmd (Resilient Comm) | Satcom Cyber Architect | Orbital crypto cannot be patched post-launch without mission risk | *[Pending Interview]* | Space-grade ARM64 / Rad-tolerant | Next-Gen Resilient Space Bus | TBD | Review pLEO crypto constraints | `PLANNED` |
+| **ENG-17** | Space Systems Cmd (Domain Awareness) | Telemetry Ground Systems Lead | Space telemetry bursts overwhelm ground station ingestion sockets | *[Pending Interview]* | Variable burst rate (>10k msg/s) | Space Delta TT&C Modernization | TBD | Review Kafka pipeline invariants | `PLANNED` |
+| **ENG-18** | Space Systems Cmd (Defensive Cyber) | Space Vehicle Security Engineer | Ground-to-space firmware uploads vulnerable to payload alteration | *[Pending Interview]* | Ultra-low bandwidth downlink | Space RMF Accreditation Line | TBD | Share hash-admission evidence | `PLANNED` |
+| **ENG-19** | AFTC / 412th TW (EW Test Squadron) | Flight Test Instrumentation Lead | External instrumentation pod lacks isolated crypto processing | *[Pending Interview]* | External pod enclosure / ARINC 429 | Edwards AFB Test Pod Program | TBD | Confirm pod physical envelope | `PLANNED` |
+| **ENG-20** | AFTC / 96th TW (Cyber Test Squadron) | Red Team Cyber Test Lead | Network test harnesses lack controlled socket attack simulation | *[Pending Interview]* | Malformed frame injection benches | Eglin AFB Cyber Test Facility | TBD | Compare test methodologies | `PLANNED` |
+| **ENG-21** | 16th Air Force (Information Warfare) | Cyber Weapon System Strategist | Threat policy updates require full software rebuild and re-test | *[Pending Interview]* | Sub-second Rego policy swapping | 616th Operations Center Cyber Ops | TBD | Demo OPA sidecar SIGHUP reload | `PLANNED` |
+| **ENG-22** | AFWERX Ventures | Defense Innovation Liaison | SBIR Phase I feasibility lacks clear PEO transition champion | *[Pending Interview]* | Program Element transition alignment | DAF Open Topic Phase II Matching | TBD | Submit preliminary D1 report | `PLANNED` |
+| **ENG-23** | Prime Integrator 1 (Tactical Avionics) | Chief Software Architect | Flight-critical computer recertification blocks crypto upgrades | *[Pending Interview]* | SOSA / OpenVPX 3U slot | Collaborative Combat Aircraft (CCA) | TBD | Present transparent proxy data | `PLANNED` |
+| **ENG-24** | Prime Integrator 1 (Mission Systems) | Cryptographic Hardware Lead | Discrete HSMs exceed thermal and weight budgets on uncrewed pods | *[Pending Interview]* | Weight <5 lbs; passive cooling | Dispensable Autonomous Drones | TBD | Contrast SWaP-C metrics | `PLANNED` |
+| **ENG-25** | Prime Integrator 2 (Electronic Warfare) | EW Systems Engineering Director | Hostile electronic warfare jamming floods receiver socket buffers | *[Pending Interview]* | EWMA microsecond packet rejection | Airborne EW Pod Upgrade | TBD | Share socket-stress test logs | `PLANNED` |
+| **ENG-26** | Prime Integrator 2 (Edge Computing) | Principal Edge Software Engineer | In-memory binary injection bypasses static OS integrity checks | *[Pending Interview]* | IMA / Secure Boot / `fexecve` | Edge Mission Computer Refresh | TBD | Share runtime admission code | `PLANNED` |
+| **ENG-27** | Prime Integrator 3 (Autonomous Systems)| Collaborative Combat Aircraft Lead | Uncrewed swarm nodes require lightweight, dispensable crypto | *[Pending Interview]* | Sub-$5k per-node avionics cost | Air Force CCA Incremental RFP | TBD | Discuss modular architecture | `PLANNED` |
+| **ENG-28** | DAF PEO Digital (Enterprise IT) | Cloud-to-Edge Security Lead | WAN-dependent zero-trust architectures fail at contested edge | *[Pending Interview]* | Zero public IP exposure / mesh | Contested Logistics Architecture | TBD | Review loopback/mesh topology | `PLANNED` |
+| **ENG-29** | NSA CSfC Office | CSfC Client Integration Officer | Commercial-off-the-shelf crypto fails CSfC Annex requirements | *[Pending Interview]* | CSfC Components List criteria | CSfC Modernization Roadmap | TBD | Request pre-validation feedback | `PLANNED` |
+| **ENG-30** | DAF SBIR / STTR Transition Office | SBIR Transition Program Manager | Defense software lacks dual-use commercial sustainability | *[Pending Interview]* | Non-defense commercial enterprise tier | Commercialization Readiness Program | TBD | Present commercial SCADA model | `PLANNED` |
 
 ---
 
-## 4. Standardized 5-Question Discovery Interview Protocol
+## 4. Standardized 5-Question Discovery Inquiry Protocol
 
 Each interview is conducted using a standardized, open-ended technical inquiry protocol designed to elicit verifiable operational requirements:
 
@@ -169,7 +171,7 @@ Each interview is conducted using a standardized, open-ended technical inquiry p
 ## 5. Synthesis Output Trace (Mapping to Task 1 Deliverable D1)
 
 All findings recorded in this ledger synthesize directly into **Deliverable D1 (Day 30)**:
-1. **Validated Mission Problem Statements:** Codified operational pain points across AFLCMC/HN and ACC/A6.
-2. **Tactical Interface & SWaP-C Envelope Specification:** Specific hardware metrics informing the **$15,000 Direct Materials procurement** under Task 2 (Days 31–60).
+1. **Defense Need Evidence:** Validated mission problem statements and customer friction across AFLCMC/HN, AFRL/RI, ACC/A6, and SSC.
+2. **Technical Merit Input:** Tactical interface and SWaP-C specifications dictating the **$11,000 Direct Materials** (hardware modules) and **$4,000 Compute ODC** procurement under Task 2 (Days 31–60).
 3. **Accreditation Strategy:** NSA CSfC and Air Force RMF alignment roadmap.
-4. **Transition Candidate Roster:** Prospective military evaluators for Phase II Letters of Intent / Memoranda of Agreement.
+4. **Commercialization & Transition Pathways:** Prospective military evaluators for Phase II Letters of Intent / Memoranda of Agreement.

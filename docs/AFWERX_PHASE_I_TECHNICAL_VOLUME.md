@@ -449,26 +449,37 @@ The contractor shall conduct a 90-day technical feasibility study and customer d
 ```
 
 ```text
-TODAY
-Laptop-centered laboratory prototype (Lenovo Yoga + Pavilion + Mobile Enclaves)
-        ↓
-measured feasibility evidence
-
-PHASE I
-Customer discovery + representative hardware requirements
-        ↓
-validated transition architecture
-
-PHASE II
-Representative tactical hardware / network emulation
-        ↓
-operationally relevant demonstration
+CURRENT STATE
+───────────────────────────────────────────────────────────────────────────
+Lenovo Yoga 7 (Fedora Linux, C++20 runtime, container isolation,
+TPM-backed testing, controlled socket injection, A4/A5/A6 security testing)
++ HP Pavilion (distributed worker / network-path testing)
++ Pixel / Samsung (mobile operator / hardware enclave test vectors)
+                             ↓
+LABORATORY FEASIBILITY (measured + reproducible empirical evidence)
+                             ↓
+PHASE I CUSTOMER DISCOVERY (Task 1: Days 1–30)
+discover actual operational constraints:
+- target compute architecture (ARM64, x86_64, RISC-V)
+- bus interfaces (MIL-STD-1553, Ethernet, Serial, Link 16)
+- SWaP-C limitations (<35W, constrained physical volume)
+- cryptographic module requirements & trust anchors
+- tactical network conditions (DIL, high packet jitter)
+- accreditation constraints (NSA CSfC, Air Force RMF)
+                             ↓
+REPRESENTATIVE HARDWARE PROCUREMENT (Task 2: Days 31–60)
+Direct Materials ($11,000 FAR 31.205-26) & Cloud/CI Compute ODC ($4,000)
+                             ↓
+PHASE II TRANSITION & OPERATIONAL DEMONSTRATION (Task 3: Days 61–90)
+representative tactical hardware / network emulation
+                             ↓
+operationally relevant airborne / edge demonstration
 ```
 
 * **Task 1: Tactical Customer Discovery & Interface Baselines (Days 1–30):**
   The contractor shall engage candidate Air Force stakeholders (PEO Cyber and Networks, AFRL Information Directorate, Space Systems Command, and avionics primes), conducting at least **≥30 structured interviews** to define operational problem statements, bus protocols, and SWaP-C limitations.
 * **Task 2: ACVP-Compatible Test Bench & Hardware Enclave Integration (Days 31–60):**
-  The contractor shall build an automated ACVP-compatible test harness ingesting official NIST Cryptographic Algorithm Validation Program test vectors for FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA). Using Phase I direct materials funding ($15,000), the contractor shall procure representative edge development hardware, single-board modules, and cryptographic evaluation boards as identified through Task 1 customer discovery to benchmark physical trust anchor integration, throughput, and memory zeroization timing.
+  The contractor shall build an automated ACVP-compatible test harness ingesting official NIST Cryptographic Algorithm Validation Program test vectors for FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA). Utilizing Phase I direct technical resources ($15,000 total: $11,000 physical materials under FAR 31.205-26, $4,000 cloud/CI compute ODC), the contractor shall procure representative edge development hardware, single-board modules, and cryptographic evaluation boards as identified through Task 1 customer discovery to benchmark physical trust anchor integration, throughput, and memory zeroization timing.
 * **Task 3: Phase II Transition Documentation & Demonstration Architecture (Days 61–90):**
   The contractor shall develop the complete technical architecture and flight-demonstration plan for Phase II tactical pod integration, pursue and document customer transition interest (including Letters of Intent or Memoranda of Agreement where obtainable), and author the final comprehensive feasibility report.
 
@@ -527,7 +538,7 @@ Network and adversarial testing is performed through controlled loopback, isolat
 
 This environment has been sufficient to establish laboratory-scale feasibility for memory zeroization, cryptographic admission, fail-closed runtime binding, telemetry behavior, and controlled socket-stress testing. It is not represented as flight-qualified, radiation-hardened, tactical line-rate, or operationally representative Department of the Air Force hardware.
 
-Phase I will use the existing prototype environment as the validated baseline while determining, through customer discovery, the representative compute, interface, SWaP-C, cryptographic-module, and network-emulation hardware required for a Phase II operational demonstration.
+Phase I will use the existing prototype environment as the validated baseline while determining, through customer discovery, the representative compute, interface, SWaP-C, cryptographic-module, and network-emulation hardware required for a Phase II operational demonstration. In summary, QuantumFlex is running on a real multi-node physical prototype environment today, but the present environment is laboratory-grade rather than representative tactical hardware. Phase I explicitly uses customer discovery to determine and procure the representative compute, cryptographic, and network interfaces required for the next-stage demonstration.
 
 ---
 

@@ -17,10 +17,14 @@
 | Cost Element | Basis of Estimate | Allocation | Planned Cost |
 | :--- | :--- | :---: | :---: |
 | **1. Direct Labor** | Principal Investigator (Rahshaun Chambers)<br>320 Direct Project Hours @ $140.625 / hr | 60.00% | **$45,000.00** |
-| **2. Materials & Equipment to be Acquired** | Representative edge compute, cryptographic evaluation modules, and cloud test interfaces | 20.00% | **$15,000.00** |
-| **3. Other Direct Costs (ODC)** | Independent cryptographic pre-assessment review (NVLAP/FIPS 140-3 consultant review) | 6.67% | **$5,000.00** |
+| **2. Direct Materials (FAR 31.205-26)** | Physical edge compute modules, discrete TPM 2.0 evaluation boards, adapters | 14.67% | **$11,000.00** |
+| **3. Other Direct Costs (ODC)** | Cloud broker / CI testing capacity ($4k) + Independent cryptographic review ($5k) | 12.00% | **$9,000.00** |
 | **4. Indirect Costs (G&A / Overhead)** | Operational administration, corporate compliance, legal, telecommunications, and DSIP reporting | 13.33% | **$10,000.00** |
 | **TOTAL PROPOSAL VALUE** | **Planned DAF SBIR Phase I Ceiling** | **100.00%** | **$75,000.00** |
+
+> [!NOTE]
+> **FAR 31.205-26 & SOLICITATION-CONTROLLED CATEGORIZATION NOTICE**  
+> In strict accordance with FAR 31.205-26, tangible parts, subassemblies, and hardware test adapters are segregated under **Direct Materials**, while intangible compute instances, Kafka streaming infrastructure, and CI runner capacity are categorized under **Other Direct Costs (ODC)** alongside independent technical consulting. Final cost-volume category mappings and line items remain subject to the controlling DSIP Volume 3 proposal template instructions upon solicitation release.
 
 ---
 
@@ -37,19 +41,18 @@
   * *Task 3 (Phase II Transition SOW & Final Reporting):* **80 Hours** ($11,250.00)  
     Formulating the Phase II demonstration Statement of Work; pursuing and documenting transition interest; compiling the Final Feasibility Report (incorporating SF 298 and DD Form 882).
 
-### B. Materials & Equipment to be Procured Upon Contract Award ($15,000.00)
-Phase I direct materials funding ($15,000.00) is dedicated to transitioning from the current laptop-centered prototype laboratory to target-representative defense hardware determined through Task 1 customer discovery:
-* **Representative Edge & Avionics Compute Modules ($4,500.00):** Acquisition of target-representative ARM64 and x86_64 industrial compute modules identified by DAF stakeholders for edge environment simulation and performance profiling.
+### B. Direct Materials / Physical Equipment (FAR 31.205-26) ($11,000.00)
+Phase I direct materials funding ($11,000.00) is dedicated to procuring tangible parts, subassemblies, and physical test adapters determined through Task 1 customer discovery, transitioning beyond the laptop-centered prototype laboratory:
+* **Representative Edge & Avionics Compute Modules ($4,500.00):** Acquisition of target-representative ARM64 and x86_64 industrial compute modules (e.g., standard tactical single-board forms) identified by DAF stakeholders for edge environment simulation and performance profiling.
 * **Hardware Security & Cryptographic Evaluation Modules ($3,500.00):** Acquisition of candidate discrete TPM 2.0 evaluation boards, cryptographic interface adapters, and hardware trust anchors specified by operational transition partners.
-* **Specialized Telemetry & Test Harness Compute ($4,000.00):** Dedicated multi-tenant cloud broker instances, isolated Kafka streaming clusters, and automated continuous-integration runners.
-* **Network Stress & Emulation Interfaces ($3,000.00):** Dedicated network test adapters and emulation interfaces for high-throughput packet injection and controlled socket-stress testing on the acquired candidate hardware.
+* **Network Stress & Hardware Emulation Test Adapters ($3,000.00):** Dedicated network test adapters and hardware interfaces for high-throughput packet injection and controlled socket-stress testing on the acquired candidate hardware.
 
-### C. Other Direct Costs — Independent Cryptographic Review ($5,000.00)
-* **Scope:** Engagement of an independent cryptographic consultant with formal NVLAP / FIPS 140-3 laboratory testing expertise.
-* **Objective:** Conduct a pre-assessment code and architectural audit of the automated ACVP test bench, entropy verification routines, and memory zeroization invariants, establishing readiness for formal Phase II accreditation.
+### C. Other Direct Costs (ODC) — Compute Infrastructure & Cryptographic Review ($9,000.00)
+* **Dedicated Cloud Testing & CI Runner Compute ($4,000.00):** Multi-tenant cloud broker instances, isolated Kafka streaming test clusters, and automated continuous-integration runners for reproducible remote verification and telemetry pipeline benchmarking.
+* **Independent Cryptographic Pre-Assessment Review ($5,000.00):** Engagement of an independent cryptographic consultant with formal NVLAP / FIPS 140-3 laboratory testing expertise to conduct a pre-assessment audit of the automated ACVP test bench, entropy verification routines, and memory zeroization invariants, establishing readiness for formal Phase II accreditation.
 
 ### D. Indirect Costs / General & Administrative ($10,000.00)
-* **Rate Basis:** Calculated as a provisional indirect rate of **15.38%** on total direct costs ($65,000.00 direct base).
+* **Rate Basis:** Calculated as a provisional indirect rate of **15.38%** on total direct costs ($65,000.00 direct base: $45,000 labor + $11,000 materials + $9,000 ODC).
 * **Pool Inclusions:** Statutory corporate filings (Pennsylvania annual compliance), SAM.gov registration maintenance, legal, accounting, cloud telecommunications, and government portal administration.
 
 ---

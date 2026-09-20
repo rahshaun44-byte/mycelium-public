@@ -53,9 +53,19 @@
       "planned_total": 75000.00,
       "direct_labor": 45000.00,
       "direct_labor_hours": 320,
-      "direct_materials_and_hardware_procurement": 15000.00,
+      "direct_materials_physical_far_31_205_26": 11000.00,
+      "cloud_compute_testing_odc": 4000.00,
       "independent_cryptographic_review_odc": 5000.00,
-      "indirect_costs_ga": 10000.00
+      "indirect_costs_ga": 10000.00,
+      "categorization_governance": "FAR 31.205-26 compliance; final mappings subject to controlling DSIP Volume 3 schema"
+    },
+    "standalone_sister_repository": {
+      "repository": "rahshaun44-byte/quantumflex",
+      "release_tag": "v2.1.0-integrity-bound",
+      "release_tag_type": "annotated semantic release tag",
+      "commit_hash": "e6d56baa7b6ab99896f11b7b1fa632acbcd4d961",
+      "admission_evidence": "QuantumFlexAdmission.json",
+      "integrity_scope": "A4 raw SHA-256 pre-link hash binding across public headers and runtime libraries"
     },
     "prototype_laboratory_baseline": {
       "type": "laptop-centered physical prototype laboratory",
