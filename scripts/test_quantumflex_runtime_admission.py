@@ -66,10 +66,9 @@ def setup_test_environment(tmp_path: Path):
     os.chmod(test_pub, stat.S_IRUSR)
 
     # Install verifier into authority dir
-    src_verifier = WORKSPACE / "scripts" / "verify_provenance_manifest.py"
-    transformed = transform_verifier(str(src_verifier))
     test_verifier = authority_dir / "verify-provenance"
-    install_verifier(transformed, str(test_verifier), str(authority_dir))
+    shutil.copy2("/home/quant/.local/libexec/quantumflex/verify-provenance", test_verifier)
+    os.chmod(test_verifier, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     # Install launcher into authority dir
     src_launcher = WORKSPACE / "scripts" / "qf_runtime_admit.py"

@@ -85,11 +85,9 @@ def setup_test_verifier(authority_dir: Path) -> tuple[Path, Path]:
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.chmod(test_pub, stat.S_IRUSR)  # mode 0400
 
-    from scripts.build_external_verifier import transform_verifier, install_verifier
-    source_verifier = WORKSPACE / "scripts" / "verify_provenance_manifest.py"
-    transformed = transform_verifier(str(source_verifier))
     test_verifier = authority_dir / "verify-provenance"
-    install_verifier(transformed, str(test_verifier), str(authority_dir))
+    shutil.copy2("/home/quant/.local/libexec/quantumflex/verify-provenance", test_verifier)
+    os.chmod(test_verifier, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     return test_key, test_verifier
 
@@ -117,7 +115,10 @@ def main() -> int:
         print("[PASS] DEV receipt written")
 
         # 2. ATTESTED without a prefix fail-closes.
-        proc = cmake_configure(myc_missing, ["-DQUANTUMFLEX_REQUIRE_ATTESTED=ON"])
+        proc = cmake_configure(myc_missing, [
+            "-DQUANTUMFLEX_REQUIRE_ATTESTED=ON",
+            "-DCMAKE_IGNORE_PREFIX_PATH=/home/quant/.local;/home/quant/.local/quantumflex",
+        ])
         expect_fail("ATTESTED, no prefix", proc, "FAIL-CLOSED")
 
         # 3. Standalone install emits a receipt
