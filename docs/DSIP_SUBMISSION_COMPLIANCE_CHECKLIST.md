@@ -1,90 +1,114 @@
-# 🛡️ DSIP SUBMISSION COMPLIANCE CHECKLIST
+# 🛡️ DSIP SUBMISSION COMPLIANCE CHECKLIST & GATEKEEPER
 ## Department of the Air Force (DAF) / AFWERX SBIR Open Topic Phase I
 
 **Applicant Organization:** FINALLYFUNGUS LLC (PA Entity ID: 13706513) DBA QuantumFlex  
 **Principal Investigator (PI):** Rahshaun Chambers  
 **Proposal Title:** QuantumFlex: Autonomous Post-Quantum Cryptographic Agility, Shock-Absorbing Telemetry & TOCTOU-Immune Engine Admission for National Security Systems  
 **Portal:** Defense SBIR/STTR Innovation Portal ([www.dodsbirsttr.mil/submissions](https://www.dodsbirsttr.mil/submissions))  
-**Award Pathway:** Open Topic Commercial Solutions Opening (CSO) Phase I ($75,000 Fixed Ceiling)  
-**Date of Audit:** September 20, 2026
+**Date of Audit:** September 20, 2026  
+**Commit Baseline:** `239e8eb`
 
 ---
 
-## 1. Administrative Gateway Prerequisites (SAM.gov & Federal Registry)
+## ⚠️ OVERALL GATEKEEPER STATUS: CONDITIONAL / NOT LOCKED
 
-Before creating or finalizing a proposal package in DSIP, ensure all statutory registrations are validated:
+> [!CAUTION]
+> **SUBMISSION READINESS STATUS: BLOCKED / NOT YET LOCKED**  
+> **Final Green Submission Status is REFUSED.**  
+> As of September 19, 2026, the AFWERX funding portal indicates active Specific Topic Release 5 (closing Sep 23) and Release 6 (opening Sep 23) activity, with **no active Open Topic Phase I solicitation currently accepting proposals**. In accordance with federal procurement governance, all solicitation-dependent parameters remain **CONDITIONAL PLACEHOLDERS** and cannot be certified as submission-ready until an official DAF Open Topic solicitation card, deadline, and controlling template revision are published and verified in DSIP.
+
+---
+
+## 1. Solicitation-Controlled Parameter Trace
+
+The table below catalogs every parameter that is strictly controlled by the governing solicitation document. No parameter may be marked as "Green" or "Locked" until verified against the active solicitation.
+
+| Parameter | Proposal Assumption | Controlling Authority | Verification Status | Gate Status |
+| :--- | :--- | :--- | :--- | :---: |
+| **Solicitation Number** | DAF SBIR Open Topic Phase I | DSIP / AFWERX Get Funded Portal | Currently in Specific Topic Releases 5 & 6 | **NOT LOCKED** |
+| **Submission Deadline** | [PENDING OPEN TOPIC RELEASE] | Official Solicitation Instructions | Awaiting Open Topic release schedule | **NOT LOCKED** |
+| **Volume Architecture** | 4 to 7 Volumes depending on release | Controlling Solicitation Document | Varies by solicitation (e.g., 25.5/E vs 24.7/E) | **SOLICITATION-CONTROLLED** |
+| **Technical Volume Format** | 13-Page Designated-Page Template | Official Proposal Template Instructions | Evaluators only evaluate designated pages | **SCAFFOLDED / NOT LOCKED** |
+| **Award Ceiling** | Planned $75,000.00 Fixed Price | Solicitation Topic Instructions | Historically up to $75k; unverified in DSIP | **SOLICITATION-CONTROLLED** |
+| **Appendix Page Allowance** | 10 Pages ([`DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf)) | Solicitation Topic Instructions | Subject to controlling upload rules | **SOLICITATION-CONTROLLED** |
+
+---
+
+## 2. Administrative Gateway Prerequisites (Statutory Registrations)
+
+These items are government-wide prerequisites independent of specific solicitations:
 
 - [x] **State Corporate Registration (Pennsylvania):**
   - *Entity Name:* FINALLYFUNGUS LLC
   - *Entity ID:* `13706513`
   - *Status:* Active / Good Standing in the Commonwealth of Pennsylvania.
-  - *Compliance Action:* File the 2026 Pennsylvania Annual Report via the PA Department of State portal prior to September 30, 2026.
+  - *Imminent Action:* File the 2026 Pennsylvania Annual Report via the PA Department of State portal prior to September 30, 2026.
 - [ ] **System for Award Management (SAM.gov):**
-  - *Unique Entity Identifier (UEI):* Must be active and displayed in SAM.gov profile.
-  - *Commercial and Government Entity (CAGE) Code:* Must be active and linked to the business address in Pittston / Philadelphia, PA.
-  - *NAICS Codes:* Primary `541512` (Computer Systems Design Services) or `541715` (Research and Development in the Physical, Engineering, and Life Sciences).
-  - *FAR / DFARS Certifications:* Completed and current electronic representations and certifications.
+  - *Unique Entity Identifier (UEI):* Must be active and displayed on DSIP profile.
+  - *Commercial and Government Entity (CAGE) Code:* Must be active and linked to the registered entity.
+  - *NAICS Codes:* Primary `541512` (Computer Systems Design) / `541715` (R&D in Physical/Engineering Sciences).
+  - *Representations & Certifications:* Current and validated in SAM.gov.
 - [ ] **Small Business Administration (SBA.gov):**
   - *Small Business Concern (SBC) Registration:* Completed on `SBIR.gov` firm registry.
-  - *SBC ID:* Generated and verified for inclusion on DSIP Volume 1.
-- [ ] **Defense SBIR/STTR Innovation Portal (DSIP) Account:**
-  - Corporate user account verified for FINALLYFUNGUS LLC.
-  - Designated Authorized Representative (AR) and Principal Investigator (PI) roles linked.
+  - *SBC ID:* Active and recorded for Volume 1 entry.
+- [ ] **DSIP Corporate Account:**
+  - Registered firm profile linking Authorized Representative (AR) and Principal Investigator (PI).
 
 ---
 
-## 2. Six-Volume DSIP Submission Package Verification
+## 3. Package Deliverables & Governance Architecture
 
-| Volume | Title / Component | Requirement / Constraint | QuantumFlex Package Asset | Status |
-| :---: | :--- | :--- | :--- | :---: |
-| **Vol 1** | **Proposal Cover Sheet** | Form-generated on DSIP; requires SBC ID, UEI, CAGE, topic selection, and business certifications. | Completed within portal web UI. | **PENDING PORTAL INPUT** |
-| **Vol 2** | **Technical Proposal & Appendix** | **Pitch Deck (15 Slides Max):** Covers problem, solution, architecture, team, and work plan.<br>**Appendix (10 Pages Max):** Empirical data, laboratory benchmarks, and mathematical proofs. | **Pitch Deck (10 Slides):**<br>- [`docs/AFWERX_SBIR_VOLUME_2_SLIDES_1_TO_5.md`](file:///home/quant/mycelium/docs/AFWERX_SBIR_VOLUME_2_SLIDES_1_TO_5.md)<br>- [`docs/AFWERX_SBIR_VOLUME_2_SLIDES_6_TO_10.md`](file:///home/quant/mycelium/docs/AFWERX_SBIR_VOLUME_2_SLIDES_6_TO_10.md)<br>**Technical Appendix (10 Pages):**<br>- [`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf) | **READY FOR SUBMISSION** |
-| **Vol 3** | **Cost Proposal** | Itemized budget up to **$75,000 fixed price** ceiling. Justifies direct labor, materials, and indirect costs. | Detailed budget in [`docs/AFWERX_PHASE_I_WORK_PLAN.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_WORK_PLAN.md):<br>- Labor: $45,000<br>- Hardware/Enclaves: $15,000<br>- Independent Review: $5,000<br>- Indirect / G&A: $10,000 | **READY FOR SUBMISSION** |
-| **Vol 4** | **Company Commercialization Report** | Automatically populated from SBIR.gov / DSIP database. | Confirms early-stage baseline (zero prior Phase II awards; 0% transition rate baseline). | **PORTAL GENERATED** |
-| **Vol 5** | **Supporting Documents & Letters** | Optional/Recommended: Customer discovery target roster or Letters of Support (LOS). | Discovery Target Roster (PEO C3I&N, AFRL/RI, SSC) mapped in [`docs/AFWERX_PHASE_I_WORK_PLAN.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_WORK_PLAN.md). | **READY FOR SUBMISSION** |
-| **Vol 6** | **Fraud, Waste & Abuse (FWA) Training** | Mandatory online video / questionnaire certification for PI and corporate officers. | Annual DoD training module executed directly in DSIP portal. | **PENDING PORTAL INPUT** |
+The proposal repository is partitioned into distinct artifacts to prevent premature certification of unverified procurement assumptions:
 
----
-
-## 3. Formatting, PDF Specification & Demarcation Rules
-
-To prevent automated rejection by DSIP upload filters:
-
-- [x] **File Format:** All uploaded files must be pure PDF (skia/cairo or standard print-to-pdf; zero DRM, zero encryption, zero password protection).
-- [x] **Page Size & Margins:** Standard Letter format (8.5 x 11 inches) with minimum 0.5-inch margins.
-- [x] **Page Budget Compliance:**
-  - *Volume 2 Pitch Deck:* Exactly 10 slides (allowed maximum: 15 slides).
-  - *Volume 2 Appendix (Dossier):* Exactly 10 pages (allowed maximum: 10 pages; verified via `pdfinfo`: 10 pages, 341,792 bytes).
-- [x] **Mandatory Demarcation Statements Included:**
-  - *Distribution Statement A:* Approved for public release; distribution is unlimited.
-  - *CMVP Boundary Disclosure:* Explicit declaration that CMVP certificate status is `NULL` (pre-validation engineering prototype), avoiding false claim liability under federal procurement statutes.
-  - *Entity Grounded Truth:* Strict disclosure of dual-line business structure (FINALLYFUNGUS LLC agricultural baseline vs QuantumFlex R&D initiative).
+| Proposal Asset | File Path | Governance Role | Current Status |
+| :--- | :--- | :--- | :---: |
+| **Claim Ledger** | [`docs/AFWERX_CLAIM_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CLAIM_LEDGER.md) | Substates every empirical metric (0 bytes, 15.01s, 4.651ms, 30/30) to test logs | **VERIFIED** |
+| **Technical Appendix** | [`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf) | 10-page signed empirical due-diligence report | **VERIFIED & COMPILED** |
+| **Technical Volume** | [`docs/AFWERX_PHASE_I_TECHNICAL_VOLUME.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_TECHNICAL_VOLUME.md) | Scaffold for 13-page designated-page template (Release 25.5/E standard) | **SCAFFOLDED (PENDING RELEASE)** |
+| **Customer Discovery Deck** | [`docs/AFWERX_SBIR_CUSTOMER_DISCOVERY_DECK.md`](file:///home/quant/mycelium/docs/AFWERX_SBIR_CUSTOMER_DISCOVERY_DECK.md) | 10-slide internal briefing deck for stakeholder interviews | **ALIGNED (INTERNAL ASSET)** |
+| **Work Plan (SOW)** | [`docs/AFWERX_PHASE_I_WORK_PLAN.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_WORK_PLAN.md) | Formatted to AFWERX SOW schema (Scope, Tasks, Kickoff, Day 45, Day 90) | **ALIGNED** |
+| **Cost Basis** | [`docs/AFWERX_PHASE_I_COST_BASIS.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_COST_BASIS.md) | Itemized $75k budget breakdown ($45k labor, $15k compute, $5k ODC, $10k G&A) | **PLANNED (SUBJECT TO CEILING)** |
 
 ---
 
-## 4. Pre-Submission Execution Runbook
+## 4. Mandatory Regulatory & Technical Demarcation Rules
+
+All proposal assets must strictly adhere to the following demarcation rules:
+
+1. **CNSA 2.0 Scope Precision:**  
+   National Security Systems are entering a staged transition toward post-quantum cryptography under CNSA 2.0 and related federal migration policy, creating an engineering need for crypto-agile systems that can validate, replace, and operationally bind cryptographic components without introducing uncontrolled runtime or supply-chain state. NSA guidance identifies ML-KEM and ML-DSA as the post-quantum public-key algorithms for CNSA 2.0 and establishes a 2027 requirement for new products and services in applicable CSfC contexts, with broader migration milestones extending through 2030–2031 (and NSM-10 targeting 2035 for full NSS migration).  
+   *(Never state "mandatory ML-KEM by 2027 across all NSS").*
+2. **Customer Relationship Scoping:**  
+   Air Force program offices (PEO Cyber and Networks, AFRL Information Directorate, Space Systems Command) must be explicitly designated as **candidate discovery stakeholders**. Never refer to them as confirmed customers, transition sponsors, or partners without executed agreements.
+3. **Month 3 Milestone Scoping:**  
+   The Month 3 milestone must state: *"Pursue and document Phase II transition interest, including LOI/MOA or equivalent customer evidence where obtainable"*. Securing an external government signature cannot be a required contractual success criterion.
+4. **CMVP Demarcation:**  
+   NIST CMVP / CAVP certificates are `NULL`. The system is an internal pre-validation engineering prototype; never imply formal NIST certification.
+
+---
+
+## 5. Unlock Protocol (Path to Green Status)
+
+To transition this checklist from **`CONDITIONAL / BLOCKED`** to **`SUBMISSION-READY GREEN`**, the following four gates must be passed:
 
 ```
-Step 1: Verify SAM.gov Active Status & UEI/CAGE
-        Ensure registration reflects FINALLYFUNGUS LLC in good standing.
+[GATE 1: SOLICITATION VERIFICATION]
+  -> Identify active Open Topic Phase I solicitation number on DSIP.
+  -> Record exact submission deadline and award ceiling in this checklist.
 
-Step 2: Complete 2026 PA Annual Report
-        Submit filing on PA Department of State portal before September 30.
+[GATE 2: TEMPLATE RECONCILIATION]
+  -> Download controlling Technical Volume template from the active solicitation package.
+  -> Populate docs/AFWERX_PHASE_I_TECHNICAL_VOLUME.md into the exact template format.
+  -> Verify designated page boundaries.
 
-Step 3: Access DSIP Portal
-        Navigate to www.dodsbirsttr.mil/submissions and initiate Phase I application.
+[GATE 3: REGISTRATION & COMPLIANCE SIGN-OFF]
+  -> Confirm active SAM.gov UEI and CAGE code profiles.
+  -> Complete 2026 PA Annual Report filing prior to September 30.
 
-Step 4: Upload Volume 2 Documents
-        - Upload compiled Pitch Deck (Slides 1–10).
-        - Attach docs/DUE_DILIGENCE_DOSSIER.pdf as the official Technical Appendix.
-
-Step 5: Fill Volume 1 & Volume 3 Web Forms
-        - Input corporate identifiers on Volume 1.
-        - Enter itemized cost breakdown ($75,000) on Volume 3.
-
-Step 6: Complete Volume 6 FWA Certification
-        Complete the mandatory training checklist.
-
-Step 7: Pre-Submission Review & Sign-Off
-        Conduct visual inspection of generated preview bundle; submit before deadline.
+[GATE 4: PRE-SUBMISSION UPLOAD AUDIT]
+  -> Upload Volume 1 form data.
+  -> Upload Volume 2 PDF (Technical Volume + Appendix).
+  -> Upload Volume 3 Cost Proposal.
+  -> Complete Volume 6 Fraud, Waste & Abuse training.
+  -> Perform visual check on generated DSIP preview bundle.
 ```
