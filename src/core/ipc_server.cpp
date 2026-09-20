@@ -275,6 +275,12 @@ namespace quantumflex::ipc {
             throw std::runtime_error("IPC FATAL: Failed to load CA certificate for verification");
         }
 
+        // Enforce TLS 1.3 minimum protocol version; failure to establish TLS 1.3 floor is fatal
+        if (SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_3_VERSION) != 1) {
+            ERR_print_errors_fp(stderr);
+            throw std::runtime_error("failed to enforce TLS 1.3 minimum protocol version");
+        }
+
         // Enforce strict mTLS: Fail if the client doesn't present a CA-signed cert
         SSL_CTX_set_verify(ssl_ctx_, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
     }
