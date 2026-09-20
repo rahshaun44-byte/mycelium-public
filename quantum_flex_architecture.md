@@ -48,3 +48,7 @@
 - **Protocol:** Configuration drift and architecture manifests are tracked via local Git. Upon verified system state modification, a deterministic commit is generated and pushed to the remote decentralized ledger (Git over Tailscale SSH), ensuring the swarm's memory is backed up off-node securely.
 
 **OPERATIONAL PROTOCOL:** Before executing commands, read this document. Do not hallucinate paths or use Docker. We use rootless Podman and Systemd user services (`loginctl enable-linger`).
+
+The organism / thermodynamic-cycle essay (\(Y = f(x-h)+k\)) is the named
+operating method, not a hardware claim. Map, NULLs, and the Ghost Node
+name collision: `docs/LIVING_COMPUTATION_CYCLE.md`.

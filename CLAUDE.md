@@ -33,6 +33,9 @@ CMake package (`QuantumFlex::runtime`). Mycelium admits that package
 `add_subdirectory(quantumflex)` and writes `QuantumFlexAdmission.dev.json`.
 The package builds standalone (`cmake -S quantumflex`) with OpenSSL 3.5 only —
 no Postgres. See `quantumflex/README.md` and `docs/CRYPTO_LIBRARY_CARVEOUT.md`.
+The organism-cycle map (what is live vs NULL) is
+`docs/LIVING_COMPUTATION_CYCLE.md`. Do not treat AQFP, Seebeck, or LT
+fountain codes as running components.
 `src/core/` still uses `file(GLOB ... CONFIGURE_DEPENDS)`. There is no CTest suite; "verified"
 in this repo currently means compiled clean and exercised manually against a live Postgres
 instance (see `src/core/bae_node.cpp` for the pattern: build, then actually run it against
