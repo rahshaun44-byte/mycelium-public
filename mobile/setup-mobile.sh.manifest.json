@@ -1,0 +1,8 @@
+{
+  "artifact": "setup-mobile.sh",
+  "schema": "quantumflex-mobile-distribution-v1",
+  "sha256": "59cdd5057498ff1fd769aa9eabbdeef009291a84db5f6df5c4d6e3cbc5968e45",
+  "signed_at": 1789870183,
+  "size_bytes": 6037,
+  "version": "2.6.0-qf-m1"
+}
