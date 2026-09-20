@@ -49,6 +49,8 @@
 
 **OPERATIONAL PROTOCOL:** Before executing commands, read this document. Do not hallucinate paths or use Docker. We use rootless Podman and Systemd user services (`loginctl enable-linger`).
 
-The organism / thermodynamic-cycle essay (\(Y = f(x-h)+k\)) is the named
-operating method, not a hardware claim. Map, NULLs, and the Ghost Node
-name collision: `docs/LIVING_COMPUTATION_CYCLE.md`.
+The organism / thermodynamic-cycle essay is **philosophy**
+(\(Y = f(x-h)+k\)). The engineering spec is
+\(Y_t = F(A(x_t,k_t),k_t)\) with Ghost re-admission and
+\(H_{\mathrm{attack}}=0\): `docs/LIVING_COMPUTATION_CYCLE.md`.
+Plane C (AQFP, Seebeck, DNA storage) is research, not this node.

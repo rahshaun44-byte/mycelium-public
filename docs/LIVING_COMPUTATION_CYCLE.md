@@ -1,112 +1,183 @@
-# Living computation cycle — named method, actual estate
+# Living computation cycle — frozen architecture
 
-QuantumFlex is not a quantum computer, an AQFP chip, or a thermoelectric
-organism. The organism diagram is the **named operating method**:
+**Classification:** a bio-thermodynamically inspired, fail-secure
+computing architecture with a speculative physical-computing research
+layer.
+
+That distinction is load-bearing. Reviewers who circle “bit flips are
+mathematically barred” and write “no” are correct. Those claims are not
+part of deployable QuantumFlex.
+
+**Philosophy (human-readable):**
 
 \[
 Y = f(x - h) + k
 \]
 
-Possibility stays wide internally. Authority, execution, state, and
-external effects collapse through evidence-backed boundaries. Missing
-validation evidence is HALT, not a manufactured pass.
-
-This file maps the essay onto what this repository and host actually
-are. Metaphor that has no running referent is marked **NULL**. Do not
-treat a NULL row as a QF-A5 artifact or as admission evidence.
-
-Related facts: `quantum_flex_architecture.md` (swarm units and ports),
-`docs/HOST_TRUST_ANCHOR.md` (QF-R2), `docs/MLKEM_STRICT_MIGRATION.md`
-(live KEM), `docs/ASSURANCE_LEVELS.md` (QF-A1–A5).
-
-## The security property that is real
-
-> The repository supplies the object being verified. It does not supply
-> the key that determines whether that object is trusted.
-
-That is \(k\) on this host today: `~/.local/libexec/quantumflex/` holds
-the judge and the pinned public key. The mycelium tree holds the
-manifest, signature sidecar, and artifacts. Isolation from git is **not**
-a same-user trust boundary.
-
-## Name collisions (pin these)
-
-| Name in the essay | What it is **not** | What it is **here** |
-| --- | --- | --- |
-| Ghost Node | The retired packet-sniffer (`/opt/ghost-node/ghost-agent.py`, `sentinel/decision_gate.py` — removed 2026-08-06) | Isolated fail-closed path for non-admitted flux: OPA `TOXIC`/`NONE`, engine `QUARANTINE`, forensic lockdown. Do not re-enable the sniffer and call it metabolism. |
-| `ghostnode` | The sink | Postgres admin role on `telemetry` (`127.0.0.1:5432`) |
-| Quantum / lattice | A quantum processor | Architectural state-collapse + **ML-KEM-768** (FIPS 203) on OpenSSL 3.5. Live IPC rejects legacy Frodo message types. |
-| Film / aperiodic crystal | DNA hardware | OPA/Wasm membrane + QF-A5 provenance gate + mTLS listener |
-
-## Cycle map
-
-```
-INGRESS x
-  packets, telemetry, unit start, model output
-        │
-        ▼
-APERIODIC GATEKEEPER  α  (admit / slide off)
-        │
-   ┌────┴────┐
-x-h         h
-   │         │
-   ▼         ▼
-f(·)        SINK
-laminar     fail-closed / quarantine / evidence
-   │         │
-   └────┬────┘
-        ▼
-GROUND k  (host pin, not the repo)
-        ▼
-Y  one allowed external state
-```
-
-| Essay box | \(Y=f(x-h)+k\) | Running referent | Status |
-| --- | --- | --- | --- |
-| Ingress flux \(x\) | \(x\) | Loopback services, intake, IPC `9444`, systemd start, Q1 telemetry | LIVE (host-local; not a public membrane) |
-| Aperiodic gatekeeper | \(\alpha\), first cut of \(h\) | `pqc-immune-daemon/membrane_health.rego` + Wasm; `host-trust/verify-provenance` as ExecStartPre; Quadlet `DropCapability=ALL` / `ReadOnly=true` | PARTIAL. Provenance judge is host-side. Yoga lock still requires a known-good tree (`docs/QF_R2_OPERATOR_RUNBOOK.md`). |
-| Zero-adhesion rejection | \(h\) slides off | Fail-closed: empty OPA → deny; signature/hash mismatch → exit 1, process never starts | LIVE for those gates. Packets do not “physically fail to etch”; the kernel still sees sockets. |
-| CBF \(\alpha(T,S)\), \(T \le T_{\mathrm{crit}}\) | thermal governor | Sentinel Euclidean drive \(D\) and `amara-predict` CPU shares | LIVE, coarse. No Q16.16 CBF, no Johnson-Nyquist ceiling as an enforced invariant. |
-| Laminar core \(f(\cdot)\) | \(f\) | `quantumflex/` (`QuantumFlex::crypto` / `::wire` / `::runtime`); `quantum_flex_engine`; swarm workers on `task_queue` | LIVE software. **AQFP, incompressible Navier-Stokes, LT fountain, DNA homopolymer codec: NULL.** |
-| Ghost Node sink | isolated \(h\) | OPA TOXIC halt; `SystemState` `QUARANTINE`/`LOCKDOWN_*`; `ForensicLockdown` (default dry-run) | PARTIAL. Not Bennett uncomputation. Not a Landauer shock absorber. |
-| Recovered \(\Delta x\) recirculated | distillation | Intake ledger + Q1 replay db (`/state` tmpfs vs `/app/data`) | PARTIAL. Repair of malformed packets is not a second distillation pass. |
-| Residue → TRNG → KEM | cryptographic fuel | OpenSSL CSPRNG / `MLKem768Engine`. Immune daemon fallback is policy-driven, not attack-energy harvesting | LIVE KEM. **Attack-to-Gaussian-error pipeline: NULL.** FrodoKEM is legacy/research, not the IPC KEM. |
-| Homeostatic ground \(k\) | \(k\) | Host trust anchor (pinned Ed25519 pub + judge); LUKS; user-namespace keep-id; dual-role Postgres | PARTIAL. **Seebeck TEG harvest: NULL.** |
-| Invariant \(Y\) | \(Y\) | Admitted execution only: signed manifest + matching artifacts, or the process does not start | INTENDED. This branch is **not** a known-good QF-A5 tree (4/13 hash mismatch). |
-
-## What \(h\) is on this host (measurable)
-
-Before QF-R2: verifier and key inside the judged tree, floating image
-tags, SELinux label disable, unproven egress, mutable runtime.
-
-Removed or bounded: rootless user, capabilities dropped in the Quadlet
-*template*, read-only bind of `/app`, loopback publish, provenance gate
-*designed* outside the repo.
-
-Still open: QF-R1 SELinux, QF-R3 digest pin, QF-R4 egress, same-user
-libexec rewrite, dirty QF-A5 tree.
+**Engineering specification:**
 
 \[
-h \rightarrow \text{measurable, bounded, observable}
+Y_t = F\bigl(A(x_t, k_t), k_t\bigr)
 \]
 
-not \(h = 0\).
+Admission is not arithmetic subtraction:
 
-## What this document forbids
+\[
+A(x,s) \rightarrow (x_a, x_q)
+\]
 
-- Implementing AQFP, Seebeck arrays, LT fountain meshes, or a DNA
-  codec because the essay named them. Those stay NULL until there is
-  hardware, a signed artifact, and a judge that is not the defendant.
-- Re-enabling `/opt/ghost-node` or `decision_gate.py` and calling it
-  the metabolic engine.
-- Treating FrodoKEM-976 as the live IPC KEM. Wire types `0x12`/`0x13`/`0x14`
-  are ML-KEM-768; legacy `0x02`/`0x03` are rejected.
-- Claiming FIPS 140-3, CMVP, or QF-A4 extraction. QF-A4 remains NULL.
-- Regex-transforming `scripts/verify_provenance_manifest.py` into the
-  host judge. It is a pointer. See `scripts/assert_host_trust_source.py`.
+\(x_a\) is admitted input. \(x_q\) is quarantined input. \(s\) is
+measured system state (folded into \(k_t\) below). The Ghost path is:
 
-## Collapse still in force
+\[
+G(x_q, k_t) \rightarrow (\Delta x, r)
+\qquad
+\Delta x \not\rightarrow f
+\qquad
+\Delta x \rightarrow A(\Delta x, k_t)
+\]
 
-Mycelium governs. QuantumFlex implements crypto and QFXK. The host
-judge admits. Observation (Q1) does not confer authority. UNKNOWN ≠
-ALLOW.
+**Recovery never grants authority. Recovery only creates another
+admission candidate.**
+
+**Observation may change knowledge. It may never create authority.**
+
+Missing validation evidence is HALT, not a manufactured pass. Do not
+treat a **NULL** row as a QF-A5 artifact.
+
+Related: `quantum_flex_architecture.md`, `docs/HOST_TRUST_ANCHOR.md`,
+`docs/MLKEM_STRICT_MIGRATION.md`, `docs/ASSURANCE_LEVELS.md`,
+`docs/QF_R2_OPERATOR_RUNBOOK.md`.
+
+## Invariant \(k\)
+
+\(k\) is not an additive constant. It is the invariant state vector:
+
+\[
+k =
+\{
+K_{\mathrm{trust}},\
+P_{\mathrm{policy}},\
+B_{\mathrm{thermal}},\
+R_{\mathrm{provenance}},\
+I_{\mathrm{identity}},\
+C_{\mathrm{crypto}}
+\}
+\]
+
+| Slice | Meaning here | Status |
+| --- | --- | --- |
+| \(K_{\mathrm{trust}}\) | Host judge + pinned Ed25519 pub under `~/.local/libexec/quantumflex/` | PARTIAL (template + installer exist; Yoga lock needs a known-good tree) |
+| \(P_{\mathrm{policy}}\) | `membrane_health.rego` / Wasm; empty OPA → deny | LIVE |
+| \(B_{\mathrm{thermal}}\) | Sentinel Euclidean \(D\), `amara-predict` CPU shares | LIVE, coarse. Not a proven \(T < T_{\mathrm{crit}}\) bit-flip barrier |
+| \(R_{\mathrm{provenance}}\) | QF-A5 manifest + `SIGNATURE_B64=` sidecar | LIVE format; **this branch is not known-good** (4/13 hash mismatch) |
+| \(I_{\mathrm{identity}}\) | mTLS CN, Shamir unlock, user-namespace keep-id | PARTIAL |
+| \(C_{\mathrm{crypto}}\) | OpenSSL 3.5 **ML-KEM-768** IPC (`0x12`/`0x13`/`0x14`); Frodo types rejected | LIVE. Not FIPS 140-3 / CMVP |
+
+**Property \(K_{\mathrm{trust}}\) can actually state:** the repository
+supplies the object being verified. It does not supply the key that
+determines whether that object is trusted. Isolation from git is not a
+same-user trust boundary.
+
+## The flow that survives audit
+
+```
+UNTRUSTED INGRESS x
+        │
+        ▼
+ADMISSION A(x, k)     policy + parser + envelope
+        │
+   ┌────┴────┐
+ xa          xq
+   │          │
+   ▼          ▼
+ f(xa, k)    GHOST G(xq, k)   isolated only
+   │          │
+   │          Δx  (candidate only)
+   │          │
+   │          ▼
+   │     RE-ADMISSION A(Δx, k)
+   │          │
+   └────┬─────┘
+        ▼
+      k  then  Y
+```
+
+Credited entropy is a **separate** path. Ghost residue does not join it:
+
+```
+Physical noise source → health tests → conditioning → approved RBG/DRBG
+        ├─► ML-KEM-768
+        └─► FrodoKEM (research/legacy only; not live IPC)
+
+Ghost / attack residue ──► telemetry / optional auxiliary mixer
+                           credited entropy H_attack = 0
+```
+
+Security must hold if the attacker controls every bit of that auxiliary
+pool (SP 800-90B/90C posture). Collect noise. Do not credit it.
+
+## Three planes (freeze)
+
+| Plane | What it is | Helium required |
+| --- | --- | --- |
+| **A — deployable** | Admission, signed provenance, OPA/Wasm, rootless Podman, fail-closed gates, append-only receipts, ML-KEM-768, isolated Ghost analysis, Q1 telemetry, replay vs ledger split, re-admission | No |
+| **B — measurable physical control** | \( \alpha = g(T,V,P,E,\text{queue},\text{error}) \), \(0 \le \alpha \le 1 \): telemetry that actually throttles or isolates | Commodity sensors; not implemented as a single CBF yet |
+| **C — research** | AQFP/RQFP, Bennett uncomputation on reversible substrates, TEG harvest, DNA/molecular storage, characterized noise sources | Future substrate. Not properties of Yoga/Fedora |
+
+Plane C ideas are design languages and substrate mappings. They are not
+proofs about the current node.
+
+## Name collisions
+
+| Name | Not this | This |
+| --- | --- | --- |
+| Ghost Node | Retired sniffer `/opt/ghost-node`, `sentinel/decision_gate.py` (removed 2026-08-06) | Isolated analysis of \(x_q\). Outputs have **zero authority** until \(A(\Delta x, k)\) |
+| `ghostnode` | The sink | Postgres admin role on `telemetry` (`127.0.0.1:5432`) |
+| Quantum / lattice | A quantum processor | State-collapse method + ML-KEM-768 |
+
+## Physics and cryptography audit (do not re-inflate)
+
+| Claim | Audit | QuantumFlex interpretation |
+| --- | --- | --- |
+| OPA as aperiodic membrane | Analogy | Policy defines admissible structure. Software still parses hostile input. Isolation and a small attack surface are required. |
+| Invalid packets “cannot etch” | Too strong | They still exercise parsers, kernels, runtimes, policy engines. |
+| Navier-Stokes = packet storms | Model, not equivalence | Congestion/anomaly as dissipative-flow analogy. |
+| AQFP ultra-low energy | Real research | Plane C only. |
+| Bennett uncomputation, zero heat | Only on reversible physical machines | Inverse ops on CMOS are not thermodynamically reversible. |
+| Reversible ops avoid Landauer cost | Qualified | In principle for logically reversible ops; practical machines still dissipate; erasure still costs. |
+| Uncomputation kills power side channels | **False** | Timing, EM, power, implementation leakage remain. |
+| Attack residue drives the TRNG | **Unsafe** | \(H_{\mathrm{attack}} = 0\) for credited entropy. |
+| FrodoKEM uses small LWE errors | Correct as crypto | Legacy/research here; not live IPC. |
+| ML-KEM-768 needs discrete Gaussians | **Incorrect** | Centered binomial sampling. Fresh approved RBG (FIPS 203). |
+| ML-KEM from refined hostile noise | **No** | Randomness secrecy is a security assumption. |
+| LT decode instantly at \(K(1+\varepsilon)\) | Too deterministic | Probabilistic; ripple can empty. Use only if the network model justifies erasure coding (Plane A optional). |
+| Homopolymer ≤3 / ~50% GC | DNA-storage specific | No automatic win for ordinary packets. |
+| TEG powers boundary sensors | Possible, not guaranteed | Plane C. Low-\(\Delta T\) power can be negligible. |
+| \(T < T_{\mathrm{crit}}\) bars bit flips | **False** | Lowers thermal-noise contribution. Does not eliminate radiation, supply noise, defects, EMI, metastability. |
+| \(k\) physically anchors modulus \(q\) | Conceptual only | Parameters and trust roots are logical invariants. |
+
+## Plane A map (this estate)
+
+| Box | Referent | Status |
+| --- | --- | --- |
+| \(x\) | Loopback services, intake, IPC `:9444`, systemd start, Q1 | LIVE, host-local |
+| \(A\) | OPA/Wasm; `host-trust/verify-provenance` ExecStartPre; Quadlet capability drop / read-only (template) | PARTIAL. Yoga lock not done |
+| \(x_q\) / Ghost | OPA `TOXIC`/`NONE`; `QUARANTINE`/`LOCKDOWN_*`; `ForensicLockdown` (default dry-run) | PARTIAL. Not Bennett. Not a key factory |
+| \(\Delta x \rightarrow A\) | Intake / replay may produce candidates; they do not skip provenance or policy | INTENDED. Do not wire Ghost output into `f` |
+| \(f\) | `quantumflex/` runtime, `quantum_flex_engine`, swarm `task_queue` | LIVE software |
+| \(Y\) | Admitted execution only | INTENDED. This branch must not start as if verified |
+
+## What this freeze forbids
+
+- Crediting adversarial or Ghost residue as KEM entropy.
+- Feeding \(\Delta x\) into \(f\) without \(A(\Delta x, k_t)\).
+- Stating bit flips are mathematically impossible under a temperature cap.
+- Treating Plane C substrates as properties of Fedora/Yoga.
+- Re-enabling the retired sniffer and calling it the Ghost path.
+- Using FrodoKEM-976 as the live IPC KEM.
+- Claiming FIPS 140-3, CMVP, or QF-A4 extraction (still NULL).
+- Regex-transforming `scripts/verify_provenance_manifest.py` (pointer, not judge).
+
+Mycelium governs. QuantumFlex implements crypto and QFXK. The host judge
+admits. Q1 observes. UNKNOWN ≠ ALLOW.
