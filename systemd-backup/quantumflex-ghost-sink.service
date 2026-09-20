@@ -1,0 +1,18 @@
+[Unit]
+Description=QuantumFlex Ghost Node Anomaly Sink (Isolated Loopback)
+After=network.target
+
+[Service]
+Type=simple
+Environment=SINK_LISTEN_ADDR=127.0.0.1:19443
+Environment=SINK_ALLOW_UNBOUND=0
+Environment=SINK_STORAGE_PATH=%h/.local/share/quantumflex/ghost_sink
+ExecStart=%h/mycelium/quantumflex-ghost-sink/target/release/quantumflex-ghost-sink
+Restart=on-failure
+RestartSec=3
+LimitCORE=0
+StandardOutput=append:%h/.local/state/quantum-flex-mycelium/ghost-sink.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target
