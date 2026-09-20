@@ -44,6 +44,8 @@ def write_signed_tree(
     *,
     extra_rel: str | None = None,
     key_id: str | None = None,
+    plane: str = "host-release-a5",
+    schema_version: str | None = None,
 ) -> Path:
     release = root / "release"
     release.mkdir(parents=True)
@@ -68,15 +70,14 @@ def write_signed_tree(
 
     manifest = {
         "artifacts": listed,
-        "schema_version": "2.1.0",
+        "schema_version": schema_version or ("2.2.0" if key_id else "2.1.0"),
         "predicate_type": "https://slsa.dev/provenance/v1",
     }
     if key_id:
-        manifest["schema_version"] = "2.2.0"
         manifest["signing"] = {
             "algorithm": "Ed25519",
             "key_id": key_id,
-            "plane": "host-release-a5",
+            "plane": plane,
         }
     manifest_path = release / "PROVENANCE_MANIFEST.json"
     body = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
@@ -213,6 +214,79 @@ def main() -> int:
             "wrong-plane key_id FAIL-CLOSED (no key search)",
             labeled.returncode != 0 and "No key search" in (labeled.stdout + labeled.stderr),
             labeled.stdout + labeled.stderr,
+        )
+
+        good22 = tmp_path / "schema22"
+        good22.mkdir()
+        pub22 = write_signed_tree(
+            good22,
+            {"payloads/hello.txt": b"trusted-bytes\n"},
+            key_id="mycelium-a5-ed25519-v1",
+        )
+        dest22 = tmp_path / "libexec-22"
+        install_anchor(dest22, pub22)
+        dest22.chmod(0o700)
+        ok22 = run(
+            [
+                str(dest22 / "verify-provenance"),
+                str(good22 / "release" / "PROVENANCE_MANIFEST.json"),
+                "--repo-root",
+                str(good22),
+            ]
+        )
+        expect(
+            "schema 2.2.0 with matching key_id ALLOW",
+            ok22.returncode == 0 and "TRUSTED -> ALLOW EXECUTION" in ok22.stdout,
+            ok22.stdout + ok22.stderr,
+        )
+
+        stripped = tmp_path / "downgrade"
+        stripped.mkdir()
+        pub_d = write_signed_tree(
+            stripped,
+            {"payloads/hello.txt": b"trusted-bytes\n"},
+            schema_version="2.2.0",
+        )
+        dest_d = tmp_path / "libexec-down"
+        install_anchor(dest_d, pub_d)
+        dest_d.chmod(0o700)
+        down = run(
+            [
+                str(dest_d / "verify-provenance"),
+                str(stripped / "release" / "PROVENANCE_MANIFEST.json"),
+                "--repo-root",
+                str(stripped),
+            ]
+        )
+        expect(
+            "schema 2.2.0 without key_id does not fall back to 2.1.0",
+            down.returncode != 0 and "No 2.1.0 fallback" in (down.stdout + down.stderr),
+            down.stdout + down.stderr,
+        )
+
+        mixed = tmp_path / "downgrade-21"
+        mixed.mkdir()
+        pub_m = write_signed_tree(
+            mixed,
+            {"payloads/hello.txt": b"trusted-bytes\n"},
+            key_id="mycelium-a5-ed25519-v1",
+            schema_version="2.1.0",
+        )
+        dest_m = tmp_path / "libexec-21mix"
+        install_anchor(dest_m, pub_m)
+        dest_m.chmod(0o700)
+        mix = run(
+            [
+                str(dest_m / "verify-provenance"),
+                str(mixed / "release" / "PROVENANCE_MANIFEST.json"),
+                "--repo-root",
+                str(mixed),
+            ]
+        )
+        expect(
+            "schema 2.1.0 carrying 2.2.0 identity fields is not a downgrade path",
+            mix.returncode != 0 and "No protocol downgrade" in (mix.stdout + mix.stderr),
+            mix.stdout + mix.stderr,
         )
 
         (fixture / "payloads" / "hello.txt").write_bytes(b"tampered\n")

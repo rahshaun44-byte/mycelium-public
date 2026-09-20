@@ -83,9 +83,9 @@ jobs:
         
       - name: Refuse mycelium-a5 private key in Actions
         run: |
-          # Prod A5 is an offline ceremony. Cosign OIDC below is a different plane.
-          if env | grep -E '^(QF_RELEASE_KEY|QF_RELEASE_KEY_PATH)=' >/dev/null; then
-            echo "HARD STOP: mycelium-a5-ed25519-v1 private key must not enter GitHub Actions."
+          # Prod A5 is Vault Transit / openssl-file offline. Cosign OIDC is a different plane.
+          if env | grep -E '^(QF_RELEASE_KEY|QF_RELEASE_KEY_PATH|VAULT_TOKEN)=' >/dev/null; then
+            echo "HARD STOP: mycelium-a5-ed25519-v1 ceremony material must not enter GitHub Actions."
             exit 1
           fi
 

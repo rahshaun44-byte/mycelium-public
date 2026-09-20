@@ -29,6 +29,8 @@ TRUST_ANCHOR_DIR = Path(__file__).resolve().parent
 DEFAULT_KEY_PATH = TRUST_ANCHOR_DIR / "release_signing_key.pub"
 # Single pin. Never iterate a keyring. Historical 2.1.0 omits key_id.
 PINNED_KEY_ID = os.environ.get("QF_SIGNING_KEY_ID", "mycelium-a5-ed25519-v1")
+PINNED_PLANE = os.environ.get("QF_SIGNING_PLANE", "host-release-a5")
+ALLOWED_PINS = frozenset({("host-release-a5", "mycelium-a5-ed25519-v1")})
 
 
 def compute_sha256(filepath: Path) -> str:
@@ -99,14 +101,50 @@ def declared_key_id(manifest_data: object, sidecar: dict[str, str]) -> str | Non
     return mid or sid
 
 
-def enforce_single_pin(declared: str | None, pinned: str) -> None:
-    if declared is None:
+def enforce_schema_and_pin(
+    manifest_data: object, sidecar: dict[str, str], pinned_key_id: str, pinned_plane: str
+) -> None:
+    if not isinstance(manifest_data, dict):
+        sys.exit("[!] ADMISSION DENIED: Manifest JSON is not an object.")
+
+    schema = manifest_data.get("schema_version")
+    signing = manifest_data.get("signing")
+    signing_dict = signing if isinstance(signing, dict) else {}
+
+    if schema == "2.2.0":
+        key_id = signing_dict.get("key_id") if isinstance(signing_dict.get("key_id"), str) else None
+        plane = signing_dict.get("plane") if isinstance(signing_dict.get("plane"), str) else None
+        sidecar_id = sidecar.get("KEY_ID") or None
+        if not key_id or not plane or not sidecar_id:
+            sys.exit(
+                "[!] ADMISSION DENIED: schema 2.2.0 requires signing.key_id, "
+                "signing.plane, and sidecar KEY_ID. No 2.1.0 fallback."
+            )
+        if key_id != sidecar_id:
+            sys.exit(
+                f"[!] ADMISSION DENIED: key_id mismatch manifest={key_id!r} sidecar={sidecar_id!r}"
+            )
+        if (plane, key_id) not in ALLOWED_PINS:
+            sys.exit(
+                f"[!] ADMISSION DENIED: ({plane!r}, {key_id!r}) is not in the pin whitelist. "
+                "No key search."
+            )
+        if key_id != pinned_key_id or plane != pinned_plane:
+            sys.exit(
+                f"[!] ADMISSION DENIED: key_id/plane {key_id!r}/{plane!r} is not this "
+                f"verifier's pin {pinned_key_id!r}/{pinned_plane!r}. No key search."
+            )
         return
-    if declared != pinned:
-        sys.exit(
-            f"[!] ADMISSION DENIED: key_id {declared!r} is not this verifier's pin "
-            f"{pinned!r}. No key search."
-        )
+
+    if schema == "2.1.0":
+        if signing_dict.get("key_id") or sidecar.get("KEY_ID"):
+            sys.exit(
+                "[!] ADMISSION DENIED: schema 2.1.0 payload carries 2.2.0 identity fields. "
+                "No protocol downgrade."
+            )
+        return
+
+    sys.exit(f"[!] ADMISSION DENIED: unsupported schema_version={schema!r}")
 
 
 def find_signature(manifest_path: Path) -> Path:
@@ -185,7 +223,11 @@ def _verify_ed25519_openssl(manifest_path: Path, sig_bytes: bytes, key_path: Pat
 
 
 def verify_manifest(
-    manifest_path: Path, repo_root: Path | None, key_path: Path, pinned_key_id: str
+    manifest_path: Path,
+    repo_root: Path | None,
+    key_path: Path,
+    pinned_key_id: str,
+    pinned_plane: str,
 ) -> int:
     manifest_path = manifest_path.resolve()
     if not manifest_path.is_file():
@@ -206,7 +248,7 @@ def verify_manifest(
     except Exception as exc:
         sys.exit(f"[!] ADMISSION DENIED: Manifest JSON malformed: {exc}")
 
-    enforce_single_pin(declared_key_id(manifest_data, sidecar), pinned_key_id)
+    enforce_schema_and_pin(manifest_data, sidecar, pinned_key_id, pinned_plane)
 
     artifacts = manifest_data.get("artifacts", {})
     if not isinstance(artifacts, dict) or not artifacts:
@@ -263,8 +305,15 @@ def main() -> int:
         default=PINNED_KEY_ID,
         help="Single allowed signing.key_id (default mycelium-a5-ed25519-v1). No keyring.",
     )
+    parser.add_argument(
+        "--plane",
+        default=PINNED_PLANE,
+        help="Single allowed signing.plane (default host-release-a5).",
+    )
     args = parser.parse_args()
-    return verify_manifest(args.manifest, args.repo_root, args.key.resolve(), args.key_id)
+    return verify_manifest(
+        args.manifest, args.repo_root, args.key.resolve(), args.key_id, args.plane
+    )
 
 
 if __name__ == "__main__":

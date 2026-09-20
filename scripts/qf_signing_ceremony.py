@@ -11,6 +11,7 @@ This module is the in-repo ceremony helper. The host judge
 
 from __future__ import annotations
 
+import base64
 import json
 from typing import Any
 
@@ -37,6 +38,14 @@ PLANES: dict[str, dict[str, str]] = {
 }
 
 HOST_A5_KEY_ID = PLANES["host-release-a5"]["key_id"]
+HOST_A5_PLANE = "host-release-a5"
+
+# Verifier whitelist: exact (plane, key_id). Never a keyring.
+ALLOWED_PINS: frozenset[tuple[str, str]] = frozenset(
+    {
+        (HOST_A5_PLANE, HOST_A5_KEY_ID),
+    }
+)
 
 
 def canonical_manifest_bytes(obj: Any) -> bytes:
@@ -99,3 +108,26 @@ def pin_matches(declared: str | None, pinned: str) -> bool:
     if declared is None:
         return True
     return declared == pinned
+
+
+def vault_sign_input_b64(message: bytes) -> str:
+    """Vault transit/sign input: Base64 of the *raw* message.
+
+    Ed25519 (RFC 8032) is not Ed25519ph. Do not SHA-256 the manifest first.
+    """
+    return base64.b64encode(message).decode("ascii")
+
+
+def parse_vault_signature(signature_field: str) -> bytes:
+    """Vault returns vault:<key-version>:<payload>. Payload is Base64 of 64 raw bytes."""
+    parts = signature_field.strip().split(":")
+    if len(parts) < 3 or parts[0] != "vault":
+        raise ValueError(f"unexpected Vault signature field: {signature_field!r}")
+    raw = base64.b64decode(parts[-1])
+    if len(raw) != 64:
+        raise ValueError(f"Vault Ed25519 signature is not 64 bytes ({len(raw)})")
+    return raw
+
+
+def schema_enforces_key_id(schema: object) -> bool:
+    return schema == "2.2.0"

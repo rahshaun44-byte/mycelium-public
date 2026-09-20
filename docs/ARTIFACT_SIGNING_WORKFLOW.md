@@ -21,8 +21,12 @@ This file is only the signing plane.
 4. **CANONICALIZE** — `json.dumps(..., indent=2, sort_keys=True) + "\n"`
    (`scripts/qf_signing_ceremony.py`). Encode once, then sign those bytes.
    Sidecar `TIMESTAMP=` is unsigned.
-5. **SIGN** — offline Ed25519 (`openssl pkeyutl -sign -rawin`). Private
-   key never in git or GitHub Actions.
+5. **SIGN** — RFC 8032 Ed25519 over the **on-disk** canonical bytes
+   (`prehashed=false`). Backends: `openssl-file` or Vault Transit
+   (`--backend vault-transit`). Never SHA-256-then-sign. Never mint a
+   new Transit key under `mycelium-a5-ed25519-v1` if the pin already
+   exists — BYOK import only (`docs/VAULT_TRANSIT_A5.md`).
+   Private key / ceremony token never in git or GitHub Actions.
 6. **PUBLISH** — artifacts + manifest + detached `.sig` (`SIGNATURE_B64=`,
    optional `KEY_ID=`).
 7. **VERIFY** — one pinned pubkey, one `key_id`. No keyring search.
@@ -78,15 +82,18 @@ a replacement for the offline pin.
 - Unsigned admission for a remote prefix → keep `signed: false` until
   the export ceremony exists.
 - Same key for mobile and A5 → separate `key_id`s.
-- “Try all keys” → `enforce_single_pin`; mismatch is deny.
+- “Try all keys” → `(plane, key_id)` whitelist (`ALLOWED_PINS`);
+  mismatch is deny. No fallback lookup.
+- Schema 2.2.0 failure → still 2.2.0. No 2.1.0 fallback.
 
 ## Operator commands (Workflow 1)
 
 ```bash
 # Offline, after inspect_qfa5_release.py would be the *new* known-good set:
 python3 scripts/generate_provenance_manifest.py \
-  --key ~/.config/quantumflex/vault/release_ed25519.key \
+  --backend vault-transit \
   --key-id mycelium-a5-ed25519-v1
+# or --backend openssl-file --key ~/.config/quantumflex/vault/release_ed25519.key
 
 python3 host-trust/verify-provenance \
   release/PROVENANCE_MANIFEST.json --repo-root . \

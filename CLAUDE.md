@@ -169,6 +169,13 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   the repo supplies the object, not the key. This collapse branch is
   dirty vs the signed manifest — installer refuse is correct. Operator
   sequence: `docs/QF_R2_OPERATOR_RUNBOOK.md`. Signing ceremony (hash →
-  manifest → Ed25519 → pin → gate, planes by key_id):
-  `docs/ARTIFACT_SIGNING_WORKFLOW.md`. This agent does not write
+  manifest → Ed25519 over on-disk bytes → pin → gate, planes by key_id):
+  `docs/ARTIFACT_SIGNING_WORKFLOW.md`. Vault Transit is the A5 signer
+  backend (`docs/VAULT_TRANSIT_A5.md`): BYOK import of the pinned
+  identity, never `vault write transit/keys/mycelium-a5-ed25519-v1
+  type=ed25519` (that mints a new keypair under the same name). Sign
+  raw Base64(`input`), `prehashed=false` — not SHA-256-then-sign.
+  Ceremony tokens are 10m, non-renewable. Cosign/OIDC in Actions is a
+  different plane; `VAULT_TOKEN` must not enter CI. Schema 2.2.0 does
+  not fall back to 2.1.0. This agent does not write
   `/home/quant/.local/libexec`.

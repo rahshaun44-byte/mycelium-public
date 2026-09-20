@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 
 from qf_signing_ceremony import (
     HOST_A5_KEY_ID,
@@ -137,6 +138,17 @@ def main():
         default=os.environ.get("QF_SIGNING_KEY_ID", HOST_A5_KEY_ID),
         help="Signing plane key_id (default mycelium-a5-ed25519-v1). Never share with mobile.",
     )
+    parser.add_argument(
+        "--backend",
+        choices=("openssl-file", "vault-transit"),
+        default=os.environ.get("QF_SIGN_BACKEND", "openssl-file"),
+        help="openssl-file uses --key. vault-transit uses VAULT_ADDR/VAULT_TOKEN (ephemeral).",
+    )
+    parser.add_argument(
+        "--vault-key-name",
+        default=HOST_A5_KEY_ID,
+        help="Transit key name. Must already be the pinned identity (BYOK), not a fresh generate.",
+    )
     args = parser.parse_args()
 
     os.makedirs(RELEASE_DIR, exist_ok=True)
@@ -203,16 +215,33 @@ def main():
         "artifacts": artifacts
     }
 
-    # 1. Deterministic canonical JSON serialization (frozen before sign)
+    # 1. Write canonical bytes once, then sign *that file* (byte invariance).
     canonical = canonical_manifest_bytes(manifest)
     with open(MANIFEST_PATH, "wb") as f:
         f.write(canonical)
+    on_disk = open(MANIFEST_PATH, "rb").read()
+    if on_disk != canonical:
+        print("[FAIL-CLOSED] On-disk manifest diverged from canonical bytes.")
+        return 1
 
-    # 2. Cryptographic Asymmetric Ed25519 Signature using external key
+    # 2. Ed25519 over the file bytes. Not SHA-256(file). Not Ed25519ph.
     try:
-        sig_bytes = sign_file_ed25519(MANIFEST_PATH, args.key)
+        if args.backend == "vault-transit":
+            from vault_a5_transit import halt_if_generate_would_replace_pin, sign_raw_manifest_bytes
+
+            pin = Path(PUB_KEY_PATH)
+            if halt_if_generate_would_replace_pin(args.vault_key_name, pin) != 0:
+                return 1
+            sig_bytes = sign_raw_manifest_bytes(on_disk, args.vault_key_name)
+            authority = f"vault-transit:{args.vault_key_name}"
+        else:
+            sig_bytes = sign_file_ed25519(MANIFEST_PATH, args.key)
+            authority = args.key
     except FileNotFoundError as e:
         print(f"[FAIL-CLOSED] {e}")
+        return 1
+    except Exception as e:
+        print(f"[FAIL-CLOSED] signing failed: {e}")
         return 1
 
     sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
@@ -232,7 +261,7 @@ def main():
     print(f"[+] key_id: {args.key_id}")
     print(f"[+] Artifacts bound: {len(artifacts)}")
     print(f"[+] Manifest SHA-256: {hashlib.sha256(canonical).hexdigest()}")
-    print(f"[+] Signing Authority: {args.key} (Isolated from runtime environment)")
+    print(f"[+] Signing Authority: {authority}")
     return 0
 
 if __name__ == "__main__":

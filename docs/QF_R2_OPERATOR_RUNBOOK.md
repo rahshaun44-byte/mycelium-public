@@ -72,7 +72,7 @@ Authoritative files (this is the contract, not a sketch):
 | `release/PROVENANCE_MANIFEST.json` | Schema **2.1.0**, SLSA-style predicate, artifact map |
 | `release/PROVENANCE_MANIFEST.sig` | Detached Ed25519 sidecar, `SIGNATURE_B64=` |
 | `release/release_signing_key.pub` | Bootstrap PEM (Ed25519). Copied to libexec at lock time |
-| `scripts/generate_provenance_manifest.py` | Signer. Private key via `--key` / `QF_RELEASE_KEY_PATH` (default `~/.config/quantumflex/vault/release_ed25519.key`) |
+| `scripts/generate_provenance_manifest.py` | Signer. `--backend openssl-file` (`--key` / `QF_RELEASE_KEY_PATH`) or `--backend vault-transit` (ephemeral token). Next ceremony is schema **2.2.0**. Do not generate a new Transit key under `mycelium-a5-ed25519-v1` — BYOK import only (`docs/VAULT_TRANSIT_A5.md`). |
 | `host-trust/verify-provenance` | Judge *template*. Installed copy is the judge |
 
 **On-disk format the judge must accept (or it is a sketch):**
@@ -286,7 +286,11 @@ ls -l ~/.config/quantumflex/vault/release_ed25519.key
 # 0400, your uid, not under /home/quant/mycelium
 
 python3 scripts/generate_provenance_manifest.py \
+  --backend openssl-file \
   --key ~/.config/quantumflex/vault/release_ed25519.key
+# or, after BYOK import of the SAME identity (never type=ed25519 generate):
+#   python3 scripts/vault_a5_transit.py          # must match the pin
+#   python3 scripts/generate_provenance_manifest.py --backend vault-transit
 
 python3 scripts/inspect_qfa5_release.py
 # must now be exit 0
@@ -294,7 +298,10 @@ python3 scripts/inspect_qfa5_release.py
 
 If the private key is missing, **HARD-STOP.** Do not generate a new
 keypair and call it the old pin. That would be a different root of
-trust, and every previously signed release becomes unverifiable.
+trust, and every previously signed release becomes unverifiable. The
+same rule applies to Vault: `vault write transit/keys/mycelium-a5-ed25519-v1
+type=ed25519` mints a new identity under the old label. Import
+(`transit/keys/.../import`) or stop.
 
 Do not proceed to 3.4 until `inspect_qfa5_release.py` exits 0.
 
