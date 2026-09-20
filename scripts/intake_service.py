@@ -96,6 +96,13 @@ class IntakeRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "MISSING_TICKET_ID"})
                 return
 
+            if not payload.get("claim_token"):
+                self._send_json(400, {
+                    "error": "MISSING_CLAIM_TOKEN",
+                    "detail": "Triage updates require the claim_token issued by /api/v1/claim.",
+                })
+                return
+
             try:
                 updated = self.store.update_triage_outcome(
                     ticket_id=ticket_id,
