@@ -177,5 +177,8 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   raw Base64(`input`), `prehashed=false` — not SHA-256-then-sign.
   Ceremony tokens are 10m, non-renewable. Cosign/OIDC in Actions is a
   different plane; `VAULT_TOKEN` must not enter CI. Schema 2.2.0 does
-  not fall back to 2.1.0. This agent does not write
+  not fall back to 2.1.0. PCR 10 IMA replay is
+  `quantumflex-telemetry` (`src/telemetry/pcr10_replay.rs` in that crate)
+  plus `sentinel/policies/gatekeeper_attestation.rego`. Ghost absorbs
+  \(h\); it cannot mint `allow` or ledger commit. This agent does not write
   `/home/quant/.local/libexec`.

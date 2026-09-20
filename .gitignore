@@ -89,6 +89,7 @@ node_modules/
 # Worktrees and Rust targets
 worktrees/
 quantum-flex-sdk/target/
+quantumflex-telemetry/target/
 
 !sentinel/xdp/Makefile
 
