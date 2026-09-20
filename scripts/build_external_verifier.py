@@ -174,6 +174,17 @@ def main():
         print("[*] Stage 4: Executing atomic install into target directory...")
         try:
             install_verifier(transformed, TARGET_BINARY, TARGET_DIR)
+            
+            # Install qf-runtime-admit launcher (QF-A6)
+            launcher_src = os.path.join(DEFAULT_REPO_ROOT, "scripts/qf_runtime_admit.py")
+            if os.path.isfile(launcher_src):
+                with open(launcher_src, "r", encoding="utf-8") as f:
+                    launcher_code = f.read()
+                ast.parse(launcher_code)
+                compile(launcher_code, "<qf-runtime-admit>", "exec")
+                launcher_target = os.path.join(TARGET_DIR, "qf-runtime-admit")
+                install_verifier(launcher_code, launcher_target, TARGET_DIR)
+                print(f"[+] QF-A6 Runtime Launcher installed: {launcher_target}")
         except Exception as e:
             print(f"[-] Installation FAILED: {e}", file=sys.stderr)
             return 1

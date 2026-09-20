@@ -218,7 +218,40 @@ def verify_package_admission(prefix=None, receipt_path=None, manifest_path=None,
         print(f"[FAIL-CLOSED] Receipt SHA-256 mismatch! Expected {expected_receipt_hash}, got {actual_receipt_hash}. Package artifacts may have been altered.")
         return 1
 
-    print("[+] Admission receipt SHA-256 verified against signed provenance manifest.")
+    print("[*] Admission receipt SHA-256: VALID (Verified against signed provenance manifest)")
+
+    # 7. Verify A4 artifact hashes from receipt against disk
+    try:
+        receipt_data = json.loads(receipt_bytes.decode("utf-8"))
+        artifacts = receipt_data.get("artifacts", [])
+        if not artifacts:
+            print("[FAIL-CLOSED] Admission receipt contains empty artifact set")
+            return 1
+
+        pkg_root = prefix if prefix else os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(receipt_path))))
+        mismatches = []
+        for art in artifacts:
+            rel = art.get("path")
+            exp_h = art.get("sha256")
+            abs_art = os.path.join(pkg_root, rel)
+            if not os.path.isfile(abs_art):
+                print(f"[FAIL-CLOSED] Missing package artifact on disk: {abs_art}")
+                return 1
+            with open(abs_art, "rb") as f_art:
+                act_h = hashlib.sha256(f_art.read()).hexdigest()
+            if act_h != exp_h:
+                mismatches.append((rel, exp_h, act_h))
+
+        if mismatches:
+            print(f"[FAIL-CLOSED] Artifact hash mismatch detected in package ({len(mismatches)} files):")
+            for r, exp, act in mismatches:
+                print(f"  - {r}: expected {exp[:16]}..., got {act[:16]}...")
+            return 1
+    except Exception as e:
+        print(f"[FAIL-CLOSED] Corrupted admission receipt JSON: {e}")
+        return 1
+
+    print(f"[+] All {len(artifacts)} installed package artifacts verified byte-accurate.")
     print("[+] VERDICT: ATTESTED -> ALLOW (QF-A5 Package Provenance Verified)")
     return 0
 
