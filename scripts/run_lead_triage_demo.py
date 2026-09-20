@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -29,6 +30,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.intake_store import (
     HONEST_CUSTOMER_RECEIPT_TEXT,
     IdempotencyConflictError,
@@ -495,11 +497,22 @@ def process_intake_ticket(
 
 
 if __name__ == "__main__":
-    sample_ticket = {
-        "business_name": "Dino's Italian Bistro (FICTIONAL TEST DATA)",
-        "location": "Market St, Wilkes-Barre, PA",
-        "phone": "(570) 555-0192",
-        "message": "Commercial refrigeration failure at restaurant on Market St, Wilkes-Barre. Need emergency service before 6:00 AM.",
-    }
-    result = process_intake_ticket(sample_ticket)
-    print(json.dumps(result, indent=2))
+    import argparse
+
+    parser = argparse.ArgumentParser(description="QuantumFlex Commercial Intake & Triage Engine")
+    parser.add_argument("--recover", action="store_true", help="Recover and process pending tickets in queue")
+    args = parser.parse_args()
+
+    if args.recover:
+        recovered = recover_and_process_pending_queue()
+        print(f"[*] Processed {len(recovered)} pending ticket(s):")
+        print(json.dumps(recovered, indent=2))
+    else:
+        sample_ticket = {
+            "business_name": "Dino's Italian Bistro (FICTIONAL TEST DATA)",
+            "location": "Market St, Wilkes-Barre, PA",
+            "phone": "(570) 555-0192",
+            "message": "Commercial refrigeration failure at restaurant on Market St, Wilkes-Barre. Need emergency service before 6:00 AM.",
+        }
+        result = process_intake_ticket(sample_ticket)
+        print(json.dumps(result, indent=2))
