@@ -1,0 +1,29 @@
+FROM registry.fedoraproject.org/fedora-minimal:40 AS builder
+
+RUN microdnf -y install rust cargo gcc && microdnf clean all
+
+WORKDIR /build
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "" > src/lib.rs && echo "fn main() {}" > src/main.rs \
+    && cargo build --release && rm -rf src
+
+COPY src ./src
+RUN cargo build --release
+
+FROM registry.fedoraproject.org/fedora-minimal:40
+
+WORKDIR /app
+COPY --from=builder /build/target/release/quantumflex-ghost-sink /app/ghost-sink
+
+RUN useradd -u 10001 -U -M -s /sbin/nologin qflexsink && \
+    mkdir -p /var/log/quantumflex/sink && \
+    chown -R qflexsink:qflexsink /var/log/quantumflex/sink /app
+
+ENV SINK_LISTEN_ADDR=0.0.0.0:19443
+ENV SINK_ALLOW_UNBOUND=1
+ENV SINK_STORAGE_PATH=/var/log/quantumflex/sink
+
+USER 10001:10001
+EXPOSE 19443
+
+ENTRYPOINT ["/app/ghost-sink"]

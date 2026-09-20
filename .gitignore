@@ -90,6 +90,7 @@ node_modules/
 worktrees/
 quantum-flex-sdk/target/
 quantumflex-telemetry/target/
+quantumflex-ghost-sink/target/
 
 !sentinel/xdp/Makefile
 

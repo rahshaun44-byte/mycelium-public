@@ -163,7 +163,7 @@ proofs about the current node.
 | --- | --- | --- |
 | \(x\) | Loopback services, intake, IPC `:9444`, systemd start, Q1 | LIVE, host-local |
 | \(A\) | OPA/Wasm; `host-trust/verify-provenance` ExecStartPre; Quadlet capability drop / read-only (template); PCR 10 IMA replay (`quantumflex-telemetry`) + `gatekeeper_attestation.rego` | PARTIAL. Replay crate and policy exist; not wired into live ExecStart |
-| \(x_q\) / Ghost | OPA `TOXIC`/`NONE`; `QUARANTINE`/`LOCKDOWN_*`; `ForensicLockdown` (default dry-run) | PARTIAL. Not Bennett. Not a key factory |
+| \(x_q\) / Ghost | OPA `TOXIC`/`NONE`; `QUARANTINE`/`LOCKDOWN_*`; `ForensicLockdown` (default dry-run); `quantumflex-ghost-sink` JSONL absorber + `GatekeeperDispatcher` (`Y ∩ h = ∅`) | PARTIAL. Sink crate exists; not a live Yoga unit. Zero authority |
 | \(\Delta x \rightarrow A\) | Intake / replay may produce candidates; they do not skip provenance or policy | INTENDED. Do not wire Ghost output into `f` |
 | \(f\) | `quantumflex/` runtime, `quantum_flex_engine`, swarm `task_queue` | LIVE software |
 | \(Y\) | Admitted execution only | INTENDED. This branch must not start as if verified |

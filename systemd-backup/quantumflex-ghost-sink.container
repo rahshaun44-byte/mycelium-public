@@ -1,0 +1,35 @@
+# TEMPLATE — not a live Quadlet.
+# Copy to ~/.config/containers/systemd/ on the operator host, then
+# systemctl --user daemon-reload.
+#
+# Ghost sink is an isolated absorber of h. It has zero admission
+# authority. Do not publish this port on the host. QF-R3 image digest
+# pin is OPEN. QF-R4 egress: this unit should not need outbound.
+
+[Unit]
+Description=QuantumFlex Ghost Node anomaly sink (template)
+After=network-online.target
+
+[Container]
+ContainerName=qf-ghost-sink
+# QF-R3 OPEN: pin @sha256:<audited-digest> only after you hash-verify the image.
+Image=localhost/quantumflex/ghost-sink:latest
+PublishPort=127.0.0.1:19443:19443
+User=10001:10001
+NoNewPrivileges=true
+DropCapability=ALL
+ReadOnly=true
+ReadOnlyTmpfs=false
+Volume=%h/.local/share/quantumflex/ghost_sink:/var/log/quantumflex/sink:rw
+Environment=SINK_LISTEN_ADDR=0.0.0.0:19443
+Environment=SINK_ALLOW_UNBOUND=1
+Environment=SINK_STORAGE_PATH=/var/log/quantumflex/sink
+StopSignal=SIGTERM
+StopTimeout=10
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

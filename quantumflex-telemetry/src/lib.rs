@@ -4,6 +4,7 @@
 //! `sentinel/policies/gatekeeper_attestation.rego` can split \(x_a\) from
 //! \(x_q\). Ghost output has zero authority.
 
+pub mod dispatch;
 pub mod telemetry;
 
 pub use telemetry::pcr10_replay::*;

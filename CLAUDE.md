@@ -180,5 +180,7 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   not fall back to 2.1.0. PCR 10 IMA replay is
   `quantumflex-telemetry` (`src/telemetry/pcr10_replay.rs` in that crate)
   plus `sentinel/policies/gatekeeper_attestation.rego`. Ghost absorbs
-  \(h\); it cannot mint `allow` or ledger commit. This agent does not write
+  \(h\); it cannot mint `allow` or ledger commit. The Ghost HTTP absorber
+  is `quantumflex-ghost-sink` (loopback `:19443`, not engine mTLS `:9443`).
+  `GatekeeperDispatcher` refuses `allow && route_to_ghost`. This agent does not write
   `/home/quant/.local/libexec`.
