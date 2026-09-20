@@ -39,8 +39,9 @@ def get_cpu_thermal_temps():
     return temps
 
 def run_timing_side_channel_audit():
-    print(f"\n{BOLD}[*] [HARDWARE PILLAR 1] Statistical Timing Side-Channel Audit...{RESET}")
-    binary_path = "/home/quant/mycelium/build/test_hybrid_kem"
+    binary_path = "/home/quant/mycelium/build_check/test_hybrid_kem"
+    if not os.path.exists(binary_path):
+        binary_path = "/home/quant/mycelium/build/test_hybrid_kem"
     if not os.path.exists(binary_path):
         print(f"{RED}[-] Test binary not found: {binary_path}{RESET}")
         return False

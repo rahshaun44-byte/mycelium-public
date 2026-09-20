@@ -109,7 +109,6 @@ if [ "$EXPECTED_SHA" != "$ACTUAL_SHA" ]; then
     exit 1
 fi
 echo "[PASS] SHA-256 byte integrity verified ($ACTUAL_SHA)."
-echo "[*] Workflow 2 detached sig (mobile-ed25519-v1) verified against mobile trust anchor."
 
 # 7. Install verified CLI
 cp -a "$CLI_FILE" "$HOME/qflex_cli.py"

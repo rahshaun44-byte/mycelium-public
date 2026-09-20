@@ -311,33 +311,42 @@ Securing formal customer interest will establish the foundation for a competitiv
 
 ### [PAGES 8–9] Commercialization & Dual-Use Market Strategy
 
-#### [PAGE 8] Dual-Use Commercial Market Opportunities
-The systemic vulnerabilities addressed by QuantumFlex—cryptographic fragility, socket exhaustion, and supply-chain tampering—are identical across the commercial sector. FINALLYFUNGUS LLC has established a dual-use transition strategy targeting high-value enterprise and industrial infrastructure markets.
+#### [PAGE 8] Dual-Use Commercial Market Opportunities & Operational Case Study
+The systemic vulnerabilities addressed by QuantumFlex—cryptographic fragility, socket exhaustion, and supply-chain tampering—are identical across both contested tactical edges and commercial critical infrastructure. Rather than relying on speculative TAM/SAM projections, FINALLYFUNGUS LLC has validated its dual-use data plane against high-consequence physical facility operations.
 
 ```
 +---------------------------------------------------------------------------------------------------------+
-|                                    DUAL-USE COMMERCIALIZATION ROADMAP                                   |
+|                                    DUAL-USE OPERATIONAL PARALLEL                                        |
 +---------------------------------------------------------------------------------------------------------+
-|  DEFENSE SECTOR (Government)                           |  COMMERCIAL SECTOR (Private Enterprise)        |
-+--------------------------------------------------------+------------------------------------------------+
-|  * Tactical Airborne Communications Pods               |  * Critical Infrastructure SCADA / ICS Grids   |
-|  * Contested Edge UAS Telemetry Gateways               |  * Enterprise Zero-Trust Post-Quantum Banks    |
-|  * Space Systems Command Cross-Link Satellites         |  * Telecom Carrier 5G/6G Core Transport Links  |
-|  * NSA CSfC Tactical Edge Deployments                  |  * Healthcare Medical Device Telemetry Hubs    |
-+--------------------------------------------------------+------------------------------------------------+
-                                                         |
-                                                         v
-                                  [ Common Core Software Asset ]
-                                  * Standalone C++20 Data Plane (quantumflex)
-                                  * OPA Rego Supervisory Dynamic Sidecar
-                                  * EWMA LIF Socket Shock Absorber Sentinel
-                                  * Kernel fexecve File-Descriptor Binding
+|  DEFENSE EDGE (Air Force Agile Combat Employment - ACE)  |  COMMERCIAL EDGE (Critical Physical Facilities)|
++----------------------------------------------------------+------------------------------------------------+
+|  * Disconnected, Intermittent, Limited (DIL) links       |  * Saturated / failed cellular & cloud links   |
+|  * Forward operating sites without reachback to cloud    |  * Medical cold chain & cold storage facilities|
+|  * Zero third-party telemetry / no SaaS credentials      |  * Zero third-party cloud data leakage (ACID)  |
+|  * Strict human-in-the-loop mission command approval     |  * Strict human dispatch approval (draft-only) |
+|  * Sub-10ms localized event ingress & shock absorption   |  * Sub-10ms decoupled HTTP 202 ingress         |
++----------------------------------------------------------+------------------------------------------------+
+                                                           |
+                                                           v
+                                    [ Common Core Sovereign Software Asset ]
+                                    * C++20 Zero-Trust Engine & mTLS 1.3 Floor (:9444)
+                                    * Rust Ghost Anomaly Sink & Hash-Chain Ledger (:19443)
+                                    * Decoupled Loopback Intake & SQLite WAL Durability (:5680)
+                                    * Local Model Triage Engine (Ollama / Qwen2.5 @ :11434)
 ```
 
-1. **Market 1: Critical Infrastructure SCADA & Industrial Control Systems (ICS):**
-   * *Target Customers:* Electric power utilities, regional transmission operators, oil and gas pipeline operators, and municipal water authorities.
+1. **Market 1: Critical Cold Chain, Industrial Facilities & Emergency Dispatch:**
+   * *Target Customers:* Industrial refrigeration plants, food distribution centers, pharmaceutical cold chain facilities, and critical HVAC/mechanical contractors.
+   * *Operational Threat:* High-consequence facility operations suffer catastrophic inventory loss when equipment failures are delayed or dropped due to cloud latency, vendor outages, or public SaaS API rate limits.
+   * *Empirical Validation (Scranton Cold Storage Case Study):* FINALLYFUNGUS LLC deployed and verified the QuantumFlex intake architecture under active load:
+     - **Decoupled Ingress:** Measured **8.25 ms** loopback receipt response (`HTTP 202 Accepted`), persisting customer tickets to disk (SQLite WAL + `synchronous=FULL`) before model inference begins (CL-04).
+     - **Atomic Worker Leases:** Worker claims enforced via unique cryptographic fencing tokens (`claim_token`), eliminating duplicate processing and race conditions (CL-11).
+     - **Localhost Model Triage:** Evaluated via local `qwen2.5-coder:7b` in **5.35s–9.33s** (warm avg 6.85s), correctly categorizing critical refrigeration emergencies (`CRITICAL` / `COMMERCIAL_REFRIGERATION`) with zero outbound data leakage (`customer_receipt_delivered = 0`, `operator_alert_delivered = 0`).
+     - **Fault Recovery:** 100% recovery of orphaned in-flight tickets following simulated worker termination.
+2. **Market 2: Critical Infrastructure SCADA & Industrial Control Systems (ICS):**
+   * *Target Customers:* Regional transmission operators, water treatment authorities, and energy pipeline operators requiring local cryptographic shock absorption without risking process crashes.
    * *Operational Value:* Legacy Remote Terminal Units (RTUs) and Programmable Logic Controllers (PLCs) possess minimal compute power and crash when subjected to malformed packet storms. QuantumFlex acts as an edge shock absorber, intercepting corrupted or unauthenticated MODBUS/DNP3 frames under controlled socket-stress conditions without degrading supervisory control.
-2. **Market 2: Enterprise Post-Quantum Zero-Trust Migration:**
+3. **Market 3: Enterprise Post-Quantum Zero-Trust Migration:**
    * *Target Customers:* Tier-1 financial institutions, healthcare data backbones, and telecommunications providers subject to OMB M-26-15, SEC cyber disclosure rules, and European NIS2 compliance directives.
    * *Operational Value:* Enterprise networks require automated cryptographic discovery, dynamic CycloneDX 1.5 Cryptographic Bill of Materials (CBOM) generation, and mathematically verifiable memory zeroization to protect long-duration financial and medical records against Harvest-Now-Decrypt-Later threats.
 

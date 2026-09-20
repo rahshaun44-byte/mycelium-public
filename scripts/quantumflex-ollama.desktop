@@ -1,0 +1,20 @@
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Type=Application
+Name=QuantumFlex Neural Studio
+GenericName=Sovereign AI & Ollama Cockpit
+Comment=Local multi-agent neural swarm, vector memory, and Ollama console for QuantumFlex
+Exec=/usr/bin/google-chrome --app="http://127.0.0.1:9000" --user-data-dir="/home/quant/.config/quantumflex/chrome-cockpit"
+Icon=/home/quant/mycelium/mcp_layer/qf_bot/ui/icon.svg
+Categories=Development;Science;ArtificialIntelligence;Network;
+StartupWMClass=127.0.0.1__9000
+Actions=InteractiveChat;AthenaOracle;
+
+[Desktop Action InteractiveChat]
+Name=Interactive Terminal Swarm
+Exec=gnome-terminal -- /home/quant/mycelium/venv/bin/python3 /home/quant/mycelium/scripts/qf_chat.py
+
+[Desktop Action AthenaOracle]
+Name=Query Athena Vector Memory
+Exec=gnome-terminal -- /home/quant/mycelium/venv/bin/python3 /home/quant/mycelium/scripts/ask_athena.py
