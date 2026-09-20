@@ -2,6 +2,20 @@
 
 The defendant cannot be the judge.
 
+**The repository supplies the object being verified. It does not supply
+the key that determines whether that object is trusted.**
+
+That is the property QF-R2 can actually state. Isolation under
+`~/.local/libexec/quantumflex/` is **not** a same-user trust boundary:
+`quant` can still replace the verifier and the key together. This
+change blocks *repository-controlled* trust-anchor substitution, not
+arbitrary compromise of the operator account.
+
+Do **not** regex-transform `scripts/verify_provenance_manifest.py` into
+the host judge. That file is an exec-only pointer. A substitution that
+does not find its assumed pattern can still write a destination and
+print success. Missing evidence means HALT and write nothing.
+
 If `scripts/verify_provenance_manifest.py` and `release/release_signing_key.pub`
 live inside the tree they evaluate, a compromised branch can rewrite the
 artifact, the manifest, and the verifier in one blast radius and print
@@ -71,6 +85,30 @@ installed 0500 file. It understands the QF-A5 on-disk format this repo
 actually signs (`artifacts[path].sha256` objects, `SIGNATURE_B64=`
 sidecar). A verifier that treats artifact entries as bare hex, or the
 sidecar as raw base64-only, will fail-closed on a real release.
+
+Install is an asserted **byte-copy**, not a rewrite:
+
+```
+source host-trust/verify-provenance
+     ↓
+expected trust-boundary text present?
+     ├── NO  → HALT, write nothing
+     └── YES
+           ↓
+       syntax compile
+           ↓
+       dry-run ALLOW
+           ↓
+       staging copy + sha256 match
+           ↓
+       same-filesystem rename
+```
+
+`scripts/assert_host_trust_source.py` inspects the exact current text
+(`TRUST_ANCHOR_DIR = Path(__file__).resolve().parent`, sibling
+`release_signing_key.pub`, `SIGNATURE_B64=`, `entry.get("sha256")`).
+It refuses the in-repo pointer as a judge. This agent does not mutate
+`/home/quant/.local/libexec`.
 
 ## Evaluate a checkout
 

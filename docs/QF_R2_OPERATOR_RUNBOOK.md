@@ -46,6 +46,21 @@ independent openssl + sha256 (not the in-repo pointer)
 treat it as the judge. Do not run `install_host_trust_anchor.sh` first
 and “inspect later.”
 
+Do **not** run a `re.sub()` / one-liner that “moves the key path
+outside the repo.” Inspected exact contents (this branch):
+
+- `scripts/verify_provenance_manifest.py` — `os.execv` pointer. No
+  `SIGNATURE_B64`, no artifact loop. Transforming it manufactures a
+  stub that is not a QF-A5 judge.
+- `host-trust/verify-provenance` — already binds
+  `TRUST_ANCHOR_DIR = Path(__file__).resolve().parent` and
+  `DEFAULT_KEY_PATH = TRUST_ANCHOR_DIR / "release_signing_key.pub"`.
+  It needs a byte-copy, not a rewrite.
+
+Missing expected source text → HALT, write nothing. Isolation of
+libexec is not a same-user trust boundary. The repo supplies the
+object under test; it does not supply the verification key.
+
 ---
 
 ## 0. What QF-A5 actually is

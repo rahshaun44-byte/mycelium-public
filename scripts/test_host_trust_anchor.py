@@ -20,6 +20,7 @@ from pathlib import Path
 
 WORKSPACE = Path(__file__).resolve().parent.parent
 INSTALLER = WORKSPACE / "scripts" / "install_host_trust_anchor.sh"
+ASSERT = WORKSPACE / "scripts" / "assert_host_trust_source.py"
 WRAPPER = WORKSPACE / "scripts" / "verify_provenance_manifest.py"
 TEMPLATE = WORKSPACE / "host-trust" / "verify-provenance"
 LIVE_MANIFEST = WORKSPACE / "release" / "PROVENANCE_MANIFEST.json"
@@ -121,6 +122,33 @@ def main() -> int:
 
     if not TEMPLATE.is_file():
         raise SystemExit(f"[FAIL] missing template {TEMPLATE}")
+
+    judge_ok = run([sys.executable, str(ASSERT), str(TEMPLATE), "--role", "judge"])
+    expect("assert admits host-trust/verify-provenance as judge", judge_ok.returncode == 0, judge_ok.stderr)
+    pointer_ok = run([sys.executable, str(ASSERT), str(WRAPPER), "--role", "pointer"])
+    expect("assert admits in-repo script as pointer", pointer_ok.returncode == 0, pointer_ok.stderr)
+    pointer_as_judge = run([sys.executable, str(ASSERT), str(WRAPPER), "--role", "judge"])
+    expect(
+        "assert HALTs transforming the pointer into a judge",
+        pointer_as_judge.returncode != 0 and "HARD-STOP" in pointer_as_judge.stderr,
+        pointer_as_judge.stdout + pointer_as_judge.stderr,
+    )
+
+    with tempfile.TemporaryDirectory(prefix="qf-trust-") as tmp:
+        broken = Path(tmp) / "broken-judge"
+        broken.write_text(
+            TEMPLATE.read_text(encoding="utf-8").replace(
+                "TRUST_ANCHOR_DIR = Path(__file__).resolve().parent",
+                "TRUST_ANCHOR_DIR = Path('/tmp')",
+            ),
+            encoding="utf-8",
+        )
+        broken_assert = run([sys.executable, str(ASSERT), str(broken), "--role", "judge"])
+        expect(
+            "assert HALTs when expected trust-boundary text is absent",
+            broken_assert.returncode != 0 and "missing required evidence" in broken_assert.stderr,
+            broken_assert.stdout + broken_assert.stderr,
+        )
 
     with tempfile.TemporaryDirectory(prefix="qf-trust-") as tmp:
         tmp_path = Path(tmp)

@@ -158,6 +158,11 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   `systemd-backup/` units carry `ExecStartPre=` against that path; live Yoga
   units under `~/.config/` are not this tree and are not edited from here.
   `scripts/install_host_trust_anchor.sh` Hard-Stops unless a dry-run ALLOW's
-  the tree. This collapse branch is dirty vs the signed manifest — that
-  refuse is correct. Operator sequence:
-  `docs/QF_R2_OPERATOR_RUNBOOK.md`.
+  the tree and `scripts/assert_host_trust_source.py` sees the exact
+  trust-boundary text in `host-trust/verify-provenance`. Do not
+  `re.sub()` `scripts/verify_provenance_manifest.py` (it is a pointer,
+  not a judge). Isolation of libexec is not a same-user trust boundary:
+  the repo supplies the object, not the key. This collapse branch is
+  dirty vs the signed manifest — installer refuse is correct. Operator
+  sequence: `docs/QF_R2_OPERATOR_RUNBOOK.md`. This agent does not write
+  `/home/quant/.local/libexec`.
