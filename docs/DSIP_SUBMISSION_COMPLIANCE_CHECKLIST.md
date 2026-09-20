@@ -3,10 +3,10 @@
 
 **Applicant Organization:** FINALLYFUNGUS LLC (PA Entity ID: 13706513) DBA QuantumFlex  
 **Principal Investigator (PI):** Rahshaun Chambers  
-**Proposal Title:** QuantumFlex: Autonomous Post-Quantum Cryptographic Agility, Shock-Absorbing Telemetry & TOCTOU-Immune Engine Admission for National Security Systems  
+**Proposal Title:** QuantumFlex: Autonomous Post-Quantum Cryptographic Agility, Shock-Absorbing Telemetry & TOCTOU-Resistant Runtime Admission for National Security Systems  
 **Portal:** Defense SBIR/STTR Innovation Portal ([www.dodsbirsttr.mil/submissions](https://www.dodsbirsttr.mil/submissions))  
 **Date of Audit:** September 20, 2026  
-**Commit Baseline:** `239e8eb`
+**Commit Baseline:** `31ed9c9`
 
 ---
 
@@ -84,6 +84,8 @@ All proposal assets must strictly adhere to the following demarcation rules:
    The Month 3 milestone must state: *"Pursue and document Phase II transition interest, including LOI/MOA or equivalent customer evidence where obtainable"*. Securing an external government signature cannot be a required contractual success criterion.
 4. **CMVP Demarcation:**  
    NIST CMVP / CAVP certificates are `NULL`. The system is an internal pre-validation engineering prototype; never imply formal NIST certification.
+5. **Prototype Laboratory Grounded Truth:**  
+   QuantumFlex is validated on a **laptop-centered prototype laboratory** (Lenovo Yoga 7 primary node running Fedora Linux with Pluton/TPM; HP Pavilion worker node; supported mobile enclaves) with software-defined network isolation (loopback, container networks, Tailscale mesh). Never claim single-board computers, discrete TPM modules, or physical injection benches as currently possessed.
 
 ---
 

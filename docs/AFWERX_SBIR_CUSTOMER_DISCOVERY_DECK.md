@@ -163,8 +163,8 @@
     * Output: Validated mission problems, candidate TPOC roster, and Day 45 Preliminary Progress Report.
   * **Month 2: ACVP-Compatible Test Bench & Hardware Enclave Integration (Task 2)**
     * Construct automated ACVP-compatible test harness consuming NIST CAVP vectors for FIPS 203/204.
-    * Procure tactical single-board computers (ARM64/x86_64 industrial SBCs) and discrete TPM 2.0 evaluation boards under direct materials funding ($15,000).
-    * Benchmark decapsulation throughput and memory zeroization under line-rate load.
+    * Procure candidate representative edge compute and cryptographic evaluation hardware identified in Task 1 under direct materials funding ($15,000).
+    * Benchmark decapsulation throughput and memory zeroization under controlled socket-load and adversarial network-stress testing.
   * **Month 3: Transition Documentation & Final Feasibility Deliverables (Task 3 & Closeout)**
     * Develop the formal SBIR Phase II technical prototype and demonstration plan for tactical pod integration.
     * **Pursue and document Phase II transition interest, including LOI/MOA or equivalent customer evidence where obtainable.**

@@ -47,9 +47,17 @@
       "planned_total": 75000.00,
       "direct_labor": 45000.00,
       "direct_labor_hours": 320,
-      "direct_materials_and_sbc_procurement": 15000.00,
+      "direct_materials_and_hardware_procurement": 15000.00,
       "independent_cryptographic_review_odc": 5000.00,
       "indirect_costs_ga": 10000.00
+    },
+    "prototype_laboratory_baseline": {
+      "type": "laptop-centered physical prototype laboratory",
+      "primary_node": "Lenovo Yoga 7 (Fedora Linux, C++20, Pluton/TPM, Valgrind, AddressSanitizer)",
+      "secondary_node": "HP Pavilion (distributed-worker and network-path testing)",
+      "mobile_nodes": "Google Pixel (Titan M2 HSM), Samsung Galaxy (Knox Vault)",
+      "isolation_model": "Software-defined test isolation (Linux namespaces, loopback, Podman networks, Tailscale mesh)",
+      "disclaimer": "Laboratory-scale feasibility only; not represented as flight-qualified, radiation-hardened, or tactical line-rate hardware"
     },
     "compliance_checklist": {
       "file_path": "docs/DSIP_SUBMISSION_COMPLIANCE_CHECKLIST.md",

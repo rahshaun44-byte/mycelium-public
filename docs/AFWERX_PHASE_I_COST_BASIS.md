@@ -17,7 +17,7 @@
 | Cost Element | Basis of Estimate | Allocation | Planned Cost |
 | :--- | :--- | :---: | :---: |
 | **1. Direct Labor** | Principal Investigator (Rahshaun Chambers)<br>320 Direct Project Hours @ $140.625 / hr | 60.00% | **$45,000.00** |
-| **2. Materials & Equipment to be Acquired** | Tactical SBCs, TPM 2.0 evaluation modules, cloud ingestion nodes, and test interfaces | 20.00% | **$15,000.00** |
+| **2. Materials & Equipment to be Acquired** | Representative edge compute, cryptographic evaluation modules, and cloud test interfaces | 20.00% | **$15,000.00** |
 | **3. Other Direct Costs (ODC)** | Independent cryptographic pre-assessment review (NVLAP/FIPS 140-3 consultant review) | 6.67% | **$5,000.00** |
 | **4. Indirect Costs (G&A / Overhead)** | Operational administration, corporate compliance, legal, telecommunications, and DSIP reporting | 13.33% | **$10,000.00** |
 | **TOTAL PROPOSAL VALUE** | **Planned DAF SBIR Phase I Ceiling** | **100.00%** | **$75,000.00** |
@@ -33,16 +33,16 @@
   * *Task 1 (Customer Discovery & Interface Baselines):* **120 Hours** ($16,875.00)  
     Conducting ≥30 structured DAF discovery interviews across PEO Cyber & Networks, AFRL Information Directorate, and Space Systems Command; synthesizing user constraints and drafting Deliverable D1.
   * *Task 2 (ACVP-Compatible Test Bench & Hardware Enclave Integration):* **120 Hours** ($16,875.00)  
-    Developing automated NIST FIPS 203/204 ACVP-compatible test harnesses; benchmarking embedded TPM 2.0 modules and discrete enclaves (Titan M2 / Knox Vault) on acquired SBC hardware; drafting Deliverable D2.
+    Developing automated NIST FIPS 203/204 ACVP-compatible test harnesses; benchmarking hardware trust anchors and mobile secure enclaves (Titan M2 / Knox Vault) on candidate edge compute hardware; drafting Deliverable D2.
   * *Task 3 (Phase II Transition SOW & Final Reporting):* **80 Hours** ($11,250.00)  
     Formulating the Phase II demonstration Statement of Work; pursuing and documenting transition interest; compiling the Final Feasibility Report (incorporating SF 298 and DD Form 882).
 
 ### B. Materials & Equipment to be Procured Upon Contract Award ($15,000.00)
-Direct equipment, hardware modules, and cloud computing resources to be procured under Task 2 specifically for physical laboratory validation:
-* **Tactical Single-Board Computers ($4,500.00):** Acquisition of x86_64 and ARM64 industrial single-board computers for edge avionics environment simulation and performance profiling.
-* **Hardware Security Enclaves ($3,500.00):** Acquisition of discrete TPM 2.0 evaluation modules, physical test boards, and cryptographic interface adapters.
+Phase I direct materials funding ($15,000.00) is dedicated to transitioning from the current laptop-centered prototype laboratory to target-representative defense hardware determined through Task 1 customer discovery:
+* **Representative Edge & Avionics Compute Modules ($4,500.00):** Acquisition of target-representative ARM64 and x86_64 industrial compute modules identified by DAF stakeholders for edge environment simulation and performance profiling.
+* **Hardware Security & Cryptographic Evaluation Modules ($3,500.00):** Acquisition of candidate discrete TPM 2.0 evaluation boards, cryptographic interface adapters, and hardware trust anchors specified by operational transition partners.
 * **Specialized Telemetry & Test Harness Compute ($4,000.00):** Dedicated multi-tenant cloud broker instances, isolated Kafka streaming clusters, and automated continuous-integration runners.
-* **Network Injection & Emulation Hardware ($3,000.00):** High-speed packet injection interfaces and line-rate socket saturation testing equipment for EWMA LIF shock absorber stress testing on the acquired SBC hardware.
+* **Network Stress & Emulation Interfaces ($3,000.00):** Dedicated network test adapters and emulation interfaces for high-throughput packet injection and controlled socket-stress testing on the acquired candidate hardware.
 
 ### C. Other Direct Costs — Independent Cryptographic Review ($5,000.00)
 * **Scope:** Engagement of an independent cryptographic consultant with formal NVLAP / FIPS 140-3 laboratory testing expertise.

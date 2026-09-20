@@ -176,7 +176,7 @@ CL-14    | NIST CMVP / CAVP Formal Certification   | Certificate: NULL (Pre-vali
 #### Detailed Empirical Narrative:
 1. **Memory Cleansing & Zeroization (`CL-01`):**
    Full leak verification conducted under Valgrind Memcheck 3.27.1 on the Shamir secret recovery engine (`tools/genesis_tool.cpp`) and zeroization suite (`tools/test_zeroization.cpp`). Post-recovery inspection confirmed that `OPENSSL_cleanse` overwrote 100% of secret shard buffers on both heap and stack, leaving `0 bytes in use at exit in 0 blocks` across 37 total allocations and 37 frees.
-2. **Shock-Absorbing Telemetry Cadence (`CL-02`):**
+2. **Measured EWMA Response Under Controlled Hostile Socket Injection (`CL-02`):**
    Under continuous injection of forged Ed25519 signatures and malformed QFXK wire frames, the Leaky Integrate-and-Fire sentinel rejected 100% of adversarial packets at socket ingress. Nominal telemetry streaming maintained an unbroken cadence of **15.01 seconds** (nominal target: 15.00s; cadence jitter $\Delta < 0.1\%$) with zero CPU spikes or thread exhaustion.
 3. **Shamir Threshold Unlock Latency (`CL-03`):**
    Benchmarking the transition of the cryptographic core from `LOCKED` to `ACTIVE` across a 2-of-3 Shamir threshold ceremony yielded a completed state transition in **4.651 ms**, enabling near-instantaneous key recovery under tactical edge constraints.
@@ -225,7 +225,7 @@ Current Department of the Air Force and Joint Force edge communications architec
    Tactical edge nodes receiving Over-The-Air (OTA) software and algorithm updates risk Time-of-Check to Time-of-Use race conditions. Malicious processes resident on the device can overwrite verified executables on non-volatile flash storage immediately before kernel execution, bypassing static hash checks.
 
 #### 3. The Defense Innovation Opportunity
-There is an immediate requirement for an autonomous, software-defined **Crypto-Agility and Shock-Absorption Sidecar** that can be retrofitted onto existing tactical datalinks. QuantumFlex solves this operational gap by decoupling cryptography from control logic, filtering hostile packets at line-rate, and mathematically binding executable file descriptors in kernel memory without requiring airframe redesign.
+There is an immediate requirement for an autonomous, software-defined **Crypto-Agility and Shock-Absorption Sidecar** that can be retrofitted onto existing tactical datalinks. QuantumFlex solves this operational gap by decoupling cryptography from control logic, filtering hostile packets under controlled socket-load and adversarial network-stress testing, and mathematically binding executable file descriptors in kernel memory without requiring airframe redesign.
 
 ---
 
@@ -336,7 +336,7 @@ The systemic vulnerabilities addressed by QuantumFlex—cryptographic fragility,
 
 1. **Market 1: Critical Infrastructure SCADA & Industrial Control Systems (ICS):**
    * *Target Customers:* Electric power utilities, regional transmission operators, oil and gas pipeline operators, and municipal water authorities.
-   * *Operational Value:* Legacy Remote Terminal Units (RTUs) and Programmable Logic Controllers (PLCs) possess minimal compute power and crash when subjected to malformed packet storms. QuantumFlex acts as an edge shock absorber, intercepting corrupted or unauthenticated MODBUS/DNP3 frames at line rate without degrading supervisory control.
+   * *Operational Value:* Legacy Remote Terminal Units (RTUs) and Programmable Logic Controllers (PLCs) possess minimal compute power and crash when subjected to malformed packet storms. QuantumFlex acts as an edge shock absorber, intercepting corrupted or unauthenticated MODBUS/DNP3 frames under controlled socket-stress conditions without degrading supervisory control.
 2. **Market 2: Enterprise Post-Quantum Zero-Trust Migration:**
    * *Target Customers:* Tier-1 financial institutions, healthcare data backbones, and telecommunications providers subject to OMB M-26-15, SEC cyber disclosure rules, and European NIS2 compliance directives.
    * *Operational Value:* Enterprise networks require automated cryptographic discovery, dynamic CycloneDX 1.5 Cryptographic Bill of Materials (CBOM) generation, and mathematically verifiable memory zeroization to protect long-duration financial and medical records against Harvest-Now-Decrypt-Later threats.
@@ -406,11 +406,11 @@ Conventional market solutions fail to provide the combined attributes of post-qu
 | (EXECUTED_FD == VERIFIED_FD)   | fexecve Pinning)  | execve Injection) | Only)             | Token Only)    |
 | Tactical SWaP-C Compatibility  | YES (<64MB RAM;   | YES (Software)    | NO (Heavy, Power- | NO (Requires   |
 | (Constrained Edge Hardware)    | Single-Threaded)  |                   | Hungry Chassis)   | Global WAN)    |
-+---------------------------------------------------------------------------------------------------------+
++--------------------------------+-------------------+-------------------+-------------------+----------------+
 ```
 
 * **Versus Traditional VPN Gateways:** Standard protocols (IPsec, OpenVPN, WireGuard) require full cryptographic renegotiation and socket teardown during key rotation, severing active airborne RF datalinks. Under packet flooding attacks, they parse headers into memory, causing CPU saturation. QuantumFlex switches ciphers in $< 35\text{ ms}$ in memory without socket drops and drops malicious packets via branchless LIF filtering.
-* **Versus Hardware Security Modules (HSMs):** While HSMs offer physical tamper protection, they are heavy, power-hungry, expensive, and require physical replacement or firmware re-flashing to support new post-quantum standards. QuantumFlex provides software-defined agility on standard tactical single-board computers.
+* **Versus Hardware Security Modules (HSMs):** While HSMs offer physical tamper protection, they are heavy, power-hungry, expensive, and require physical replacement or firmware re-flashing to support new post-quantum standards. QuantumFlex provides software-defined agility on edge compute platforms and tactical single-board architectures.
 
 ---
 
@@ -424,17 +424,18 @@ The contractor shall conduct a 90-day technical feasibility study and customer d
 |                                    PHASE I WORK BREAKDOWN SCHEDULE                                      |
 +---------------------------------------------------------------------------------------------------------+
 |  TASK 1: Tactical Customer Discovery & Interface Baselines (Days 1–30)                                  |
-|  * Subtask 1.1: Conduct ≥30 discovery interviews across PEO Cyber & Networks, AFRL, and SSC.            |
-|  * Subtask 1.2: Map tactical SWaP-C envelopes and bus protocols (MIL-STD-1553, Ethernet, Serial).     |
-|  * Subtask 1.3: Synthesize discovery transcripts and compile Deliverable D1.                            |
+|  * Subtask 1.1: Conduct ≥30 structured DAF discovery interviews (PEO Cyber/Networks, AFRL, SSC).        |
+|  * Subtask 1.2: Map airborne/edge interface constraints (MIL-STD-1553, Ethernet, Link 16, SWaP-C).      |
+|  * Subtask 1.3: Publish Customer Discovery Synthesis & Interface Baseline Report (D1).                  |
 +---------------------------------------------------------------------------------------------------------+
                                                      |
                                                      v
 +---------------------------------------------------------------------------------------------------------+
 |  TASK 2: ACVP-Compatible Test Bench & Hardware Security Enclave Integration (Days 31–60)                |
 |  * Subtask 2.1: Construct ACVP-compatible NIST FIPS 203/204 pre-validation test harness.                |
-|  * Subtask 2.2: Benchmark discrete TPM 2.0 and mobile secure enclave integration (Titan M2 / Knox).     |
-|  * Subtask 2.3: Stress-profile decapsulation throughput and memory zeroization under line-rate load.    |
+|  * Subtask 2.2: Benchmark hardware trust enclaves & mobile security architectures (Titan M2 / Knox).     |
+|  * Subtask 2.3: Stress-profile decapsulation throughput and memory zeroization under controlled socket  |
+|                 injection and adversarial network stress.                                               |
 |  * Subtask 2.4: Publish Cryptographic Benchmark & Hardware Enclave Feasibility Report (D2).             |
 +---------------------------------------------------------------------------------------------------------+
                                                      |
@@ -447,10 +448,27 @@ The contractor shall conduct a 90-day technical feasibility study and customer d
 +---------------------------------------------------------------------------------------------------------+
 ```
 
+```text
+TODAY
+Laptop-centered laboratory prototype (Lenovo Yoga + Pavilion + Mobile Enclaves)
+        ↓
+measured feasibility evidence
+
+PHASE I
+Customer discovery + representative hardware requirements
+        ↓
+validated transition architecture
+
+PHASE II
+Representative tactical hardware / network emulation
+        ↓
+operationally relevant demonstration
+```
+
 * **Task 1: Tactical Customer Discovery & Interface Baselines (Days 1–30):**
   The contractor shall engage candidate Air Force stakeholders (PEO Cyber and Networks, AFRL Information Directorate, Space Systems Command, and avionics primes), conducting at least **≥30 structured interviews** to define operational problem statements, bus protocols, and SWaP-C limitations.
 * **Task 2: ACVP-Compatible Test Bench & Hardware Enclave Integration (Days 31–60):**
-  The contractor shall build an automated ACVP-compatible test harness ingesting official NIST Cryptographic Algorithm Validation Program test vectors for FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA). Using Phase I direct materials funding ($15,000), the contractor shall procure dedicated tactical single-board computers and discrete TPM 2.0 evaluation modules to benchmark physical trust anchor integration, throughput, and memory zeroization timing.
+  The contractor shall build an automated ACVP-compatible test harness ingesting official NIST Cryptographic Algorithm Validation Program test vectors for FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA). Using Phase I direct materials funding ($15,000), the contractor shall procure representative edge development hardware, single-board modules, and cryptographic evaluation boards as identified through Task 1 customer discovery to benchmark physical trust anchor integration, throughput, and memory zeroization timing.
 * **Task 3: Phase II Transition Documentation & Demonstration Architecture (Days 61–90):**
   The contractor shall develop the complete technical architecture and flight-demonstration plan for Phase II tactical pod integration, pursue and document customer transition interest (including Letters of Intent or Memoranda of Agreement where obtainable), and author the final comprehensive feasibility report.
 
@@ -502,13 +520,14 @@ In strict adherence to federal procurement integrity standards:
 * **Research Line:** QuantumFlex operates as an early-stage cybersecurity and post-quantum software R&D initiative chartered to resolve algorithmic brittleness and data hoarding in national security systems.
 * **Foreign Ownership & Control:** FINALLYFUNGUS LLC is 100% American-owned and operated. **No known foreign ownership, control, or influence identified in company records as of submission.**
 
-#### 3. Facilities, Current Equipment & Phase I Acquisition Plan
-* **Current Development & Testing Baseline:**
-  * Primary x86_64 Linux engineering workstation (Lenovo platform running Fedora Linux, Linux kernel namespaces, Valgrind 3.27, AddressSanitizer, and POSIX IPC tooling).
-  * Commercial mobile edge hardware featuring discrete silicon hardware security enclaves (Google Pixel with Titan M2 HSM, Samsung Galaxy with Knox Vault).
-  * Software-defined network emulation environment utilizing Linux network namespaces (`ip netns`), traffic control (`tc`), and zero-trust tailnet mesh.
-* **Phase I Equipment Acquisition Plan (Funded under $15k Materials):**
-  * Under Task 2, direct materials funding ($15,000) will be used to procure dedicated tactical single-board computers (ARM64 and x86_64 industrial SBCs) and discrete TPM 2.0 evaluation modules for physical hardware-in-the-loop benchmarking.
+#### 3. Facilities & Prototype Laboratory Baseline
+QuantumFlex is currently developed and validated on a **laptop-centered physical prototype laboratory** rather than specialized military or rack-mounted test equipment. The primary engineering node is a Lenovo Yoga 7 running Fedora Linux, providing the C++20 runtime, cryptographic test environment, container isolation, local policy enforcement, and hardware-backed TPM functionality. A secondary HP Pavilion node is used for distributed-worker and network-path testing, while supported mobile devices provide additional hardware-rooted trust and remote-operator test vectors.
+
+Network and adversarial testing is performed through controlled loopback, isolated container networks, and private mesh paths, allowing repeatable injection of malformed frames, stalled connections, tampered artifacts, provenance failures, and runtime-admission attacks without exposing the prototype to an uncontrolled external network.
+
+This environment has been sufficient to establish laboratory-scale feasibility for memory zeroization, cryptographic admission, fail-closed runtime binding, telemetry behavior, and controlled socket-stress testing. It is not represented as flight-qualified, radiation-hardened, tactical line-rate, or operationally representative Department of the Air Force hardware.
+
+Phase I will use the existing prototype environment as the validated baseline while determining, through customer discovery, the representative compute, interface, SWaP-C, cryptographic-module, and network-emulation hardware required for a Phase II operational demonstration.
 
 ---
 

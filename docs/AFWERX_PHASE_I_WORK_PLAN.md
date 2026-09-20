@@ -75,8 +75,8 @@ The contractor shall engage candidate Air Force stakeholders to define mission r
 * **Objective:** Mature the cryptographic verification pipeline and benchmark hardware-rooted trust anchor integration ($k$).
 * **Subtasks:**
   * **Subtask 2.1: ACVP-Compatible Test Bench:** Construct an automated Python/C++ test harness consuming official NIST Automated Cryptographic Validation Protocol (ACVP) JSON vectors for FIPS 203 (ML-KEM-512, ML-KEM-768, ML-KEM-1024) and FIPS 204 (ML-DSA-44, ML-DSA-65, ML-DSA-87).
-  * **Subtask 2.2: Hardware Security Enclave Acquisition & Integration:** Utilizing Phase I direct materials funding ($15,000), procure dedicated tactical single-board computers (ARM64/x86_64 industrial SBCs) and discrete TPM 2.0 evaluation boards to benchmark physical hardware enclaves alongside commercial secure elements (Google Titan M2 and Samsung Knox Vault).
-  * **Subtask 2.3: Performance & Latency Stress Profiling:** Benchmark decapsulation throughput, memory zeroization timing, and EWMA LIF shock-absorber rejection latencies under simulated line-rate socket saturation on the procured tactical SBC hardware.
+  * **Subtask 2.2: Representative Hardware Acquisition & Enclave Integration:** Utilizing Phase I direct materials funding ($15,000), procure the representative edge computing hardware, single-board modules, and discrete cryptographic evaluation boards identified during Task 1 customer discovery to transition beyond the laptop-centered prototype laboratory, benchmarking physical hardware enclaves alongside commercial secure elements (Google Titan M2 and Samsung Knox Vault).
+  * **Subtask 2.3: Performance & Latency Stress Profiling:** Benchmark decapsulation throughput, memory zeroization timing, and EWMA LIF shock-absorber rejection latencies under controlled socket-load and adversarial network-stress testing on the acquired candidate hardware.
 * **Task 2 Output:** Deliverable D2.
 
 ---
