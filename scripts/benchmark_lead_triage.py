@@ -171,6 +171,7 @@ def run_comprehensive_suite() -> None:
     try:
         store.update_triage_outcome(
             ticket_id="TCK-nonexistent-9999",
+            claim_token="unused-token",
             intake_status="TRIAGE_SUCCESS",
             urgency="HIGH",
             trade_category="COMMERCIAL_HVAC",

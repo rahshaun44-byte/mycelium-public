@@ -1,68 +1,140 @@
-# Quantum Flex: Dual Mobile Nodes Operations & Setup Guide
+# QuantumFlex: Mobile Operator Plane Architecture & Setup Guide (QF-M1)
 
-This guide details the network topology, security postures, and setup instructions for mobile nodes connected to the Quantum Flex distributed stack over Tailscale mesh and local Wi-Fi.
-
----
-
-## 1. Mesh Topology & IP Registry
-
-| Node / Device | Hardware Role | Interface IP | Tailscale Mesh IP | MagicDNS Hostname | Operating Environment |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Master Node (Yoga 7)** | Control Plane & PQC Core | `192.168.100.11` | `100.64.1.17` | `fedora` | Fedora Linux 44 x86_64 |
-| **Worker Node 2 (Pavilion)** | Stream Compute / KRaft Kafka | `192.168.100.17` | `100.64.1.34` | `qf-pavilion-worker` | Debian 13 (Trixie) Linux |
-| **Mobile Node 1 (Pixel 11 Pro)** | Hardware Shard Anchor / OOB Signer | DHCP | `100.64.1.18` | `pixel-11-pro` | GrapheneOS / Titan M2 |
-| **Mobile Node 2 (Galaxy S23 FE)** | Mobile Ops Console & Terminal | DHCP | `100.64.1.32` | `rahshauns-s23-fe` | Android / Knox Vault / DeX |
+Consolidated operational guide for the QuantumFlex mobile command plane across sovereign mobile nodes (Hardware Custody & OOB Signer, and Field Workstation & DeX Terminal) over Tailscale WireGuard mesh.
 
 ---
 
-## 2. Cryptographic & Security Division of Roles
+## 1. The Core Architectural Invariant
 
-### A. Google Pixel 11 Pro (Hardware Enclave Anchor)
-- **Primary Function**: Shamir Shard Custodian & Out-of-Band (OOB) Quorum Signer.
-- **Hardware Isolation**: Titan M2 Security Enclave.
-- **Key Storage**: Holds Shamir Shard #2 in hardware keystore.
-- **Execution**: Participates in 2-of-3 threshold recombination. Does **not** run intensive Frodo matrix arithmetic; acts as authorization gatekeeper for engine unlocking and circuit-breaker overrides.
+$$\text{ONE interface} \neq \text{ONE authority}$$
 
-### B. Samsung Galaxy S23 FE (Operational Workstation)
-- **Primary Function**: Field Operations, AMARA Dashboard monitoring, and mobile MCP agent execution.
-- **Hardware Isolation**: Samsung Knox Vault.
-- **Desktop Mode**: Samsung DeX turns the S23 FE into an external monitor Linux workstation running Termux and local AI agents.
+QuantumFlex unifies the mobile protocol and operator interface into a single, zero-dependency command line (`qf`) and sovereign mobile HUD, while strictly enforcing hardware and cryptographic division of authority:
 
----
+```text
+                    QuantumFlex Mobile Command Plane
 
-## 3. Fast Setup via Termux / Mobile Shell
+                         Unified qf CLI
+                              │
+               ┌──────────────┴──────────────┐
+               │                             │
+               ▼                             ▼
+        Mobile Node 1                  Mobile Node 2
+        custody-anchor                 field-terminal
+        100.64.1.18                  100.64.1.32
 
-### Method 1: Mobile Web App (Zero-Install PWA)
-Open either browser (Chrome, Vanadium, Samsung Internet) over Tailscale:
-- **Quantum Flex Mobile HUD**: `http://100.64.1.17:9050`
-- **PWA Direct Download Portal**: `http://100.64.1.17:9050/download`
-- Tap **"Add to Home Screen"** to install standalone mobile progressive web app.
-- Toggle between **Wi-Fi (`192.168.100.11:9050`)** and **Tailscale (`100.64.1.17:9050`)** using the top host bar.
-
-### Method 2: Termux Mobile CLI Kit
-From Termux on either phone (with Tailscale connected):
-```bash
-# Fetch mobile status directly from master
-curl -s http://100.64.1.17:9050/api/status | jq .
-
-# Query live mesh topology
-curl -s http://100.64.1.17:9050/api/mesh/nodes | jq .
+        CUSTODY ROLE                   OPERATIONS ROLE
+        ────────────                   ───────────────
+        Hardware Enclave HSM           Hardware Vault
+        OOB signer                     Workstation / Console
+        shard custody (#2)             cockpit / triage
+        quorum state                   drafts / approvals
+        emergency freeze               telemetry lens
 ```
 
 ---
 
-## 4. Mobile Browser Endpoints Summary
+## 2. Mesh Topology & Device Registry
 
-| Service | Tailscale Mesh URL | Local Wi-Fi URL | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Quantum Flex Mobile Bot HUD** | `http://100.64.1.17:9050` | `http://192.168.100.11:9050` | Teammate AI chat, mesh status, alert triage |
-| **AMARA Biological HUD** | `http://100.64.1.17:8000` | `http://192.168.100.11:8000` | Vitals, Euclidean Drive, memory gauges |
-| **Kafka UI Stream Console** | `http://100.64.1.34:8090` | `http://192.168.100.17:8090` | Real-time Kafka topic inspector on Pavilion |
-| **Core API Gateway Health** | `http://100.64.1.17:8080/health` | `http://192.168.100.11:8080/health` | API gate status & telemetry health |
-| **Quantum Flex MCP SSE** | `http://100.64.1.17:9000/sse` | `http://192.168.100.11:9000/sse` | Model Context Protocol stream |
+| Node / Device | Hardware Role | Interface IP | Tailscale Mesh IP | MagicDNS Hostname | Authority Domain |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Master Node (Yoga 7)** | Control Plane & PQC Core | `192.168.100.11` | `100.64.1.17` | `fedora` | TPM 2.0 / PCR-7, Shards 1 & 2, Admission Authority |
+| **Worker Node 2 (Pavilion)** | Stream Compute / KRaft Kafka | `192.168.100.17` | `100.64.1.34` | `qf-pavilion-worker` | Kafka Broker, Stream Compute |
+| **Mobile Node 1** | Hardware Shard Anchor / OOB Signer | DHCP / USB | `100.64.1.18` | `mobile-node-1` | Hardware HSM / Enclave, Shamir Shard #2, Quorum Signer |
+| **Mobile Node 2** | Mobile Ops Console & Terminal | DHCP | `100.64.1.32` | `mobile-node-2` | Hardware Vault, Desktop Workstation, Triage Lens |
+
 
 ---
 
-## 5. Mobile Security & Compliance Mandate
-- **Pre-Validation Notice**: All telemetry payloads transmitted to mobile devices strictly enforce `cmvp_certificate: null`.
-- **Zero Public Exposure**: Mobile endpoints are accessible exclusively via authenticated WireGuard Tailscale tunnels or WPA3-secured local LAN. No public ports or dynamic DNS forwarding exist.
+## 3. Verified OTA Bootstrap Protocol
+
+QuantumFlex enforces **verify-before-execute** on all mobile artifacts. Piping unverified HTTP responses directly into execution shells is strictly rejected.
+
+### Cryptographic Bootstrap Flow:
+```text
+download artifact
+      ↓
+download signed manifest + signature
+      ↓
+verify against pinned mobile trust anchor (release_signing_key.pub)
+      ↓
+verify SHA-256
+      ↓
+install / execute
+```
+
+### Setup Command on Android (Termux):
+```bash
+# 1. Fetch bootstrap installer and pinned trust anchor
+curl -fsS http://100.64.1.17:9000/mobile/download/trust-anchor -o ~/.quantumflex/release_signing_key.pub
+curl -fsS http://100.64.1.17:9000/mobile/download/setup -o ~/setup-mobile.sh
+chmod +x ~/setup-mobile.sh
+
+# 2. Run verified installation
+bash ~/setup-mobile.sh
+```
+
+---
+
+## 4. Mobile Operator CLI (`qf`) Reference
+
+The unified mobile CLI operates with **observational-by-default** semantics. Read-only commands inspect engine telemetry; state mutations require explicit operator confirmation and role verification.
+
+### Observational Commands:
+| Command | Description |
+| :--- | :--- |
+| `qf node` | Inspects local node identity, assigned role, transport link, and authority scope. |
+| `qf status` | Queries cluster health, Sentinel drive score ($D$), TPM match, and peer latencies. |
+| `qf verify` | Authoritative lens for QF-A4 artifact hashes, QF-A5 Ed25519 provenance, and QF-A6 runtime binding ($EXECUTED\_FD == VERIFIED\_FD$). |
+| `qf invariant` | Evaluates Universal Invariant ($R \ge O$), physical reserves, and obligations. |
+| `qf custody` | Displays Shamir 3-of-5 threshold state, Titan M2 shard status, and circuit-breaker status. |
+| `qf doctor` | System diagnostic verifying trust anchors, host handshake, and network paths. |
+| `qf drafts` | Inspects staged agent actions awaiting human operator review. |
+| `qf chat <agent> "<prompt>"` | Interrogates multi-agent swarm (`mycelia`, `sentinel`, `aria`, `athena`) backed by local Ollama neural engine. |
+
+### Privileged Transitions:
+| Command | Required Role | Description |
+| :--- | :--- | :--- |
+| `qf approve <draft_id>` | `shard-custodian` or `field-workstation` | Authorizes staged draft action with a fresh, timestamped node authorization receipt. |
+| `qf discard <draft_id>` | `shard-custodian` or `field-workstation` | Discards staged draft. |
+
+> [!CAUTION]
+> If a node is identified as `unknown` / `observer`, all privileged actions are fail-closed with `PRIVILEGED_ACTIONS=DENY`.
+
+---
+
+## 5. Direct Physical Provisioning via ADB (`sync_mobile_nodes.py`)
+
+For physical USB provisioning:
+```bash
+# Inspection only (default, zero modifications)
+python3 scripts/sync_mobile_nodes.py
+
+# Verified push of CLI, manifests, and HUD to /sdcard/Download/QuantumFlex/
+python3 scripts/sync_mobile_nodes.py --push
+
+# Install or update native Capacitor Cockpit APK (com.quantumflex.cockpit)
+python3 scripts/sync_mobile_nodes.py --apk
+
+# Full dual provisioning targeting specific serial
+python3 scripts/sync_mobile_nodes.py --push --apk --device <SERIAL>
+```
+
+---
+
+## 6. Over-The-Air (OTA) Distribution Endpoints
+
+All OTA endpoints are served strictly on the authenticated loopback / Tailscale boundary (`100.64.1.17:9000`):
+
+| Endpoint | Artifact | Description |
+| :--- | :--- | :--- |
+| `/mobile/bootstrap` | JSON Handshake | Authenticated handshake (`schema: qf-mobile-v1`). |
+| `/mobile/admission/evidence` | JSON Proof | Authoritative host A4/A5/A6 cryptographic admission state. |
+| `/mobile/manifest` | JSON Catalog | Manifest index of all available signed artifacts. |
+| `/mobile/download/cli` | `qflex_cli.py` | Unified mobile operator CLI. |
+| `/mobile/download/cli/manifest` | `qflex_cli.py.manifest.json` | Signed distribution manifest with SHA-256. |
+| `/mobile/download/cli/sig` | `qflex_cli.py.sig` | Detached Ed25519 signature. |
+| `/mobile/download/apk` | `qf-cockpit.apk` | Native Capacitor mobile cockpit APK (`com.quantumflex.cockpit`). |
+| `/mobile/download/apk/manifest` | `app-debug.apk.manifest.json` | Signed APK manifest. |
+| `/mobile/download/apk/sig` | `app-debug.apk.sig` | Detached Ed25519 signature for APK. |
+| `/mobile/download/setup` | `setup-mobile.sh` | Verified Termux bootstrap script. |
+| `/mobile/download/trust-anchor` | `release_signing_key.pub` | Pinned Ed25519 public key. |

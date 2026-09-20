@@ -8,6 +8,10 @@
 #include <openssl/core_names.h>
 #include <openssl/params.h>
 
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -220,41 +224,50 @@ void test_fips203_mlkem_kat() {
     auto test_mlkem_variant = [](const char* alg, size_t exp_pk, size_t exp_ct, size_t exp_ss) {
         EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new_from_name(nullptr, alg, nullptr);
         assert(ctx != nullptr);
-        assert(EVP_PKEY_keygen_init(ctx) > 0);
+        int rc = EVP_PKEY_keygen_init(ctx);
+        assert(rc > 0);
         EVP_PKEY* pkey = nullptr;
-        assert(EVP_PKEY_generate(ctx, &pkey) > 0);
+        rc = EVP_PKEY_generate(ctx, &pkey);
+        assert(rc > 0);
 
         // Verify FIPS 203 public key wire size
         size_t pk_len = 0;
-        assert(EVP_PKEY_get_raw_public_key(pkey, nullptr, &pk_len) > 0);
+        rc = EVP_PKEY_get_raw_public_key(pkey, nullptr, &pk_len);
+        assert(rc > 0);
         assert(pk_len == exp_pk);
 
         // FIPS 203 Encapsulation
         EVP_PKEY_CTX* enc = EVP_PKEY_CTX_new_from_pkey(nullptr, pkey, nullptr);
         assert(enc != nullptr);
-        assert(EVP_PKEY_encapsulate_init(enc, nullptr) > 0);
+        rc = EVP_PKEY_encapsulate_init(enc, nullptr);
+        assert(rc > 0);
         size_t ct_len = 0, ss_len = 0;
-        assert(EVP_PKEY_encapsulate(enc, nullptr, &ct_len, nullptr, &ss_len) > 0);
+        rc = EVP_PKEY_encapsulate(enc, nullptr, &ct_len, nullptr, &ss_len);
+        assert(rc > 0);
         assert(ct_len == exp_ct);
         assert(ss_len == exp_ss);
 
         std::vector<uint8_t> ct(ct_len);
         std::vector<uint8_t> ss_client(ss_len);
-        assert(EVP_PKEY_encapsulate(enc, ct.data(), &ct_len, ss_client.data(), &ss_len) > 0);
+        rc = EVP_PKEY_encapsulate(enc, ct.data(), &ct_len, ss_client.data(), &ss_len);
+        assert(rc > 0);
 
         // FIPS 203 Decapsulation (Nominal Path)
         EVP_PKEY_CTX* dec = EVP_PKEY_CTX_new_from_pkey(nullptr, pkey, nullptr);
         assert(dec != nullptr);
-        assert(EVP_PKEY_decapsulate_init(dec, nullptr) > 0);
+        rc = EVP_PKEY_decapsulate_init(dec, nullptr);
+        assert(rc > 0);
         std::vector<uint8_t> ss_server(ss_len);
-        assert(EVP_PKEY_decapsulate(dec, ss_server.data(), &ss_len, ct.data(), ct_len) > 0);
+        rc = EVP_PKEY_decapsulate(dec, ss_server.data(), &ss_len, ct.data(), ct_len);
+        assert(rc > 0);
         assert(ss_client == ss_server);
 
         // FIPS 203 Adversarial Perturbation (Implicit Rejection to Pseudo-Secret)
         std::vector<uint8_t> bad_ct = ct;
         bad_ct[42] ^= 0x55;
         std::vector<uint8_t> ss_corrupt(ss_len);
-        assert(EVP_PKEY_decapsulate(dec, ss_corrupt.data(), &ss_len, bad_ct.data(), bad_ct.size()) > 0);
+        rc = EVP_PKEY_decapsulate(dec, ss_corrupt.data(), &ss_len, bad_ct.data(), bad_ct.size());
+        assert(rc > 0);
         assert(ss_corrupt != ss_client); // Must diverge fail-closed!
 
         std::cout << "    [+] " << alg << " (pk=" << pk_len << " B, ct=" << ct_len << " B, ss=" << ss_len << " B): MATCH (bit-exact & fail-closed)\n";

@@ -2,10 +2,8 @@
 import json
 import logging
 import os
-import psycopg2
 import urllib.request
 from pathlib import Path
-from kafka import KafkaConsumer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("qf-ingestion-node")
@@ -25,7 +23,9 @@ KAFKA_TOPIC = "qf-telemetry"
 KAFKA_GROUP = "qf-amara-athena-group"
 ATHENA_INGEST_URL = "http://127.0.0.1:8001/ingest"
 
+
 def get_amara_connection():
+    import psycopg2
     return psycopg2.connect(
         host="127.0.0.1",
         port=5432,
@@ -35,23 +35,47 @@ def get_amara_connection():
         connect_timeout=3
     )
 
+
+def athena_ingest_headers():
+    """Athena /ingest is fail-closed unless x-api-key matches the configured secret."""
+    headers = {"Content-Type": "application/json"}
+    api_key = os.environ.get("ATHENA_API_KEY") or os.environ.get("DASHBOARD_API_KEY")
+    if api_key:
+        headers["x-api-key"] = api_key
+    return headers
+
+
 def push_to_athena(payload):
     try:
         req = urllib.request.Request(
             ATHENA_INGEST_URL,
             data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
+            headers=athena_ingest_headers()
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         logger.error(f"Athena neural ingest failed: {e}")
+        return None
+
 
 def process_pulse(msg_value):
+    """Persist one telemetry pulse.
+
+    Returns True when the Kafka offset is safe to commit:
+    - AMARA insert succeeded (Athena is best-effort and must not duplicate rows)
+    - or the payload is a poison pill that will never succeed
+    Returns False on transient AMARA/DB failure so the message is retried.
+    """
     try:
         data = json.loads(msg_value)
+    except (TypeError, json.JSONDecodeError) as e:
+        logger.error(f"Pulse processing failure: dropping malformed payload: {e}")
+        return True
+
+    try:
         vitals = data.get("data") if isinstance(data.get("data"), dict) else data
-        
+
         node_id = vitals.get("hostname") or data.get("hostname") or data.get("source", "unknown-node")
         cpu_load = vitals.get("cpu_load_1m", vitals.get("load_1m", data.get("cpu_load_1m", 0.0)))
         ram_used = vitals.get("ram_used_pct", data.get("ram_used_pct", 0.0))
@@ -60,7 +84,7 @@ def process_pulse(msg_value):
         temp_c = vitals.get("temp_c", data.get("temp_c", "N/A"))
         active_kem = vitals.get("active_kem", data.get("active_kem", "NULL"))
         verdict = vitals.get("verdict", data.get("verdict", "ADMIT"))
-        
+
         note = f"PQC KEM: {active_kem} | Temp: {temp_c}°C | Gate: {verdict}"
 
         # 1. AMARA PostgreSQL Structured Insert
@@ -72,33 +96,46 @@ def process_pulse(msg_value):
                 """, (node_id, cpu_load, ram_used, timestamp, status, note))
             conn.commit()
 
-        # 2. Athena ChromaDB Neural Embedding
+        # 2. Athena ChromaDB Neural Embedding (best-effort; do not block AMARA commit)
         narrative = f"Host {node_id} telemetry pulse: RAM {ram_used}%, Temp {temp_c}°C, KEM {active_kem}, Gate: {verdict}"
         athena_payload = {
             "text": narrative,
             "source": "qf-telemetry-stream",
             "metadata": {"hostname": node_id, "verdict": verdict, "status": status}
         }
-        push_to_athena(athena_payload)
-        
-        logger.info(f"[INGESTED] Pulse from {node_id} anchored in AMARA and embedded in Athena.")
+        athena_ok = push_to_athena(athena_payload) is not None
+        if athena_ok:
+            logger.info(f"[INGESTED] Pulse from {node_id} anchored in AMARA and embedded in Athena.")
+        else:
+            logger.warning(f"[INGESTED] Pulse from {node_id} anchored in AMARA; Athena embedding skipped.")
+        return True
 
     except Exception as e:
         logger.error(f"Pulse processing failure: {e}")
+        return False
+
+
+def consume_messages(consumer):
+    """Commit offsets only after AMARA persistence succeeds (or a poison pill)."""
+    for message in consumer:
+        if process_pulse(message.value):
+            consumer.commit()
+
 
 def main():
+    from kafka import KafkaConsumer
+
     logger.info(f"Initializing Gatekeeper Ingestion Membrane on {KAFKA_BROKER}")
     consumer = KafkaConsumer(
         KAFKA_TOPIC,
         bootstrap_servers=[KAFKA_BROKER],
         group_id=KAFKA_GROUP,
         auto_offset_reset='latest',
-        enable_auto_commit=True,
+        enable_auto_commit=False,
         value_deserializer=lambda x: x.decode('utf-8')
     )
 
-    for message in consumer:
-        process_pulse(message.value)
+    consume_messages(consumer)
 
 if __name__ == "__main__":
     main()

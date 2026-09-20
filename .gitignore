@@ -94,3 +94,6 @@ quantumflex-ghost-sink/target/
 
 !sentinel/xdp/Makefile
 
+
+# Device-specific private directories and nodes
+s23fe/

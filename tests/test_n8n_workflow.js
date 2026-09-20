@@ -44,6 +44,14 @@ assert(httpQwenNode, 'HTTP Qwen node must exist');
 assert.strictEqual(httpQwenNode.continueOnFail, true, 'HTTP Qwen node must have continueOnFail: true');
 assert(codeNode, 'Code node must exist');
 assert(outcomeNode, 'Outcome persistence node must exist');
+assert(
+  outcomeNode.parameters.jsonBody.includes('claim_token: $json.claim_token'),
+  'Outcome node must forward the fencing claim_token; unfenced updates overwrite completed tickets'
+);
+assert(
+  codeNode.parameters.jsCode.includes("$('Claim Pending Ticket')"),
+  'Code node must read claim_token from the Claim Pending Ticket node'
+);
 console.log('[+] Workflow structure, nodes, and error traps: VERIFIED');
 
 // Verify connection graph: Ingress connects directly to Immediate Receipt AND Claim/Inference
@@ -61,6 +69,17 @@ function runCodeNode(ticketData, httpResponse, webhookMessage = "Test message") 
         return {
           first: () => ({
             json: ticketData
+          })
+        };
+      }
+      if (nodeName === 'Claim Pending Ticket') {
+        return {
+          first: () => ({
+            json: {
+              ticket_id: ticketData.ticket_id,
+              claimed: true,
+              claim_token: 'claim-token-test-aaa111'
+            }
           })
         };
       }
@@ -162,6 +181,7 @@ const urgentHttpResponse = {
 };
 const resUrgent = runCodeNode(mockIngress, urgentHttpResponse);
 assert.strictEqual(resUrgent.urgency, 'CRITICAL');
+assert.strictEqual(resUrgent.claim_token, 'claim-token-test-aaa111', 'Code node must forward the claim fencing token');
 assert.ok(resUrgent.operator_alert_draft.includes('Urgent intake'), 'Alert must say Urgent intake for critical tickets');
 console.log('  --> PASS: Critical ticket generates "Urgent intake" alert draft');
 

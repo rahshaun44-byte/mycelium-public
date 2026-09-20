@@ -100,6 +100,7 @@ if(QUANTUMFLEX_BUILD_TESTS)
         add_executable(${name} ${ARGN})
         target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
         target_link_libraries(${name} PRIVATE QuantumFlex::runtime)
+        target_compile_options(${name} PRIVATE -UNDEBUG)
     endfunction()
 
     quantumflex_add_test(test_hybrid_kem tests/test_hybrid_kem.cpp)

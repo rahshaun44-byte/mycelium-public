@@ -349,63 +349,44 @@ class IntakeStore:
             raise StorageValidationError(f"Invalid dispatch_state: {dispatch_state!r}")
 
         parsed_urgent_bool = parse_bool(requires_urgent_review)
+        token = claim_token.strip() if isinstance(claim_token, str) else ""
+        if not token:
+            raise StorageValidationError(
+                "claim_token is required; unfenced triage updates are rejected"
+            )
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
         with self._get_connection() as conn:
-            if claim_token is not None:
-                # Fencing token check: token MUST match current active claim!
-                cursor = conn.execute("""
-                    UPDATE intake_tickets
-                    SET updated_at_utc = ?,
-                        intake_status = ?,
-                        urgency = ?,
-                        trade_category = ?,
-                        requires_urgent_review = ?,
-                        incident_summary = ?,
-                        dispatch_state = ?,
-                        operator_alert_draft = ?,
-                        error_reason = ?
-                    WHERE ticket_id = ?
-                      AND claim_token = ?
-                      AND intake_status = 'CLAIMED_IN_TRIAGE';
-                """, (
-                    now,
-                    intake_status,
-                    urgency,
-                    trade_category,
-                    1 if parsed_urgent_bool else 0,
-                    incident_summary.strip() if incident_summary else "",
-                    dispatch_state,
-                    operator_alert_draft,
-                    error_reason,
-                    ticket_id,
-                    claim_token,
-                ))
-            else:
-                cursor = conn.execute("""
-                    UPDATE intake_tickets
-                    SET updated_at_utc = ?,
-                        intake_status = ?,
-                        urgency = ?,
-                        trade_category = ?,
-                        requires_urgent_review = ?,
-                        incident_summary = ?,
-                        dispatch_state = ?,
-                        operator_alert_draft = ?,
-                        error_reason = ?
-                    WHERE ticket_id = ?;
-                """, (
-                    now,
-                    intake_status,
-                    urgency,
-                    trade_category,
-                    1 if parsed_urgent_bool else 0,
-                    incident_summary.strip() if incident_summary else "",
-                    dispatch_state,
-                    operator_alert_draft,
-                    error_reason,
-                    ticket_id,
-                ))
+            # Fencing token check: token MUST match the current active claim.
+            # Unfenced updates (no token) previously overwrote TRIAGE_SUCCESS
+            # rows — n8n retries and stale workers could clobber a completed ticket.
+            cursor = conn.execute("""
+                UPDATE intake_tickets
+                SET updated_at_utc = ?,
+                    intake_status = ?,
+                    urgency = ?,
+                    trade_category = ?,
+                    requires_urgent_review = ?,
+                    incident_summary = ?,
+                    dispatch_state = ?,
+                    operator_alert_draft = ?,
+                    error_reason = ?
+                WHERE ticket_id = ?
+                  AND claim_token = ?
+                  AND intake_status = 'CLAIMED_IN_TRIAGE';
+            """, (
+                now,
+                intake_status,
+                urgency,
+                trade_category,
+                1 if parsed_urgent_bool else 0,
+                incident_summary.strip() if incident_summary else "",
+                dispatch_state,
+                operator_alert_draft,
+                error_reason,
+                ticket_id,
+                token,
+            ))
 
             conn.commit()
 
@@ -413,10 +394,10 @@ class IntakeStore:
                 existing = self.get_ticket(ticket_id)
                 if existing is None:
                     raise TicketNotFoundError(f"Ticket '{ticket_id}' not found; zero rows updated.")
-                if claim_token is not None and existing.get("claim_token") != claim_token:
+                if existing.get("claim_token") != token:
                     raise StaleClaimError(
                         f"Stale claim rejected: ticket '{ticket_id}' active claim token is "
-                        f"'{existing.get('claim_token')}', but update supplied stale token '{claim_token}'."
+                        f"'{existing.get('claim_token')}', but update supplied stale token '{token}'."
                     )
                 raise StorageValidationError(
                     f"Ticket '{ticket_id}' could not be updated in status '{existing.get('intake_status')}'."
