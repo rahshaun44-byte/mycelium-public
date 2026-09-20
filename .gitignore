@@ -92,3 +92,6 @@ quantum-flex-sdk/target/
 
 !sentinel/xdp/Makefile
 
+
+# Device-specific private directories and nodes
+s23fe/
