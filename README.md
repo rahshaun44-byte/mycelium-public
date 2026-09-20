@@ -279,36 +279,24 @@ Quantum Flex assumes:
 
 ```text
 .
-├── include/
-│   └── quantum-flex/
-│       ├── hybrid_kem.hpp
-│       ├── wire_framing.hpp
-│       └── ipc_server.hpp
+├── quantumflex/                  # independently buildable runtime (crypto + QFXK)
+│   ├── include/quantum-flex/     # hybrid_kem.hpp, wire_framing.hpp, signers
+│   ├── src/crypto/  src/wire/
+│   └── tests/
 │
-├── src/
-│   ├── crypto/
-│   │   └── hybrid_kem.cpp
-│   │
-│   └── core/
-│       ├── wire_framing.cpp
-│       └── ipc_server.cpp
+├── include/quantum-flex/         # mycelium coordination headers (ipc, ledger, node)
+├── src/core/                     # engine coordination (no crypto .cpp)
 │
 ├── scripts/
-│   ├── qf_hybrid_gatekeeper.py
+│   ├── qf_hybrid_gatekeeper.py   # mycelium client of the runtime
 │   ├── cedrus_artifact_gate.py
 │   ├── test_wycheproof_x25519.py
 │   └── generate_cbom.py
 │
-├── tools/
-│   ├── test_hybrid_kem.cpp
-│   ├── test_wire_framing.cpp
-│   └── test_wire_fuzz_negative.cpp
-│
 └── docs/
-    ├── SECURITY.md
+    ├── CRYPTO_LIBRARY_CARVEOUT.md
     ├── QFXK_WIRE_PROTOCOL_SPEC.md
-    ├── DEPLOYMENT_CHECKLIST.md
-    └── cbom_alpha_node_template.json
+    └── SECURITY.md
 ```
 
 ---

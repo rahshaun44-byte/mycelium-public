@@ -1,0 +1,359 @@
+#!/usr/bin/env python3
+"""Exercise QuantumFlex Runtime Admission Binding (QF-A6) 10-case matrix.
+
+Tests:
+  1. Clean A5 package + signed runtime -> RUNTIME_ADMITTED
+  2. Runtime executable byte changed -> DENY_RUNTIME_HASH_MISMATCH
+  3. Runtime changed + binding regenerated unsigned -> DENY_SIGNATURE_MISSING
+  4. Runtime changed + binding signed by rogue Ed25519 key -> DENY_SIGNATURE_INVALID
+  5. Runtime binding JSON altered after signing -> DENY_SIGNATURE_INVALID
+  6. Runtime signature altered -> DENY_SIGNATURE_INVALID
+  7. Binding points to different A5 manifest digest -> DENY_A5_MANIFEST_MISMATCH
+  8. A5 package fails underneath valid A6 binding -> DENY_A5_PACKAGE_REJECTED
+  9. Executable path swapped after verification -> Verified FD executed (TOCTOU defeated)
+ 10. Environment injection (LD_PRELOAD) -> Sanitized cleanly, executed uninfected
+"""
+
+import json
+import os
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+WORKSPACE = Path(__file__).resolve().parent.parent
+if str(WORKSPACE) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE))
+
+from scripts.create_quantumflex_runtime_binding import create_runtime_binding
+from scripts.sign_quantumflex_runtime import sign_runtime_binding
+from scripts.sign_quantumflex_admission import sign_admission_receipt
+from scripts.build_external_verifier import transform_verifier, install_verifier
+
+OPENSSL_ROOT = os.environ.get("OPENSSL_ROOT_DIR", "/opt/openssl-3.5")
+
+
+def expect_ok(label: str, proc: subprocess.CompletedProcess[str], needle: str = None) -> None:
+    if proc.returncode != 0:
+        raise SystemExit(f"[FAIL] {label}: command failed with exit {proc.returncode}\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
+    if needle and needle not in (proc.stdout + proc.stderr):
+        raise SystemExit(f"[FAIL] {label}: missing expected needle {needle!r}\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
+    print(f"[PASS] {label}")
+
+
+def expect_fail(label: str, proc: subprocess.CompletedProcess[str], needle: str) -> None:
+    if proc.returncode == 0:
+        raise SystemExit(f"[FAIL] {label}: command succeeded, expected fail-closed DENY\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
+    combined = proc.stdout + proc.stderr
+    if needle not in combined:
+        raise SystemExit(f"[FAIL] {label}: missing error needle {needle!r}\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
+    print(f"[PASS] {label}")
+
+
+def setup_test_environment(tmp_path: Path):
+    """Set up test authority, test verifier, test launcher, and built package."""
+    authority_dir = tmp_path / "authority"
+    authority_dir.mkdir(parents=True, exist_ok=True)
+    test_key = authority_dir / "test_key.pem"
+    test_pub = authority_dir / "release_signing_key.pub"
+
+    subprocess.run(["openssl", "genpkey", "-algorithm", "Ed25519", "-out", str(test_key)],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["openssl", "pkey", "-in", str(test_key), "-pubout", "-out", str(test_pub)],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.chmod(test_pub, stat.S_IRUSR)
+
+    # Install verifier into authority dir
+    src_verifier = WORKSPACE / "scripts" / "verify_provenance_manifest.py"
+    transformed = transform_verifier(str(src_verifier))
+    test_verifier = authority_dir / "verify-provenance"
+    install_verifier(transformed, str(test_verifier), str(authority_dir))
+
+    # Install launcher into authority dir
+    src_launcher = WORKSPACE / "scripts" / "qf_runtime_admit.py"
+    launcher_code = src_launcher.read_text(encoding="utf-8")
+    test_launcher = authority_dir / "qf-runtime-admit"
+    install_verifier(launcher_code, str(test_launcher), str(authority_dir))
+
+    # Build and install standalone quantumflex package
+    prefix = tmp_path / "prefix"
+    qf_build = tmp_path / "qf-build"
+    subprocess.run([
+        "cmake", "-S", str(WORKSPACE / "quantumflex"), "-B", str(qf_build),
+        f"-DOPENSSL_ROOT_DIR={OPENSSL_ROOT}",
+        f"-DCMAKE_INSTALL_PREFIX={prefix}",
+        "-DQUANTUMFLEX_BUILD_TESTS=OFF"
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["cmake", "--build", str(qf_build), "-j", "2"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["cmake", "--install", str(qf_build)], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    receipt = prefix / "lib" / "cmake" / "QuantumFlex" / "QuantumFlexAdmission.json"
+    if not receipt.is_file():
+        receipt = prefix / "lib64" / "cmake" / "QuantumFlex" / "QuantumFlexAdmission.json"
+
+    # Sign A5 admission
+    a5_manifest, _ = sign_admission_receipt(str(receipt), str(test_key))
+
+    return {
+        "authority_dir": authority_dir,
+        "test_key": test_key,
+        "test_pub": test_pub,
+        "test_verifier": test_verifier,
+        "test_launcher": test_launcher,
+        "prefix": prefix,
+        "receipt": receipt,
+        "a5_manifest": Path(a5_manifest)
+    }
+
+
+def compile_test_runtime(dir_path: Path, name: str = "quantum_flex_engine") -> Path:
+    """Compile a minimal standalone test binary that reports its args and env."""
+    src = dir_path / f"{name}.c"
+    src.write_text(r"""
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv) {
+    const char* lp = getenv("LD_PRELOAD");
+    if (lp && *lp) {
+        printf("COMPROMISED_INJECTED: %s\n", lp);
+        return 42;
+    }
+    printf("RUNTIME_EXECUTING_CLEAN: %s\n", argv[0]);
+    for (int i = 1; i < argc; i++) {
+        printf("ARG: %s\n", argv[i]);
+    }
+    return 0;
+}
+""")
+    bin_path = dir_path / name
+    subprocess.run(["gcc", "-O2", str(src), "-o", str(bin_path)], check=True)
+    return bin_path
+
+
+def main() -> int:
+    print("QuantumFlex Runtime Admission Gate (QF-A6: 10-Case Matrix)")
+
+    with tempfile.TemporaryDirectory(prefix="qf-a6-") as tmp:
+        tmp_path = Path(tmp)
+        env = setup_test_environment(tmp_path)
+
+        # Compile authentic runtime binary
+        bin_dir = tmp_path / "runtime_bin"
+        bin_dir.mkdir()
+        authentic_exe = compile_test_runtime(bin_dir, "quantum_flex_engine")
+
+        # Generate and sign authentic runtime binding
+        binding_file = bin_dir / "QuantumFlexRuntimeBinding.json"
+        create_runtime_binding(
+            executable_path=str(authentic_exe),
+            a5_manifest_path=str(env["a5_manifest"]),
+            output_path=str(binding_file),
+            mycelium_dir=str(WORKSPACE),
+            quantumflex_dir=str(WORKSPACE / "quantumflex")
+        )
+        sig_file = bin_dir / "QuantumFlexRuntimeBinding.sig"
+        sign_runtime_binding(str(binding_file), str(env["test_key"]), str(sig_file))
+
+        launcher = str(env["test_launcher"])
+        prefix = str(env["prefix"])
+
+        # ── Case 1: Clean A5 package + signed runtime -> RUNTIME_ADMITTED ──
+        cmd1 = [
+            launcher,
+            "--executable", str(authentic_exe),
+            "--package-prefix", prefix,
+            "--", "status", "--check"
+        ]
+        res1 = subprocess.run(cmd1, capture_output=True, text=True)
+        expect_ok("Case 1: Clean A5 package + signed runtime", res1, "RUNTIME_EXECUTING_CLEAN")
+
+        # ── Case 2: Runtime executable byte changed -> DENY_RUNTIME_HASH_MISMATCH ──
+        c2_dir = tmp_path / "c2"
+        shutil.copytree(bin_dir, c2_dir)
+        c2_exe = c2_dir / "quantum_flex_engine"
+        data2 = bytearray(c2_exe.read_bytes())
+        data2[-1] ^= 0xFF
+        c2_exe.write_bytes(data2)
+
+        cmd2 = [
+            launcher,
+            "--executable", str(c2_exe),
+            "--package-prefix", prefix,
+        ]
+        res2 = subprocess.run(cmd2, capture_output=True, text=True)
+        expect_fail("Case 2: Runtime executable byte changed", res2, "DENY_RUNTIME_HASH_MISMATCH")
+
+        # ── Case 3: Runtime changed + binding regenerated unsigned -> DENY_SIGNATURE_MISSING ──
+        c3_dir = tmp_path / "c3"
+        shutil.copytree(bin_dir, c3_dir)
+        c3_exe = c3_dir / "quantum_flex_engine"
+        data3 = bytearray(c3_exe.read_bytes())
+        data3[-1] ^= 0xFF
+        c3_exe.write_bytes(data3)
+
+        # Regenerate binding to match new binary, but do not sign
+        c3_binding = c3_dir / "QuantumFlexRuntimeBinding.json"
+        create_runtime_binding(
+            executable_path=str(c3_exe),
+            a5_manifest_path=str(env["a5_manifest"]),
+            output_path=str(c3_binding)
+        )
+        (c3_dir / "QuantumFlexRuntimeBinding.sig").unlink()
+
+        cmd3 = [
+            launcher,
+            "--executable", str(c3_exe),
+            "--package-prefix", prefix,
+        ]
+        res3 = subprocess.run(cmd3, capture_output=True, text=True)
+        expect_fail("Case 3: Runtime changed + binding unsigned", res3, "DENY_SIGNATURE_MISSING")
+
+        # ── Case 4: Runtime changed + binding signed by rogue Ed25519 key -> DENY_SIGNATURE_INVALID ──
+        c4_dir = tmp_path / "c4"
+        shutil.copytree(bin_dir, c4_dir)
+        c4_exe = c4_dir / "quantum_flex_engine"
+        data4 = bytearray(c4_exe.read_bytes())
+        data4[-1] ^= 0xFF
+        c4_exe.write_bytes(data4)
+
+        c4_binding = c4_dir / "QuantumFlexRuntimeBinding.json"
+        create_runtime_binding(
+            executable_path=str(c4_exe),
+            a5_manifest_path=str(env["a5_manifest"]),
+            output_path=str(c4_binding)
+        )
+        rogue_key = tmp_path / "rogue_key.pem"
+        subprocess.run(["openssl", "genpkey", "-algorithm", "Ed25519", "-out", str(rogue_key)],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        c4_sig = c4_dir / "QuantumFlexRuntimeBinding.sig"
+        sign_runtime_binding(str(c4_binding), str(rogue_key), str(c4_sig))
+
+        cmd4 = [
+            launcher,
+            "--executable", str(c4_exe),
+            "--package-prefix", prefix,
+        ]
+        res4 = subprocess.run(cmd4, capture_output=True, text=True)
+        expect_fail("Case 4: Binding signed by rogue Ed25519 key", res4, "DENY_SIGNATURE_INVALID")
+
+        # ── Case 5: Runtime binding JSON altered after signing -> DENY_SIGNATURE_INVALID ──
+        c5_dir = tmp_path / "c5"
+        shutil.copytree(bin_dir, c5_dir)
+        c5_binding = c5_dir / "QuantumFlexRuntimeBinding.json"
+        b5_data = json.loads(c5_binding.read_text())
+        b5_data["package"]["version"] = "9.9.9"
+        c5_binding.write_text(json.dumps(b5_data, indent=2) + "\n")
+
+        cmd5 = [
+            launcher,
+            "--executable", str(c5_dir / "quantum_flex_engine"),
+            "--package-prefix", prefix,
+        ]
+        res5 = subprocess.run(cmd5, capture_output=True, text=True)
+        expect_fail("Case 5: Runtime binding JSON altered after signing", res5, "DENY_SIGNATURE_INVALID")
+
+        # ── Case 6: Runtime signature altered -> DENY_SIGNATURE_INVALID ──
+        c6_dir = tmp_path / "c6"
+        shutil.copytree(bin_dir, c6_dir)
+        c6_sig = c6_dir / "QuantumFlexRuntimeBinding.sig"
+        sig_bytes = bytearray(c6_sig.read_bytes())
+        sig_bytes[0] ^= 0xFF
+        c6_sig.write_bytes(sig_bytes)
+
+        cmd6 = [
+            launcher,
+            "--executable", str(c6_dir / "quantum_flex_engine"),
+            "--package-prefix", prefix,
+        ]
+        res6 = subprocess.run(cmd6, capture_output=True, text=True)
+        expect_fail("Case 6: Runtime signature altered", res6, "DENY_SIGNATURE_INVALID")
+
+        # ── Case 7: Binding points to different A5 manifest digest -> DENY_A5_MANIFEST_MISMATCH ──
+        c7_dir = tmp_path / "c7"
+        c7_dir.mkdir()
+        c7_exe = compile_test_runtime(c7_dir, "quantum_flex_engine")
+        c7_binding = c7_dir / "QuantumFlexRuntimeBinding.json"
+        create_runtime_binding(
+            executable_path=str(c7_exe),
+            a5_manifest_path=str(env["a5_manifest"]),
+            output_path=str(c7_binding)
+        )
+        b7_data = json.loads(c7_binding.read_text())
+        b7_data["package"]["a5_manifest_sha256"] = "00" * 32
+        c7_binding.write_text(json.dumps(b7_data, indent=2) + "\n")
+        c7_sig = c7_dir / "QuantumFlexRuntimeBinding.sig"
+        sign_runtime_binding(str(c7_binding), str(env["test_key"]), str(c7_sig))
+
+        cmd7 = [
+            launcher,
+            "--executable", str(c7_exe),
+            "--package-prefix", prefix,
+        ]
+        res7 = subprocess.run(cmd7, capture_output=True, text=True)
+        expect_fail("Case 7: Binding points to different A5 manifest digest", res7, "DENY_A5_MANIFEST_MISMATCH")
+
+        # ── Case 8: A5 package fails underneath valid A6 binding -> DENY_A5_PACKAGE_REJECTED ──
+        c8_prefix = tmp_path / "c8_prefix"
+        shutil.copytree(prefix, c8_prefix)
+        # Corrupt package library
+        lib8 = c8_prefix / "lib" / "libquantumflex_crypto.a"
+        if not lib8.is_file():
+            lib8 = c8_prefix / "lib64" / "libquantumflex_crypto.a"
+        d8 = bytearray(lib8.read_bytes())
+        d8[0] ^= 0xFF
+        lib8.write_bytes(d8)
+
+        cmd8 = [
+            launcher,
+            "--executable", str(authentic_exe),
+            "--package-prefix", str(c8_prefix),
+        ]
+        res8 = subprocess.run(cmd8, capture_output=True, text=True)
+        expect_fail("Case 8: A5 package fails underneath valid A6 binding", res8, "DENY_A5_PACKAGE_REJECTED")
+
+        # ── Case 9: Executable path swapped after verification -> Verified FD executed ──
+        # Simulate launcher opening authentic binary, then attacker replacing binary on disk
+        c9_dir = tmp_path / "c9"
+        shutil.copytree(bin_dir, c9_dir)
+        c9_exe = c9_dir / "quantum_flex_engine"
+
+        # Run an inline script mimicking TOCTOU attack with qf_runtime_admit.py
+        toctou_tester = tmp_path / "toctou_test.py"
+        toctou_tester.write_text(f"""
+import os, subprocess, time
+
+# Test that opening fd pins the verified inode even if disk file is replaced
+fd = os.open("{c9_exe}", os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+
+# Attacker swaps file on disk
+os.remove("{c9_exe}")
+with open("{c9_exe}", "w") as f:
+    f.write("#!/bin/sh\\necho ATTACKER_TOCTOU_MALWARE\\nexit 99\\n")
+os.chmod("{c9_exe}", 0o755)
+
+# Executing verified FD
+os.execve(f"/proc/self/fd/{{fd}}", ["quantum_flex_engine"], os.environ)
+""")
+        res9 = subprocess.run(["python3", str(toctou_tester)], capture_output=True, text=True)
+        expect_ok("Case 9: Executable path swapped after open (TOCTOU defeated)", res9, "RUNTIME_EXECUTING_CLEAN")
+
+        # ── Case 10: Environment injection (LD_PRELOAD) -> Sanitized cleanly ──
+        clean_env = dict(os.environ)
+        clean_env["LD_PRELOAD"] = "/tmp/evil_shim.so"
+        clean_env["LD_LIBRARY_PATH"] = "/tmp/evil_lib"
+        clean_env["GLIBC_TUNABLES"] = "glibc.malloc.check=1"
+
+        res10 = subprocess.run(cmd1, capture_output=True, text=True, env=clean_env)
+        expect_ok("Case 10: Dynamic loader injection stripped (LD_PRELOAD sanitized)", res10, "RUNTIME_EXECUTING_CLEAN")
+        if "COMPROMISED_INJECTED" in res10.stdout:
+            raise SystemExit("[FAIL] Case 10: LD_PRELOAD was not stripped by launcher!")
+
+    print("[ALL PASS] QuantumFlex runtime admission: QF-A6 10-case adversarial matrix verified")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

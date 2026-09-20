@@ -26,9 +26,14 @@ cmake --build build_check -j"$(nproc)"
 ```
 No vcpkg, no CMake presets, no test target — this is a plain `pkg-config`-based build
 (`libpqxx`, `sqlite3`, `libsystemd`, OpenSSL) producing two binaries: `quantum_flex_engine` and
-`sentinel_push`. `CMakeLists.txt` uses `file(GLOB ... CONFIGURE_DEPENDS "src/core/*.cpp")` /
-`src/crypto/*.cpp` — new `.cpp` files in those two directories are picked up automatically on
-the next `cmake` configure, no `add_executable` edit needed. There is no test suite; "verified"
+`sentinel_push`. Cryptographic primitives and the QFXK wire codec live in the `quantumflex/`
+CMake package (`QuantumFlex::runtime`). Mycelium admits that package
+(`cmake/AdmitQuantumFlex.cmake`): a verifying install receipt wins;
+`-DQUANTUMFLEX_REQUIRE_ATTESTED=ON` fail-closes without one. Default DEV still
+`add_subdirectory(quantumflex)` and writes `QuantumFlexAdmission.dev.json`.
+The package builds standalone (`cmake -S quantumflex`) with OpenSSL 3.5 only —
+no Postgres. See `quantumflex/README.md` and `docs/CRYPTO_LIBRARY_CARVEOUT.md`.
+`src/core/` still uses `file(GLOB ... CONFIGURE_DEPENDS)`. There is no CTest suite; "verified"
 in this repo currently means compiled clean and exercised manually against a live Postgres
 instance (see `src/core/bae_node.cpp` for the pattern: build, then actually run it against
 `logistics-pg` and check the resulting row).
@@ -74,7 +79,7 @@ systemd `Environment=` lines.
   whole ledger to one SHA-256.
 - `append_evidence(telemetry_id, raw_payload, signature)` hashes the payload into a `ZkCommitment`
   (id + salt + commitment hash) and registers *that* — the raw payload itself is never persisted.
-- `HybridSigner` (`crypto_signer.hpp`): Ed25519 + PQC dual signature, PEM keys from
+- `HybridSigner` (`quantumflex` package, `crypto_signer.hpp`): Ed25519 + PQC dual signature, PEM keys from
   `QF_ED_PRIVATE_KEY`/`QF_PQC_PRIVATE_KEY`. `sign_payload` returns `"<ed_sig_hex>|<pqc_sig_hex>"`.
 - `BaeNode` (`bae_node.hpp`/`bae_node.cpp`): the one real Postgres-partition-purge implementation.
   Extracts a partition deterministically, hashes it, signs the hash with `HybridSigner`, builds and

@@ -13,13 +13,16 @@ pkg_check_modules(SYSTEMD REQUIRED libsystemd)
 find_package(OpenSSL 3.5 REQUIRED)
 find_package(Threads REQUIRED)
 
+# Collapse step 3: mycelium admits QuantumFlex. Tampered prefixes never link.
+# QUANTUMFLEX_REQUIRE_ATTESTED=ON is the production lock (no in-tree fallback).
+include("${CMAKE_SOURCE_DIR}/cmake/AdmitQuantumFlex.cmake")
+quantumflex_admit()
+
 file(GLOB ENGINE_CORE_SOURCES CONFIGURE_DEPENDS "src/core/*.cpp" "src/core/*.c")
-file(GLOB ENGINE_CRYPTO_SOURCES CONFIGURE_DEPENDS "src/crypto/*.cpp")
 
 add_executable(quantum_flex_engine
     src/main.cpp
     ${ENGINE_CORE_SOURCES}
-    ${ENGINE_CRYPTO_SOURCES}
 )
 
 target_include_directories(quantum_flex_engine PRIVATE
@@ -31,6 +34,7 @@ target_include_directories(quantum_flex_engine PRIVATE
 )
 
 target_link_libraries(quantum_flex_engine PRIVATE
+    QuantumFlex::runtime
     ${PQXX_LIBRARIES}
     ${SQLITE3_LIBRARIES}
     OpenSSL::SSL
@@ -45,87 +49,14 @@ target_link_libraries(sentinel_push PRIVATE ${SYSTEMD_LIBRARIES} OpenSSL::SSL Op
 
 add_executable(qf_genesis_tool
     tools/genesis_tool.cpp
-    src/crypto/crypto_shamir.cpp
 )
 target_include_directories(qf_genesis_tool PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
 )
-target_link_libraries(qf_genesis_tool PRIVATE OpenSSL::Crypto)
+target_link_libraries(qf_genesis_tool PRIVATE QuantumFlex::crypto)
 
-# ── Test Executables ────────────────────────────────────────────────────────
-add_executable(test_hybrid_kem
-    tools/test_hybrid_kem.cpp
-    src/crypto/hybrid_kem.cpp
-)
-target_include_directories(test_hybrid_kem PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-)
-target_link_libraries(test_hybrid_kem PRIVATE OpenSSL::Crypto)
-
-add_executable(test_wire_framing
-    tools/test_wire_framing.cpp
-    src/core/wire_framing.cpp
-)
-target_include_directories(test_wire_framing PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-)
-target_link_libraries(test_wire_framing PRIVATE OpenSSL::Crypto)
-
-add_executable(test_wire_fuzz_negative
-    tools/test_wire_fuzz_negative.cpp
-    src/core/wire_framing.cpp
-    src/crypto/hybrid_kem.cpp
-)
-target_include_directories(test_wire_fuzz_negative PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-)
-target_link_libraries(test_wire_fuzz_negative PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-
-add_executable(test_known_answer_vectors
-    tools/test_known_answer_vectors.cpp
-    src/crypto/hybrid_kem.cpp
-    src/crypto/crypto_shamir.cpp
-    src/crypto/crypto_hasher.cpp
-)
-target_include_directories(test_known_answer_vectors PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-)
-target_link_libraries(test_known_answer_vectors PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-
-add_executable(test_zeroization
-    tools/test_zeroization.cpp
-    src/crypto/hybrid_kem.cpp
-    src/crypto/crypto_shamir.cpp
-)
-target_include_directories(test_zeroization PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-)
-target_compile_options(test_zeroization PRIVATE -O3)
-target_link_libraries(test_zeroization PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-
-add_executable(test_dudect_timing
-    tools/test_dudect_timing.cpp
-    src/crypto/hybrid_kem.cpp
-)
-target_include_directories(test_dudect_timing PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-)
-target_compile_options(test_dudect_timing PRIVATE -O3)
-target_link_libraries(test_dudect_timing PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-
-# Native ML-KEM IPC migration checks (not a FIPS validation test).
-add_executable(test_mlkem768 tools/test_mlkem768.cpp src/crypto/hybrid_kem.cpp src/core/wire_framing.cpp)
-target_include_directories(test_mlkem768 PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(test_mlkem768 PRIVATE OpenSSL::Crypto)
-
-# Verified Core Formal Invariants test harness
+# Coordination-only test (formal C ABI). Crypto/wire tests live under quantumflex/.
 add_executable(test_verified_core
     tools/test_verified_core.cpp
     src/core/verified_core.c
