@@ -42,6 +42,12 @@
       "format": "AFWERX SOW Guidelines (Scope, Tasks 1-3, Deliverables D1-D3, Kickoff, Day 45, Day 90)",
       "statutory_closeout_forms": ["Standard Form 298 (SF 298)", "DD Form 882"]
     },
+    "customer_discovery_ledger": {
+      "file_path": "docs/AFWERX_CUSTOMER_DISCOVERY_LEDGER.md",
+      "target_engagements_count": 30,
+      "protocol": "Standardized 5-Question Technical Inquiry Protocol",
+      "primary_target_profiles": ["AFLCMC/HN", "AFRL/RI", "ACC/A6", "SSC", "Avionics Primes"]
+    },
     "cost_basis": {
       "file_path": "docs/AFWERX_PHASE_I_COST_BASIS.md",
       "planned_total": 75000.00,

@@ -67,6 +67,7 @@ The proposal repository is partitioned into distinct artifacts to prevent premat
 | **Technical Volume** | [`docs/AFWERX_PHASE_I_TECHNICAL_VOLUME.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_TECHNICAL_VOLUME.md) | Scaffold for 13-page designated-page template (Release 25.5/E standard) | **SCAFFOLDED (PENDING RELEASE)** |
 | **Customer Discovery Deck** | [`docs/AFWERX_SBIR_CUSTOMER_DISCOVERY_DECK.md`](file:///home/quant/mycelium/docs/AFWERX_SBIR_CUSTOMER_DISCOVERY_DECK.md) | 10-slide internal briefing deck for stakeholder interviews | **ALIGNED (INTERNAL ASSET)** |
 | **Work Plan (SOW)** | [`docs/AFWERX_PHASE_I_WORK_PLAN.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_WORK_PLAN.md) | Formatted to AFWERX SOW schema (Scope, Tasks, Kickoff, Day 45, Day 90) | **ALIGNED** |
+| **Discovery Ledger** | [`docs/AFWERX_CUSTOMER_DISCOVERY_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CUSTOMER_DISCOVERY_LEDGER.md) | Structured registry for ≥30 DAF interviews and standardized question protocol | **INITIALIZED (TASK 1 TRACKER)** |
 | **Cost Basis** | [`docs/AFWERX_PHASE_I_COST_BASIS.md`](file:///home/quant/mycelium/docs/AFWERX_PHASE_I_COST_BASIS.md) | Itemized $75k budget breakdown ($45k labor, $15k compute, $5k ODC, $10k G&A) | **PLANNED (SUBJECT TO CEILING)** |
 
 ---
