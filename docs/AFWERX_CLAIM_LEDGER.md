@@ -5,7 +5,7 @@
 **Governing Principle:** *Only empirically verified facts survive into formal federal proposals.*  
 **Primary Reference:** [`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf) (SHA-256: `71b505c762834cc44f166873a86960389bcbf6312f5f6b27277e5f4777193866`)  
 **Audit Date:** September 20, 2026  
-**Commit Baseline:** `31ed9c9`
+**Commit Baseline:** `507e046`
 
 ---
 
@@ -26,20 +26,21 @@
 
 | Item # | Technical Claim | Claimed Value / Metric | Primary Source Reference | Verification Mechanism & Test Artifact | Claim Status |
 | :---: | :--- | :--- | :--- | :--- | :---: |
-| **CL-01** | **Memory Cleansing & Zeroization** | 0 bytes leaked / 0 errors (37 allocs / 37 frees) | [`docs/DUE_DILIGENCE_DOSSIER.md#L318-L320`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L318-L320) | Valgrind Memcheck 3.27.1 full leak check post-Shamir recovery (`tools/test_zeroization.cpp`) | **VERIFIED** |
-| **CL-02** | **Controlled Hostile Socket Injection Response** | 15.01s interval under forged signature attack (Nominal: 15.00s; $\Delta < 0.1\%$) | [`docs/DUE_DILIGENCE_DOSSIER.md#L138-L139`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L138-L139) | Leaky Integrate-and-Fire (EWMA LIF) Sentinel socket log under forged Ed25519 barrage in software-isolated loopback | **VERIFIED** |
-| **CL-03** | **Shamir Threshold Unlock Latency** | 4.651 ms state transition (`LOCKED -> ACTIVE`) | [`docs/DUE_DILIGENCE_DOSSIER.md#L151-L160`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L151-L160) | IPC Master Key activation benchmark (`tools/genesis_tool.cpp`) | **VERIFIED** |
+| **CL-01** | **Memory Cleansing & Zeroization** | 0 bytes leaked / 0 errors (37 allocs / 37 frees) | [`docs/DUE_DILIGENCE_DOSSIER.md#L318-L320`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L318-L320) | Valgrind Memcheck 3.27.1 full leak check post-Shamir recovery (`tools/test_zeroization.cpp`); application-level `OPENSSL_cleanse` on recovery & IPC buffers | **VERIFIED** |
+| **CL-02** | **Controlled Socket Anomaly & Local Ghost Sink Absorption** | 15.01s interval under forged signature attack ($\Delta < 0.1\%$); deterministic absorption of friction term ($h$) into append-only JSONL ledger | [`docs/DUE_DILIGENCE_DOSSIER.md#L138-L139`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L138-L139), `quantumflex-ghost-sink` (`127.0.0.1:19443`) | EWMA LIF Sentinel socket drop + local `quantumflex-ghost-sink` SHA-256 hash-chained absorption ledger (`sequence=1`, `previous_hash=0000...`, $H_{\text{attack}}=0$) | **VERIFIED** |
+| **CL-03** | **Shamir Threshold Unlock Latency** | 4.651 ms state transition (`LOCKED -> ACTIVE`) | [`docs/DUE_DILIGENCE_DOSSIER.md#L151-L160`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L151-L160) | IPC Master Key activation benchmark (`tools/genesis_tool.cpp`); 3-of-5 offline unseal ceremony verified live | **VERIFIED** |
 | **CL-04** | **Decoupled Ingestion Acknowledgment** | 3.9–8.5 ms receipt latency (average 6.29 ms) | [`docs/DUE_DILIGENCE_DOSSIER.md#L305-L341`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L305-L341) | `scripts/benchmark_lead_triage.py` (Suite 1: immediate HTTP 202 before inference) | **VERIFIED** |
 | **CL-05** | **Atomic Config Swap Latency ($T_{\text{write}}$)** | $< 35\text{ ms}$ atomic swap on policy shift | [`docs/DUE_DILIGENCE_DOSSIER.md#L70`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.md#L70) | POSIX `SIGHUP` / `os.replace` atomic configuration watcher benchmark | **VERIFIED** |
-| **CL-06** | **Automated Regression Suite Pass Rate** | 30 passed, 1 warning in 0.42s (100% pass) | Commit `31ed9c9`, Pytest execution output | 30 tests pass. 1 warning: `DeprecationWarning: anyio.abc.BlockingPortal alias is deprecated` in Starlette TestClient (Classified: **BENIGN / EXTERNAL DEPENDENCY**) | **VERIFIED** |
+| **CL-06** | **Automated Regression Suite Pass Rate** | 30 passed, 1 warning in 0.42s (100% pass) | Commit `507e046`, Pytest execution output | 30 tests pass. 1 warning: `DeprecationWarning: anyio.abc.BlockingPortal alias is deprecated` in Starlette TestClient (Classified: **BENIGN / EXTERNAL DEPENDENCY**) | **VERIFIED** |
 | **CL-07** | **QF-A4 Pre-Link Hash Verification** | Raw SHA-256 byte digests match `QuantumFlexAdmission.json` | `cmake/AdmitQuantumFlex.cmake` | CMake pre-link inspection gate (Cases 1 & 2 in admission test harness) | **VERIFIED** |
-| **CL-08** | **QF-A5 External Provenance Authority** | 7/7 adversarial negative cases fail-closed | `scripts/test_quantumflex_admission.py` | External verifier `~/.local/libexec/quantumflex/verify-provenance` against `0400` trust anchor | **VERIFIED** |
+| **CL-08** | **QF-A5 External Provenance Authority** | 7/7 adversarial negative cases fail-closed | `scripts/test_quantumflex_admission.py` | External verifier `~/.local/libexec/quantumflex/verify-provenance` against `0400` trust anchor; 13/13 artifacts byte-accurate | **VERIFIED** |
 | **CL-09** | **QF-A6 TOCTOU-Resistant Runtime Admission** | 10/10 adversarial cases pass ($EXECUTED\_FD == VERIFIED\_FD$) | `scripts/test_quantumflex_runtime_admission.py` | `fexecve(fd)` launcher and dynamic loader (`LD_PRELOAD`) sanitizer closes on-disk binary substitution | **VERIFIED** |
 | **CL-10** | **Zero-Loss Kafka Pipeline Invariant** | `enable_auto_commit=False`; commits advance only post-AMARA write | `api_node/kafka_consumer.py` | Pytest mock suite (`tests/test_kafka_consumer.py` 7/7 pass) | **VERIFIED** |
 | **CL-11** | **SQLite WAL Lease Fencing & Idempotency** | Stale workers rejected via `claim_token`; webhook retry protected | `scripts/intake_store.py` | Concurrency and lease fencing test suite (`tests/test_intake_fencing.py` 3/3 pass) | **VERIFIED** |
 | **CL-12** | **Mobile Command Role Segregation** | Hardware role segregation; observer mutations fail-closed | `mobile/qflex_cli.py` | Mobile CLI test harness (`tests/test_mobile_cli.py` 5/5 pass) | **VERIFIED** |
 | **CL-13** | **Zero-Trust Network Perimeter** | Loopback binding (`127.0.0.1:9000`); Tailscale Serve MagicDNS HTTPS | Tailscale Serve configuration | `tailscale serve status` showing proxying to `127.0.0.1:9000`; zero open LAN Wi-Fi listeners | **VERIFIED** |
 | **CL-14** | **NIST CMVP / CAVP Formal Certification** | `Certificate: NULL` (None claimed) | `TRUTH_LOG_MASTER.md`, Dossier Regulatory Notice | Self-administered ACVP-compatible test harness; pre-validation prototype only | **NOT CLAIMED** |
+| **CL-15** | **TLS 1.3 Protocol Floor & Downgrade Rejection** | Fatal startup denial if min version != TLS 1.3; TLS 1.2 clients rejected with `TLSV1_ALERT_PROTOCOL_VERSION` | `src/core/ipc_server.cpp` (lines 278-282), live production test against `:9444` | 4/4 live transport controls pass (TLS 1.3 valid client ALLOW; no cert DENY; rogue CA DENY; TLS 1.2 client DENY) | **VERIFIED** |
 
 ---
 
