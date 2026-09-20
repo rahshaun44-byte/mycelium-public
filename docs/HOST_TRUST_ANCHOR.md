@@ -5,7 +5,8 @@ The defendant cannot be the judge.
 **The repository supplies the object being verified. It does not supply
 the key that determines whether that object is trusted.**
 
-That is the property QF-R2 can actually state. Isolation under
+That is \(K_{\mathrm{trust}}\) — one slice of the invariant vector \(k\)
+in `docs/LIVING_COMPUTATION_CYCLE.md`. Isolation under
 `~/.local/libexec/quantumflex/` is **not** a same-user trust boundary:
 `quant` can still replace the verifier and the key together. This
 change blocks *repository-controlled* trust-anchor substitution, not
