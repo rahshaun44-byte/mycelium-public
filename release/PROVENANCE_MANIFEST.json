@@ -3,20 +3,20 @@
     "build_check/quantum_flex_engine": {
       "assurance_level": "QF-A1",
       "description": "Production C++20 engine binary",
-      "sha256": "275d25691e00efd333fda53fe9d2394db90477c699be9eac61e5ff6897eaa2ea",
-      "size_bytes": 1673808
+      "sha256": "9f62fb7398a15ae1ed564b876eb665f756bbf71605b8142f29e62de6d010db84",
+      "size_bytes": 1614304
     },
     "build_check/test_verified_core": {
       "assurance_level": "QF-A1",
       "description": "Formal invariant test binary",
-      "sha256": "5effa2049adf3303824349f8fac80b3a6c51f2fb5574408ba6e1f3c9b99ee539",
+      "sha256": "7089c689e98dd534efacd19a820ea9b0b93598d9676f5409eb20b633a79604b4",
       "size_bytes": 17504
     },
     "docs/ASSURANCE_LEVELS.md": {
       "assurance_level": "DOC",
       "description": "Assurance hierarchy & Digital-DNA identity spec",
-      "sha256": "c30b7be6300ad6dbc73c2526fa3f1432c8271cb40cd9cd7dd14a08e61f203ae3",
-      "size_bytes": 5543
+      "sha256": "96b9871f0bdf9c22eaa475254295b0b90d786eed1f068ac24233034e4a0fed7b",
+      "size_bytes": 5919
     },
     "docs/INDEPENDENT_ASSESSMENT_GUIDE.md": {
       "assurance_level": "DOC",
@@ -45,8 +45,8 @@
     "include/quantum-flex/verified_core.h": {
       "assurance_level": "QF-A1",
       "description": "C ABI interface header",
-      "sha256": "07167b69a0d9ce1f6537e69699354c9b862bbd2303d5e74207593f7314d1548e",
-      "size_bytes": 3330
+      "sha256": "7461ccc742cf47bac50bfab1173f2d659b1e14c877b5b5b5528e1389e2373b33",
+      "size_bytes": 3375
     },
     "pqc-immune-daemon/membrane_health.rego": {
       "assurance_level": "QF-A2",
@@ -105,12 +105,17 @@
     },
     "source": {
       "branch": "main",
-      "commit": "8abffc1f1987c33eabd598c092fc241860f0bd88",
+      "commit": "bb7bcc99763b86cf90c4eefa55f8acddc67bd3f0",
       "dirty_working_tree": true,
       "repository": "quantumflex"
     },
-    "timestamp_utc": "2026-09-19T13:36:28.272007+00:00"
+    "timestamp_utc": "2026-09-20T16:54:41.547252+00:00"
   },
   "predicate_type": "https://slsa.dev/provenance/v1",
-  "schema_version": "2.1.0"
+  "schema_version": "2.2.0",
+  "signing": {
+    "algorithm": "Ed25519",
+    "key_id": "mycelium-a5-ed25519-v1",
+    "plane": "host-release-a5"
+  }
 }
