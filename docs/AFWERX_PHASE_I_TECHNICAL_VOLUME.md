@@ -10,7 +10,7 @@
 > * **Solicitation Number:** [SOLICITATION-CONTROLLED — PENDING CURRENT DAF OPEN TOPIC RELEASE ON DSIP]
 > * **Award Ceiling:** Planned $75,000.00 Firm Fixed Price (Subject to controlling solicitation ceiling)
 > * **Period of Performance:** Up to 90 Days (3 Months)
-> * **Official Technical Appendix:** [`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf) (10 Pages, Document ID: `QF-DUE-DILIGENCE-2026-V1`)
+> * **Official Technical Appendix:** [`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf) (10 Pages, SHA-256: `71b505c762834cc44f166873a86960389bcbf6312f5f6b27277e5f4777193866`)
 > * **Authoritative Empirical Claim Ledger:** [`docs/AFWERX_CLAIM_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CLAIM_LEDGER.md)
 
 ---
@@ -18,27 +18,27 @@
 ### [PAGE 1] Proposal Cover & Technical Abstract
 
 #### 1. Identification & Corporate Profile
-* **Project Title:** QuantumFlex: Autonomous Post-Quantum Cryptographic Agility, Shock-Absorbing Telemetry & TOCTOU-Immune Engine Admission for National Security Systems
+* **Project Title:** QuantumFlex: Autonomous Post-Quantum Cryptographic Agility, Shock-Absorbing Telemetry & TOCTOU-Resistant Runtime Admission for National Security Systems
 * **Topic Number:** [SOLICITATION-CONTROLLED — PENDING CURRENT DAF OPEN TOPIC RELEASE]
 * **Applicant Entity:** FINALLYFUNGUS LLC (Pennsylvania Entity ID: 13706513) DBA QuantumFlex
 * **Business Address:** 1120 South Main Street, Pittston, PA 18640 / Laboratory: Philadelphia, PA
 * **Principal Investigator (PI):** Rahshaun Chambers (Founder & Systems Architect) | quant@quantumflex.network
 * **Federal Identifiers:** SAM.gov Unique Entity Identifier (UEI): [VALIDATED] | CAGE Code: [VALIDATED] | SBA SBC ID: [VALIDATED]
-* **Business Type:** Small Business Concern (SBC) under 500 employees | 100% US Owned & Controlled | Zero Foreign Ownership, Control, or Influence (Zero FOCI)
+* **Business Type:** Small Business Concern (SBC) under 500 employees | 100% US Owned & Controlled | No known foreign ownership, control, or influence identified in company records as of submission
 * **Proposed Period of Performance:** 3 Months (90 Calendar Days)
 * **Proposed Budget:** Planned $75,000.00 Firm Fixed Price (Subject to controlling solicitation ceiling)
 * **Technical Appendix Reference:** 10-Page Empirical Proof Dossier ([`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf))
 
 #### 2. Technical Abstract
-Tactical military datalinks, airborne edge nodes, and satellite communications face an acute, compounding operational crisis: **cryptographic brittleness under post-quantum migration, unmitigated computational exhaustion from hostile socket injection, and supply-chain binary tampering**. Conventional network gateways parse and log malformed ingress, triggering CPU saturation, heap memory accumulation, and service restarts during key rollover that degrade contested tactical operations.
+Tactical military datalinks, airborne edge nodes, and satellite communications face an acute, compounding operational crisis: **cryptographic brittleness under staged post-quantum migration, unmitigated computational exhaustion from hostile socket injection, and supply-chain binary tampering**. Conventional network gateways parse and log malformed ingress, triggering CPU saturation, heap memory accumulation, and service restarts during key rollover that degrade contested tactical operations.
 
 **QuantumFlex** resolves this crisis through the **eQUATION OF TRUTH** ($\mathbf{Y = (x - h) + k}$). QuantumFlex is an autonomous, software-defined cryptographic agility sidecar and shock-absorbing telemetry architecture that:
 1. **Decouples High-Throughput Cryptography from Policy Supervision:** Separates a standalone C++20 cryptographic engine (`quantumflex`) from dynamic Open Policy Agent (OPA) Rego evaluation sidecars, executing sub-35ms in-memory cipher swaps without tearing down active data sockets.
-2. **Eliminates Computational Exhaustion via EWMA Shock Absorption:** Intercepts unauthenticated or forged binary packets at the socket ingress boundary, utilizing a Leaky Integrate-and-Fire (EWMA LIF) sentinel that shunts toxic perturbations into an isolated Landauer entropy sink without degrading host CPU or memory cadence.
+2. **Eliminates Computational Exhaustion via EWMA Shock Absorption:** Intercepts unauthenticated or forged binary packets at the socket ingress boundary, utilizing a Leaky Integrate-and-Fire (EWMA LIF) sentinel that shunts toxic perturbations into an isolated Ghost Node entropy sink (applying a Landauer-inspired information-cost analogy) without degrading host CPU or memory cadence.
 3. **Guarantees Provable Memory Cleansing:** Overwrites all ephemeral lattice secrets, Shamir polynomial shards, and recovery keys using compiler-barrier `OPENSSL_cleanse` routines, empirically verified under Valgrind with zero memory leaks.
-4. **Enforces TOCTOU-Immune File-Descriptor Execution Binding:** Binds runtime execution directly to cryptographically attested source packages via the QF-A6 admission gate, opening binaries with `O_RDONLY | O_CLOEXEC`, verifying digital signatures over the open descriptor, sanitizing dynamic loader environments (`LD_PRELOAD`), and executing via `fexecve(fd)`—defeating Time-of-Check to Time-of-Use binary-swapping attacks.
+4. **Enforces TOCTOU-Resistant Runtime Admission:** Binds runtime execution directly to cryptographically attested source packages via the QF-A6 admission gate, opening binaries with `O_RDONLY | O_CLOEXEC`, verifying digital signatures over the open descriptor, sanitizing dynamic loader environments (`LD_PRELOAD`), and executing via `fexecve(fd)`—closing on-disk executable path-substitution races.
 
-During this 90-day Phase I feasibility study, the contractor will execute ≥30 structured customer discovery interviews across candidate Air Force stakeholders (PEO Cyber and Networks, AFRL Information Directorate, and Space Systems Command), construct automated NIST FIPS 203 (ML-KEM) CAVP Known Answer Test (KAT) test benches, validate hardware security enclave integration (TPM 2.0, Titan M2, Knox Vault), and formulate a Phase II demonstration architecture for tactical pod and datalink integration.
+During this 90-day Phase I feasibility study, the contractor will execute ≥30 structured customer discovery interviews across candidate Air Force stakeholders (PEO Cyber and Networks, AFRL Information Directorate, and Space Systems Command), construct an automated ACVP-compatible NIST FIPS 203 (ML-KEM) pre-validation test harness, validate hardware security enclave integration (TPM 2.0, Titan M2, Knox Vault), and formulate a Phase II demonstration architecture for tactical pod and datalink integration.
 
 ---
 
@@ -51,11 +51,11 @@ QuantumFlex mathematically restructures this relationship through the **eQUATION
 $$\mathbf{Y = (x - h) + k}$$
 
 * **$\mathbf{x}$ (Environmental Tactical Variables):** The high-velocity operational entropy of tactical edge communications—dynamic physical telemetry (e.g., host RAM consumption at 62.8%, thermal fluctuations at 48.0°C), bursty incoming socket frames over tactical radios, and asynchronous multi-tenant message ingress.
-* **$\mathbf{h}$ (Adversarial Friction & Anomalies):** Malicious perturbations and hostile vectors—forged Ed25519 signatures, malformed binary wire protocol frames (QFXK), memory scraping, TOCTOU executable substitutions on non-volatile storage, and asynchronous webhook retry race conditions.
+* **$\mathbf{h}$ (Adversarial Friction & Anomalies):** Malicious perturbations and hostile vectors—forged Ed25519 signatures, malformed binary wire protocol frames (QFXK), memory scraping, on-disk executable substitution races, and asynchronous webhook retry race conditions.
 * **$\mathbf{k}$ (Baseline Invariant Stability):** Deterministic mathematical and cryptographic guarantees enforced at the machine-code and kernel boundaries:
   1. *Sub-Millisecond EWMA LIF Sentinel:* Implements an exponential leaky integrate-and-fire membrane potential:
      $$V_{\text{membrane}}[t] = \lambda \cdot V_{\text{membrane}}[t-1] + (1 - \lambda) \cdot \text{AnomalyCost}(p_t)$$
-     Hostile packets that violate protocol framing or fail cryptographic checks immediately elevate the membrane potential. Upon reaching the threshold $V_{\text{th}}$, the socket fails-closed, shunting packets into an isolated Landauer entropy sink without CPU spikes or thread blocking.
+     Hostile packets that violate protocol framing or fail cryptographic checks immediately elevate the membrane potential. Upon reaching the threshold $V_{\text{th}}$, the socket fails-closed, shunting packets into an isolated Ghost Node entropy sink (drawing upon a Landauer-inspired information-cost analogy to prevent computational heat and host exhaustion) without CPU spikes or thread blocking.
   2. *Branchless Constant-Time Cryptography:* Zero data-dependent branching during post-quantum decapsulation (ML-KEM-768/1024), eliminating timing side-channel leakage.
   3. *Compiler-Barrier Memory Destruction:* Enforcing explicit zeroization of ephemeral state via `OPENSSL_cleanse` across heap and stack boundaries before process exit.
   4. *Declarative OPA Rego Admission Gate:* Evaluating active cipher health against declarative policies, executing atomic configuration rewrites (`os.replace` / POSIX `SIGHUP`) with sub-35ms latency.
@@ -73,7 +73,7 @@ $$\mathbf{Y = (x - h) + k}$$
             * Dynamic RAM (62.8%)                                           * Forged Ed25519 Signatures
             * Host Temperature (48.0 C)                                     * Poisoned QFXK Binary Frames
             * High-Velocity Socket Ingress                                  * Heap Scraping / Memory Leaks
-            * Tactical Datalink Jitter                                      * TOCTOU Executable Swapping
+            * Tactical Datalink Jitter                                      * On-Disk Executable Swapping
                      |                                                               |
                      +-------------------------------+-------------------------------+
                                                      |
@@ -95,14 +95,14 @@ $$\mathbf{Y = (x - h) + k}$$
                      |                               |                               |
                      v                               v                               v
           [ AMARA Ledger (SQL) ]          [ Athena RAG (Vector) ]         [ Admitted Execution ]
-          * PostgreSQL 15 Engine          * ChromaDB / SQLite Engine      * TOCTOU-Immune Runtime
+          * PostgreSQL 15 Engine          * ChromaDB / SQLite Engine      * TOCTOU-Resistant Runtime
           * Immutable Log Rows            * 768-dim Embeddings            * Verified File Descriptor
           * Microsecond Invariant Audit   * Natural Language Query        * Hardware-Isolated Mobile
 ```
 
 ---
 
-#### [PAGE 3] Decoupled Engine Architecture & TOCTOU-Immune Runtime Verification
+#### [PAGE 3] Decoupled Engine Architecture & TOCTOU-Resistant Runtime Admission
 Conventional cryptographic architectures tightly couple wire protocol handling, algorithm execution, and policy decision-making into single monolithic executables. Under this legacy model, updating an algorithm requires recompiling the core application, halting active datalinks, and risking supply-chain binary substitution on edge non-volatile storage.
 
 QuantumFlex enforces strict architectural decoupling between the **Cryptographic Data Plane** and the **Supervisory Policy Control Plane**, secured by an unbroken cryptographic chain of custody:
@@ -134,9 +134,9 @@ Scrub Dynamic Loader (LD_PRELOAD / LD_LIBRARY_PATH) ---------> +----------------
    Before any linking occurs, the CMake admission gate (`cmake/AdmitQuantumFlex.cmake`) calculates raw SHA-256 byte digests of all installed static archives (`libquantumflex_crypto.a`, `libquantumflex_wire.a`) and public headers against the admission receipt. Any byte modification causes CMake configuration to fail-closed immediately.
 3. **QF-A5 External Provenance Authority:**
    Package authenticity is governed by a canonical detached Ed25519 provenance manifest (`QuantumFlexAdmission.provenance.json` / `.sig`). This manifest is verified by an independent host-anchored verifier (`~/.local/libexec/quantumflex/verify-provenance`) referencing an isolated public trust anchor (`release_signing_key.pub`) held with strict `0400` permissions. The trust anchor resides strictly outside the repository tree, preventing circular supply-chain self-attestation.
-4. **QF-A6 Atomic File-Descriptor Binding ($\text{EXECUTED\_FD} == \text{VERIFIED\_FD}$):**
-   Standard Linux process execution via `execve(path)` is inherently vulnerable to Time-of-Check to Time-of-Use (TOCTOU) race conditions: an attacker with local file access can swap an admitted binary on disk between the moment a security daemon verifies its hash and the moment the kernel loads it into memory.
-   The `qf-runtime-admit` engine eliminates this vulnerability through kernel-level file-descriptor pinning:
+4. **QF-A6 TOCTOU-Resistant Runtime Admission ($\text{EXECUTED\_FD} == \text{VERIFIED\_FD}$):**
+   Standard Linux process execution via `execve(path)` is inherently vulnerable to Time-of-Check to Time-of-Use (TOCTOU) race conditions: an attacker or rogue process with local storage access can swap an admitted binary on disk between the moment a security daemon checks its hash and the moment the kernel invokes it.
+   The `qf-runtime-admit` engine closes this specific executable path-substitution race through kernel-level file-descriptor pinning:
    * The launcher opens the target binary with `O_RDONLY | O_CLOEXEC`.
    * It calculates the SHA-256 digest and verifies the Ed25519 digital signature directly over the open file descriptor (`fd`).
    * It completely purges the dynamic loader environment, stripping `LD_PRELOAD`, `LD_LIBRARY_PATH`, and unauthorized environment overrides.
@@ -147,8 +147,8 @@ Scrub Dynamic Loader (LD_PRELOAD / LD_LIBRARY_PATH) ---------> +----------------
 
 ---
 
-#### [PAGE 4] Empirical Laboratory Proofs (TRL-4 Baseline)
-All technical claims, latency figures, and resilience assertions in this proposal are backed by empirical test logs cataloged in [`docs/AFWERX_CLAIM_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CLAIM_LEDGER.md) and fully documented in the 10-page Technical Appendix ([`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf)).
+#### [PAGE 4] Empirical Laboratory Proofs (Self-Assessed TRL-4 Baseline)
+All technical claims, latency figures, and resilience assertions in this proposal are backed by empirical test logs cataloged in [`docs/AFWERX_CLAIM_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CLAIM_LEDGER.md) and fully documented in the 10-page Technical Appendix ([`docs/DUE_DILIGENCE_DOSSIER.pdf`](file:///home/quant/mycelium/docs/DUE_DILIGENCE_DOSSIER.pdf)). In accordance with Government Accountability Office (GAO) guidelines, the current prototype represents a **self-assessed TRL 4** (integrated components and breadboards validated in a laboratory environment).
 
 ```
 =========================================================================================================
@@ -161,10 +161,10 @@ CL-02    | EWMA LIF Telemetry Cadence Under Attack | 15.01s interval (Nominal: 1
 CL-03    | Shamir Threshold State Transition       | 4.651 ms transition latency            | VERIFIED
 CL-04    | Decoupled Ingestion Acknowledgment      | 3.9–8.5 ms receipt (average 6.29 ms)   | VERIFIED
 CL-05    | Atomic Configuration Hot-Swap           | < 35 ms atomic rewrite latency (Twrite)| VERIFIED
-CL-06    | Automated Regression Suite Pass Rate    | 30/30 passed in 0.44s (commit 239e8eb) | VERIFIED
+CL-06    | Automated Regression Suite Pass Rate    | 30 passed, 1 warning (0.42s, c.31ed9c9)| VERIFIED
 CL-07    | QF-A4 Pre-Link Raw Byte Hash Check      | 100% fail-closed on flipped byte       | VERIFIED
 CL-08    | QF-A5 Detached Ed25519 Provenance       | 7/7 negative adversarial cases caught  | VERIFIED
-CL-09    | QF-A6 TOCTOU fexecve Execution Binding  | 10/10 adversarial cases pass           | VERIFIED
+CL-09    | QF-A6 TOCTOU-Resistant Runtime Admit    | 10/10 adversarial cases pass (fexecve) | VERIFIED
 CL-10    | Zero-Loss Kafka Pipeline Invariant      | 0 dropped pulses on DB disconnect      | VERIFIED
 CL-11    | SQLite WAL Lease Fencing (claim_token)  | 0 race-condition overwrites            | VERIFIED
 CL-12    | Mobile Hardware Role Segregation       | Observer mutations fail-closed (DENY)  | VERIFIED
@@ -183,7 +183,7 @@ CL-14    | NIST CMVP / CAVP Formal Certification   | Certificate: NULL (Pre-vali
 4. **Decoupled Intake Acknowledgment (`CL-04`):**
    Durable telemetry intake benchmarks across 9 test suites demonstrated that HTTP 202 client receipts return in **3.9–8.5 ms** (average 6.29 ms) locally, completely decoupled from local neural inference latency. SQLite WAL persistence with `synchronous=FULL` guarantees durability prior to socket release.
 5. **Comprehensive Automated Test Battery (`CL-06`):**
-   The unified test battery at commit `239e8eb` achieved 100% determinism: 30 of 30 tests passed in 0.44s covering external verifier security (6), zero-loss Kafka consumer offset commits (7), intake lease fencing (3), mobile CLI role segregation (5), mobile distribution signatures (4), and mobile OTA routes (5).
+   The unified test battery at commit `31ed9c9` achieved 100% determinism: 30 of 30 tests passed in 0.42s covering external verifier security (6), zero-loss Kafka consumer offset commits (7), intake lease fencing (3), mobile CLI role segregation (5), mobile distribution signatures (4), and mobile OTA routes (5). The single warning recorded (`DeprecationWarning: anyio.abc.BlockingPortal alias is deprecated`) is classified as a **benign external dependency notice** in Starlette TestClient with zero operational impact.
 6. **Regulatory Demarcation (`CL-14`):**
    In strict compliance with federal procurement governance, NIST CMVP and CAVP certificates are recorded as `NULL`. QuantumFlex is an internal pre-validation engineering research prototype designed to prime formal accredited laboratory evaluation during SBIR Phase II.
 
@@ -192,7 +192,7 @@ CL-14    | NIST CMVP / CAVP Formal Certification   | Certificate: NULL (Pre-vali
 ### [PAGE 5] Operational Defense Problem & Opportunity
 
 #### 1. The Strategic Post-Quantum Mandate
-National Security Systems are entering a staged transition toward post-quantum cryptography under CNSA 2.0 and related federal migration policy, creating an engineering need for crypto-agile systems that can validate, replace, and operationally bind cryptographic components without introducing uncontrolled runtime or supply-chain state. NSA guidance identifies **ML-KEM** and **ML-DSA** as the post-quantum public-key algorithms for CNSA 2.0 and establishes a **2027 requirement for new products and services** in applicable Commercial Solutions for Classified (CSfC) contexts, with broader migration milestones extending through **2030–2031** (and NSM-10 targeting **2035** for full NSS migration).
+National Security Systems are entering a staged transition toward post-quantum cryptography under CNSA 2.0 and related federal migration policy, creating an engineering need for crypto-agile systems that can validate, replace, and operationally bind cryptographic components without introducing uncontrolled runtime or supply-chain state. NSA's published draft CSfC PQC guidance (**CSfC Post Quantum Cryptography Guidance Addendum 1.0, Draft .5**) lays out a staged transition requirement for new products and services in applicable Commercial Solutions for Classified (CSfC) contexts beginning in **2027**, with broader migration milestones extending through **2030–2031** (and NSM-10 targeting **2035** for full NSS migration). ML-KEM and ML-DSA themselves are finalized NIST standards under **FIPS 203** and **FIPS 204**.
 
 #### 2. The Operational Threat Matrix
 Current Department of the Air Force and Joint Force edge communications architectures suffer from three critical architectural vulnerabilities:
@@ -211,7 +211,7 @@ Current Department of the Air Force and Joint Force edge communications architec
 |    Computational Exhaustion    | every unauthenticated/malformed     | spikes, thread deadlocks, and     |
 |    Denial-of-Service           | packet, causing heap bloat.         | dropped tactical telemetry.       |
 +--------------------------------+-------------------------------------+-----------------------------------+
-| 3. TOCTOU Binary Swapping      | Malicious local processes swap      | Hostile binaries execute with     |
+| 3. On-Disk Binary Swapping     | Malicious local processes swap      | Hostile binaries execute with     |
 |    at the Contested Edge       | update binaries on disk between     | full edge system privileges       |
 |                                | hash check and kernel execution.    | during in-flight OTA updates.     |
 +--------------------------------+-------------------------------------+-----------------------------------+
@@ -221,7 +221,7 @@ Current Department of the Air Force and Joint Force edge communications architec
    Adversarial nation-states are actively recording encrypted military radio, datalink, and satellite communications today with the intent to decrypt them once cryptanalytic capabilities or large-scale quantum computers mature. Furthermore, virtually all defense PQC implementations rely exclusively on Module-Lattice cryptography (NIST FIPS 203/204). If an unexpected algebraic breakthrough impairs structured lattices, deployed tactical aircraft will face immediate communications blackout requiring physical depot hardware refits.
 2. **Computational Exhaustion & Host Resource Starvation:**
    Standard military data gateways attempt to parse, deserialize, buffer, and audit every incoming network packet. Under intentional adversarial jamming or forged signature flooding, tactical edge computers (constrained by strict size, weight, power, and thermal limits) suffer severe CPU saturation and memory leaks, starving core avionics flight software of compute cycles.
-3. **TOCTOU Binary Swapping on Contested Edge Hardware:**
+3. **On-Disk Binary Swapping on Contested Edge Hardware:**
    Tactical edge nodes receiving Over-The-Air (OTA) software and algorithm updates risk Time-of-Check to Time-of-Use race conditions. Malicious processes resident on the device can overwrite verified executables on non-volatile flash storage immediately before kernel execution, bypassing static hash checks.
 
 #### 3. The Defense Innovation Opportunity
@@ -257,12 +257,12 @@ QuantumFlex directly addresses urgent security requirements across three primary
 #### 2. Candidate Air Force Discovery Stakeholders
 During Phase I customer discovery, FINALLYFUNGUS LLC will engage candidate technical evaluators and transition program offices across the DAF ecosystem:
 
-1. **Candidate Transition Stakeholder: PEO Cyber and Networks (formerly PEO C3I&N, Hanscom AFB, MA)**
+1. **Candidate Transition Stakeholder: PEO Cyber and Networks (formerly AFLCMC/HN C3I&N, Hanscom AFB, MA)**
    * *Organizational Alignment:* Cryptographic Modernization Branch & Airborne Tactical Datalinks Division.
    * *Mission Synergy:* PEO Cyber and Networks oversees cryptologic hardware and datalink security across the Air Force fleet. QuantumFlex provides a software-defined path to meet CNSA 2.0 staged migration timelines without replacing flight-line cryptographic chassis.
 2. **Candidate R&D Stakeholder: Air Force Research Laboratory (AFRL) Information Directorate (Rome, NY)**
    * *Organizational Alignment:* Cyber Assurance Branch & Quantum Information Systems Branch.
-   * *Mission Synergy:* AFRL/RI develops resilient edge computing and secure cyber architectures. QuantumFlex’s formal invariant modeling ($Y = (x - h) + k$), Landauer entropy shunting, and Valgrind-verified memory zeroization directly align with AFRL’s mission to harden edge enclaves against advanced cyber threats.
+   * *Mission Synergy:* AFRL/RI develops resilient edge computing and secure cyber architectures. QuantumFlex’s formal invariant modeling ($Y = (x - h) + k$), Ghost Node entropy shunting, and Valgrind-verified memory zeroization directly align with AFRL’s mission to harden edge enclaves against advanced cyber threats.
 3. **Candidate Space Stakeholder: Space Systems Command (SSC, El Segundo, CA / Colorado Springs, CO)**
    * *Organizational Alignment:* Space Sensing Directorate & Protected Tactical SATCOM Program Office.
    * *Mission Synergy:* SSC requires ultra-reliable, zero-leak telemetry ingestion and post-quantum security for space vehicle cross-links operating in high-radiation, unattended orbital regimes.
@@ -344,30 +344,31 @@ The systemic vulnerabilities addressed by QuantumFlex—cryptographic fragility,
 ---
 
 #### [PAGE 9] Commercialization Business Model & Intellectual Property Strategy
-FINALLYFUNGUS LLC will commercialize QuantumFlex through a high-margin, scalable **Dual-Licensing and Software-as-a-Service (SaaS)** operational model:
+FINALLYFUNGUS LLC will commercialize QuantumFlex through a structured commercial licensing model and statutory SBIR data rights framework:
 
 ```
 +---------------------------------------------------------------------------------------------------------+
-|                                         DUAL-LICENSING REVENUE MODEL                                    |
+|                                  COMMERCIALIZATION & DATA RIGHTS FRAMEWORK                              |
 +---------------------------------------------------------------------------------------------------------+
-| Commercial Enterprise Tier                             | Defense & Government Purpose Rights (GPR)       |
+| Commercial Enterprise Tier                             | Defense Sector: SBIR Data Rights Framework     |
 +--------------------------------------------------------+------------------------------------------------+
-| * Per-Node Annual Subscription: $1,200–$4,800/yr       | * Custom Enterprise / Site License: GPR Terms  |
-| * Dynamic CBOM Generation & Continuous Asset Discovery | * Airframe & Avionics Pod Integration Services |
-| * Automated OPA Rego Policy Updates & Compliance Logs  | * Hardware-in-the-Loop Simulation Test Harness |
-| * Tier-1 24/7 Enterprise Mission-Critical Support      | * FIPS 140-3 Laboratory Pre-Assessment Support |
+| * Per-Node Annual Subscription: $1,200–$4,800/yr       | * DFARS 252.227-7018 SBIR Data Rights apply    |
+| * Dynamic CBOM Generation & Continuous Asset Discovery | * Technical Data: Limited Rights for 20 years  |
+| * Automated OPA Rego Policy Updates & Compliance Logs  | * Computer Software: Restricted Rights (20 yrs)|
+| * Tier-1 24/7 Enterprise Mission-Critical Support      | * Government Purpose Rights apply post-20 yrs  |
+| * Special License Rights negotiated as required        | * Dedicated Airframe Integration Services      |
 +--------------------------------------------------------+------------------------------------------------+
 ```
 
 1. **Commercial Pricing Model:**
    * *Edge Node Subscription:* Billed annually per deployed gateway node ($1,200 to $4,800/node/year based on bandwidth throughput and high-availability clustering).
    * *Enterprise Controller License:* Centralized management dashboard providing continuous organizational CBOM aggregation, policy orchestration, and automated anomaly auditing ($25,000 to $75,000/year).
-2. **Defense Contract Monetization:**
-   * Phase II SBIR development contract ($1.25M) followed by Phase III commercialization sole-source contracts.
-   * Government-Purpose Rights (GPR) software licensing for military airframes, paired with specialized engineering integration services for MIL-STD-1553 and tactical avionics buses.
+2. **Defense Data Rights & Contract Framework:**
+   * In accordance with **DFARS 252.227-7018** (Rights in Technical Data and Computer Software: Small Business Innovation Research Program), the Government receives **SBIR Data Rights** across all technical data and computer software developed under the contract for a protection period of **twenty (20) years** from award.
+   * During this 20-year period, technical data is protected under limited rights and computer software under restricted rights; the Government receives Government Purpose Rights (GPR) only after the expiration of the 20-year protection period unless special license rights are mutually negotiated.
 3. **Intellectual Property (IP) Strategy:**
-   * *Proprietary Trade Secrets & Data Assertions:* FINALLYFUNGUS LLC asserts proprietary technical data rights over the core mathematical algorithms governing the Leaky Integrate-and-Fire EWMA shock absorber, the Landauer entropy sink shunting mechanism, and the QF-A6 atomic `fexecve` open descriptor verification engine.
-   * *Open-Source Demarcation:* Permissively licensed public wrappers (`Apache-2.0`) provide zero-dependency client integration without disclosing proprietary kernel binding or defense policy logic.
+   * *Trade Secrets & Proprietary Assertions:* FINALLYFUNGUS LLC asserts trade secret protection over proprietary implementation details, mathematical parameterizations, undisclosed internal source code, and deployment heuristics governing the EWMA LIF shock absorber and the QF-A6 runtime admission engine. (Standard public mathematical concepts and Linux system calls such as `fexecve` are not claimed as trade secrets).
+   * *Open-Source Boundary:* Permissively licensed public wrappers (`Apache-2.0`) provide zero-dependency client integration without disclosing proprietary kernel binding or defense policy logic.
 4. **Three-Year Commercialization Milestones:**
    * *Year 1 (2026–2027):* Complete AFWERX Phase I customer discovery; secure Phase II award; conduct laboratory hardware-in-the-loop testing with defense prime partner.
    * *Year 2 (2027–2028):* Deploy operational prototype in Air Force tactical pod demonstration; onboard 3 commercial beta customers in electrical SCADA grids.
@@ -377,12 +378,12 @@ FINALLYFUNGUS LLC will commercialize QuantumFlex through a high-margin, scalable
 
 ### [PAGE 10] Prior, Related & Competitor Work
 
-#### 1. Prior Work Developed by Offeror (TRL-4 Prototype Baseline)
-FINALLYFUNGUS LLC has self-funded and engineered an operational, laboratory-validated prototype system (`QuantumFlex` / `mycelium`), establishing a proven Technology Readiness Level 4 (TRL-4) baseline:
+#### 1. Prior Work Developed by Offeror (Self-Assessed TRL-4 Baseline)
+FINALLYFUNGUS LLC has self-funded and engineered an operational, laboratory-validated prototype system (`QuantumFlex` / `mycelium`), establishing a proven self-assessed TRL 4 baseline:
 * **Standalone Cryptographic Data Plane:** Fully modular C++20 engine containing NIST FIPS 203 (ML-KEM-768/1024), FrodoKEM-976, and X25519 primitives, decoupled from host control logic.
 * **Host-Anchored External Verifier:** Created `verify-provenance` binary and CMake admission gate (`AdmitQuantumFlex.cmake`) enforcing strict XOR developer vs attested package exclusivity.
-* **Kernel-Bound Runtime Admission Launcher:** Created `qf-runtime-admit` utility implementing TOCTOU-immune open file-descriptor execution via `fexecve(fd)`.
-* **Automated 30-Test Regression Suite:** Validated 100% deterministic test execution across unit, integration, and security test harnesses in 0.44s at commit `239e8eb`.
+* **Kernel-Bound Runtime Admission Launcher:** Created `qf-runtime-admit` utility closing on-disk executable path-substitution races via `fexecve(fd)`.
+* **Automated 30-Test Regression Suite:** Validated 100% deterministic test execution across unit, integration, and security test harnesses in 0.42s at commit `31ed9c9`.
 
 #### 2. Competitor Analysis & State-of-the-Art Differentiation
 Conventional market solutions fail to provide the combined attributes of post-quantum algorithm agility, socket-level shock absorption, and binary execution binding required by tactical defense enclaves:
@@ -430,8 +431,8 @@ The contractor shall conduct a 90-day technical feasibility study and customer d
                                                      |
                                                      v
 +---------------------------------------------------------------------------------------------------------+
-|  TASK 2: Automated CAVP Test Bench & Hardware Security Enclave Integration (Days 31–60)                 |
-|  * Subtask 2.1: Construct automated NIST FIPS 203/204 Known Answer Test (KAT) validation harness.      |
+|  TASK 2: ACVP-Compatible Test Bench & Hardware Security Enclave Integration (Days 31–60)                |
+|  * Subtask 2.1: Construct ACVP-compatible NIST FIPS 203/204 pre-validation test harness.                |
 |  * Subtask 2.2: Benchmark discrete TPM 2.0 and mobile secure enclave integration (Titan M2 / Knox).     |
 |  * Subtask 2.3: Stress-profile decapsulation throughput and memory zeroization under line-rate load.    |
 |  * Subtask 2.4: Publish Cryptographic Benchmark & Hardware Enclave Feasibility Report (D2).             |
@@ -448,8 +449,8 @@ The contractor shall conduct a 90-day technical feasibility study and customer d
 
 * **Task 1: Tactical Customer Discovery & Interface Baselines (Days 1–30):**
   The contractor shall engage candidate Air Force stakeholders (PEO Cyber and Networks, AFRL Information Directorate, Space Systems Command, and avionics primes), conducting at least **≥30 structured interviews** to define operational problem statements, bus protocols, and SWaP-C limitations.
-* **Task 2: Automated CAVP Test Bench & Hardware Enclave Integration (Days 31–60):**
-  The contractor shall build an automated test harness ingesting official NIST CAVP Known Answer Test (KAT) vectors for FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA). The contractor shall evaluate physical trust anchor integration across embedded TPM 2.0 modules and discrete secure elements, benchmarking throughput and memory zeroization timing.
+* **Task 2: ACVP-Compatible Test Bench & Hardware Enclave Integration (Days 31–60):**
+  The contractor shall build an automated ACVP-compatible test harness ingesting official NIST Cryptographic Algorithm Validation Program test vectors for FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA). Using Phase I direct materials funding ($15,000), the contractor shall procure dedicated tactical single-board computers and discrete TPM 2.0 evaluation modules to benchmark physical trust anchor integration, throughput, and memory zeroization timing.
 * **Task 3: Phase II Transition Documentation & Demonstration Architecture (Days 61–90):**
   The contractor shall develop the complete technical architecture and flight-demonstration plan for Phase II tactical pod integration, pursue and document customer transition interest (including Letters of Intent or Memoranda of Agreement where obtainable), and author the final comprehensive feasibility report.
 
@@ -467,7 +468,7 @@ In accordance with official AFWERX Open Topic SOW guidelines, all contract repor
 | Kickoff Meeting     | Day 15     | Virtual contract orientation with Air Force TPOC / program office.   |
 | Deliverable D1      | Day 30     | Tactical Interface Baseline & Customer Discovery Synthesis Report.   |
 | Preliminary Report  | Day 45     | Mid-term progress report detailing stakeholder discovery findings.   |
-| Deliverable D2      | Day 60     | Automated CAVP KAT Test Bench & Hardware Enclave Assessment.         |
+| Deliverable D2      | Day 60     | ACVP-Compatible Test Bench & Hardware Enclave Feasibility Assessment.|
 | Final Meeting       | Day 85     | Final technical briefing and Phase II demonstration review.          |
 | Deliverable D3      | Day 90     | Final Comprehensive Feasibility Report & Phase II Transition Plan,   |
 | (Final Report)      |            | formally incorporating Standard Form 298 (SF 298) and DD Form 882.   |
@@ -477,7 +478,7 @@ In accordance with official AFWERX Open Topic SOW guidelines, all contract repor
 1. **Kickoff Meeting (Day 15):** Virtual meeting with the designated Air Force Technical Point of Contact (TPOC) to review milestones, confirm communication channels, and approve interview outreach protocols.
 2. **Deliverable D1 (Day 30):** *Tactical Interface Baseline & Customer Discovery Synthesis Report.* Synthesizes findings from initial stakeholder discovery, defining platform physical interfaces, SWaP-C envelopes, and datalink constraints.
 3. **Preliminary Progress Report (Day 45):** Formal mid-term progress report submitted via DSIP summarizing interview metrics, technical challenges encountered, and initial test bench progress.
-4. **Deliverable D2 (Day 60):** *Automated CAVP KAT Test Bench & Hardware Enclave Feasibility Assessment.* Documents the automated KAT validation harness, algorithm cycle counts, memory zeroization benchmarks, and TPM 2.0 integration feasibility.
+4. **Deliverable D2 (Day 60):** *ACVP-Compatible Test Bench & Hardware Enclave Feasibility Assessment.* Documents the automated KAT validation harness, algorithm cycle counts, memory zeroization benchmarks, and TPM 2.0 integration feasibility.
 5. **Deliverable D3 (Day 90 — Final Comprehensive Report):** Comprehensive final feasibility report incorporating all customer discovery transcripts, architectural designs, commercialization milestones, and Phase II demonstration SOW. Formally incorporates:
    * **Standard Form 298 (SF 298):** Report Documentation Page.
    * **DD Form 882:** Report of Inventions and Subcontracts.
@@ -488,26 +489,32 @@ In accordance with official AFWERX Open Topic SOW guidelines, all contract repor
 
 #### 1. Principal Investigator & Key Personnel
 * **Rahshaun Chambers (Lead Systems Architect & Principal Investigator):**
-  * *Role & Commitment:* 100% committed to technical execution of the Phase I Statement of Work (320 direct labor hours across 12 weeks, ~26.7 hours/week).
+  * *Role & Commitment:* **320 Phase I direct project hours; PI primarily employed by the SBC during performance** (fully satisfying SBA requirements that the PI's primary employment be with the small business concern at the time of award and throughout the period of performance). Dedicated to technical execution across all 3 Phase I tasks (~26.7 direct hours/week).
   * *Technical Background:* Founder of QuantumFlex and lead architect of the `mycelium` code repository. Academic background in Computer Science at Southern New Hampshire University (SNHU), with foundational coursework in operating systems, software engineering, algorithms, and discrete mathematics.
   * *Core Competencies:* Direct experience architecting decoupled C++20 and Rust cryptographic engines, POSIX signal inter-process communication, Open Policy Agent (OPA) Rego sidecar integration, Ed25519 provenance validation gates, and kernel-level `fexecve` file-descriptor execution binding.
 * **Subcontractors & Independent Consultants ($5,000 ODC):**
-  * The contractor will engage an independent cryptographic consultant with formal NVLAP accredited laboratory evaluation experience to perform pre-assessment reviews of the automated CAVP test bench, entropy interfaces, and memory zeroization routines.
+  * The contractor will engage an independent cryptographic consultant with formal NVLAP accredited laboratory evaluation experience to perform pre-assessment reviews of the automated ACVP test bench, entropy interfaces, and memory zeroization routines.
 
 #### 2. Corporate Demarcation & Entity Disclosure
 In strict adherence to federal procurement integrity standards:
 * **Applicant Firm:** FINALLYFUNGUS LLC (PA Entity ID: 13706513, Pittston, PA) DBA QuantumFlex.
 * **Commercial Baseline:** Established commercial line operating in agricultural and cultivation supply products.
 * **Research Line:** QuantumFlex operates as an early-stage cybersecurity and post-quantum software R&D initiative chartered to resolve algorithmic brittleness and data hoarding in national security systems.
-* **Foreign Ownership & Control:** FINALLYFUNGUS LLC is 100% American-owned and operated. There is zero foreign ownership, control, influence (zero FOCI), or foreign national personnel.
+* **Foreign Ownership & Control:** FINALLYFUNGUS LLC is 100% American-owned and operated. **No known foreign ownership, control, or influence identified in company records as of submission.**
 
-#### 3. Facilities & Equipment
-FINALLYFUNGUS LLC maintains a dedicated software development laboratory in Philadelphia / Pittston, PA, equipped with dedicated x86_64 and ARM64 single-board computing enclaves, physical TPM 2.0 evaluation modules, isolated network packet-injection test benches, and dedicated cloud-hosted telemetry brokers.
+#### 3. Facilities, Current Equipment & Phase I Acquisition Plan
+* **Current Development & Testing Baseline:**
+  * Primary x86_64 Linux engineering workstation (Lenovo platform running Fedora Linux, Linux kernel namespaces, Valgrind 3.27, AddressSanitizer, and POSIX IPC tooling).
+  * Commercial mobile edge hardware featuring discrete silicon hardware security enclaves (Google Pixel with Titan M2 HSM, Samsung Galaxy with Knox Vault).
+  * Software-defined network emulation environment utilizing Linux network namespaces (`ip netns`), traffic control (`tc`), and zero-trust tailnet mesh.
+* **Phase I Equipment Acquisition Plan (Funded under $15k Materials):**
+  * Under Task 2, direct materials funding ($15,000) will be used to procure dedicated tactical single-board computers (ARM64 and x86_64 industrial SBCs) and discrete TPM 2.0 evaluation modules for physical hardware-in-the-loop benchmarking.
 
 ---
 
 ### [OPTIONAL PAGE 14] Acronyms & Glossary
 
+* **ACVP:** Automated Cryptographic Validation Protocol (NIST)
 * **CAVP:** Cryptographic Algorithm Validation Program (NIST)
 * **CBOM:** Cryptographic Bill of Materials (CycloneDX 1.5 JSON standard)
 * **CCA:** Collaborative Combat Aircraft
