@@ -81,6 +81,14 @@ jobs:
       - name: Generate Release Attestation
         run: python3 scripts/generate_release_attestation.py quantumflex-bundle.tar.gz
         
+      - name: Refuse mycelium-a5 private key in Actions
+        run: |
+          # Prod A5 is an offline ceremony. Cosign OIDC below is a different plane.
+          if env | grep -E '^(QF_RELEASE_KEY|QF_RELEASE_KEY_PATH)=' >/dev/null; then
+            echo "HARD STOP: mycelium-a5-ed25519-v1 private key must not enter GitHub Actions."
+            exit 1
+          fi
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
         

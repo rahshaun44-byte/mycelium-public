@@ -58,7 +58,8 @@ if [ "$ACTUAL_SHA" != "$EXPECTED_CLI_SHA" ]; then
     echo "    Actual:   $ACTUAL_SHA" >&2
     exit 1
 fi
-echo "[+] Integrity verified: qflex_cli.py SHA-256 matches Truth Log ($ACTUAL_SHA)"
+echo "[+] Integrity verified: qflex_cli.py SHA-256 matches baked pin ($ACTUAL_SHA)"
+echo "[*] Hash is not a signature. Workflow 2 detached sig (mobile-ed25519-v1) is a separate plane."
 
 cp -a "$LOCAL_CLI" "$HOME/qflex_cli.py"
 chmod 0755 "$HOME/qflex_cli.py"

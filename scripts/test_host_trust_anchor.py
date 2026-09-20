@@ -38,7 +38,13 @@ def expect(label: str, ok: bool, detail: str = "") -> None:
     print(f"[PASS] {label}")
 
 
-def write_signed_tree(root: Path, artifacts: dict[str, bytes], *, extra_rel: str | None = None) -> Path:
+def write_signed_tree(
+    root: Path,
+    artifacts: dict[str, bytes],
+    *,
+    extra_rel: str | None = None,
+    key_id: str | None = None,
+) -> Path:
     release = root / "release"
     release.mkdir(parents=True)
     listed: dict[str, dict[str, object]] = {}
@@ -65,6 +71,13 @@ def write_signed_tree(root: Path, artifacts: dict[str, bytes], *, extra_rel: str
         "schema_version": "2.1.0",
         "predicate_type": "https://slsa.dev/provenance/v1",
     }
+    if key_id:
+        manifest["schema_version"] = "2.2.0"
+        manifest["signing"] = {
+            "algorithm": "Ed25519",
+            "key_id": key_id,
+            "plane": "host-release-a5",
+        }
     manifest_path = release / "PROVENANCE_MANIFEST.json"
     body = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     manifest_path.write_text(body, encoding="utf-8")
@@ -93,12 +106,14 @@ def write_signed_tree(root: Path, artifacts: dict[str, bytes], *, extra_rel: str
     )
     expect("openssl pkeyutl -sign -rawin", signed.returncode == 0, signed.stderr)
     sig_b64 = base64.b64encode(raw_sig.read_bytes()).decode("ascii")
-    (release / "PROVENANCE_MANIFEST.sig").write_text(
-        "SIGNATURE_ALGORITHM=Ed25519\n"
-        "PUBLIC_KEY_PIN=release_signing_key.pub\n"
-        f"SIGNATURE_B64={sig_b64}\n",
-        encoding="utf-8",
-    )
+    sig_lines = [
+        "SIGNATURE_ALGORITHM=Ed25519",
+        "PUBLIC_KEY_PIN=release_signing_key.pub",
+    ]
+    if key_id:
+        sig_lines.append(f"KEY_ID={key_id}")
+    sig_lines.append(f"SIGNATURE_B64={sig_b64}")
+    (release / "PROVENANCE_MANIFEST.sig").write_text("\n".join(sig_lines) + "\n", encoding="utf-8")
     return pub
 
 
@@ -172,6 +187,32 @@ def main() -> int:
             "synthetic tree ALLOW",
             good.returncode == 0 and "TRUSTED -> ALLOW EXECUTION" in good.stdout,
             good.stdout + good.stderr,
+        )
+
+        wrong_plane = tmp_path / "wrong-plane"
+        wrong_plane.mkdir()
+        wrong_pub = write_signed_tree(
+            wrong_plane,
+            {"payloads/hello.txt": b"trusted-bytes\n"},
+            key_id="mobile-ed25519-v1",
+        )
+        wrong_dest = tmp_path / "libexec-wrong"
+        install_anchor(wrong_dest, wrong_pub)
+        wrong_dest.chmod(0o700)
+        labeled = run(
+            [
+                str(wrong_dest / "verify-provenance"),
+                str(wrong_plane / "release" / "PROVENANCE_MANIFEST.json"),
+                "--repo-root",
+                str(wrong_plane),
+                "--key-id",
+                "mycelium-a5-ed25519-v1",
+            ]
+        )
+        expect(
+            "wrong-plane key_id FAIL-CLOSED (no key search)",
+            labeled.returncode != 0 and "No key search" in (labeled.stdout + labeled.stderr),
+            labeled.stdout + labeled.stderr,
         )
 
         (fixture / "payloads" / "hello.txt").write_bytes(b"tampered\n")

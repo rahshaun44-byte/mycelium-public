@@ -107,9 +107,11 @@ expected trust-boundary text present?
 
 `scripts/assert_host_trust_source.py` inspects the exact current text
 (`TRUST_ANCHOR_DIR = Path(__file__).resolve().parent`, sibling
-`release_signing_key.pub`, `SIGNATURE_B64=`, `entry.get("sha256")`).
-It refuses the in-repo pointer as a judge. This agent does not mutate
-`/home/quant/.local/libexec`.
+`release_signing_key.pub`, `SIGNATURE_B64`, `entry.get("sha256")`,
+single `key_id` pin). It refuses the in-repo pointer as a judge. This
+agent does not mutate `/home/quant/.local/libexec`.
+
+Ceremony (all artifact classes): `docs/ARTIFACT_SIGNING_WORKFLOW.md`.
 
 ## Evaluate a checkout
 

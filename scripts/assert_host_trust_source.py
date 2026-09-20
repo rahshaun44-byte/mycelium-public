@@ -19,9 +19,11 @@ from pathlib import Path
 JUDGE_REQUIRED = (
     'TRUST_ANCHOR_DIR = Path(__file__).resolve().parent',
     'DEFAULT_KEY_PATH = TRUST_ANCHOR_DIR / "release_signing_key.pub"',
-    'if line.startswith("SIGNATURE_B64="):',
+    'if "SIGNATURE_B64" in fields:',
     'value = entry.get("sha256")',
     "path.relative_to(root)",
+    "enforce_single_pin",
+    "No key search",
     "openssl",
     "pkeyutl",
     "-rawin",

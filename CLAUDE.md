@@ -168,5 +168,7 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
   not a judge). Isolation of libexec is not a same-user trust boundary:
   the repo supplies the object, not the key. This collapse branch is
   dirty vs the signed manifest — installer refuse is correct. Operator
-  sequence: `docs/QF_R2_OPERATOR_RUNBOOK.md`. This agent does not write
+  sequence: `docs/QF_R2_OPERATOR_RUNBOOK.md`. Signing ceremony (hash →
+  manifest → Ed25519 → pin → gate, planes by key_id):
+  `docs/ARTIFACT_SIGNING_WORKFLOW.md`. This agent does not write
   `/home/quant/.local/libexec`.

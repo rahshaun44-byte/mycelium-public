@@ -34,6 +34,7 @@ string(APPEND _json "  \"openssl_version\": \"${QF_OPENSSL}\",\n")
 string(APPEND _json "  \"source_commit\": \"${QF_SOURCE_COMMIT}\",\n")
 string(APPEND _json "  \"binding\": \"sha256\",\n")
 string(APPEND _json "  \"signed\": false,\n")
+string(APPEND _json "  \"signing\": {\"plane\": \"quantumflex-admission\", \"signed\": false},\n")
 string(APPEND _json "  \"artifacts\": [\n")
 
 set(_first TRUE)

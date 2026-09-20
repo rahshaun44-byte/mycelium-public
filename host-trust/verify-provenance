@@ -27,6 +27,8 @@ from pathlib import Path
 
 TRUST_ANCHOR_DIR = Path(__file__).resolve().parent
 DEFAULT_KEY_PATH = TRUST_ANCHOR_DIR / "release_signing_key.pub"
+# Single pin. Never iterate a keyring. Historical 2.1.0 omits key_id.
+PINNED_KEY_ID = os.environ.get("QF_SIGNING_KEY_ID", "mycelium-a5-ed25519-v1")
 
 
 def compute_sha256(filepath: Path) -> str:
@@ -54,22 +56,57 @@ def contained_in(path: Path, root: Path) -> bool:
         return False
 
 
-def load_signature_bytes(sig_path: Path) -> bytes:
+def load_signature_fields(sig_path: Path) -> tuple[bytes, dict[str, str]]:
     raw = sig_path.read_bytes()
     text = raw.decode("utf-8", errors="replace")
+    fields: dict[str, str] = {}
     for line in text.splitlines():
-        if line.startswith("SIGNATURE_B64="):
-            return base64.b64decode(line.split("=", 1)[1].strip())
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        fields[key.strip()] = value.strip()
+    if "SIGNATURE_B64" in fields:
+        return base64.b64decode(fields["SIGNATURE_B64"]), fields
     stripped = raw.strip()
     if len(stripped) == 64:
-        return stripped
+        return stripped, fields
     try:
         decoded = base64.b64decode(stripped, validate=True)
     except Exception as exc:
         sys.exit(f"[!] ADMISSION DENIED: Detached signature unreadable at {sig_path}: {exc}")
     if len(decoded) != 64:
         sys.exit(f"[!] ADMISSION DENIED: Detached signature is not 64-byte Ed25519 ({sig_path})")
-    return decoded
+    return decoded, fields
+
+
+def load_signature_bytes(sig_path: Path) -> bytes:
+    sig, _fields = load_signature_fields(sig_path)
+    return sig
+
+
+def declared_key_id(manifest_data: object, sidecar: dict[str, str]) -> str | None:
+    mid = None
+    if isinstance(manifest_data, dict):
+        signing = manifest_data.get("signing")
+        if isinstance(signing, dict):
+            raw = signing.get("key_id")
+            mid = raw if isinstance(raw, str) and raw else None
+    sid = sidecar.get("KEY_ID") or None
+    if mid and sid and mid != sid:
+        sys.exit(
+            f"[!] ADMISSION DENIED: key_id mismatch manifest={mid!r} sidecar={sid!r}"
+        )
+    return mid or sid
+
+
+def enforce_single_pin(declared: str | None, pinned: str) -> None:
+    if declared is None:
+        return
+    if declared != pinned:
+        sys.exit(
+            f"[!] ADMISSION DENIED: key_id {declared!r} is not this verifier's pin "
+            f"{pinned!r}. No key search."
+        )
 
 
 def find_signature(manifest_path: Path) -> Path:
@@ -147,7 +184,9 @@ def _verify_ed25519_openssl(manifest_path: Path, sig_bytes: bytes, key_path: Pat
         sys.exit("[!] ADMISSION DENIED: Cryptographic signature mismatch over manifest bytes.")
 
 
-def verify_manifest(manifest_path: Path, repo_root: Path | None, key_path: Path) -> int:
+def verify_manifest(
+    manifest_path: Path, repo_root: Path | None, key_path: Path, pinned_key_id: str
+) -> int:
     manifest_path = manifest_path.resolve()
     if not manifest_path.is_file():
         sys.exit(f"[!] ADMISSION DENIED: Manifest not found: {manifest_path}")
@@ -158,13 +197,16 @@ def verify_manifest(manifest_path: Path, repo_root: Path | None, key_path: Path)
         repo_root = repo_root.resolve()
 
     sig_path = find_signature(manifest_path)
-    verify_ed25519(manifest_path, load_signature_bytes(sig_path), key_path)
+    sig_bytes, sidecar = load_signature_fields(sig_path)
+    verify_ed25519(manifest_path, sig_bytes, key_path)
     print(f"[+] PROVENANCE: Ed25519 digital signature VALID (Key: {key_path})")
 
     try:
         manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
     except Exception as exc:
         sys.exit(f"[!] ADMISSION DENIED: Manifest JSON malformed: {exc}")
+
+    enforce_single_pin(declared_key_id(manifest_data, sidecar), pinned_key_id)
 
     artifacts = manifest_data.get("artifacts", {})
     if not isinstance(artifacts, dict) or not artifacts:
@@ -216,8 +258,13 @@ def main() -> int:
         default=DEFAULT_KEY_PATH,
         help="Pinned Ed25519 public key (default: sibling release_signing_key.pub)",
     )
+    parser.add_argument(
+        "--key-id",
+        default=PINNED_KEY_ID,
+        help="Single allowed signing.key_id (default mycelium-a5-ed25519-v1). No keyring.",
+    )
     args = parser.parse_args()
-    return verify_manifest(args.manifest, args.repo_root, args.key.resolve())
+    return verify_manifest(args.manifest, args.repo_root, args.key.resolve(), args.key_id)
 
 
 if __name__ == "__main__":

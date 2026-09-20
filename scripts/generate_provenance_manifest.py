@@ -16,12 +16,17 @@ Security Model & Trust Boundary:
 import argparse
 import base64
 import hashlib
-import json
 import os
 import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
+
+from qf_signing_ceremony import (
+    HOST_A5_KEY_ID,
+    canonical_manifest_bytes,
+    encode_sidecar,
+)
 
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RELEASE_DIR = os.path.join(WORKSPACE, "release")
@@ -127,6 +132,11 @@ def main():
         ),
         help="Path to external Ed25519 private key (outside runtime repository)"
     )
+    parser.add_argument(
+        "--key-id",
+        default=os.environ.get("QF_SIGNING_KEY_ID", HOST_A5_KEY_ID),
+        help="Signing plane key_id (default mycelium-a5-ed25519-v1). Never share with mobile.",
+    )
     args = parser.parse_args()
 
     os.makedirs(RELEASE_DIR, exist_ok=True)
@@ -151,8 +161,13 @@ def main():
         print(f"[!] Warning: Target files missing on disk: {missing}")
 
     manifest = {
-        "schema_version": "2.1.0",
+        "schema_version": "2.2.0",
         "predicate_type": "https://slsa.dev/provenance/v1",
+        "signing": {
+            "algorithm": "Ed25519",
+            "key_id": args.key_id,
+            "plane": "host-release-a5",
+        },
         "build_definition": {
             "build_type": "https://quantumflex.defense/build/v2",
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -188,10 +203,10 @@ def main():
         "artifacts": artifacts
     }
 
-    # 1. Deterministic canonical JSON serialization
-    canonical_json = json.dumps(manifest, indent=2, sort_keys=True)
-    with open(MANIFEST_PATH, "w") as f:
-        f.write(canonical_json + "\n")
+    # 1. Deterministic canonical JSON serialization (frozen before sign)
+    canonical = canonical_manifest_bytes(manifest)
+    with open(MANIFEST_PATH, "wb") as f:
+        f.write(canonical)
 
     # 2. Cryptographic Asymmetric Ed25519 Signature using external key
     try:
@@ -202,17 +217,21 @@ def main():
 
     sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
 
-    # 3. Write signature file
+    # 3. Write detached sidecar. TIMESTAMP is unsigned (not in the signed bytes).
+    sidecar = encode_sidecar(
+        signature_b64=sig_b64,
+        key_id=args.key_id,
+        public_key_pin="release_signing_key.pub",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
     with open(SIG_PATH, "w") as f:
-        f.write(f"SIGNATURE_ALGORITHM=Ed25519\n")
-        f.write(f"PUBLIC_KEY_PIN=release_signing_key.pub\n")
-        f.write(f"SIGNATURE_B64={sig_b64}\n")
-        f.write(f"TIMESTAMP={datetime.now(timezone.utc).isoformat()}\n")
+        f.write(sidecar)
 
     print(f"[+] Provenance manifest written to: {MANIFEST_PATH}")
     print(f"[+] Ed25519 signature written to: {SIG_PATH}")
+    print(f"[+] key_id: {args.key_id}")
     print(f"[+] Artifacts bound: {len(artifacts)}")
-    print(f"[+] Manifest SHA-256: {hashlib.sha256(open(MANIFEST_PATH, 'rb').read()).hexdigest()}")
+    print(f"[+] Manifest SHA-256: {hashlib.sha256(canonical).hexdigest()}")
     print(f"[+] Signing Authority: {args.key} (Isolated from runtime environment)")
     return 0
 

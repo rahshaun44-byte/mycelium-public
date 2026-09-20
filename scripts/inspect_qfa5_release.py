@@ -75,8 +75,9 @@ def main() -> int:
     print(f"sidecar  : {SIDECAR}")
     print(f"bootstrap: {BOOTSTRAP_KEY}")
     print()
-    print("Authoritative on-disk contract (schema 2.1.0):")
+    print("Authoritative on-disk contract (schema 2.1.0 or 2.2.0):")
     print("  artifacts[rel_path] = {sha256, size_bytes, assurance_level, description}")
+    print("  optional signing.key_id (required for 2.2.0 ceremonies)")
     print("  PROVENANCE_MANIFEST.sig contains SIGNATURE_B64= (Ed25519 over raw bytes)")
     print("  openssl pkeyutl -sign/-verify -rawin")
     print("  release/MANIFEST.json (schema 1.5.0) is a different policy-bundle file.")
@@ -92,8 +93,9 @@ def main() -> int:
         print(f"[HARD-STOP] Manifest JSON unreadable: {exc}")
         return 1
 
-    if manifest.get("schema_version") != "2.1.0":
-        print(f"[HARD-STOP] Unexpected schema_version={manifest.get('schema_version')!r}")
+    schema = manifest.get("schema_version")
+    if schema not in ("2.1.0", "2.2.0"):
+        print(f"[HARD-STOP] Unexpected schema_version={schema!r}")
         return 1
 
     source = manifest.get("build_definition", {}).get("source", {})
@@ -104,6 +106,8 @@ def main() -> int:
         f"dirty={source.get('dirty_working_tree')}"
     )
     print(f"Signed at    : {manifest.get('build_definition', {}).get('timestamp_utc')}")
+    signing = manifest.get("signing") if isinstance(manifest.get("signing"), dict) else {}
+    print(f"signing.key_id: {signing.get('key_id') or '(omitted — 2.1.0 historical pin is the pubkey file)'}")
     print()
 
     sig_bytes = None
