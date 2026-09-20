@@ -17,6 +17,7 @@ ExecStartPre=%h/.local/libexec/quantumflex/verify-provenance %h/mycelium
 ExecStart=%h/mycelium/build_check/quantum_flex_engine
 Restart=on-failure
 RestartSec=5
+LimitCORE=0
 StandardOutput=append:%h/.local/state/quantum-flex-mycelium/engine.log
 StandardError=inherit
 
