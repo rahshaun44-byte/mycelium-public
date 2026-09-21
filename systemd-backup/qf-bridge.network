@@ -1,0 +1,15 @@
+# ==============================================================================
+# QuantumFlex Isolated Bridge Network (Quadlet Definition)
+# ==============================================================================
+# Provisions the dedicated rootless Podman network for the Gatekeeper, Ghost
+# Node, and Telemetry DB containers with a static subnet for deterministic IP
+# assignment (10.88.0.50 for Ghost Node).
+# ==============================================================================
+
+[Unit]
+Description=QuantumFlex Isolated Bridge Network
+
+[Network]
+Subnet=10.88.0.0/16
+Gateway=10.88.0.1
+Internal=true
