@@ -1,0 +1,45 @@
+# ==============================================================================
+# QuantumFlex Ingress Gatekeeper Container (Quadlet Template)
+# ==============================================================================
+# Evaluates incoming state attestations at line speed via Wasmtime/OPA ABI.
+# Strictly isolates unverified packets (h) and routes them to the Ghost Node.
+#
+# HARDENING:
+#   - PublishPort bound strictly to 127.0.0.1 (Loopback only). Zero mesh/LAN exposure.
+#   - Policy mounted read-only (:ro,Z) to separate logic from governing policy.
+# ==============================================================================
+
+[Unit]
+Description=QuantumFlex Ingress Gatekeeper (Wasmtime/OPA)
+After=network-online.target quantumflex-ghost-sink.service
+Wants=quantumflex-ghost-sink.service
+
+[Container]
+ContainerName=qf-ingress-gatekeeper
+Image=localhost/quantumflex/ingress-gatekeeper:latest
+
+# Attach to the isolated bridge network to reach Ghost Sink
+Network=qf-bridge.network
+
+# Mount the compiled Wasm policy dynamically (read-only)
+Volume=%h/.config/quantumflex/policies:/policies:ro,Z
+
+# Wasm policy environment path
+Environment=WASM_POLICY_PATH=/policies/quantumflex_bootgate.wasm
+
+# HARDENED: Bind strictly to loopback interface. Never 0.0.0.0 or physical LAN.
+PublishPort=127.0.0.1:8443:8443/tcp
+
+User=10001:10001
+NoNewPrivileges=true
+DropCapability=ALL
+ReadOnly=true
+
+[Service]
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=30
+ExecStartPre=/usr/bin/test -f %h/.config/quantumflex/policies/quantumflex_bootgate.wasm
+
+[Install]
+WantedBy=default.target

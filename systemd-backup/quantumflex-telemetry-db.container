@@ -1,0 +1,40 @@
+# ==============================================================================
+# QuantumFlex Telemetry Database Container (Quadlet Template)
+# ==============================================================================
+# Append-only PostgreSQL telemetry store for the Ghost Node entropy sink.
+#
+# HARDENING:
+#   - Zero plaintext passwords in unit files or environment.
+#   - Passwords injected via Podman Secrets: Secret=postgres-telemetry-pass.secret
+#   - Isolated within qf-bridge.network; zero ports published to host interfaces.
+# ==============================================================================
+
+[Unit]
+Description=QuantumFlex Telemetry Database (Append-Only Ledger)
+After=network-online.target
+
+[Container]
+ContainerName=telemetry-db
+Image=docker.io/library/postgres:16-alpine
+
+# Isolated bridge network only - invisible to host physical interfaces or Tailnet
+Network=qf-bridge.network
+
+# Ingest credentials from Podman Secret (no plaintext passwords)
+Secret=postgres-telemetry-pass,type=env,target=POSTGRES_PASSWORD
+
+Environment=POSTGRES_USER=qf_admin
+Environment=POSTGRES_DB=telemetry
+
+# Persistent volume for the append-only ledger
+Volume=telemetry-data:/var/lib/postgresql/data:Z
+
+User=70:70
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target

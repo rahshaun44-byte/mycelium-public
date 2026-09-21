@@ -41,6 +41,8 @@
 | **CL-13** | **Zero-Trust Network Perimeter** | Loopback binding (`127.0.0.1:9000`); Tailscale Serve MagicDNS HTTPS | Tailscale Serve configuration | `tailscale serve status` showing proxying to `127.0.0.1:9000`; zero open LAN Wi-Fi listeners | **VERIFIED** |
 | **CL-14** | **NIST CMVP / CAVP Formal Certification** | `Certificate: NULL` (None claimed) | `TRUTH_LOG_MASTER.md`, Dossier Regulatory Notice | Self-administered ACVP-compatible test harness; pre-validation prototype only | **NOT CLAIMED** |
 | **CL-15** | **TLS 1.3 Protocol Floor & Downgrade Rejection** | Fatal startup denial if min version != TLS 1.3; TLS 1.2 clients rejected with `TLSV1_ALERT_PROTOCOL_VERSION` | `src/core/ipc_server.cpp` (lines 278-282), live production test against `:9444` | 4/4 live transport controls pass (TLS 1.3 valid client ALLOW; no cert DENY; rogue CA DENY; TLS 1.2 client DENY) | **VERIFIED** |
+| **CL-16** | **Selective State Attestation & Transaction Authority** | Below-the-network admission matrix (12/12 pass), native/Wasm parity (12/12 pass), crash-injection atomicity (4/4 pass), external anti-rollback witness, IEEE-754 sequence bounds ($0 \le \text{seq} \le 2^{53}-1$) | `sentinel/policies/bootgate.rego`, `sentinel/policies/bootgate.wasm`, `tests/test_single_transaction_authority.py`, `tests/test_wasm_parity.py`, `tests/test_critical_state_gate.py` | Strict RFC 8785 canonicalization, Ed25519 provenance, OPA policy binding, atomic SQLite WAL single transaction authority, external monotonic witness | **VERIFIED** |
+
 
 ---
 
