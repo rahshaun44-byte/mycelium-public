@@ -1,40 +1,33 @@
 # ==============================================================================
-# QuantumFlex Monotonic Witness Container (Quadlet Template for HP Pavilion)
+# QuantumFlex Monotonic Witness Container (Quadlet Unit)
 # ==============================================================================
-# Dedicated external anti-rollback witness arbiter running on Worker Node 2
-# (qf-pavilion-worker: 100.64.1.34).
+# Independent external anti-rollback witness arbiter (Gate 5 / QF_EXTERNAL_CHECKPOINT_V1).
+# Enforces monotonic sequence progression (sequence > highest_witnessed_sequence).
 #
 # HARDENING:
-#   - Bound strictly to the Tailscale interface IP (100.64.1.34:8444).
-#   - Zero physical LAN exposure (never 0.0.0.0 or 192.168.100.17).
-#   - Enforces strict monotonic sequence progression (seq > highest_witnessed).
-#   - Integrates FIPS 204 ML-DSA and Ed25519 cryptographic provenance verification.
+#   - Bound strictly to loopback (127.0.0.1:8444). Zero LAN/physical exposure.
+#   - Rootless unprivileged execution (UID 10001).
+#   - All capabilities dropped (DropCapability=ALL).
+#   - Persistent SQLite WAL volume at /data.
 # ==============================================================================
 
 [Unit]
-Description=QuantumFlex Monotonic Witness Node (HP Pavilion)
-After=network-online.target tailscaled.service
-Wants=tailscaled.service
+Description=QuantumFlex Monotonic Witness Container
+After=network-online.target
+Wants=network-online.target
 
 [Container]
-ContainerName=qf-witness
+ContainerName=quantumflex-witness
 Image=localhost/quantumflex/monotonic-witness:latest
-
-# Use host networking so the container can bind directly to the tailscale0 interface IP
 Network=host
-
-Environment=WITNESS_BIND_ADDR=100.64.1.34:8444
-Secret=postgres-telemetry-pass,type=env,target=POSTGRES_PASSWORD
-Environment=POSTGRES_USER=qf_admin
-Environment=POSTGRES_DB=telemetry
-Environment=POSTGRES_TELEMETRY_URL=postgres://qf_admin:${POSTGRES_PASSWORD}@127.0.0.1:5432/telemetry?sslmode=disable
-
+Environment=WITNESS_BIND_ADDR=127.0.0.1:8444
+Volume=%h/.local/share/quantum-flex-mycelium/witness:/data:Z
 NoNewPrivileges=true
 DropCapability=ALL
 
 [Service]
 Restart=on-failure
-RestartSec=5
+RestartSec=3
 TimeoutStartSec=15
 
 [Install]

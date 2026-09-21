@@ -1,0 +1,19 @@
+FROM docker.io/library/alpine:3.20
+
+RUN apk add --no-cache python3 sqlite
+
+WORKDIR /app
+COPY witness_server.py /app/witness_server.py
+
+RUN chmod +x /app/witness_server.py && \
+    mkdir -p /data && \
+    chown -R 10001:10001 /app /data
+
+USER 10001:10001
+
+ENV WITNESS_BIND_ADDR="127.0.0.1:8444"
+ENV WITNESS_DATA_DIR="/data"
+
+EXPOSE 8444
+
+ENTRYPOINT ["/usr/bin/python3", "-u", "/app/witness_server.py"]
