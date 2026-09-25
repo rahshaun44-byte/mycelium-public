@@ -1,94 +1,113 @@
 ---
 name: quantumflex-operations
 description: >-
-  Operational procedures for QuantumFlex: Shamir 3-of-5 unsealing ceremony,
-  Tailscale mesh service management, mobile node synchronization, neural Oracle
-  queries, and host performance optimization.
+  Operational procedures for QuantumFlex: Stratum 0 Shamir 3-of-5 unsealing ceremony,
+  systemd stack lifecycle, dual Postgres routing, Tailscale private mesh, C++ engine builds,
+  and host kernel performance tuning.
 ---
 
-# QuantumFlex Operations Playbook
+# QuantumFlex Core Operations Playbook
 
-This skill provides step-by-step procedures for managing and maintaining the QuantumFlex sovereign operating system.
+This skill provides operational procedures for managing, maintaining, and inspecting the core QuantumFlex sovereign operating system stack.
 
 ---
 
 ## 1. Stratum 0 Engine Unsealing (Shamir 3-of-5 Ceremony)
 
-When the C++ Evidence Engine (`quantum-flex-engine-mycelium.service`) boots, it starts in a sealed `LOCKED` posture.
+When the C++ Evidence Engine boots, it starts in a sealed `LOCKED` posture requiring a 3-of-5 threshold of cryptographic shards.
 
-### Procedure:
-1. **Mount Transient USB Vault:**
+### Unlock Procedure:
+1. Ensure the 3 required shard files are present (with permissions `0600`):
    ```bash
-   udisksctl mount -b /dev/sda1
+   chmod 600 ~/qfx-shards/shard_1.txt ~/qfx-shards/shard_2.txt
    ```
-2. **Execute Unlock Script with Shard Triad:**
+2. Execute the unseal script:
    ```bash
-   SHARD_FILES="/home/quant/qfx-shards/shard_1.txt,/home/quant/qfx-shards/shard_2.txt,/run/media/quant/QFX_VAULT/shard_3.txt" ./scripts/unlock_engine.sh
+   cd /home/quant/mycelium && SHARD_FILES="$HOME/qfx-shards/shard_1.txt,$HOME/qfx-shards/shard_2.txt,$HOME/qfx-shards/shard_3.txt" ./scripts/unlock_engine.sh
    ```
-   *Expected Output:* `ACK|NODE_UNLOCKED`
-3. **Enforce Airgap Media Hygiene:**
+3. Verify the engine state transitioned to `ACTIVE`:
    ```bash
-   udisksctl unmount -b /dev/sda1
+   tail -n 15 /home/quant/.local/state/quantum-flex-mycelium/engine.log
+   ```
+   *Expected:* `[+] Node Unlocked. Superposition collapsed into ACTIVE state.`
+4. Securely destroy any temporary memorized shard file:
+   ```bash
+   shred -u ~/qfx-shards/shard_3.txt
    ```
 
 ---
 
-## 2. Private Tailscale Mesh Service Management
+## 2. Systemd Service Stack Management
 
-QuantumFlex strictly isolates application sockets to loopback (`127.0.0.1`) and exposes authorized services inside the encrypted Tailnet via Tailscale Serve.
+QuantumFlex services run as systemd **user** services under `~/.config/systemd/user/`.
 
-### Activation:
+### Checking Stack Status:
+```bash
+systemctl --user status quantum-flex-engine-mycelium.service witness.service ghost-sink.service amara-dashboard.service athena-node.service qf-monitor.service
+```
+
+### Starting the Core Stack:
+```bash
+systemctl --user start quantum-flex-engine-mycelium.service witness.service ghost-sink.service
+```
+
+### Restarting the Dashboard & Monitoring:
+```bash
+systemctl --user restart amara-dashboard.service qf-monitor.service
+```
+
+---
+
+## 3. Dual Postgres Backend Verification
+
+QuantumFlex isolates application memory into two distinct Postgres instances:
+1. **Native Postgres (`127.0.0.1:5432`, DB `telemetry`)**: Used by Sentinel, MCP layer, and task swarm.
+   ```bash
+   pg_isready -h 127.0.0.1 -p 5432 -d telemetry
+   ```
+2. **Podman Logistics Postgres (`127.0.0.1:5433`, DB `amara_matrix`)**: Used exclusively by the C++ engine (`BaeNode`).
+   ```bash
+   podman ps --filter name=logistics-pg
+   pg_isready -h 127.0.0.1 -p 5433 -d amara_matrix
+   ```
+
+---
+
+## 4. Private Tailscale Mesh Management
+
+All QuantumFlex services bind to loopback (`127.0.0.1`) and are routed inside the private encrypted Tailnet via Tailscale Serve.
+
+### Enabling the Mesh:
 ```bash
 ./scripts/enable_quantumflex_mesh.sh
 ```
-*Publishes:*
-- Port `8000` -> AMARA Matrix Real-Time Dashboard
-- Port `8080` -> Quantum Flex Core API Gateway
-- Port `9000` -> QF-Bot AI Teammates & MCP SSE Stream
-- Port `443` (HTTPS) -> Mobile Cockpit Web HUD
+*Published Endpoints:*
+- `8000` -> AMARA Matrix Real-Time Dashboard
+- `8080` -> Quantum Flex Core API Gateway
+- `9000` -> QF-Bot AI Teammates & MCP SSE Stream
+- `443` (HTTPS) -> Mobile Cockpit Web HUD
 
-### Endpoint Health Verification:
+### Verifying Endpoint Health:
 ```bash
 /home/quant/mycelium/venv/bin/python3 test_endpoints.py
 ```
 
 ---
 
-## 3. Mobile Node Synchronization (QF-M1)
+## 5. C++ Engine Compilation & Verification
 
-Deploys verified CLI, bootstrap scripts, and Cockpit APK to connected Android devices (Pixel 11 Pro, Galaxy S23 FE) over ADB with remote cryptographic SHA-256 validation.
-
-### Inspection Only:
+To build the native C++20 evidence engine and sentinel push binaries:
 ```bash
-/home/quant/mycelium/venv/bin/python3 scripts/sync_mobile_nodes.py
+cmake -S . -B build_check -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build_check -j"$(nproc)"
 ```
-
-### Full Cryptographic Deployment:
-```bash
-/home/quant/mycelium/venv/bin/python3 scripts/sync_mobile_nodes.py --push --apk
-```
+*Output Binaries:* `build_check/quantum_flex_engine`, `build_check/sentinel_push`.
 
 ---
 
-## 4. Athena Cognitive Memory & Local Oracle
+## 6. Host Performance & Kernel Network Optimization
 
-Interrogates the local Athena Oracle backed by `nomic-embed-text` dense vector embeddings and `gemma2:2b` offline neural inference.
-
-### Ingesting New Knowledge Vault Documents:
-```bash
-/home/quant/mycelium/venv/bin/python3 scripts/ingest_vault.py
-```
-
-### Querying Athena Oracle:
-```bash
-/home/quant/mycelium/venv/bin/python3 scripts/ask_athena.py "Your prompt or inquiry here"
-```
-
----
-
-## 5. Host Performance & Kernel Network Optimization
-
-Applies Google BBR congestion control, Fair Queueing `fq`, and 16MB socket buffers for Astound Broadband:
+Applies Google BBR congestion control, Fair Queueing `fq`, and 16MB socket buffers:
 ```bash
 sudo /home/quant/mycelium/scripts/update_and_optimize_host.sh
 ```

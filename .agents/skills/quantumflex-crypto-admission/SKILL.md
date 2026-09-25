@@ -2,12 +2,12 @@
 name: quantumflex-crypto-admission
 description: >-
   Cryptographic admission, provenance verification (QF-A4/A5/A6), signing ceremonies,
-  and fail-closed integrity gates in the QuantumFlex sovereign operating system.
+  CBOM generation, Vault Transit A5 signer, and fail-closed integrity gates.
 ---
 
 # QuantumFlex Cryptographic Admission & Provenance Playbook
 
-This skill provides procedures for verifying and maintaining the three-tiered admission and provenance system in QuantumFlex.
+This skill provides procedures for verifying and maintaining the three-tiered cryptographic admission, CBOM generation, and provenance system in QuantumFlex.
 
 ---
 
@@ -23,7 +23,7 @@ This skill provides procedures for verifying and maintaining the three-tiered ad
 
 ---
 
-## 2. Verification Commands
+## 2. Verification Commands & Test Matrices
 
 ### Host Provenance Pre-Flight:
 ```bash
@@ -46,20 +46,35 @@ This skill provides procedures for verifying and maintaining the three-tiered ad
 /home/quant/mycelium/venv/bin/python3 scripts/test_signing_ceremony.py
 ```
 
+### Cryptographic Bill of Materials (CBOM) Generation:
+```bash
+/home/quant/mycelium/venv/bin/python3 scripts/generate_cbom.py
+```
+
 ---
 
-## 3. Re-Signing & Admission Export
+## 3. Re-Signing & Admission Export Workflow
 
-When building a new attested release of the C++ engine or runtime:
-1. Generate the updated canonical provenance manifest:
+When creating a new attested release of the C++ engine or runtime:
+
+1. **Generate Canonical Provenance Manifest:**
    ```bash
    python3 scripts/generate_provenance_manifest.py
    ```
-2. Sign the admission receipt:
+2. **Sign the Admission Receipt:**
    ```bash
    python3 scripts/sign_quantumflex_admission.py --receipt build_check/QuantumFlexAdmission.json --key <signing_key>
    ```
-3. Sign the runtime binding:
+3. **Sign the Runtime Binding:**
    ```bash
    python3 scripts/sign_quantumflex_runtime.py --binding build_check/QuantumFlexRuntimeBinding.json --key <signing_key>
    ```
+
+---
+
+## 4. Post-Quantum Cryptography & Immune Daemon
+
+The PQC immune daemon (`pqc-immune-daemon/immune_daemon.py`) monitors algorithm health:
+- Periodically snapshots the active PQC algorithm to an OPA policy engine (`sentinel/policies/membrane_health.rego`).
+- If OPA evaluates the algorithm as `TOXIC`, atomically rewrites `crypto_provider.conf` and signals running workers to renegotiate with fallback algorithms.
+- **Fail-Closed Principle:** If OPA is unreachable, the algorithm is immediately treated as toxic.
