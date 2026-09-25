@@ -1,6 +1,6 @@
 # QuantumFlex Bare-Metal Biological Systems Architecture: Master Blueprint
 
-**Quantum Flex / Quantum Mycelium** is an organic, security-first, post-quantum distributed infrastructure. The architecture mirrors biological organisms—organizing cryptographic defense, neural anomaly detection, process containment, and economic wealth extraction into unified living strata.
+**Quantum Flex / Quantum Mycelium** is an organic, security-first, post-quantum distributed infrastructure. The architecture mirrors biological organisms—organizing cryptographic defense, neural anomaly detection, process containment, and economic yield modeling into unified living strata.
 
 ---
 
@@ -8,9 +8,9 @@
 
 ```
  ┌────────────────────────────────────────────────────────────────────────┐
- │  STRATUM 4: WEALTH ELEVATION & ECONOMIC EXTRACTION (DePIN / Monetization)│
+ │  STRATUM 4: WEALTH ELEVATION & ECONOMIC MODELING (DePIN / Projections) │
  ├────────────────────────────────────────────────────────────────────────┤
- │  STRATUM 3: CONTAINMENT WALLS & φ-DECISION GATING (OPA & Groth16 ZK)  │
+ │  STRATUM 3: CONTAINMENT WALLS & POLICY GATING (OPA & Hash Ledgers)     │
  ├────────────────────────────────────────────────────────────────────────┤
  │  STRATUM 2: INTER-NODE NERVOUS WIRING (Streaming EWMA + LIF Sentinel) │
  ├────────────────────────────────────────────────────────────────────────┤
@@ -24,12 +24,13 @@
 
 ## II. Stratum 0: Cryptographic Immune Foundation
 
-- **Autonomous Crypto-Agility**: Implements [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM), [FIPS 204](https://csrc.nist.gov/pubs/fips/204/final) (ML-DSA), [FIPS 205](https://csrc.nist.gov/pubs/fips/205/final) (SLH-DSA), and [OMB M-26-15](https://postquantum.com/security-pqc/omb-m-26-15-pqc-migration/) compliance patterns.
-- **Dynamic Vein Collapse**: When Open Policy Agent (`membrane_health.rego`) detects algorithmic compromise or quantum collision, the `pqc-immune-daemon` rewrites provider configs and triggers zero-downtime signal-driven renegotiation (`SIGHUP`):
-  $$\text{ML-KEM-1024} \longrightarrow \text{ML-KEM-768} \longrightarrow \text{FrodoKEM-976-AES} \longrightarrow \text{X25519}$$
-  $$\text{ML-DSA-87} \longrightarrow \text{ML-DSA-65} \longrightarrow \text{SLH-DSA-128f} \longrightarrow \text{Ed25519}$$
-- **Fail-Secure Circuit Breaker**: If OPA telemetry drops for $\ge 3$ polling windows, the system automatically defaults to defensive fallback.
-- **Shamir's Secret Sharing ($k$-of-$n$)**: Distributes private key entropy across disconnected local memory shards, preventing single-point key compromise.
+- **Autonomous Crypto-Agility**: Implements [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM), [FIPS 204](https://csrc.nist.gov/pubs/fips/204/final) (ML-DSA), [FIPS 205](https://csrc.nist.gov/pubs/fips/205/final) (SLH-DSA), and federal OMB M-26-15 migration patterns.
+- **Dynamic Vein Collapse**: When Open Policy Agent (`membrane_health.rego`) evaluates algorithmic health as `TOXIC`, the `pqc-immune-daemon` dynamically selects the next verified fallback, rewrites `crypto_provider.conf`, and triggers signal-driven renegotiation (`SIGHUP`):
+  $$\text{ML-KEM-1024} \longrightarrow \text{FrodoKEM-1344-AES} \longrightarrow \text{X25519}$$
+  $$\text{ML-KEM-768} \longrightarrow \text{FrodoKEM-976-AES} \longrightarrow \text{X25519}$$
+  *(Signature rotation across ML-DSA-87/65 and SLH-DSA is architected as Plane C roadmap).*
+- **Fail-Secure Circuit Breaker**: If OPA telemetry drops for $\ge 3$ polling windows within a 60-second sliding window, the immune daemon automatically defaults to defensive quarantine (`FrodoKEM-976-AES`) and trips the circuit breaker.
+- **Shamir's Secret Sharing ($k$-of-$n$)**: Distributes private key entropy across disconnected local memory shards (3-of-5 threshold over $\text{GF}(256)$ with Lagrange interpolation), requiring an operator unsealing ceremony before the C++ evidence engine enters the `ACTIVE` state.
 
 ---
 
@@ -37,66 +38,70 @@
 
 - **Zero-Trust Isolation**: Containerized workloads run in rootless user namespaces with read-only root filesystems, dropped capabilities (`CAP_DROP ALL`), and `no-new-privileges:true`.
 - **SELinux Enforcement**: Strict container domain constraints (`label=type:container_t`) prevent host execution traversal.
-- **Resource Throttling**: Hard memory (`512MB` – `4.5GB`) and CPU limits (`0.5` – `1.5` cores) prevent runaway memory pressure or IO starvation.
-- **Loopback Confinement**: All internal services bind strictly to `127.0.0.1` and internal bridge networks (`qf_isolated_net`), forbidding direct mesh exposure.
+- **Resource Throttling**: Pod resource limits (`128MB` – `512MB` RAM, `0.25` – `1.0` cores) prevent runaway memory pressure or IO starvation.
+- **Loopback Confinement**: All internal services bind strictly to `127.0.0.1` and internal bridge networks (`qf_isolated_net`), forbidding direct unauthenticated network exposure.
 
 ---
 
 ## IV. Stratum 2: Inter-Node Nervous Wiring
 
 - **Streaming EWMA + LIF Sentinel**: Emulates biological neural membranes using Leaky Integrate-and-Fire dynamics:
-  $$\frac{dV_{\text{mem}}}{dt} = -\frac{V_{\text{mem}}}{\tau_m} + I(t), \quad \tau_m = 200\text{ms}$$
-- **Dynamic Thresholding**:
-  $$V_{\text{thresh}} = \mu_{\text{EWMA}} + 3\sigma_{\text{EWMA}} + 2.50$$
+  $$\frac{dV_{\text{mem}}}{dt} = -\frac{V_{\text{mem}}}{\tau_m} + I(t)$$
+  *Parameters:* $\tau_m = 500\text{ms}$ in the C++ engine (`ewma_lif_sentinel.cpp`), with $200\text{ms}$ used in the accelerated Python benchmark suite.
+- **Dynamic Membrane Thresholding**:
+  $$V_{\text{thresh}} = \max(V_{\text{floor}},\, \mu_{\text{EWMA}} + 3\sigma_{\text{EWMA}}), \quad V_{\text{floor}} = 2.50$$
 - **Stochastic Jitter Filtering**: Absorbs ambient packet jitter (ambient 2% noise) while triggering an instantaneous action potential ($V_{\text{mem}} \ge V_{\text{thresh}}$) upon acute cryptographic collision bursts within $<20\text{ms}$.
-- **Neural IPC**: High-throughput named pipes / Unix domain sockets link `LocalNode`, `BaeNode`, and `ForensicLockdown` modules.
+- **Engine IPC Architecture**:
+  - `LocalNode`, `BaeNode`, and `ForensicLockdown` operate as compiled in-process C++20 components with zero-copy object dispatch.
+  - External engine telemetry arrives over mutual TLS 1.3 TCP (`127.0.0.1:9444`).
+  - Inter-node gossip replication connects via Unix Domain Sockets secured in `$XDG_RUNTIME_DIR/quantum_flex_<peer_id>.sock` with strict alphanumeric charset validation.
 
 ---
 
 ## V. Stratum 3: Containment Walls & $\phi$-Confidence Decision Gating
 
-All system reflexes, dispute resolutions, and payout approvals execute strictly according to the **Golden Ratio ($\phi$) Confidence Scale**:
+All system reflexes, dispute resolutions, and payout approvals execute according to the **Golden Ratio ($\phi$) Confidence Scale** (`tools/depin_wealth_engine.py`):
 
 | Tier | Confidence | Description | Action Taken |
 |---|---|---|---|
 | **Tier 1** | $23.6\%$ | Low Signal / Ambient Noise | Telemetry logging only |
 | **Tier 2** | $38.2\%$ | Pattern Detected | Background heuristic monitoring |
 | **Tier 3** | $61.8\%$ | Probable Anomaly | High-priority alert with context |
-| **Tier 4** | $78.6\%$ | High Confidence | Auto-action eligible (Payouts / Failover) |
+| **Tier 4** | $78.6\%$ | High Confidence | Auto-action eligible (Projections / Failover) |
 | **Tier 5** | $100.0\%$ | Root Collapse / Absolute Proof | Instant Forensic Lockdown / SIGHUP |
 
-- **Zero-Knowledge Verification**: Full Groth16 circuit-level proof verification over the `bn128` elliptic curve guarantees tamper-proof state transitions.
+- **Append-Only Evidence Ledger**: Tamper-proof state transitions are guaranteed by the hash-chained `EvidenceEngine` ledger computing salted SHA-256 `ZkCommitment`s and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
 
 ---
 
 ## VI. Stratum 4: Wealth Elevation & Monetization Pipeline
 
-Wealth extraction and continuous cashflow are fundamental to sustainable bare-metal operations:
+Wealth extraction and operational sustainability are modeled through phased revenue vectors:
 
-### 1. 0–30 Days (Frictionless / Immediate Yield)
-- **DePIN Node Yield**: Active harvesting on Grass Network (Bandwidth) and Honeygain (Content Delivery). Automated health tracking via `depin_wealth_engine.py`.
-- **Fiverr GMB Optimization**: Rapid-turnaround Google Maps profile optimization ($50–$150/client).
-- **High-Value Technical Placement**: Amazon OTS IT Support Associate II & SOC Analyst contract targeting.
+### 1. 0–30 Days (Edge Node & Micro-Yield Modeling)
+- **DePIN Node Yield Simulation**: Projections modeled via `tools/depin_wealth_engine.py` evaluating distributed bandwidth and edge delivery potential.
+- **Fiverr GMB Optimization**: Rapid-turnaround profile and search presence services.
+- **High-Value Placement**: Technical infrastructure and SOC analyst contract targeting.
 
 ### 2. 30–90 Days (Mycelial Leverage)
 - **Automation Retainers**: Deploying turnkey n8n workflow automations for B2B clients.
-- **B2B Outreach**: Cold outreach to local businesses with incomplete web/map profiles.
+- **B2B Outreach**: Cold outreach to regional businesses for security and workflow modernization.
 - **Contract Retainers**: Remote Tier-2 SOC / IAM Analyst fractional contracts.
 
 ### 3. 90+ Days (Exponential Root)
-- **Commercial IP Licensing**: Commercial productization of the SENTINEL PQC-Agility Module.
-- **Enterprise Multi-Agent Engine**: Deploying Quantum Mycelium frameworks for enterprise security orchestration.
-- **Post-Quantum Audit Tooling**: Turnkey compliance readiness suites for OMB M-26-15 federal standards.
+- **Commercial IP Licensing**: Productization of the SENTINEL PQC-Agility Module and Ghost Sink shock absorber.
+- **Enterprise Multi-Agent Engine**: Sovereign local AI swarm orchestration (Amara & Athena).
+- **Post-Quantum Audit Tooling**: Compliance readiness and provenance suites aligned with federal zero-trust and post-quantum migration mandates.
 
 ---
 
-## VII. Workspace Verification & Release Status
+## VII. Workspace Verification & Baseline Status
 
-- **100% Passing Unit & Integration Tests**:
-  - `pqc-immune-daemon`: `test_immune_daemon.py` (PASS)
-  - `mycelium`: `test_ewma_lif.py` (PASS)
-  - `sentinel`: `config_loader.py` dynamic interpolation (PASS)
-  - `depin_wealth_engine`: Telemetry & $\phi$-scoring (PASS)
-  - `rotate_credentials`: Full entropy & `.gitignore` boundary audit (PASS)
-- **Pre-Packaged Production Release**:
-  - Offline Sanitized Bundle: `C:\Users\quant\.gemini\antigravity-ide\scratch\repos\quantum_flex_master_release.zip` (381 verified files, zero secrets).
+- **Verified Invariant Suites**:
+  - `pqc-immune-daemon`: `test_immune_daemon.py` (15/15 PASS)
+  - `pqc-immune-daemon`: `opa test` (12/12 PASS)
+  - `sentinel/policies`: `opa check` & `opa test` (28/28 PASS)
+  - `mycelium`: `test_ewma_lif.py` (4/4 PASS)
+  - `C++20 Evidence Engine`: CMake configure and build cleanly to `quantum_flex_engine`
+- **Full Integration Matrix**:
+  - 92+ tests passing; remaining integration test vectors require live external environment prerequisites (host libexec trust anchor, Podman container daemon, and mobile APK artifacts).

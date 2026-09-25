@@ -150,7 +150,7 @@ class GatekeeperEngine:
                 "-i", in_path,
                 "-d", data_path,
                 "-d", str(self.policy_path),
-                "data.quantumflex.bootgate.allow"
+                "data.quantumflex.critical_bootgate.allow"
             ]
             res = subprocess.run(cmd, capture_output=True, text=True, check=True)
             eval_data = json.loads(res.stdout)

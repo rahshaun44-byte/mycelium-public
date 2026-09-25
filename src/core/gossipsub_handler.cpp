@@ -3,10 +3,12 @@
 #include "quantum-flex/replication_layer.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -152,7 +154,18 @@ namespace quantumflex::replication {
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void GossipSubHandler::send_to_peer(const std::string& peer_id, const std::string& msg) {
-        // Unix Domain Socket P2P routing mapping NODE_ID -> /tmp/quantum_flex_<peer_id>.sock
+        // Validate peer_id charset (strictly alphanumeric, hyphen, underscore; 1..64 chars)
+        // Prevents path traversal, directory escape, and malformed socket allocation
+        if (peer_id.empty() || peer_id.length() > 64) {
+            return;
+        }
+        for (const char c : peer_id) {
+            if (std::isalnum(static_cast<unsigned char>(c)) == 0 && c != '-' && c != '_') {
+                return;
+            }
+        }
+
+        // Unix Domain Socket P2P routing mapping NODE_ID -> $XDG_RUNTIME_DIR/quantum_flex_<peer_id>.sock
         const int sock = socket(AF_UNIX, SOCK_STREAM, 0);
         if (sock == -1) {
             return;
@@ -160,7 +173,19 @@ namespace quantumflex::replication {
 
         struct sockaddr_un addr{};
         addr.sun_family = AF_UNIX;
-        const std::string sock_path = "/tmp/quantum_flex_" + peer_id + ".sock";
+
+        const char* xdg_dir = std::getenv("XDG_RUNTIME_DIR");
+        std::string base_dir;
+        if (xdg_dir != nullptr && xdg_dir[0] != '\0') {
+            base_dir = xdg_dir;
+        } else {
+            base_dir = "/run/user/" + std::to_string(getuid());
+        }
+        const std::string sock_path = base_dir + "/quantum_flex_" + peer_id + ".sock";
+        if (sock_path.length() >= sizeof(addr.sun_path)) {
+            close(sock);
+            return;
+        }
         
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay, hicpp-no-array-decay)
         strncpy(addr.sun_path, sock_path.c_str(), sizeof(addr.sun_path) - 1);

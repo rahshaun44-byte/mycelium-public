@@ -1,4 +1,4 @@
-package quantumflex.bootgate
+package quantumflex.critical_bootgate
 
 import rego.v1
 
