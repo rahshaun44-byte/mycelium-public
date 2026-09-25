@@ -8,7 +8,7 @@ Components Tested:
   1. Strict Memory Layout (CriticalStatePayload, StateSignatures, StateAttestation)
   2. RFC 8785 JCS Canonicalization + SHA3-256 Digest
   3. Dual-Signature Provenance Gate (Ed25519 + ML-DSA post-quantum path)
-  4. OPA Boot Gate Invariant & Anti-Replay Policy (critical_state_bootgate.rego)
+  4. OPA Boot Gate Invariant & Anti-Replay Policy (bootgate.rego)
   5. Ingress Gatekeeper Hard Stop Anomaly Routing
   6. Rust-based Isolated Ghost Node Entropy Sink (127.0.0.1:19443)
   7. Hash-Chained JSONL Ledger Invariants (H_attack = 0, zero authority)
@@ -35,6 +35,13 @@ REGO_POLICY = ROOT_DIR / "sentinel" / "policies" / "bootgate.rego"
 GHOST_SINK_BIN = ROOT_DIR / "quantumflex-ghost-sink" / "target" / "release" / "quantumflex-ghost-sink"
 SINK_URL = "http://127.0.0.1:19443/v1/sink/anomaly"
 SINK_HEALTH = "http://127.0.0.1:19443/healthz"
+
+ALLOWED_PAYLOAD_KEYS = {
+    "schema_version", "sequence", "previous_state_digest", "policy_digest",
+    "decision_id", "input_digest", "result", "public_credentials",
+}
+ALLOWED_CRED_KEYS = {"ed25519_pub_key", "ml_dsa_pub_key"}
+ALLOWED_SIG_KEYS = {"ed25519_signature", "ml_dsa_signature"}
 
 
 def jcs_canonicalize(data: dict) -> bytes:
@@ -113,6 +120,22 @@ class GatekeeperEngine:
 
     def inspect_and_admit(self, attestation: dict) -> tuple[bool, str]:
         """Ingress Gatekeeper evaluation of Y = f(x - h) + k."""
+        # 0. Closed-set struct enforcement (DisallowUnknownFields) before OPA.
+        # bootgate.rego trusts the host verifier for this, so the simulator must do it.
+        payload = attestation.get("payload")
+        signatures = attestation.get("signatures")
+        if (
+            not isinstance(payload, dict)
+            or not isinstance(signatures, dict)
+            or set(payload.keys()) != ALLOWED_PAYLOAD_KEYS
+            or not isinstance(payload.get("public_credentials"), dict)
+            or set(payload["public_credentials"].keys()) != ALLOWED_CRED_KEYS
+            or set(signatures.keys()) != ALLOWED_SIG_KEYS
+        ):
+            reason = "Strict struct mismatch: unknown or missing fields"
+            self.route_to_ghost_node(attestation, reason)
+            return False, reason
+
         # 1. Cryptographic Provenance Pre-check (Ed25519 signature over SHA3-256 of JCS)
         try:
             payload = attestation.get("payload", {})
@@ -138,13 +161,20 @@ class GatekeeperEngine:
             }
         }
 
+        # Facts established here, not asserted: Ed25519 passed above; the simulated
+        # ML-DSA signature and the embedded public key are checked against this engine.
+        expected_mldsa = hashlib.sha3_256(digest_bytes + b"ML-DSA-SIG-PATH").hexdigest()
+        creds = payload["public_credentials"]
         opa_input = {
             "attestation": attestation,
             "verification": {
                 "canonical_digest_verified": True,
                 "ed25519_verified": True,
-                "ml_dsa_verified": True,
-                "trusted_keyring": True
+                "ml_dsa_verified": signatures.get("ml_dsa_signature") == expected_mldsa,
+                "trusted_keyring": (
+                    creds.get("ed25519_pub_key") == self.ed_pub_hex
+                    and creds.get("ml_dsa_pub_key") == self.mldsa_pub_hex
+                ),
             }
         }
 
