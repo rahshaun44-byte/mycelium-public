@@ -47,6 +47,52 @@
 ## 8. Remote Ledger Push (The Sync Protocol)
 - **Protocol:** Configuration drift and architecture manifests are tracked via local Git. Upon verified system state modification, a deterministic commit is generated and pushed to the remote decentralized ledger (Git over Tailscale SSH), ensuring the swarm's memory is backed up off-node securely.
 
+## 9. Decoupled Observability vs. Control Authority Plane (The Safety Invariant)
+The absolute decoupling of the Observability Plane from the Control Authority Plane is an inviolable architectural boundary: **Telemetry is never self-authorizing.**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. EVIDENCE PLANE (PostHog / Q1 Observer)                                   │
+│    • Role: Passive sensory input (latency spikes, crash frequency, traces)   │
+│    • Output: Untrusted Claim / Structured Advisory Finding                  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ (Finding submitted as an assertion)
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. JUDGMENT GATE (Sentinel / OPA Rego compiled to Wasm)                     │
+│    • Role: Deterministic policy evaluation                                  │
+│    • Invariant: "Does this evidence meet the threshold for intervention?"    │
+│    • Rule: Fails closed. Telemetry alone is never self-authorizing.         │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ (Policy passed)
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. AUTHORITY PLANE (Cryptographic Signatures / Operator Approval)           │
+│    • Role: Intent authorization                                             │
+│    • Mechanism: Ed25519 signed token or explicit operator approval          │
+│    • State: Issues an ephemeral, lease-fenced action grant                  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ (Signed grant verified)
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 4. ACTUATION LAYER (Rootless Podman / Local Worker)                         │
+│    • Role: Scoped execution (restart container, isolate socket, roll key)   │
+│    • Boundary: Cannot execute without presenting valid authority token      │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 5. RE-VERIFICATION (Q1 Compact Observer)                                    │
+│    • Role: Ground-truth confirmation via statvfs, socket bindings, etc.     │
+│    • Invariant: Does not trust worker self-reported success                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Inviolable Invariants:
+1. **Telemetry Poisoning Defense:** Corrupted or synthetic telemetry (e.g. fabricated 500 bursts) results only in an advisory metric or Ghost Node diversion—never an automated host shutdown or service isolation.
+2. **Vendor Compromise Containment:** Third-party observability tools (PostHog, Cloud dashboards) hold zero credentials or paths to execute host commands.
+3. **Prevention of Feedback Cascades:** Automated remediation loops are broken; all state mutations require deterministic policy checks and lease-fenced human authorization (`PENDING_HUMAN_APPROVAL`).
+
 **OPERATIONAL PROTOCOL:** Before executing commands, read this document. Do not hallucinate paths or use Docker. We use rootless Podman and Systemd user services (`loginctl enable-linger`).
 
 The organism / thermodynamic-cycle essay is **philosophy**

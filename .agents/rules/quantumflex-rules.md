@@ -25,3 +25,10 @@
 5. **Python Environment & Testing:**
    - The virtual environment is located at `/home/quant/mycelium/venv` (pointing to `/home/quant/.venv/qflex`).
    - Use `pytest.ini` for automatic module resolution. Tests should run with zero warnings where possible.
+
+6. **Decoupled Observability & Control Authority (Telemetry Never Self-Authorizes):**
+   - Monitoring and analytics software (PostHog, Q1 Observer, dashboards) operate strictly as passive sensory inputs producing untrusted advisory claims.
+   - Observability tools have zero actuation rights, shell execution channels, or direct control authority over host containers or systemd units.
+   - Any remediation action must pass through the deterministic Sentinel/OPA judgment gate, obtain cryptographic/operator authorization, and adhere to lease-fenced execution (`PENDING_HUMAN_APPROVAL`).
+   - Post-remediation health is verified independently via kernel reality checks (`statvfs`, socket listeners), never trusting self-reported worker status.
+
