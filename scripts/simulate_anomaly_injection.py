@@ -31,7 +31,7 @@ from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-REGO_POLICY = ROOT_DIR / "sentinel" / "policies" / "critical_state_bootgate.rego"
+REGO_POLICY = ROOT_DIR / "sentinel" / "policies" / "bootgate.rego"
 GHOST_SINK_BIN = ROOT_DIR / "quantumflex-ghost-sink" / "target" / "release" / "quantumflex-ghost-sink"
 SINK_URL = "http://127.0.0.1:19443/v1/sink/anomaly"
 SINK_HEALTH = "http://127.0.0.1:19443/healthz"
@@ -138,9 +138,19 @@ class GatekeeperEngine:
             }
         }
 
+        opa_input = {
+            "attestation": attestation,
+            "verification": {
+                "canonical_digest_verified": True,
+                "ed25519_verified": True,
+                "ml_dsa_verified": True,
+                "trusted_keyring": True
+            }
+        }
+
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f_in, \
              tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f_data:
-            json.dump(attestation, f_in)
+            json.dump(opa_input, f_in)
             json.dump(data_doc, f_data)
             in_path, data_path = f_in.name, f_data.name
 
@@ -150,7 +160,7 @@ class GatekeeperEngine:
                 "-i", in_path,
                 "-d", data_path,
                 "-d", str(self.policy_path),
-                "data.quantumflex.critical_bootgate.allow"
+                "data.quantumflex.bootgate.allow"
             ]
             res = subprocess.run(cmd, capture_output=True, text=True, check=True)
             eval_data = json.loads(res.stdout)

@@ -16,7 +16,7 @@ namespace quantumflex::security {
     struct LifConfig {
         double alpha{0.05};            // EWMA smoothing coefficient (0.0 < alpha <= 1.0)
         double sigma_multiplier{3.0};   // Variance scaling factor (n * sigma)
-        double tau_leak_ms{500.0};      // Membrane leak half-life in milliseconds
+        double tau_leak_ms{500.0};      // Membrane leak time constant (tau) in milliseconds
         double drop_impulse{1.0};       // Voltage impulse per dropped connection / error
         double v_base_floor{2.0};       // Minimum firing threshold floor
         uint32_t tick_interval_ms{30};  // Background quantized decay baseline resolution (ms)

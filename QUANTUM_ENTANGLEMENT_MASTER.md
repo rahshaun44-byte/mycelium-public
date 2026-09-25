@@ -70,7 +70,7 @@ All system reflexes, dispute resolutions, and payout approvals execute according
 | **Tier 4** | $78.6\%$ | High Confidence | Auto-action eligible (Projections / Failover) |
 | **Tier 5** | $100.0\%$ | Root Collapse / Absolute Proof | Instant Forensic Lockdown / SIGHUP |
 
-- **Append-Only Evidence Ledger**: Tamper-proof state transitions are guaranteed by the hash-chained `EvidenceEngine` ledger computing salted SHA-256 `ZkCommitment`s and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
+- **Append-Only Evidence Ledger**: Tamper-proof state transitions are guaranteed by the hash-chained `EvidenceEngine` ledger computing salted SHA-256 hash commitments (`ZkCommitment` struct: SHA-256 hash + salt, not a zk-SNARK) and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
 
 ---
 

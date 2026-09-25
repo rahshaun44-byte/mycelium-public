@@ -18,7 +18,7 @@ from scripts.build_external_verifier import transform_verifier, OLD_PATTERN
 
 EXTERNAL_VERIFIER = os.path.expanduser("~/.local/libexec/quantumflex/verify-provenance")
 TRUST_ANCHOR = os.path.expanduser("~/.local/libexec/quantumflex/release_signing_key.pub")
-WORKSPACE = "/home/quant/mycelium"
+WORKSPACE = os.environ.get("QUANTUMFLEX_WORKSPACE", str(Path(__file__).resolve().parents[1]))
 
 
 def test_trust_anchor_exists_and_permissions():

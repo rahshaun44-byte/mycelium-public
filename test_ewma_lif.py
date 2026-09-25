@@ -96,7 +96,7 @@ def run_benchmark():
     print("    [+] PASS: Acute cryptographic collapse correctly triggered.")
 
     # Test 3: Post-Spike Leak Decay Recovery
-    print("\n[*] Phase 3: Testing post-spike membrane recovery over 1000ms (5 tau half-lives)...")
+    print("\n[*] Phase 3: Testing post-spike membrane recovery over 1000ms (5 tau time constants)...")
     for _ in range(100):
         engine.apply_decay(elapsed_ms=10.0)
         engine.record_success()

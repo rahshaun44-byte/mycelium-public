@@ -51,9 +51,10 @@ listener's cert paths are resolved under it, and neither directory-creates for y
 
 **Python components** — three independent dependency sets, no lockfile, no shared venv manifest:
 `sentinel/requirements.txt`, `mcp_layer/requirements-worker.txt`, `api_node/requirements.txt`. The
-working venv used on this host is `~/mycelium/venv` (Python 3.14). No formal test suite or lint
-config (no `pytest.ini`, `.clang-tidy`, `.clang-format`) currently exists in this repo — don't
-assume one and don't invent CI-style tooling that isn't there.
+working venv used on this host is `~/mycelium/venv` (Python 3.14). The repo includes
+a `pytest.ini` and integration/unit test suite under `tests/` (19 test files). Run tests with:
+`pytest` or `/home/quant/mycelium/venv/bin/python3 -m pytest -q`. (No `.clang-tidy` or `.clang-format`
+config currently exists).
 
 **How this actually runs**: not via a single entrypoint — each Python component is its own
 systemd **user** service (`systemctl --user status <name>`: `amara-dashboard`, `athena-node`,

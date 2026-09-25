@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Quantum Flex: DePIN Wealth Elevation & Φ-Confidence Decision Engine
-------------------------------------------------------------------
-Monitors passive DePIN node telemetry, calculates Golden Ratio confidence tiers
-for reward payouts, and tracks the 3-stage wealth extraction pipeline.
+Quantum Flex: DePIN Simulation & Φ-Confidence Decision Model
+------------------------------------------------------------
+Simulates passive DePIN node projections, calculates Golden Ratio confidence tiers
+for reward payouts, and models the 3-stage wealth extraction progression.
+(Note: Node parameters and yields are simulation literals for modeling purposes).
 """
 
 import os
@@ -104,9 +105,9 @@ class DePinWealthEngine:
         depin = summary["depin_telemetry"]
 
         print("=" * 68)
-        print("  QUANTUM FLEX: DEPIN TELEMETRY & WEALTH ELEVATION ENGINE")
+        print("  QUANTUM FLEX: DEPIN SIMULATION & WEALTH PROJECTION MODEL")
         print("=" * 68)
-        print(f"[*] Active Nodes: {depin['active_nodes']} | Est. Daily: ${depin['daily_passive_yield_usd']} | Monthly Run-Rate: ${depin['monthly_passive_run_rate_usd']}")
+        print(f"[*] Simulated Nodes: {depin['active_nodes']} | Proj. Daily: ${depin['daily_passive_yield_usd']} | Monthly Run-Rate: ${depin['monthly_passive_run_rate_usd']}")
         print("-" * 68)
         
         for node in self.nodes:
