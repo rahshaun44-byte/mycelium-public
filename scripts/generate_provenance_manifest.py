@@ -159,7 +159,7 @@ def main():
     missing = []
     for rel_path, assurance_level, description in TARGET_FILES:
         res = hash_file_sha256(rel_path)
-        if res is None:
+        if res is None or not res.get("sha256") or res.get("size_bytes", 0) <= 0:
             missing.append(rel_path)
         else:
             artifacts[rel_path] = {
@@ -170,7 +170,9 @@ def main():
             }
 
     if missing:
-        print(f"[!] Warning: Target files missing on disk: {missing}")
+        print(f"[FAIL-CLOSED] Target release files missing or empty on disk:\n  {missing}", file=sys.stderr)
+        print("A provenance manifest cannot be generated or signed with incomplete release artifacts.", file=sys.stderr)
+        return 1
 
     manifest = {
         "schema_version": "2.2.0",
