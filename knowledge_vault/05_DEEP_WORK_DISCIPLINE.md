@@ -38,7 +38,7 @@ Shallow work produces cheap neurological rewards:
 * Re-checking Tailscale status every 5 minutes
 
 Your brain gets a dopamine checkmark. But the cold reality did not move:
-* The Pavilion is still offline.
+* The Pavilion is back online and streaming telemetry (Kafka KRaft broker :9092).
 * `ledger.dat` does not exist.
 * The school assignment is still unsubmitted.
 * The bank balance has not changed.
