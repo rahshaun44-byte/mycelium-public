@@ -1,0 +1,26 @@
+{
+  "recorded_at_utc": "2026-09-26T05:08:35.000000+00:00",
+  "archive_sha256": "433dd9c0f0a5725f7ce0d5e05b78443b83ee865a28174dfb8641ea75cef45c6a",
+  "platform": "Linux-7.2.7-200.fc44.x86_64-x86_64-with-glibc2.43",
+  "python": "3.14.7",
+  "exit_code": 0,
+  "passing_cases": 11,
+  "expected_cases": 11,
+  "elapsed_seconds": 1.452,
+  "run_location": "fresh temporary extraction outside repository, same Linux host",
+  "customer_environment": false,
+  "verdict": "PASS",
+  "cases": [
+    "[PASS] Case 1: Clean signed A5 release + signed runtime",
+    "[PASS] Case 2: Runtime executable byte changed",
+    "[PASS] Case 3: Runtime changed + binding unsigned",
+    "[PASS] Case 4: Binding signed by rogue Ed25519 key",
+    "[PASS] Case 5: Runtime binding JSON altered after signing",
+    "[PASS] Case 6: Runtime signature altered",
+    "[PASS] Case 7: Binding points to different A5 manifest digest",
+    "[PASS] Case 8: A5 artifact tampered under valid A6 binding",
+    "[PASS] Case 9: Launcher executes verified FD after pathname swap",
+    "[PASS] Case 10: Dynamic loader injection stripped (LD_PRELOAD sanitized)",
+    "[PASS] Case 11: Unsigned A5 manifest rejected"
+  ]
+}

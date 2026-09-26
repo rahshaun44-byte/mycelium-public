@@ -1,0 +1,18 @@
+QuantumFlex Runtime Admission Gate (QF-A6: 11-Case Matrix)
+[+] Atomic installation successful: /tmp/qf-a6-bymjs5cn/authority/qf-runtime-admit
+[+] Permissions: 0o755
+[+] Verified Trust Anchor: /tmp/qf-a6-bymjs5cn/authority/release_signing_key.pub
+[PASS] Case 1: Clean signed A5 release + signed runtime
+[PASS] Case 2: Runtime executable byte changed
+[PASS] Case 3: Runtime changed + binding unsigned
+[PASS] Case 4: Binding signed by rogue Ed25519 key
+[PASS] Case 5: Runtime binding JSON altered after signing
+[PASS] Case 6: Runtime signature altered
+[PASS] Case 7: Binding points to different A5 manifest digest
+[PASS] Case 8: A5 artifact tampered under valid A6 binding
+[PASS] Case 9: Launcher executes verified FD after pathname swap
+[PASS] Case 10: Dynamic loader injection stripped (LD_PRELOAD sanitized)
+[PASS] Case 11: Unsigned A5 manifest rejected
+[ALL PASS] QuantumFlex runtime admission: QF-A6 11-case adversarial matrix verified
+
+STDERR:

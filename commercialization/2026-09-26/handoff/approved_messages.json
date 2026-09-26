@@ -1,0 +1,38 @@
+[
+  {
+    "id": "C1",
+    "from_address": "rahshaun44-byte@users.noreply.github.com",
+    "sender_name": "Rahshaun Chambers",
+    "company": "FinallyFungus LLC",
+    "to": "[contact redacted]",
+    "subject": "A small release-verification pilot for Linux Edge",
+    "body": "Hello ClearBlade team,\n\nYour Edge documentation describes Linux deployment in remote networks. Could you route this to the person responsible for release integrity or edge deployment?\n\nWe are evaluating QuantumFlex's local release-admission gate. Our proposed pilot uses one native Linux executable on a nonproduction host: a valid signed release launches, and six agreed tampering cases must be rejected. Your engineer observes the result and keeps the commands and evidence.\n\nThe fixed pilot is $1,500, split between booking after technical preflight and accepted delivery. We have a reproducible synthetic demonstration; customer validation is the next step. Is this relevant to a current release or customer security review, or do your existing controls already cover it?\n\nRahshaun Chambers\nFinallyFungus LLC\rahshaun44-byte@users.noreply.github.com\n\nAdvertisement: a commercial pilot offer from FinallyFungus LLC.\n[VALID BUSINESS POSTAL ADDRESS REQUIRED BEFORE SENDING]\nTo stop all future marketing emails from us, reply \"unsubscribe\" or tell us you do not want further marketing emails.",
+    "status": "APPROVED_NOT_SENT_MISSING_POSTAL_ADDRESS",
+    "reply_to": "rahshaun44-byte@users.noreply.github.com",
+    "send_ready": false
+  },
+  {
+    "id": "C2",
+    "from_address": "rahshaun44-byte@users.noreply.github.com",
+    "sender_name": "Rahshaun Chambers",
+    "company": "FinallyFungus LLC",
+    "to": "[contact redacted]",
+    "subject": "One Linux executable: repeatable release-admission test",
+    "body": "Hello IOTech team,\n\nI saw the Linux installation path in your Edge Xpert documentation. Could you forward this to your release-engineering or edge-deployment lead?\n\nWe are testing QuantumFlex on one narrow task: admit a signed native Linux executable and reject six agreed tampering cases on a nonproduction host. The customer chooses the mutations and keeps the repeatable test evidence.\n\nThe proposed pilot is $1,500, half after successful technical preflight and scope acceptance, half after accepted delivery. Does a native executable in your deployment flow need this kind of validation, or is that already covered by your current package/container controls?\n\nRahshaun Chambers\nFinallyFungus LLC\rahshaun44-byte@users.noreply.github.com\n\nAdvertisement: a commercial pilot offer from FinallyFungus LLC.\n[VALID BUSINESS POSTAL ADDRESS REQUIRED BEFORE SENDING]\nTo stop all future marketing emails from us, reply \"unsubscribe\" or tell us you do not want further marketing emails.",
+    "status": "APPROVED_NOT_SENT_MISSING_POSTAL_ADDRESS",
+    "reply_to": "rahshaun44-byte@users.noreply.github.com",
+    "send_ready": false
+  },
+  {
+    "id": "C3",
+    "from_address": "rahshaun44-byte@users.noreply.github.com",
+    "sender_name": "Rahshaun Chambers",
+    "company": "FinallyFungus LLC",
+    "to": "sales@xetawave.com",
+    "subject": "Release integrity test for a Linux edge application",
+    "body": "Hello XetaWave team,\n\nYour XetaEdge product looks relevant to a small QuantumFlex pilot we are preparing. Could you route this to the engineer responsible for Linux application deployment?\n\nThe proposed test covers one native Linux executable on a nonproduction system: its valid signed release launches, while six agreed tampering cases are rejected. Your engineer observes the test and keeps the commands and evidence. We would first check CPU, Linux and tooling compatibility; embedded support is not assumed.\n\nThe fixed pilot is $1,500, split between booking after successful preflight and accepted delivery. Is there a suitable test application and a current release integrity question this would help answer?\n\nRahshaun Chambers\nFinallyFungus LLC\rahshaun44-byte@users.noreply.github.com\n\nAdvertisement: a commercial pilot offer from FinallyFungus LLC.\n[VALID BUSINESS POSTAL ADDRESS REQUIRED BEFORE SENDING]\nTo stop all future marketing emails from us, reply \"unsubscribe\" or tell us you do not want further marketing emails.",
+    "status": "APPROVED_NOT_SENT_MISSING_POSTAL_ADDRESS",
+    "reply_to": "rahshaun44-byte@users.noreply.github.com",
+    "send_ready": false
+  }
+]

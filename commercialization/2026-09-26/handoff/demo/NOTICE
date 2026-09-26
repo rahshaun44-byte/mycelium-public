@@ -1,0 +1,9 @@
+QuantumFlex
+Copyright 2026 FINALLYFUNGUS LLC DBA QuantumFlex
+
+This product includes software developed by FinallyFungus LLC.
+
+Third-Party Dependencies:
+- JSON for Modern C++ (nlohmann/json)
+  Copyright (c) 2013-2022 Niels Lohmann
+  Licensed under the MIT License
