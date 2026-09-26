@@ -10,7 +10,8 @@ Components Tested:
   3. Dual-Signature Provenance Gate (Ed25519 + ML-DSA post-quantum path)
   4. OPA Boot Gate Invariant & Anti-Replay Policy (bootgate.rego)
   5. Ingress Gatekeeper Hard Stop Anomaly Routing
-  6. Rust-based Isolated Ghost Node Entropy Sink (127.0.0.1:19443)
+  6. Rust-based Isolated Ghost Node Entropy Sink (127.0.0.1:$QF_SIM_SINK_PORT, default 19543;
+     the live quantumflex-ghost-sink keeps 19443)
   7. Hash-Chained JSONL Ledger Invariants (H_attack = 0, zero authority)
 """
 
@@ -33,8 +34,10 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 ROOT_DIR = Path(__file__).resolve().parents[1]
 REGO_POLICY = ROOT_DIR / "sentinel" / "policies" / "bootgate.rego"
 GHOST_SINK_BIN = ROOT_DIR / "quantumflex-ghost-sink" / "target" / "release" / "quantumflex-ghost-sink"
-SINK_URL = "http://127.0.0.1:19443/v1/sink/anomaly"
-SINK_HEALTH = "http://127.0.0.1:19443/healthz"
+SIM_SINK_PORT = int(os.environ.get("QF_SIM_SINK_PORT", "19543"))
+SINK_URL = f"http://127.0.0.1:{SIM_SINK_PORT}/v1/sink/anomaly"
+SINK_HEALTH = f"http://127.0.0.1:{SIM_SINK_PORT}/healthz"
+LIVE_SINK_PORT = 19443
 
 ALLOWED_PAYLOAD_KEYS = {
     "schema_version", "sequence", "previous_state_digest", "policy_digest",
@@ -238,6 +241,15 @@ class GatekeeperEngine:
             print(f"       [GHOST SINK ABSORPTION] Seq: {data['sequence_number']} | Hash: {data['record_hash'][:16]}... | Status: {data['status']}")
 
 
+def port_is_free(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+    return True
+
+
 def wait_for_sink_health(timeout=10.0):
     start = time.time()
     while time.time() - start < timeout:
@@ -256,6 +268,16 @@ def main():
     print("  Mathematical Invariant: Y = f(x - h) + k                   ")
     print("=" * 70)
 
+    # 0. Never share a port with the live sink or any other listener: the health
+    #    probe below would succeed against it and route attacks into its ledger.
+    if SIM_SINK_PORT == LIVE_SINK_PORT and os.environ.get("QF_SIM_ALLOW_LIVE_PORT") != "1":
+        print(f"[-] Refusing to run on live sink port {LIVE_SINK_PORT}; "
+              "set QF_SIM_SINK_PORT or QF_SIM_ALLOW_LIVE_PORT=1")
+        sys.exit(2)
+    if not port_is_free(SIM_SINK_PORT):
+        print(f"[-] Port 127.0.0.1:{SIM_SINK_PORT} is already in use; set QF_SIM_SINK_PORT")
+        sys.exit(2)
+
     # 1. Setup isolated storage directory for Ghost Node
     sim_dir = Path(tempfile.mkdtemp(prefix="qf_anomaly_sim_"))
     ledger_file = sim_dir / "entropy_sink_ledger.jsonl"
@@ -263,7 +285,7 @@ def main():
 
     # 2. Launch real compiled Rust Ghost Node binary
     env = os.environ.copy()
-    env["SINK_LISTEN_ADDR"] = "127.0.0.1:19443"
+    env["SINK_LISTEN_ADDR"] = f"127.0.0.1:{SIM_SINK_PORT}"
     env["SINK_ALLOW_UNBOUND"] = "0"
     env["SINK_STORAGE_PATH"] = str(sim_dir)
 
@@ -275,10 +297,10 @@ def main():
     )
 
     try:
-        if not wait_for_sink_health():
-            print("[-] Error: Failed to connect to Ghost Node sink on 127.0.0.1:19443")
+        if not wait_for_sink_health() or sink_proc.poll() is not None:
+            print(f"[-] Error: Failed to connect to Ghost Node sink on 127.0.0.1:{SIM_SINK_PORT}")
             sys.exit(1)
-        print("[+] Ghost Node Anomaly Sink Active on http://127.0.0.1:19443")
+        print(f"[+] Ghost Node Anomaly Sink Active on http://127.0.0.1:{SIM_SINK_PORT}")
 
         gatekeeper = GatekeeperEngine(REGO_POLICY)
         print(f"[+] Initialized Ingress Gatekeeper Engine:")
