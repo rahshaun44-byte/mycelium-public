@@ -58,19 +58,21 @@
 
 ---
 
-## V. Stratum 3: Containment Walls & $\phi$-Confidence Decision Gating
+## V. Stratum 3: Containment Walls, OPA Policy Gating & $\phi$ Projection Tiers
 
-All system reflexes, dispute resolutions, and payout approvals execute according to the **Golden Ratio ($\phi$) Confidence Scale** (`tools/depin_wealth_engine.py`):
+DePIN node projections in `tools/depin_wealth_engine.py` are labeled with the **Golden Ratio ($\phi$) Confidence Scale**. The scale is a projection model only: no lockdown, SIGHUP, or payout code path reads it. The "Label" column is the exact string the script prints:
 
-| Tier | Confidence | Description | Action Taken |
+| Tier | Confidence | Description | Label |
 |---|---|---|---|
-| **Tier 1** | $23.6\%$ | Low Signal / Ambient Noise | Telemetry logging only |
-| **Tier 2** | $38.2\%$ | Pattern Detected | Background heuristic monitoring |
-| **Tier 3** | $61.8\%$ | Probable Anomaly | High-priority alert with context |
-| **Tier 4** | $78.6\%$ | High Confidence | Auto-action eligible (Projections / Failover) |
-| **Tier 5** | $100.0\%$ | Root Collapse / Absolute Proof | Instant Forensic Lockdown / SIGHUP |
+| **Tier 1** | $23.6\%$ | Low Signal / Ambient Noise | `TIER_1: LOW SIGNAL / LOG ONLY` |
+| **Tier 2** | $38.2\%$ | Pattern Detected | `TIER_2: MONITORING ONLY` |
+| **Tier 3** | $61.8\%$ | Probable Anomaly | `TIER_3: PROBABLE (Contextual Monitoring)` |
+| **Tier 4** | $78.6\%$ | High Confidence | `TIER_4: AUTO-PAYOUT ELIGIBLE (High Confidence)` (label only; no payout is executed) |
+| **Tier 5** | $100.0\%$ | Root Collapse / Absolute Proof | Defined (`TIER_5_ROOT`) but never evaluated |
 
-- **Append-Only Evidence Ledger**: Tamper-proof state transitions are guaranteed by the hash-chained `EvidenceEngine` ledger computing salted SHA-256 hash commitments (`ZkCommitment` struct: SHA-256 hash + salt, not a zk-SNARK) and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
+Actual reflexes are triggered elsewhere: `pqc-immune-daemon/immune_daemon.py` sends SIGHUP after an OPA `TOXIC` verdict, and `ForensicLockdown` is owned by `LocalNode`, which defaults to `LockdownPolicy{.dry_run = true}`.
+
+- **Append-Only Evidence Ledger**: State transitions are tamper-evident (tampering is detected, not prevented) through the hash-chained `EvidenceEngine` ledger computing salted SHA-256 hash commitments (`ZkCommitment` struct: SHA-256 hash + salt, not a zk-SNARK) and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
 
 ---
 
@@ -102,6 +104,6 @@ Wealth extraction and operational sustainability are modeled through phased reve
   - `pqc-immune-daemon`: `opa test` (12/12 PASS)
   - `sentinel/policies`: `opa check` & `opa test` (28/28 PASS)
   - `mycelium`: `test_ewma_lif.py` (4/4 PASS)
-  - `C++20 Evidence Engine`: CMake configure and build cleanly to `quantum_flex_engine`
+  - `C++20 Evidence Engine`: operator-host DEV build (`-DQUANTUMFLEX_REQUIRE_ATTESTED=OFF`) reported as building `quantum_flex_engine`; not reproduced in CI or in the audit container (no libpqxx/libsystemd; OpenSSL 3.0, not 3.5). `src/core/gossipsub_handler.cpp` passes `g++-13 -std=c++20 -Wall -Wextra -fsyntax-only`.
 - **Full Integration Matrix**:
   - 92+ tests passing; remaining integration test vectors require live external environment prerequisites (host libexec trust anchor, Podman container daemon, and mobile APK artifacts).
