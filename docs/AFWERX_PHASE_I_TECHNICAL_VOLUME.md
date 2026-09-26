@@ -164,7 +164,7 @@ CL-05    | Atomic Configuration Hot-Swap           | < 35 ms atomic rewrite late
 CL-06    | Automated Regression Suite Pass Rate    | 30 passed, 1 warning (0.42s, c.31ed9c9)| VERIFIED
 CL-07    | QF-A4 Pre-Link Raw Byte Hash Check      | 100% fail-closed on flipped byte       | VERIFIED
 CL-08    | QF-A5 Detached Ed25519 Provenance       | 7/7 negative adversarial cases caught  | VERIFIED
-CL-09    | QF-A6 TOCTOU-Resistant Runtime Admit    | 10/10 adversarial cases pass (fexecve) | VERIFIED
+CL-09    | QF-A6 TOCTOU-Resistant Runtime Admit    | 11/11 adversarial cases pass (fexecve) | VERIFIED
 CL-10    | Zero-Loss Kafka Pipeline Invariant      | 0 dropped pulses on DB disconnect      | VERIFIED
 CL-11    | SQLite WAL Lease Fencing (claim_token)  | 0 race-condition overwrites            | VERIFIED
 CL-12    | Mobile Hardware Role Segregation       | Observer mutations fail-closed (DENY)  | VERIFIED
