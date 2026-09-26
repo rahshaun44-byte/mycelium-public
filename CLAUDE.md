@@ -13,9 +13,10 @@ be read as separate systems that happen to share a Postgres instance:
   actually runs day to day: intrusion detection, a dashboard, a RAG assistant, and an LLM task
   swarm. Deployed as systemd **user** services.
 - **C++20 evidence/ledger engine** (`src/`, `include/quantum-flex/`) — a from-scratch port of a
-  separate, previously-untracked prototype (`~/quantum-flex`, now archived to
-  `~/quantum-flex-archive` — not part of this repo). Newer and much less exercised than the Python
-  side; most of it compiles and links but is not wired into any running service yet.
+  separate, previously-untracked prototype (now at `~/qflex/quantum-flex` — not part of this
+  repo). Newer and much less exercised than the Python side. It runs as the user service
+  `quantum-flex-engine-mycelium` (`build_check/quantum_flex_engine`, mTLS on `127.0.0.1:9444`),
+  boots LOCKED, and is unsealed only by an operator via `scripts/unlock_engine.sh`.
 
 ## Build & run
 
@@ -112,10 +113,9 @@ systemd `Environment=` lines.
 
 **Networking**: `IpcServer` (`ipc_server.hpp`) is a single-threaded mTLS TCP server (TLS 1.3,
 client-cert auth), default `9443`, driven one connection at a time by
-`process_single_connection()` in `src/main.cpp`'s loop — deliberately synchronous. The
-`quantum-flex-sentinel-harvester` systemd service (a separate, root-level deployment outside this
-repo, under `/usr/local/libexec/quantum-flex/` — see below) is the client that actually talks to
-this socket.
+`process_single_connection()` in `src/main.cpp`'s loop — deliberately synchronous. The live
+unit binds `9444` (`QF_BIND_PORT`). The old root harvester client for this socket no longer
+exists; `scripts/unlock_engine.sh` is the one known operator client.
 
 **Crypto-agility / "immune" subsystem** (`pqc-immune-daemon/immune_daemon.py`,
 `pqc-immune-daemon/crypto_provider.conf`, `sentinel/policies/membrane_health.rego`): a decision loop, not a
@@ -132,16 +132,12 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
 `telemetry` Postgres backend (backend #1 above), not `amara_matrix`.
 
 **Repo-state gotchas:**
-- **This host runs a second, entirely separate Quantum Flex deployment outside this repo** — root
-  and dedicated-user systemd services under `/usr/local/bin`, `/usr/local/libexec/quantum-flex/`,
-  `/etc/quantum-flex/`, `/opt/quantum-flex-ingest/`. It is not git-tracked anywhere in
-  `~/mycelium`; treat it as a black box unless you're specifically asked to touch it, and check
-  `systemctl list-units | grep quantum` before assuming a given binary/service does or doesn't
-  exist.
-- `~/quantum-flex-archive` (the retired prototype this engine was ported from) still has a live
-  root systemd service (`quantum-flex-harvester.service`) pointing at a path inside it
-  (`clients/python/sentinel_harvester.py`) — that service will fail on its next restart since the
-  directory moved. Not part of this repo, but worth knowing if you're asked to debug it.
+- The former second, root-level Quantum Flex deployment (`/usr/local/libexec/quantum-flex/`,
+  `/etc/quantum-flex/`, `/opt/quantum-flex-ingest/`) and its `quantum-flex-harvester.service` are
+  gone as of 2026-09-26. One leftover: `/etc/systemd/system/quantum_flex_engine.service` (root unit,
+  disabled, inactive) pointing at a stale `/home/quant/pqc-immune-daemon/mycelium/build/` path — do
+  not enable it. Check `systemctl list-units --all | grep -i quantum` before assuming a service
+  exists. Current runtime record: `docs/CURRENT_SYSTEM_SNAPSHOT_2026-09-26.md`.
 - **Multiple AI coding sessions have edited this repo concurrently** at least once already,
   producing a duplicate/incompatible reimplementation of `BaeNode` and an accidental commit of the
   entire `build_check/` directory (compiler binaries, `.o` files — since reverted and gitignored).
