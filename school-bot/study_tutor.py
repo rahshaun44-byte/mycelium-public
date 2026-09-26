@@ -265,6 +265,8 @@ def interactive_menu():
   {CYAN}[2]{RESET} 🧪  Quiz Me         — Socratic Q&A, one question at a time
   {CYAN}[3]{RESET} ⚡  Rapid Drill     — Fast-fire memorization mode
   {CYAN}[4]{RESET} 📖  Explain Concept — Deep dive on a single topic
+  {YELLOW}[5]{RESET} 🎓  Study CS 320    — Software Testing & QA
+  {YELLOW}[6]{RESET} 🎓  Study CS 210    — Programming Languages
   {CYAN}[q]{RESET} 🚪  Quit
 """)
 
@@ -294,6 +296,16 @@ def interactive_menu():
             mode_explain(concept)
         else:
             print(f"{RED}Need a concept.{RESET}")
+
+    elif choice == "5":
+        print(f"\n{GREEN}Loading CS 320: Software Testing, Automation, and Quality Assurance...{RESET}")
+        topic = "CS 320 Software Testing, JUnit 5, continuous integration, dynamic and static testing, test strategies, and SDLC"
+        mode_quiz(topic)
+
+    elif choice == "6":
+        print(f"\n{GREEN}Loading CS 210: Programming Languages...{RESET}")
+        topic = "CS 210 Programming Languages, C++, Java, Python syntax comparison, secure coding practices, and file operations"
+        mode_quiz(topic)
 
     elif choice in ("q", "quit", "exit"):
         print(f"\n{GREEN}Degree doesn't fail itself. Keep going.{RESET}\n")
