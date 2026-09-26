@@ -3,6 +3,8 @@
 Observed September 25, 2026, approximately 23:01–23:06 America/New_York.
 This is a read-only operational refresh plus this documentation file, not a security certification or deployment change. Recheck volatile facts before operational decisions.
 
+**Superseded 2026-09-26:** runtime observations below are replaced by CURRENT_SYSTEM_SNAPSHOT_2026-09-26.md (immune daemon now runs the Mycelium copy; swarm-worker fix deployed).
+
 **23:19 EDT follow-up:** The earlier Open WebUI wildcard listener below is historical. Current socket inspection shows 127.0.0.1:3000 (PID 52962). Podman records container replacement at 23:12:58–23:12:59; initiating person/agent remains unknown. Tailscale Serve confirms AMARA port 8000 is published on the tailnet. See REMEDIATION_REVIEW_2026-09-25.md for event timestamps, attribution limits, and the uncommitted signed-release warning. Original observations below are preserved as dated evidence.
 
 ## Corrected baseline
