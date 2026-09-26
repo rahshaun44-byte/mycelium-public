@@ -91,18 +91,13 @@ def execute_task(task):
                 return "FAILED", f"Athena query failed with HTTP {resp.status_code}: {resp.text}"
                 
         elif target == "amara":
-            # Dispatch to Amara reasoning / matrix endpoint
-            outcome = f"Amara logic for '{action}' evaluated successfully."
-            return "COMPLETED", outcome
+            return "FAILED", "Action not implemented: AMARA task actuator is not wired."
             
         elif target == "iac":
-            # Dispatch to IaC deployer
-            outcome = f"IaC deployer executed action '{action}' on parameters {params}."
-            return "COMPLETED", outcome
+            return "FAILED", "Action not implemented: IaC task actuator is not wired."
             
         else:
-            outcome = f"Executed generic action '{action}' on node '{target}'"
-            return "COMPLETED", outcome
+            return "FAILED", "Unsupported task target: no actuator is registered."
     except Exception as e:
         log.error(f"Task [{task['id']}] execution exception: {e}")
         return "FAILED", str(e)
