@@ -108,3 +108,21 @@ python qflex.py invariant
 # Check system status HUD:
 python qflex.py status
 ```
+
+---
+
+## 6. Live Verification & Telemetry Re-Admission (2026-09-25)
+
+- **Operational State**: **ACTIVE** (Recovered from degraded/offline posture)
+- **Mesh Connection**: `100.64.1.34` direct over LAN (`192.168.100.17:41641`) via Tailscale mesh.
+- **SSH Access**: Tailscale SSH as `rocky@100.64.1.34` (root login strictly denied by Tailscale ACL tag `tag:worker`).
+- **Container Health**:
+  - `qf-kafka-broker` (confluentinc/cp-kafka:7.6.0): `Up 42+ hours`, listening on `127.0.0.1:9092` (exposed to Tailnet via Tailscale Serve TCP proxy `100.64.1.34:9092`).
+  - `qf-kafka-ui` (provectuslabs/kafka-ui:latest): `Up 42+ hours`, listening on `127.0.0.1:8090` (exposed via Tailscale Serve HTTPS & HTTP 8090).
+- **Worker Sentinel**: `qf-worker-sentinel.service` running active:
+  - RAM Utilization: ~63% (1.2 GB used / 1.9 GB total, 0 B swap).
+  - Disk Utilization: 0.8% used (428 GB free).
+- **Master Ingestion Pipeline**:
+  - `qf-kafka-telemetry.service` on Yoga 7 is publishing pulses every 15s (`partition 0, offset > 2000`).
+  - `qf-kafka-consumer.service` on Yoga 7 is actively consuming pulses, inserting to AMARA PostgreSQL (`telemetry` DB), and embedding into Athena neural memory (`athena-node.service` port 8001).
+

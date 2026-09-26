@@ -188,3 +188,25 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 | **R8** | Split `QF` magic bytes across TLS writes | **RESOLVED** | Bounded read added to `src/core/ipc_server.cpp` when `buffer[0] == 'Q'`, correctly reassembling fragmented binary headers. |
 | **R9** | Host Frodo installation pressure | **REJECTED** | Preserved host default; engine operates in-process ML-KEM-768 via OpenSSL 3.5 native EVP. |
 | **R10** | Ghost Node audit ledger mutation vulnerability | **RESOLVED** | Revoked `UPDATE` and `DELETE` on `sentinel_ledger` and `invariant_audit_ledger` from `ghostnode`; verified append-only (`ar`). |
+
+---
+
+## 11. Worker Node 2 (`qf-pavilion-worker`) Recovery & Live Ingestion Verification (2026-09-25)
+
+- **Audit Date**: 2026-09-25
+- **Node Identifier**: `qf-pavilion-worker` (HP Pavilion Desktop Tower)
+- **Mesh Topology Status**:
+  - Direct connection active over LAN (`192.168.100.17:41641`) via encrypted Tailscale WireGuard mesh (`100.64.1.34`).
+  - Uptime: 1 day, 18+ hours.
+  - OS & Kernel: Debian 13 (Trixie) Linux 6.12, unprivileged user `rocky` (UID 1000). Root login denied by Tailscale ACL tag `tag:worker`.
+- **Container Infrastructure (Docker CE)**:
+  - `qf-kafka-broker` (confluentinc/cp-kafka:7.6.0): Up 42+ hours. Bound to `127.0.0.1:9092` with Tailscale Serve exposing `100.64.1.34:9092` to Tailnet.
+  - `qf-kafka-ui` (provectuslabs/kafka-ui:latest): Up 42+ hours. Bound to `127.0.0.1:8090` with Tailscale Serve exposing HTTPS and HTTP :8090 to Tailnet.
+- **Worker Sentinel Health**:
+  - `qf-worker-sentinel.service` running active.
+  - Vitals: RAM used ~63% (1.2 GB / 1.9 GB, 0 B swap), Disk used 0.8% (428 GB free).
+- **Master Node Pipeline Alignment (Lenovo Yoga 7)**:
+  - `qf-kafka-telemetry.service`: Actively forward-streaming telemetry pulses (PQC KEM ML-KEM-768, host temps, memory vitals) at 15s cadence to `100.64.1.34:9092` (topic `qf-telemetry`, partition 0, offset > 2000).
+  - `qf-kafka-consumer.service`: Actively pulling stream from Pavilion broker, persisting structured vitals to AMARA PostgreSQL (`telemetry` DB), and streaming embeddings to Athena neural cognitive node (`athena-node.service` port 8001).
+- **Operational Verdict**: Worker Node 2 fully admitted from degraded/offline posture to **ACTIVE Layer 4 Stream Compute**.
+
