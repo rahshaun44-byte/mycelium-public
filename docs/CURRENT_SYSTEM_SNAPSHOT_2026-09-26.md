@@ -65,9 +65,26 @@ Live ledger `~/.local/share/quantumflex/ghost_sink/entropy_sink_ledger.jsonl` (7
 
 - PostHog wizard output is gitignored (`d440e6a`), not wired into any runtime.
 
-## Unresolved
+## Decisions (00:30 EDT follow-up)
 
-1. Engine unsealed since 23:15:24 by an unidentified actor; decide whether to re-lock.
-2. Immune daemon: choose a supervised worker + strict profile, or record agility as conf-only;
-   add the entrypoint to the signed manifest (operator signing ceremony).
-3. Old root `quantum-flex-harvester.service` still points into `~/quantum-flex-archive` (not rechecked).
+1. **Engine policy:** boots LOCKED; ACTIVE only via a deliberate 3-of-5 unseal for a named
+   operator session; return to LOCKED with `systemctl --user restart quantum-flex-engine-mycelium`
+   when the session ends.
+   - 23:15:24 unseal attributed to the operator: `~/.bash_history` holds two
+     `SHARD_FILES=…shard_1,2,3… ./scripts/unlock_engine.sh` invocations (history is untimestamped,
+     so the time match is by log only). Engine stays ACTIVE for the current session.
+   - Limit: all 5 shards sit together in `~/qfx-shards/` (0700) on this host, so the 3-of-5
+     threshold gives no separation against a local compromise of `quant`.
+2. **Immune daemon scope (unsigned helper):**
+   - May: poll OPA every 500 ms with a CBOM snapshot and atomically rewrite
+     `mcp_layer/crypto_provider.conf` to the fallback on TOXIC.
+   - May not: signal any process without a verified `WORKER_PID`, change firewall rules, unseal,
+     make non-loopback requests, or claim QF-A5 provenance until `immune_daemon.py` is in the
+     signed manifest.
+3. **Harvester:** no `quantum-flex-harvester.service` exists (system or user), no timer, no socket.
+   `~/quantum-flex-archive` does not exist; the prototype is at `~/qflex/quantum-flex`.
+   `/usr/local/libexec/quantum-flex`, `/etc/quantum-flex`, `/opt/quantum-flex-ingest` are absent.
+   One leftover: `/etc/systemd/system/quantum_flex_engine.service` (root unit, `User=quant`),
+   disabled and inactive, pointing at `/home/quant/pqc-immune-daemon/mycelium/build/`. Left archived.
+
+CLAUDE.md's "second deployment" and harvester notes are stale per item 3.
