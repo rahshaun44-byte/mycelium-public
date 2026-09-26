@@ -97,3 +97,9 @@ quantumflex-ghost-sink/target/
 
 # Device-specific private directories and nodes
 s23fe/
+
+# PostHog self-driving wizard output (deferred integration, not wired into any runtime)
+/package.json
+/package-lock.json
+/posthog-self-driving-report.md
+/.claude/skills/replay-vision-*/
