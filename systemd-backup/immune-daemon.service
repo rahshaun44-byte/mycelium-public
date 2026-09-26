@@ -1,0 +1,18 @@
+[Unit]
+Description=Quantum Flex PQC Crypto-Agility Immune Daemon
+After=network.target opa-immune.service
+Wants=opa-immune.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/mycelium
+EnvironmentFile=%h/mycelium/.env
+ExecStartPre=%h/.local/libexec/quantumflex/verify-provenance %h/mycelium/release/PROVENANCE_MANIFEST.json --repo-root %h/mycelium
+ExecStart=%h/mycelium/.venv/bin/python3 -u pqc-immune-daemon/immune_daemon.py --conf %h/mycelium/mcp_layer/crypto_provider.conf --opa http://127.0.0.1:8181 --profile agility
+Restart=always
+RestartSec=5
+StandardOutput=append:%h/.local/state/quantum-flex-mycelium/immune-daemon.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target
