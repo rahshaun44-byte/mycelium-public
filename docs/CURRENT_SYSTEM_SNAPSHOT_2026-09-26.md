@@ -27,7 +27,7 @@ All `NRestarts=0`. Timers: `sentinel-drive.timer` (~30 s), `neurogenesis.timer` 
 Loopback listeners: engine mTLS `9444`, ghost sink `19443`, OPA `8181`, Postgres `5432`,
 Open WebUI `3000`. No `5433` listener.
 
-## Engine — UNSEALED
+## Engine — unsealed at sampling (re-locked 00:27:54, see Decisions)
 
 `engine.log` shows boot `LOCKED` after the 23:12:03 start, then at **23:15:24 EDT**:
 `Node Unlocked ... ACTIVE` / `Genesis Authority authenticated via mTLS ... Node unsealed (threshold=3)`.
@@ -72,7 +72,9 @@ Live ledger `~/.local/share/quantumflex/ghost_sink/entropy_sink_ledger.jsonl` (7
    when the session ends.
    - 23:15:24 unseal attributed to the operator: `~/.bash_history` holds two
      `SHARD_FILES=…shard_1,2,3… ./scripts/unlock_engine.sh` invocations (history is untimestamped,
-     so the time match is by log only). Engine stays ACTIVE for the current session.
+     so the time match is by log only).
+   - **Re-locked 2026-09-26 00:27:54 EDT** by operator request: service restart, new PID 81493,
+     provenance 13/13, log ends `Engine is LOCKED. Awaiting SSS unlock.`, listener `127.0.0.1:9444`.
    - Limit: all 5 shards sit together in `~/qfx-shards/` (0700) on this host, so the 3-of-5
      threshold gives no separation against a local compromise of `quant`.
 2. **Immune daemon scope (unsigned helper):**

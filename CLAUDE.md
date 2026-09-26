@@ -52,14 +52,15 @@ listener's cert paths are resolved under it, and neither directory-creates for y
 
 **Python components** — three independent dependency sets, no lockfile, no shared venv manifest:
 `sentinel/requirements.txt`, `mcp_layer/requirements-worker.txt`, `api_node/requirements.txt`. The
-working venv used on this host is `~/mycelium/venv` (Python 3.14). The repo includes
+working venv used on this host is `~/mycelium/venv` (a symlink to `~/.venv/qflex`, Python 3.14);
+`immune-daemon` instead runs from the repo-local `.venv`. The repo includes
 a `pytest.ini` and integration/unit test suite under `tests/` (19 test files). Run tests with:
 `pytest` or `/home/quant/mycelium/venv/bin/python3 -m pytest -q`. (No `.clang-tidy` or `.clang-format`
 config currently exists).
 
 **How this actually runs**: not via a single entrypoint — each Python component is its own
 systemd **user** service (`systemctl --user status <name>`: `amara-dashboard`, `athena-node`,
-`qf-monitor`, `sentinel.timer`, `neurogenesis.timer`). `systemd-backup/` in this repo is exactly
+`qf-monitor`, `swarm-worker`, `immune-daemon`, `sentinel-drive.timer`, `neurogenesis.timer`). `systemd-backup/` in this repo is exactly
 what it sounds like — backed-up unit files, not the live ones; the live units are under
 `~/.config/systemd/user/`. For local iteration, most Python scripts also run standalone
 (`python3 mcp_layer/athena_api.py`, etc.) since they read config from `.env` / env vars, not from
@@ -77,7 +78,9 @@ systemd `Environment=` lines.
    role `amara_admin`. Used only by the C++ engine (`BaeNode`, via `QF_POSTGRES_CONNINFO`).
    Password lives in `.env` as `POSTGRES_PASSWORD` and must match whatever the live container was
    actually initialized with — `podman exec logistics-pg env` is the source of truth if `.env`
-   and the container ever drift, which has happened before.
+   and the container ever drift, which has happened before. As of 2026-09-26 no `logistics-pg`
+   container exists and nothing listens on 5433; the live engine runs with `QF_POSTGRES_CONNINFO`
+   unset, so its Postgres integration is disabled.
 
 **C++ engine object graph** — `LocalNode` (`local_node.hpp`) is the central object and owns:
 - `EvidenceEngine`: hash-chained, write-once `evidence_id -> data` map.
@@ -118,12 +121,15 @@ unit binds `9444` (`QF_BIND_PORT`). The old root harvester client for this socke
 exists; `scripts/unlock_engine.sh` is the one known operator client.
 
 **Crypto-agility / "immune" subsystem** (`pqc-immune-daemon/immune_daemon.py`,
-`pqc-immune-daemon/crypto_provider.conf`, `sentinel/policies/membrane_health.rego`): a decision loop, not a
-one-off script. Every 500ms, `immune_daemon.py` generates a CBOM snapshot of the active PQC
-algorithm, POSTs it to a co-located OPA sidecar, and if OPA's verdict is `TOXIC`, rewrites
-`crypto_provider.conf` (atomically via `os.replace`) and `SIGHUP`s the worker process to force renegotiation
-with the fallback algorithm. Fails secure: if OPA is unreachable, treat the current algorithm as
-toxic rather than assume it's fine.
+`mcp_layer/crypto_provider.conf`, `sentinel/policies/membrane_health.rego`): a decision loop, not a
+one-off script, run by the `immune-daemon` user unit against OPA (`opa-immune`, `127.0.0.1:8181`).
+Every 500ms it generates a CBOM snapshot of the active PQC algorithm, POSTs it to OPA, and if the
+verdict is `TOXIC`, atomically rewrites `crypto_provider.conf` (`os.replace`) to the fallback.
+It signals or halts a worker only when `WORKER_PID` is set; the live unit runs `--profile agility`
+with no `WORKER_PID`, so today it only rewrites the conf, which consumers re-read. Fails secure: if
+OPA is unreachable, treat the current algorithm as toxic. `immune_daemon.py` is not in
+`release/PROVENANCE_MANIFEST.json`, so the unit's `ExecStartPre` provenance gate does not cover it —
+treat it as an unsigned helper: no firewall changes, no unseal, no non-loopback requests.
 
 **LLM task swarm** (`mcp_layer/controller.py` — "The Claw" — and `mcp_layer/swarm_worker.py`):
 `controller.py` breaks one directive into atomic tasks via local Ollama and inserts them into a
