@@ -4,16 +4,18 @@ QuantumFlex Runtime Admission Launcher (QF-A6)
 
 Enforces atomic runtime admission:
   RUNTIME_ADMITTED =
-    A5_PACKAGE_ADMITTED
+    A5_PROVENANCE_ADMITTED
     ∧ RUNTIME_BINDING_SIGNATURE_VALID
     ∧ H(actual_A5_manifest) = binding.package.a5_manifest_sha256
     ∧ H(opened_executable) = binding.runtime.sha256
     ∧ EXECUTED_FD = VERIFIED_FD
 
-The launcher opens the executable with O_RDONLY | O_NOFOLLOW | O_CLOEXEC,
-verifies all cryptographic and hash invariants directly on the open file descriptor,
-sanitizes dynamic loader environment variables, and executes the exact same descriptor
-via /proc/self/fd/<fd>, completely eliminating TOCTOU path-swapping vulnerabilities.
+The launcher verifies the current signed QF-A5 release manifest and its declared
+artifacts, checks a signed binding to that manifest, then opens the executable
+with O_RDONLY | O_NOFOLLOW | O_CLOEXEC. It hashes the open descriptor and
+executes that descriptor via /proc/self/fd/<fd> on Linux. This closes the
+executable pathname swap window; it does not attest dynamic libraries or the
+rest of the host.
 """
 
 import argparse
@@ -46,8 +48,8 @@ def verify_and_launch(
     executable_path: str,
     binding_path: str = None,
     sig_path: str = None,
-    package_prefix: str = None,
     a5_manifest_path: str = None,
+    repo_root: str = None,
     trust_anchor_path: str = None,
     a5_verifier_path: str = None,
     engine_args: list[str] = None
@@ -71,26 +73,18 @@ def verify_and_launch(
         print(f"[FAIL-CLOSED] DENY_A5_VERIFIER_MISSING: A5 verifier missing at {a5_verifier_path}", file=sys.stderr)
         return 1
 
-    # 3. A5 Package Verification
-    if package_prefix:
-        res = subprocess.run(
-            [a5_verifier_path, "--admit-package", "--prefix", package_prefix],
-            capture_output=True,
-            text=True
-        )
-        if res.returncode != 0:
-            print(f"[FAIL-CLOSED] DENY_A5_PACKAGE_REJECTED:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}", file=sys.stderr)
-            return 1
-
-        if not a5_manifest_path:
-            for sub in ["lib64/cmake/QuantumFlex", "lib/cmake/QuantumFlex"]:
-                cand = os.path.join(package_prefix, sub, "QuantumFlexAdmission.provenance.json")
-                if os.path.isfile(cand):
-                    a5_manifest_path = cand
-                    break
-
+    # 3. Current QF-A5 release verification. A digest alone does not prove
+    # that the manifest was signed or that its declared artifacts still match.
     if not a5_manifest_path or not os.path.isfile(a5_manifest_path):
         print(f"[FAIL-CLOSED] DENY_A5_MANIFEST_MISSING: A5 provenance manifest not found at {a5_manifest_path}", file=sys.stderr)
+        return 1
+
+    verify_cmd = [a5_verifier_path, a5_manifest_path, "--key", trust_anchor_path]
+    if repo_root:
+        verify_cmd.extend(["--repo-root", repo_root])
+    res = subprocess.run(verify_cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        print(f"[FAIL-CLOSED] DENY_A5_PROVENANCE_REJECTED:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}", file=sys.stderr)
         return 1
 
     # 4. Resolve Runtime Binding & Signature Paths
@@ -216,8 +210,8 @@ def main():
     parser.add_argument("--executable", required=True, help="Path to runtime executable binary")
     parser.add_argument("--binding", help="Path to QuantumFlexRuntimeBinding.json")
     parser.add_argument("--sig", help="Path to QuantumFlexRuntimeBinding.sig")
-    parser.add_argument("--package-prefix", help="Install prefix of QuantumFlex package")
-    parser.add_argument("--a5-manifest", help="Path to QuantumFlexAdmission.provenance.json")
+    parser.add_argument("--a5-manifest", required=True, help="Path to signed PROVENANCE_MANIFEST.json")
+    parser.add_argument("--repo-root", help="Root containing artifacts declared by the A5 manifest")
     parser.add_argument("--trust-anchor", help="Override path to release_signing_key.pub")
     parser.add_argument("--verifier", help="Override path to verify-provenance")
     parser.add_argument("engine_args", nargs="*", help="Arguments passed to admitted executable")
@@ -237,8 +231,8 @@ def main():
         executable_path=args.executable,
         binding_path=args.binding,
         sig_path=args.sig,
-        package_prefix=args.package_prefix,
         a5_manifest_path=args.a5_manifest,
+        repo_root=args.repo_root,
         trust_anchor_path=args.trust_anchor,
         a5_verifier_path=args.verifier,
         engine_args=combined_args

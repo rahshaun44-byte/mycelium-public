@@ -31,6 +31,8 @@ for arg in "$@"; do
   esac
 done
 
+SRC_LAUNCHER="${REPO_ROOT}/scripts/qf_runtime_admit.py"
+
 if [[ ! -f "${SRC_VERIFIER}" ]]; then
   echo "[FAIL-CLOSED] Missing template: ${SRC_VERIFIER}" >&2
   exit 1
@@ -68,7 +70,7 @@ if [[ "${FORCE_UNVERIFIED}" -eq 0 ]]; then
 fi
 
 if [[ "${REPLACE}" -eq 0 ]]; then
-  for existing in "${DEST}/verify-provenance" "${DEST}/release_signing_key.pub"; do
+  for existing in "${DEST}/verify-provenance" "${DEST}/release_signing_key.pub" "${DEST}/qf-runtime-admit"; do
     if [[ -e "${existing}" ]]; then
       echo "[FAIL-CLOSED] ${existing} already exists." >&2
       echo "Re-installing would overwrite the judge from a (possibly dirty) checkout." >&2
@@ -88,6 +90,10 @@ trap cleanup_staging EXIT
 
 install -m 0400 "${SRC_KEY}" "${STAGING}/release_signing_key.pub"
 install -m 0500 "${SRC_VERIFIER}" "${STAGING}/verify-provenance"
+if [[ -f "${SRC_LAUNCHER}" ]]; then
+  install -m 0500 "${SRC_LAUNCHER}" "${STAGING}/qf-runtime-admit"
+  python3 -m py_compile "${STAGING}/qf-runtime-admit"
+fi
 python3 "${ASSERT}" "${STAGING}/verify-provenance" --role judge
 python3 -m py_compile "${STAGING}/verify-provenance"
 
@@ -98,9 +104,21 @@ if [[ "${src_hash}" != "${stg_hash}" ]]; then
   exit 1
 fi
 
+if [[ -f "${SRC_LAUNCHER}" ]]; then
+  src_launcher_hash="$(sha256sum "${SRC_LAUNCHER}" | awk '{print $1}')"
+  stg_launcher_hash="$(sha256sum "${STAGING}/qf-runtime-admit" | awk '{print $1}')"
+  if [[ "${src_launcher_hash}" != "${stg_launcher_hash}" ]]; then
+    echo "[FAIL-CLOSED] Staging launcher hash mismatch. Wrote nothing to live launcher." >&2
+    exit 1
+  fi
+fi
+
 # Same-filesystem rename: dest inode flips only after staging asserted.
 mv -f "${STAGING}/release_signing_key.pub" "${DEST}/release_signing_key.pub"
 mv -f "${STAGING}/verify-provenance" "${DEST}/verify-provenance"
+if [[ -f "${STAGING}/qf-runtime-admit" ]]; then
+  mv -f "${STAGING}/qf-runtime-admit" "${DEST}/qf-runtime-admit"
+fi
 python3 "${ASSERT}" "${DEST}/verify-provenance" --role judge
 dst_hash="$(sha256sum "${DEST}/verify-provenance" | awk '{print $1}')"
 if [[ "${src_hash}" != "${dst_hash}" ]]; then
@@ -111,6 +129,9 @@ fi
 echo "[+] Trust anchor directory : ${DEST} (0700)"
 echo "[+] Pinned public key      : ${DEST}/release_signing_key.pub (0400)"
 echo "[+] Verifier               : ${DEST}/verify-provenance (0500)"
+if [[ -f "${DEST}/qf-runtime-admit" ]]; then
+  echo "[+] Runtime Launcher       : ${DEST}/qf-runtime-admit (0500)"
+fi
 echo "[+] Installed judge sha256 : ${dst_hash}"
 echo "[+] This judge ignores scripts/verify_provenance_manifest.py inside any repo."
 echo "[+] Isolation is not a same-user trust boundary. The repo does not supply the key."

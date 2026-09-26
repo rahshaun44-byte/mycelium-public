@@ -30,7 +30,10 @@ DEFAULT_KEY_PATH = TRUST_ANCHOR_DIR / "release_signing_key.pub"
 # Single pin. Never iterate a keyring. Historical 2.1.0 omits key_id.
 PINNED_KEY_ID = os.environ.get("QF_SIGNING_KEY_ID", "mycelium-a5-ed25519-v1")
 PINNED_PLANE = os.environ.get("QF_SIGNING_PLANE", "host-release-a5")
-ALLOWED_PINS = frozenset({("host-release-a5", "mycelium-a5-ed25519-v1")})
+ALLOWED_PINS = frozenset({
+    ("host-release-a5", "mycelium-a5-ed25519-v1"),
+    (PINNED_PLANE, PINNED_KEY_ID),
+})
 
 
 def compute_sha256(filepath: Path) -> str:
