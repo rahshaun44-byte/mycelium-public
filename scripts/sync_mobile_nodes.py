@@ -7,6 +7,7 @@ Direct physical provisioning, health inspection, and over-the-wire deployment:
 - Explicit flags:
     --push           : Push verified CLI, manifests, and web HUD to /sdcard/Download/QuantumFlex/
     --apk            : Install/update verified native Capacitor Cockpit APK (com.quantumflex.cockpit)
+    --optimize       : Apply Android OS & Kernel optimizations (battery, animations, stay-awake) for Chief Architect node
     --device SERIAL  : Target specific ADB device serial
 - Full cryptographic pre-verification before any push or install
 - Remote SHA-256 validation via 'adb shell sha256sum' after push
@@ -170,8 +171,8 @@ def inspect_adb_device(serial: str) -> Dict[str, Any]:
         info["authority"] = "Titan M2 Hardware Security Module (OOB Signer)"
     elif "S23" in model or "SM-S711" in model:
         info["qf_node"] = "s23-fe"
-        info["qf_role"] = "field-workstation"
-        info["authority"] = "Knox Vault Hardware Security (Field Console)"
+        info["qf_role"] = "field-observer"
+        info["authority"] = "Security Observer Only (Substrate Mutations Strictly DENIED)"
     else:
         info["qf_node"] = "unknown"
         info["qf_role"] = "observer"
@@ -255,10 +256,56 @@ def install_apk_on_device(serial: str):
     else:
         print(_c(CLR_RED, "  [!] Warning: Package was installed but not found in pm list.\n"))
 
+def optimize_device_os(serial: str, dev_info: Dict[str, Any]):
+    print(_c(CLR_BOLD + CLR_CYAN, f"[*] Applying OS & Software Optimizations on Device ({serial})..."))
+    if dev_info.get("qf_node") == "pixel-11-pro":
+        print(_c(CLR_YELLOW, "  -> Role: CHIEF_ARCHITECT (Pixel 11 Pro) detected. Applying Maximum Performance Profile."))
+        cmds = [
+            # Disable all animations for absolute UI snap
+            ["shell", "settings", "put", "global", "window_animation_scale", "0"],
+            ["shell", "settings", "put", "global", "transition_animation_scale", "0"],
+            ["shell", "settings", "put", "global", "animator_duration_scale", "0"],
+            
+            # The operator's StrongBox key only signs while the device is unlocked, so the
+            # screen must be allowed to sleep and lock. Never keep it awake indefinitely.
+            ["shell", "settings", "put", "global", "stay_on_while_plugged_in", "0"],
+            ["shell", "settings", "put", "system", "screen_off_timeout", "60000"],
+            
+            # Battery Saver off, but keep Doze on system-wide; only the cockpit is exempted below.
+            ["shell", "cmd", "power", "set-mode", "0"],
+            ["shell", "dumpsys", "deviceidle", "enable"],
+            
+            # Whitelist QuantumFlex App from background restrictions
+            ["shell", "dumpsys", "deviceidle", "whitelist", "+com.quantumflex.cockpit"],
+            
+            # Force high-performance background networking for Tailscale/Cockpit
+            ["shell", "cmd", "appops", "set", "com.quantumflex.cockpit", "RUN_IN_BACKGROUND", "allow"],
+            ["shell", "cmd", "appops", "set", "com.quantumflex.cockpit", "RUN_ANY_IN_BACKGROUND", "allow"]
+        ]
+        for cmd in cmds:
+            rc, out, err = run_adb(cmd, serial=serial)
+            if rc != 0:
+                print(_c(CLR_RED, f"  [!] Failed to apply setting: {' '.join(cmd)}"))
+            else:
+                pass # success
+                
+        print(_c(CLR_GREEN, "  [PASS] Maximum Performance Profile Applied. OS tuned brilliantly for QuantumFlex.\n"))
+    else:
+        print(_c(CLR_YELLOW, f"  -> Role: FIELD_OBSERVER ({dev_info.get('qf_node')}) detected. Applying Observer Profile."))
+        cmds = [
+            # Observer device optimizations (less aggressive)
+            ["shell", "settings", "put", "system", "screen_off_timeout", "300000"], # 5 mins
+            ["shell", "dumpsys", "deviceidle", "whitelist", "+com.quantumflex.cockpit"]
+        ]
+        for cmd in cmds:
+            run_adb(cmd, serial=serial)
+        print(_c(CLR_GREEN, "  [PASS] Observer Profile Applied.\n"))
+
 def main():
     parser = argparse.ArgumentParser(description="QuantumFlex Mobile Node Synchronizer (QF-M1)")
     parser.add_argument("--push", action="store_true", help="Push verified artifacts to device")
     parser.add_argument("--apk", action="store_true", help="Install verified Cockpit APK onto device")
+    parser.add_argument("--optimize", action="store_true", help="Apply OS and battery optimizations")
     parser.add_argument("--device", help="Specific ADB device serial to target")
     args = parser.parse_args()
 
@@ -330,20 +377,24 @@ def main():
     print(f"  Cockpit Package   : {_c(CLR_GREEN if dev_info.get('cockpit_installed') else CLR_YELLOW, 'INSTALLED' if dev_info.get('cockpit_installed') else 'NOT INSTALLED')}")
     print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
 
-    if not args.push and not args.apk:
+    if not args.push and not args.apk and not args.optimize:
         print(_c(CLR_DIM, "\n  Default Mode: INSPECTION ONLY. Zero modifications made."))
-        print("  Use --push to deploy verified files, --apk to install Cockpit, or both:\n")
-        print(f"    python3 scripts/sync_mobile_nodes.py --push --apk --device {serial}\n")
+        print("  Use --push, --apk, or --optimize to modify device state:\n")
+        print(f"    python3 scripts/sync_mobile_nodes.py --push --apk --optimize --device {serial}\n")
         sys.exit(0)
 
     # Perform mutations if requested
-    verify_source_assets()
+    if args.push or args.apk:
+        verify_source_assets()
 
     if args.push:
         stage_and_verify_files_on_device(serial)
 
     if args.apk:
         install_apk_on_device(serial)
+        
+    if args.optimize:
+        optimize_device_os(serial, dev_info)
 
     print(_c(CLR_BOLD + CLR_GREEN, "═══════════════════════════════════════════════════════════════"))
     print(_c(CLR_BOLD + CLR_GREEN, f"  DEPLOYMENT COMPLETE ON {dev_info.get('qf_node').upper()} ({serial})"))

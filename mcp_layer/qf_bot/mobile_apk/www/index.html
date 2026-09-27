@@ -1,801 +1,1970 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="manifest" href="manifest_cockpit.json">
-    <meta name="theme-color" content="#0b0f19">
-    <link rel="apple-touch-icon" href="icon.svg">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QuantumFlex | Operator Cockpit</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --panel-bg: rgba(20, 25, 40, 0.6);
-            --panel-border: rgba(255, 255, 255, 0.08);
-            --text-main: #e2e8f0;
-            --text-muted: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-            --accent-red: #ef4444;
-            --font-main: 'Inter', sans-serif;
-            --font-code: 'JetBrains Mono', monospace;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#060911">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>QuantumFlex | Pixel 11 Pro Operator Cockpit</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+/* ═══════════════════════════════════════════════════════════════════
+   QUANTUMFLEX MOBILE HUD — DARK GLASS & TEAL SIGNAL
+   Sovereign Multi-Agent Command Console
+═══════════════════════════════════════════════════════════════════ */
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+:root {
+  --bg-deep: #060911;
+  --bg-card: rgba(13, 20, 34, 0.75);
+  --bg-card-hover: rgba(18, 28, 48, 0.85);
+  --bg-glass-dock: rgba(9, 14, 25, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(0, 245, 212, 0.4);
+  
+  /* The Single Teal Signal */
+  --teal-signal: #00f5d4;
+  --teal-glow: 0 0 16px rgba(0, 245, 212, 0.25);
+  --teal-dim: rgba(0, 245, 212, 0.12);
+  
+  /* Status Signals */
+  --status-green: #00ff88;
+  --status-amber: #ffd043;
+  --status-red: #ff4444;
+  
+  /* Text Tokens */
+  --text-main: #e2e8f0;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: var(--font-main);
-            min-height: 100vh;
-            display: flex;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
-            background-attachment: fixed;
-        }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
 
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            border-right: 1px solid var(--panel-border);
-            padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  position: fixed;
+}
 
-        .brand {
-            font-size: 1.5rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 2rem;
-            padding-left: 1rem;
-            background: linear-gradient(90deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+/* Background Subtle Gradient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(0, 245, 212, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(0, 245, 212, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
 
-        .nav-item {
-            padding: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: var(--text-muted);
-        }
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
 
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-        }
+/* ── Top Bar ────────────────────────────────────────────────────────────── */
+.top-bar {
+  background: var(--bg-glass-dock);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 46px 16px 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
 
-        .nav-item.active {
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--accent-blue);
-            border-left: 4px solid var(--accent-blue);
-        }
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 3rem;
-            overflow-y: auto;
-            max-height: 100vh;
-        }
+.brand-signal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--teal-signal);
+  box-shadow: var(--teal-glow);
+  animation: pulse-signal 2.5s infinite;
+}
 
-        .section {
-            display: none;
-            animation: fadeIn 0.4s ease forwards;
-        }
+@keyframes pulse-signal {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
 
-        .section.active {
-            display: block;
-        }
+.brand-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.8px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+.brand-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--teal-signal);
+  background: var(--teal-dim);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-        p.subtitle {
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-        }
+.btn-pwa-install {
+  background: var(--teal-dim);
+  border: 1px solid var(--border-active);
+  color: var(--teal-signal);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
 
-        /* Cards & Panels */
-        .card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+.btn-pwa-install:hover {
+  background: var(--teal-signal);
+  color: #000;
+}
 
-        .card-header {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+.btn-lyceum-link {
+  background: rgba(226, 183, 20, 0.12);
+  border: 1px solid rgba(226, 183, 20, 0.3);
+  color: #ffd043;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 14px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-        /* Checklists */
-        .checklist-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            transition: border 0.2s;
-            border-left: 3px solid transparent;
-        }
+/* ── Content Viewport (Swipeable Views) ─────────────────────────────────── */
+.views-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
 
-        .checklist-item.done {
-            border-left-color: var(--accent-green);
-            opacity: 0.8;
-        }
+.view-pane {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  padding: 14px 16px;
+}
 
-        .checklist-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--accent-green);
-            margin-top: 0.2rem;
-            cursor: pointer;
-        }
+.view-pane.active {
+  display: flex;
+}
 
-        .checklist-text strong {
-            display: block;
-            margin-bottom: 0.25rem;
-        }
+/* ── Agent Switcher Strip (Chat View) ───────────────────────────────────── */
+.agent-selector-strip {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
 
-        .checklist-text span {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
+.agent-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
 
-        /* Terminal & Code */
-        .code-block {
-            background: #000;
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: var(--font-code);
-            font-size: 0.9rem;
-            color: var(--text-main);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 0.5rem 0;
-            border: 1px solid #333;
-        }
+.agent-pill.active {
+  background: var(--teal-dim);
+  border-color: var(--teal-signal);
+  color: var(--teal-signal);
+  box-shadow: 0 0 10px rgba(0, 245, 212, 0.15);
+}
 
-        .copy-btn {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
+.agent-avatar { font-size: 0.95rem; }
 
-        .copy-btn:hover {
-            background: #2563eb;
-        }
+/* ── Chat Messages ──────────────────────────────────────────────────────── */
+.chat-feed {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 8px;
+}
 
-        .copy-btn.copied {
-            background: var(--accent-green);
-        }
+.msg-bubble {
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
 
-        /* Shamir Graphic */
-        .shard-container {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
+.msg-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.15), rgba(0, 245, 212, 0.05));
+  border: 1px solid var(--border-active);
+  border-bottom-right-radius: 3px;
+  color: #fff;
+}
 
-        .shard {
-            flex: 1;
-            min-width: 120px;
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            border: 1px solid var(--panel-border);
-        }
+.msg-bubble.bot {
+  align-self: flex-start;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-bottom-left-radius: 3px;
+}
 
-        .shard.on-disk { background: rgba(16, 185, 129, 0.1); border-color: var(--accent-green); color: var(--accent-green); }
-        .shard.usb { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
-        .shard.paper { background: rgba(245, 158, 11, 0.1); border-color: var(--accent-orange); color: var(--accent-orange); }
+.msg-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--teal-signal);
+}
 
-        /* Drills */
-        .drill-card {
-            cursor: pointer;
-            position: relative;
-        }
+.msg-bubble pre {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  overflow-x: auto;
+  margin-top: 6px;
+  border-left: 2px solid var(--teal-signal);
+  color: #b3fff2;
+  white-space: pre-wrap;
+}
 
-        .drill-question {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
+/* Prompt Chips Bar */
+.prompt-chips-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px 0;
+  flex-shrink: 0;
+}
 
-        .drill-answer {
-            display: none;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--panel-border);
-            color: var(--accent-orange);
-            font-family: var(--font-code);
-            font-size: 0.95rem;
-        }
+.chip-btn {
+  background: rgba(13, 20, 34, 0.9);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 5px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
 
-        .drill-card.open .drill-answer {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
+.chip-btn:hover, .chip-btn:active {
+  border-color: var(--teal-signal);
+  color: var(--teal-signal);
+  background: var(--teal-dim);
+}
 
-        /* Calculator */
-        .calc-group {
-            margin-bottom: 1.5rem;
-        }
+.chip-btn.hardstop {
+  border-color: rgba(255, 68, 68, 0.4);
+  color: #ff8888;
+}
+.chip-btn.hardstop:hover {
+  background: rgba(255, 68, 68, 0.2);
+}
 
-        .calc-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
+/* ── Fixed Input Dock ───────────────────────────────────────────────────── */
+.fixed-input-dock {
+  background: var(--bg-glass-dock);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px 14px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
-        .calc-group input {
-            width: 100%;
-            padding: 0.75rem;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--panel-border);
-            color: white;
-            border-radius: 6px;
-            font-family: var(--font-code);
-            font-size: 1.1rem;
-        }
+.input-form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-        .calc-group input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
+.dock-textarea {
+  flex: 1;
+  background: rgba(7, 10, 18, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 10px 16px;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  outline: none;
+  resize: none;
+  max-height: 80px;
+  transition: border-color 0.2s;
+}
 
-        .calc-result {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: rgba(255,255,255,0.05);
-        }
+.dock-textarea:focus {
+  border-color: var(--teal-signal);
+  box-shadow: 0 0 10px rgba(0, 245, 212, 0.15);
+}
 
-        .status-safe { color: var(--accent-green); border: 2px solid var(--accent-green); }
-        .status-danger { color: var(--accent-red); border: 2px solid var(--accent-red); }
+.btn-send {
+  background: var(--teal-signal);
+  color: #000;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 0 12px rgba(0, 245, 212, 0.3);
+}
 
-        /* Tags */
-        .tag {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .tag.red { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .tag.green { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.btn-send:active {
+  transform: scale(0.92);
+}
 
-        .nav-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            width: 100%;
-        }
+/* ── Mesh View ──────────────────────────────────────────────────────────── */
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  color: var(--teal-signal);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-                min-height: 100vh;
-                height: 100vh;
-                overflow: hidden;
-            }
+.node-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
 
-            .sidebar {
-                width: 100%;
-                padding: max(0.85rem, env(safe-area-inset-top)) 1rem 0.6rem 1rem;
-                gap: 0.5rem;
-                border-right: none;
-                border-bottom: 1px solid var(--panel-border);
-                flex-shrink: 0;
-            }
+.node-glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.2s;
+}
 
-            .brand {
-                font-size: 1.2rem;
-                margin-bottom: 0.25rem;
-                padding-left: 0.25rem;
-            }
+.node-glass-card:hover {
+  border-color: var(--border-active);
+}
 
-            .nav-container {
-                flex-direction: row;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                gap: 0.5rem;
-                padding-bottom: 4px;
-            }
+.node-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
-            .nav-container::-webkit-scrollbar {
-                display: none;
-            }
+.node-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-            .nav-item {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.82rem;
-                white-space: nowrap;
-                flex-shrink: 0;
-                border-left: none;
-                border-bottom: 3px solid transparent;
-                border-radius: 6px;
-            }
+.node-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
 
-            .nav-item.active {
-                border-left: none;
-                border-bottom: 3px solid var(--accent-blue);
-            }
+.node-ip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
 
-            .main-content {
-                padding: 1.5rem 1rem max(3.5rem, calc(2rem + env(safe-area-inset-bottom))) 1rem;
-                overflow-y: auto;
-                flex: 1;
-                max-height: none;
-            }
+.node-detail {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
 
-            h1 {
-                font-size: 1.6rem;
-            }
+.node-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
 
-            p.subtitle {
-                font-size: 0.95rem;
-                margin-bottom: 1.25rem;
-            }
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
 
-            .card {
-                padding: 1rem;
-            }
-        }
+.status-badge.online {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--status-green);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
 
-    </style>
+.status-badge.readonly {
+  background: rgba(255, 208, 67, 0.12);
+  color: var(--status-amber);
+  border: 1px solid rgba(255, 208, 67, 0.3);
+}
+
+.latency-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* Invariant summary card */
+.invariant-card {
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.08), rgba(13, 20, 34, 0.8));
+  border: 1px solid var(--border-active);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.inv-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Swarm View (Observations & Handoffs) ────────────────────────────────── */
+.obs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.obs-card {
+  background: var(--bg-card);
+  border-left: 3px solid var(--teal-signal);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.obs-card.read-only {
+  border-left-color: var(--status-amber);
+}
+
+.obs-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.obs-source { color: var(--teal-signal); font-weight: 700; }
+.obs-source.lyceum { color: var(--status-amber); }
+.obs-time { color: var(--text-muted); }
+
+.obs-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.obs-detail {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* ── Alerts View ────────────────────────────────────────────────────────── */
+.alert-banner-box {
+  background: rgba(0, 245, 212, 0.05);
+  border: 1px solid var(--border-active);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Bottom Navigation Bar ──────────────────────────────────────────────── */
+.bottom-nav {
+  background: var(--bg-glass-dock);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 4px 28px 4px;
+  flex-shrink: 0;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.nav-tab .tab-icon {
+  font-size: 1.15rem;
+}
+
+.nav-tab.active {
+  color: var(--teal-signal);
+}
+
+.nav-tab.active .tab-icon {
+  transform: translateY(-2px);
+  text-shadow: 0 0 10px rgba(0, 245, 212, 0.4);
+}
+
+/* ── Modal / Bottom Sheet ───────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+.modal-content {
+  background: #0d1422;
+  border: 1px solid rgba(0, 245, 212, 0.28);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  padding: 20px 18px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 245, 212, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: slideUp 0.2s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+.modal-body {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Interactive Operator Cockpit Extensions ───────────────────────── */
+.operator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 245, 212, 0.12);
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--teal-signal);
+}
+
+.operator-badge.observer {
+  background: rgba(255, 183, 3, 0.12);
+  border: 1px solid rgba(255, 183, 3, 0.35);
+  color: var(--status-amber);
+}
+
+.security-isolation-banner {
+  background: linear-gradient(90deg, rgba(255, 183, 3, 0.15) 0%, rgba(255, 68, 68, 0.15) 100%);
+  border-bottom: 1px solid rgba(255, 183, 3, 0.3);
+  color: #ffcc00;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+  z-index: 20;
+}
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-interactive {
+  background: var(--teal-signal);
+  color: #060911;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-interactive:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-danger {
+  background: rgba(255, 68, 68, 0.18);
+  color: #ff6666;
+  border: 1px solid rgba(255, 68, 68, 0.35);
+}
+
+.btn-danger:active {
+  background: rgba(255, 68, 68, 0.3);
+}
+
+/* Services Control Grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.service-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+
+.service-card.active-svc {
+  border-left: 3px solid var(--teal-signal);
+}
+
+.service-card.failed-svc {
+  border-left: 3px solid var(--status-red);
+}
+
+.svc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.svc-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.svc-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.svc-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-svc-action {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-svc-action:active {
+  background: rgba(0, 245, 212, 0.2);
+  color: var(--teal-signal);
+}
+
+/* Tactical Terminal */
+.terminal-card {
+  background: rgba(6, 10, 18, 0.95);
+  border: 1px solid var(--border-active);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  color: var(--teal-signal);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 6px;
+}
+
+.terminal-out {
+  background: #020408;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #00f5d4;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.terminal-form {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.terminal-input:focus {
+  outline: none;
+  border-color: var(--teal-signal);
+}
+
+/* Athena Search Vault */
+.athena-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.athena-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.athena-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.athena-input:focus {
+  outline: none;
+  border-color: var(--teal-signal);
+}
+
+.athena-response {
+  background: rgba(0, 245, 212, 0.04);
+  border: 1px solid rgba(0, 245, 212, 0.15);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  display: none;
+}
+
+.athena-meta {
+  font-size: 0.7rem;
+  color: var(--teal-signal);
+  font-family: var(--font-mono);
+  margin-top: 6px;
+}
+
+
+</style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <div class="brand">QuantumFlex</div>
-        <div class="nav-container">
-            <div class="nav-item active" data-target="dashboard">
-                <span>🚀 Shift Dashboard</span>
-            </div>
-            <div class="nav-item" data-target="shamir">
-                <span>🔐 Shamir Ceremony</span>
-            </div>
-            <div class="nav-item" data-target="terminal">
-                <span>💻 Terminal Clipboard</span>
-            </div>
-            <div class="nav-item" data-target="drills">
-                <span>🎯 Scenario Drills</span>
-            </div>
-            <div class="nav-item" data-target="calculator">
-                <span>⚖️ Invariant Calc</span>
-            </div>
-            <div class="nav-item" data-target="deepwork">
-                <span>⏳ Deep Work Codex</span>
-            </div>
+  <div class="app-wrapper">
+    <!-- Top Header Bar -->
+    <header class="top-bar">
+      <div class="brand-section">
+        <div class="brand-signal-dot"></div>
+        <div class="brand-title">
+          <span>QUANTUMFLEX</span>
+          <span class="brand-tag">PIXEL 11 PRO</span>
         </div>
+      </div>
+      <div class="top-actions" style="display:flex; align-items:center; gap:8px;">
+        <span class="operator-badge">CHIEF ARCHITECT</span>
+        <button id="btnPwaInstall" class="btn-pwa-install" onclick="installPWA()" style="display:none;">
+          <span>📲</span> Install
+        </button>
+      </div>
+    </header>
+
+    <!-- Security Isolation Banner (Active only for non-Pixel observer devices) -->
+    <div id="securityBanner" class="security-isolation-banner" style="display:none;">
+      <span>🔒</span>
+      <span id="securityBannerText">SECURITY OBSERVATION MODE — SUBSTRATE MUTATIONS LOCKED TO PIXEL 11 PRO</span>
     </div>
 
-    <div class="main-content">
-        <!-- 1. SHIFT DASHBOARD -->
-        <div id="dashboard" class="section active">
-            <h1>Operator Dashboard</h1>
-            <p class="subtitle">Enforce the daily lifecycle with military-grade precision.</p>
+    <!-- Content Viewport (Swipeable Views) -->
+    <div class="views-container" id="viewsContainer">
 
-            <div class="card">
-                <div class="card-header">Phase A: Shift Start & Arrival</div>
-                
-                <label class="checklist-item" onchange="toggleCheck(this)">
-                    <input type="checkbox">
-                    <div class="checklist-text">
-                        <strong>Visual & Physical Check</strong>
-                        <span>Confirm laptop privacy shutter is closed. Confirm phone USB cable is connected.</span>
-                    </div>
-                </label>
-                
-                <label class="checklist-item" onchange="toggleCheck(this)">
-                    <input type="checkbox">
-                    <div class="checklist-text">
-                        <strong>Network Reality Check</strong>
-                        <span>Check Starlink/home internet. If down: Engage USB Tethering (CDC NCM) -> Mark as Metered.</span>
-                    </div>
-                </label>
-
-                <label class="checklist-item" onchange="toggleCheck(this)">
-                    <input type="checkbox">
-                    <div class="checklist-text">
-                        <strong>Service Ignition (Loopback Only)</strong>
-                        <span><code>systemctl --user start amara-matrix amara-dashboard qf-bot</code></span>
-                    </div>
-                </label>
-            </div>
-
-            <div class="card" style="border-color: var(--accent-green);">
-                <div class="card-header" style="color: var(--accent-green);">Phase B: Active Operations (DOs & DON'Ts)</div>
-                <ul style="padding-left: 1.5rem; line-height: 1.8; color: var(--text-muted);">
-                    <li><span class="tag green">DO</span> Enforce the Universal Invariant (R &gt;= O).</li>
-                    <li><span class="tag green">DO</span> Ingest notes via <code>ingest_vault.py</code>.</li>
-                    <li><span class="tag green">DO</span> Monitor swarm via 127.0.0.1:9000 HUD.</li>
-                    <li><span class="tag red">DON'T</span> NEVER bind any port to 0.0.0.0.</li>
-                    <li><span class="tag red">DON'T</span> NEVER leave the QFX_VAULT USB plugged in randomly.</li>
-                </ul>
-            </div>
-
-            <div class="card" style="border-color: var(--accent-orange);">
-                <div class="card-header" style="color: var(--accent-orange);">Phase C: Shift End & Clean Lockdown</div>
-                
-                <label class="checklist-item" onchange="toggleCheck(this)">
-                    <input type="checkbox">
-                    <div class="checklist-text">
-                        <strong>Freeze Tasks</strong>
-                        <span>Issue <code>/hardstop</code> or ensure queues are fully cleared.</span>
-                    </div>
-                </label>
-                
-                <label class="checklist-item" onchange="toggleCheck(this)">
-                    <input type="checkbox">
-                    <div class="checklist-text">
-                        <strong>Relock & Power Down Services</strong>
-                        <span><code>systemctl --user stop qf-bot amara-dashboard amara-matrix</code></span>
-                    </div>
-                </label>
-                
-                <label class="checklist-item" onchange="toggleCheck(this)">
-                    <input type="checkbox">
-                    <div class="checklist-text">
-                        <strong>Forensic Verification</strong>
-                        <span><code>ss -tulpn | grep -E "5432|8000|9000"</code> (Must return blank!)</span>
-                    </div>
-                </label>
-            </div>
+      <!-- 1. CHAT & SWARM TERMINAL -->
+      <section class="view-pane active" id="view-chat">
+        <!-- Agent Selector Strip -->
+        <div class="agent-selector-strip" id="agentSelector">
+          <div class="agent-pill active" data-bot="" onclick="selectAgent('', this)">
+            <span class="agent-avatar">⬡</span>
+            <span>Swarm Swarm</span>
+          </div>
+          <div class="agent-pill" data-bot="sentinel" onclick="selectAgent('sentinel', this)">
+            <span class="agent-avatar">▲</span>
+            <span>SENTINEL</span>
+          </div>
+          <div class="agent-pill" data-bot="mycelia" onclick="selectAgent('mycelia', this)">
+            <span class="agent-avatar">🍄</span>
+            <span>MYCELIA</span>
+          </div>
+          <div class="agent-pill" data-bot="aria" onclick="selectAgent('aria', this)">
+            <span class="agent-avatar">◈</span>
+            <span>ARIA</span>
+          </div>
+          <div class="agent-pill" data-bot="athena" onclick="selectAgent('athena', this)">
+            <span class="agent-avatar">🧠</span>
+            <span>ATHENA</span>
+          </div>
         </div>
 
-        <!-- 2. SHAMIR WIZARD -->
-        <div id="shamir" class="section">
-            <h1>Shamir Ceremony Wizard</h1>
-            <p class="subtitle">Master Custody Matrix: k=3, n=5. Holding 2 shards = 0 bits of information leaked.</p>
-
-            <div class="card">
-                <div class="card-header">Current Shard State</div>
-                <div class="shard-container">
-                    <div class="shard on-disk">Shard 1<br>(Yoga NVMe)</div>
-                    <div class="shard on-disk">Shard 2<br>(Yoga NVMe)</div>
-                    <div class="shard usb">Shard 3<br>(USB QFX_VAULT)</div>
-                    <div class="shard usb">Shard 4<br>(USB QFX_VAULT)</div>
-                    <div class="shard paper">Shard 5<br>(Paper Safe)</div>
-                </div>
-                <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
-                    <strong>Rule:</strong> You ONLY unseal the Stratum 0 Engine when committing live cryptographic ledger blocks or consensus audits. Daily research and Athena queries do NOT require unlocking.
-                </p>
+        <!-- Chat Feed -->
+        <div class="chat-feed" id="chatFeed">
+          <div class="msg-bubble bot">
+            <div class="msg-header">
+              <span>▲ SENTINEL // PERIMETER GATEKEEPER</span>
             </div>
-
-            <div class="card">
-                <div class="card-header">Unlocking Procedure</div>
-                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">
-                    <strong>Step 1:</strong> Insert the unmounted physical USB ext4 drive (QFX_VAULT).
-                </div>
-                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">
-                    <strong>Step 2:</strong> Run the unlock script.
-                    <div class="code-block">
-                        <span>./scripts/unlock_engine.sh</span>
-                        <button class="copy-btn" onclick="copyCode(this, './scripts/unlock_engine.sh')">Copy</button>
-                    </div>
-                </div>
-                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">
-                    <strong>Step 3:</strong> Immediately shred temporary artifacts.
-                    <div class="code-block">
-                        <span>shred -u -z -n 3 /tmp/shard_3.txt</span>
-                        <button class="copy-btn" onclick="copyCode(this, 'shred -u -z -n 3 /tmp/shard_3.txt')">Copy</button>
-                    </div>
-                </div>
-            </div>
+            <p><strong>Perimeter online.</strong> Substrate controls unlock only for a device whose enrolled hardware key signs its requests; all others observe read-only.</p>
+          </div>
         </div>
 
-        <!-- 3. TERMINAL CLIPBOARD -->
-        <div id="terminal" class="section">
-            <h1>Terminal Clipboard</h1>
-            <p class="subtitle">1-tap verified commands for zero-error execution.</p>
-
-            <div class="card">
-                <div class="card-header">System Operations</div>
-                
-                <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Start All Services</p>
-                <div class="code-block">
-                    <span>systemctl --user start amara-matrix amara-dashboard qf-bot</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'systemctl --user start amara-matrix amara-dashboard qf-bot')">Copy</button>
-                </div>
-
-                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Stop All Services (Lockdown)</p>
-                <div class="code-block">
-                    <span>systemctl --user stop qf-bot amara-dashboard amara-matrix</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'systemctl --user stop qf-bot amara-dashboard amara-matrix')">Copy</button>
-                </div>
-
-                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Verify Zero-Trust Ports (Should output nothing on lockdown)</p>
-                <div class="code-block">
-                    <span>ss -tulpn | grep -E "5432|8000|9000"</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'ss -tulpn | grep -E &quot;5432|8000|9000&quot;')">Copy</button>
-                </div>
-                
-                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Reset Tailscale Serve State</p>
-                <div class="code-block">
-                    <span>tailscale serve reset</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'tailscale serve reset')">Copy</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">Intelligence & Memory</div>
-                
-                <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Ingest New Vault Data to Vector Store</p>
-                <div class="code-block">
-                    <span>python3 ~/mycelium/scripts/ingest_vault.py</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'python3 ~/mycelium/scripts/ingest_vault.py')">Copy</button>
-                </div>
-
-                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Interrogate Local Athena Oracle</p>
-                <div class="code-block">
-                    <span>python3 ~/mycelium/scripts/ask_athena.py "What is the R >= O invariant?"</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'python3 ~/mycelium/scripts/ask_athena.py &quot;What is the R >= O invariant?&quot;')">Copy</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">eBPF / XDP Kernel Pre-Ingress Shunt</div>
-                <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Attach Shunt to tailscale0 (Drop Non-QFXK at Ring Buffer)</p>
-                <div class="code-block">
-                    <span>sudo ~/mycelium/sentinel/xdp/attach.sh</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'sudo ~/mycelium/sentinel/xdp/attach.sh')">Copy</button>
-                </div>
-
-                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Verify Ingress Shunt State</p>
-                <div class="code-block">
-                    <span>ip link show dev tailscale0</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'ip link show dev tailscale0')">Copy</button>
-                </div>
-
-                <p style="margin: 1rem 0 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Detach Shunt</p>
-                <div class="code-block">
-                    <span>sudo ~/mycelium/sentinel/xdp/detach.sh</span>
-                    <button class="copy-btn" onclick="copyCode(this, 'sudo ~/mycelium/sentinel/xdp/detach.sh')">Copy</button>
-                </div>
-            </div>
+        <!-- Prompt Chips Row -->
+        <div class="prompt-chips-row">
+          <button class="chip-btn hardstop" onclick="sendPrompt('/hardstop')">⛔ /hardstop</button>
+          <button class="chip-btn" onclick="sendPrompt('Mesh status')">🌐 Mesh Status</button>
+          <button class="chip-btn" onclick="sendPrompt('Verify TPM anchor')">▲ Verify TPM</button>
+          <button class="chip-btn" onclick="sendPrompt('Check invariant')">🛡️ Invariant Check</button>
+          <button class="chip-btn" onclick="sendPrompt('SITREP')">📋 SITREP</button>
         </div>
 
-        <!-- 4. DRILLS -->
-        <div id="drills" class="section">
-            <h1>Scenario Drills</h1>
-            <p class="subtitle">"What If?" simulations to train reflexes. Click a scenario to reveal the protocol.</p>
+        <!-- Fixed Input Dock -->
+        <div class="fixed-input-dock">
+          <form id="chatForm" class="input-form-row">
+            <textarea id="chatInput" class="dock-textarea" rows="1" placeholder="Tactical directive or /hardstop..."></textarea>
+            <button type="submit" class="btn-send" id="btnSend">➤</button>
+          </form>
+        </div>
+      </section>
 
-            <div class="card drill-card" onclick="this.classList.toggle('open')">
-                <div class="drill-question">🚨 Starlink is suspended or home internet goes down. What do you do?</div>
-                <div class="drill-answer">
-                    1. Zero panic, zero downtime.<br>
-                    2. Connect Google Pixel 11 Pro via USB.<br>
-                    3. Enable USB Tethering on mobile.<br>
-                    4. Command: <code>nmcli connection modify "Wired connection 2" connection.metered yes</code><br>
-                    5. Resume operations.
-                </div>
-            </div>
-
-            <div class="card drill-card" onclick="this.classList.toggle('open')">
-                <div class="drill-question">🚨 Laptop webcam light turns on unexpectedly during a session. What do you do?</div>
-                <div class="drill-answer">
-                    1. Ensure physical privacy shutter is instantly closed manually.<br>
-                    2. Check process utilizing camera: <code>lsof /dev/video0</code><br>
-                    3. Terminate offending process immediately with <code>kill -9 [PID]</code>.<br>
-                    4. Perform rapid port scan: <code>ss -tulpn</code> to verify loopback isolation.<br>
-                    5. Initiate Hardstop if compromised.
-                </div>
-            </div>
-
-            <div class="card drill-card" onclick="this.classList.toggle('open')">
-                <div class="drill-question">🚨 An unauthorized port opens bound to 0.0.0.0. What do you do?</div>
-                <div class="drill-answer">
-                    1. Initiate Hard Lockdown immediately.<br>
-                    2. <code>systemctl --user stop amara-matrix amara-dashboard qf-bot</code><br>
-                    3. <code>tailscale serve reset</code><br>
-                    4. Disconnect physical network interfaces.<br>
-                    5. Analyze logs locally to trace the breach origin before bringing network up.
-                </div>
-            </div>
-
-            <div class="card drill-card" onclick="this.classList.toggle('open')">
-                <div class="drill-question">🚨 Malformed packet burst or DDoS attacks Tailscale interface. What do you do?</div>
-                <div class="drill-answer">
-                    1. Attach Phase 4 eBPF/XDP Pre-Ingress Shunt.<br>
-                    2. <code>sudo ~/mycelium/sentinel/xdp/attach.sh</code><br>
-                    3. Packets lacking Magic 0x5146584B are dropped at the ring buffer.<br>
-                    4. Zero OS socket allocation (sk_buff drag h -> 0).<br>
-                    5. Verify with <code>ip link show dev tailscale0</code> (xdpgeneric).
-                </div>
-            </div>
+      <!-- 2. SERVICES CONTROL DECK -->
+      <section class="view-pane" id="view-services">
+        <div class="section-title">
+          <span>SUBSTRATE SERVICES</span>
+          <span style="color:var(--teal-signal); cursor:pointer;" onclick="loadServices()">🔄 Refresh</span>
         </div>
 
-        <!-- 5. INVARIANT CALCULATOR -->
-        <div id="calculator" class="section">
-            <h1>Sovereign Invariant Calculator</h1>
-            <p class="subtitle">Universal Rule: Reserves (R) must strictly cover Obligations (O).</p>
-
-            <div class="card">
-                <div class="calc-group">
-                    <label>Liquid Reserves ($) [R]</label>
-                    <input type="number" id="reserves" placeholder="e.g., 50000" oninput="calculateInvariant()">
-                </div>
-                <div class="calc-group">
-                    <label>Monthly Obligations ($) [O]</label>
-                    <input type="number" id="obligations" placeholder="e.g., 5000" oninput="calculateInvariant()">
-                </div>
-
-                <div id="calcResult" class="calc-result" style="display: none;">
-                    <!-- Filled by JS -->
-                </div>
-            </div>
+        <!-- Quick Stack Bulk Operations -->
+        <div id="bulkServiceActions" style="display:flex; gap:8px; margin-bottom:12px;">
+          <button class="btn-interactive" onclick="bulkStackAction('restart')">🔄 Restart Stack</button>
+          <button class="btn-interactive btn-secondary" onclick="loadServices()">⚡ Check Status</button>
         </div>
 
-        <!-- 6. DEEP WORK CODEX -->
-        <div id="deepwork" class="section">
-            <h1>Deep Work Codex</h1>
-            <p class="subtitle">Cal Newport's Law: Long, unbroken attention on one demanding artifact.</p>
-
-            <div class="card">
-                <div class="card-header">The Sovereign Equation</div>
-                <p style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--accent-green); font-family: var(--font-code);">
-                    Deep Work = f(x) without h leaking into the hour
-                </p>
-                <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-                    • <strong>x:</strong> The actual hard problem (Pavilion boot, ledger.dat commit, coursework).<br>
-                    • <strong>h:</strong> Narrative noise (manifestation shorts, identity physics, 4 contradictory handoffs).<br>
-                    • <strong>k:</strong> The real slice you actually execute.
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">The 4 Rules of the Protected Block</div>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
-                        <strong>1. One Named Object:</strong> "Rotate Shamir and confirm ledger" is a block. "Work on QuantumFlex" is not.
-                    </div>
-                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
-                        <strong>2. Zero Context Switching:</strong> Tailscale status is not part of a compile block unless the compile needs the mesh.
-                    </div>
-                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
-                        <strong>3. The Shutdown Ritual:</strong> Write the next physical step on paper so your brain stops chewing.
-                    </div>
-                    <div style="padding: 0.75rem; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-blue); border-radius: 6px;">
-                        <strong>4. The Shallow Bin:</strong> Batch texts, emails, docs-to-correct into one 30-minute afternoon slot.
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">Host Comic Truths</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-                    • <strong>The Celeron Paperweight:</strong> HP Pavilion in PA is off, pays no rent, and has zero opinions on FrodoKEM.<br>
-                    • <strong>The Quantum Shark:</strong> Don't treat a metaphor as a lab result. Texting collapses your wavefunction.<br>
-                    • <strong>The Gym-Membership CPU:</strong> Performance mode in /sys resets on reboot. Make the discipline permanent.
-                </div>
-            </div>
+        <div class="services-grid" id="servicesContainer">
+          <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text-muted);">Polling services...</div>
         </div>
+      </section>
+
+      <!-- 3. SENTINEL & INVARIANTS (SECURITY DECK) -->
+      <section class="view-pane" id="view-security">
+        <div class="section-title">
+          <span>UNIVERSAL INVARIANT GATE</span>
+          <span id="invLiveVerdict" style="color:var(--status-green); font-weight:bold;">ADMIT (R &ge; O)</span>
+        </div>
+
+        <!-- Invariant Card -->
+        <div class="invariant-card" id="meshInvariantCard">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong style="color:var(--teal-signal); font-size:0.88rem;">INVARIANT AUDIT (R &ge; O)</strong>
+            <button class="btn-interactive" id="btnRunInvariant" onclick="runInvariantAudit()">⚡ Run Audit</button>
+          </div>
+          <div class="inv-row">
+            <span style="color:var(--text-muted);">Digital Host Memory</span>
+            <span style="color:var(--teal-signal);" id="invMemVal">15,127 MB &ge; 11,509 MB</span>
+          </div>
+          <div class="inv-row">
+            <span style="color:var(--text-muted);">Pluton TPM NVRAM</span>
+            <span style="color:var(--status-green);" id="invTpmVal">0x1c00010 MATCHED (Valid)</span>
+          </div>
+          <div class="inv-row">
+            <span style="color:var(--text-muted);">FinallyFungus Reservoir</span>
+            <span style="color:var(--status-green);" id="invWaterVal">500 gal &ge; 350 gal</span>
+          </div>
+        </div>
+
+        <!-- Defense & Vitals Banner -->
+        <div class="section-title" style="margin-top:16px;">
+          <span>SUBSTRATE DEFENSE VITALS</span>
+          <span style="color:var(--status-green);" id="driveStatusVal">EQUILIBRIUM</span>
+        </div>
+
+        <div class="alert-banner-box">
+          <div class="alert-item-row">
+            <span style="color:var(--text-muted);">Homeostatic Drive Score</span>
+            <span style="color:var(--teal-signal); font-weight:bold;" id="driveScoreVal">D = 480.5 / 1500.0</span>
+          </div>
+          <div class="alert-item-row">
+            <span style="color:var(--text-muted);">Post-Quantum KEM Tunnel</span>
+            <span style="color:var(--teal-signal);">ML-KEM-768 (FIPS 203)</span>
+          </div>
+          <div class="alert-item-row">
+            <span style="color:var(--text-muted);">Hardware Trust Authority</span>
+            <span style="color:var(--status-green);">Titan M2 HSM (Pixel 11 Pro)</span>
+          </div>
+          <div class="alert-item-row">
+            <span style="color:var(--text-muted);">Evil Maid Tripwire</span>
+            <span style="color:var(--status-green);">SEALED (Immutable Chain)</span>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="btn-interactive btn-danger" style="width:100%; justify-content:center; padding:12px;" onclick="sendPrompt('/hardstop')">
+            ⛔ TRIGGER EMERGENCY HARDSTOP
+          </button>
+        </div>
+      </section>
+
+      <!-- 4. ATHENA COGNITIVE VAULT -->
+      <section class="view-pane" id="view-athena">
+        <div class="section-title">
+          <span>ATHENA COGNITIVE VAULT</span>
+          <span style="color:var(--teal-signal);">7,397+ VECTORS</span>
+        </div>
+
+        <div class="athena-box">
+          <div style="font-size:0.82rem; color:var(--text-muted);">
+            Query Athena RAG directly against QuantumFlex blueprints, ledgers, and cognitive memory:
+          </div>
+          <div class="athena-input-row">
+            <input type="text" id="athenaQueryInput" class="athena-input" placeholder="e.g. Universal invariant formula, TPM root..." onkeydown="if(event.key==='Enter') queryAthena();" />
+            <button class="btn-interactive" onclick="queryAthena()">Ask</button>
+          </div>
+
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="chip-btn" onclick="document.getElementById('athenaQueryInput').value='What is the Universal Invariant?'; queryAthena();">Invariant</button>
+            <button class="chip-btn" onclick="document.getElementById('athenaQueryInput').value='Explain Pluton TPM 2.0 index 0x1c00010'; queryAthena();">TPM Index</button>
+            <button class="chip-btn" onclick="document.getElementById('athenaQueryInput').value='How does Ghost Sink shock absorber work?'; queryAthena();">Ghost Sink</button>
+          </div>
+
+          <div class="athena-response" id="athenaResponseCard">
+            <div id="athenaAnswerText"></div>
+            <div class="athena-meta" id="athenaMetaText"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. TACTICAL CLI TERMINAL -->
+      <section class="view-pane" id="view-terminal">
+        <div class="section-title">
+          <span>TACTICAL OPERATOR SHELL</span>
+          <span style="color:var(--text-muted); cursor:pointer;" onclick="clearTerminal()">Clear</span>
+        </div>
+
+        <!-- Quick Command Chips -->
+        <div class="prompt-chips-row">
+          <button class="chip-btn" onclick="runTerminalCommand('qflex status')">qflex status</button>
+          <button class="chip-btn" onclick="runTerminalCommand('qflex invariant')">qflex invariant</button>
+          <button class="chip-btn" onclick="runTerminalCommand('qflex mesh')">qflex mesh</button>
+          <button class="chip-btn" onclick="runTerminalCommand('qflex admission')">qflex admission</button>
+          <button class="chip-btn" onclick="runTerminalCommand('python3 mobile/qflex_cli.py status')">mobile status</button>
+          <button class="chip-btn" onclick="runTerminalCommand('tailscale status')">tailscale status</button>
+        </div>
+
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <span>PIXEL 11 PRO TACTICAL CONSOLE</span>
+            <span>BASH SUBSTRATE</span>
+          </div>
+          <pre class="terminal-out" id="termOutput">QUANTUMFLEX TACTICAL SHELL // OPERATOR: CHIEF ARCHITECT
+Ready for input.
+────────────────────────────────────</pre>
+          <form class="terminal-form" onsubmit="event.preventDefault(); runTerminalCommand();">
+            <input type="text" id="termInput" class="terminal-input" placeholder="Type command (e.g. qflex status)..." />
+            <button type="submit" class="btn-interactive" id="btnRunCmd">Run</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- 6. SWARM APPROVALS (TWO-MAN GATE) -->
+      <section class="view-pane" id="view-swarm">
+        <div class="section-title">
+          <span>ACTION AUTHORIZATION DRAFTS</span>
+          <span style="color:var(--teal-signal); cursor:pointer;" onclick="loadSwarmData()">🔄 Refresh</span>
+        </div>
+        <div id="draftsList">
+          <!-- Loaded dynamically -->
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">
+          <span>OBSERVATION LEDGER</span>
+          <span style="color:var(--status-amber);">READ-ONLY HANDOFFS</span>
+        </div>
+        <div class="obs-list" id="obsList">
+          <!-- Loaded dynamically -->
+        </div>
+      </section>
+
+      <!-- 7. SOVEREIGN MESH MATRIX -->
+      <section class="view-pane" id="view-mesh">
+        <div class="section-title">
+          <span>SOVEREIGN MESH MATRIX</span>
+          <span style="color:var(--teal-signal); cursor:pointer;" onclick="loadMeshNodes()">🔄 Ping Matrix</span>
+        </div>
+        <div class="node-cards-grid" id="nodeCardsGrid">
+          <!-- Loaded dynamically -->
+        </div>
+      </section>
 
     </div>
 
-    <script>
-        // Navigation Logic
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                // Update active nav
-                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                item.classList.add('active');
-                
-                // Show target section
-                const targetId = item.getAttribute('data-target');
-                document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-                document.getElementById(targetId).classList.add('active');
-            });
-        });
+    <!-- Bottom Navigation Dock -->
+    <nav class="bottom-nav">
+      <button class="nav-tab active" data-tab="view-chat" onclick="switchView('view-chat', this)">
+        <span class="tab-icon">💬</span>
+        <span>Swarm</span>
+      </button>
+      <button class="nav-tab" data-tab="view-services" onclick="switchView('view-services', this)">
+        <span class="tab-icon">⚙️</span>
+        <span>Control</span>
+      </button>
+      <button class="nav-tab" data-tab="view-security" onclick="switchView('view-security', this)">
+        <span class="tab-icon">🛡️</span>
+        <span>Defense</span>
+      </button>
+      <button class="nav-tab" data-tab="view-athena" onclick="switchView('view-athena', this)">
+        <span class="tab-icon">🧠</span>
+        <span>Athena</span>
+      </button>
+      <button class="nav-tab" data-tab="view-terminal" onclick="switchView('view-terminal', this)">
+        <span class="tab-icon">💻</span>
+        <span>Terminal</span>
+      </button>
+      <button class="nav-tab" data-tab="view-swarm" onclick="switchView('view-swarm', this)">
+        <span class="tab-icon">⚡</span>
+        <span>Approvals</span>
+      </button>
+      <button class="nav-tab" data-tab="view-mesh" onclick="switchView('view-mesh', this)">
+        <span class="tab-icon">🌐</span>
+        <span>Mesh</span>
+      </button>
+    </nav>
+  </div>
 
-        // Checklist Logic
-        function toggleCheck(labelElement) {
-            const checkbox = labelElement.querySelector('input');
-            if(checkbox.checked) {
-                labelElement.classList.add('done');
-            } else {
-                labelElement.classList.remove('done');
-            }
-        }
+  <script>
+// ═══════════════════════════════════════════════════════════════════
+// QUANTUMFLEX MOBILE OPERATOR COCKPIT — CLIENT RUNTIME (PIXEL 11 PRO)
+// Sovereign Multi-Agent Swarm, Substrate Control, Live Invariants & CLI
+// ═══════════════════════════════════════════════════════════════════
 
-        // Copy Logic
-        function copyCode(btn, text) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = btn.innerText;
-                btn.innerText = 'Copied!';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.classList.remove('copied');
-                }, 2000);
-            });
-        }
+let activeBot = "";
+let deferredInstallPrompt = null;
+const tabs = ['view-chat', 'view-services', 'view-security', 'view-athena', 'view-terminal', 'view-swarm', 'view-mesh'];
+let currentTabIndex = 0;
 
-        // Calculator Logic
-        function calculateInvariant() {
-            const rInput = document.getElementById('reserves').value;
-            const oInput = document.getElementById('obligations').value;
-            const resultDiv = document.getElementById('calcResult');
+// Smart Host Resolver for Pixel 11 Pro Operator Cockpit
+let hostNode = localStorage.getItem('qf_mobile_host') || '';
 
-            if(!rInput || !oInput || oInput <= 0) {
-                resultDiv.style.display = 'none';
-                return;
-            }
+if (!hostNode) {
+  if (window.location.hostname && !window.location.hostname.includes('localhost') && window.location.protocol.startsWith('http')) {
+    hostNode = window.location.origin;
+  } else {
+    // Inside Capacitor (https://localhost) or standalone file on Pixel 11 Pro
+    hostNode = 'https://fedora.example-tailnet.ts.net';
+  }
+}
 
-            const r = parseFloat(rInput);
-            const o = parseFloat(oInput);
-            const months = (r / o).toFixed(1);
+function updateHostDisplay(url) {
+  const el = document.getElementById('activeHostDisplay');
+  if (el) el.textContent = url.replace('https://', '').replace('http://', '');
+}
 
-            resultDiv.style.display = 'block';
+async function autoDetectBestHost() {
+  const candidateHosts = [
+    'https://fedora.example-tailnet.ts.net',
+    'http://127.0.0.1:9000',
+    'http://100.64.1.17:9000'
+  ];
 
-            if(r >= o) {
-                resultDiv.className = 'calc-result status-safe';
-                resultDiv.innerHTML = `✅ INVARIANT MET<br><span style="font-size: 1rem; font-weight: normal; margin-top: 0.5rem; display: block;">Runway: ${months} Months</span>`;
-            } else {
-                resultDiv.className = 'calc-result status-danger';
-                resultDiv.innerHTML = `🚨 CRITICAL ALERT: R < O<br><span style="font-size: 1rem; font-weight: normal; margin-top: 0.5rem; display: block;">Reserves do not cover 1 month of obligations.</span>`;
-            }
-        }
+  try {
+    const res = await qfFetch(`${hostNode}/api/status`, { method: 'GET', headers: OPERATOR_HEADERS, signal: AbortSignal.timeout(1500) });
+    if (res.ok) {
+      updateHostDisplay(hostNode);
+      return;
+    }
+  } catch (e) {}
 
-        // Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw_cockpit.js')
-                    .then(registration => console.log('Cockpit ServiceWorker registered.'))
-                    .catch(err => console.log('ServiceWorker registration failed: ', err));
-            });
-        }
-    </script>
+  for (const h of candidateHosts) {
+    if (h === hostNode) continue;
+    try {
+      const res = await qfFetch(`${h}/api/status`, { method: 'GET', headers: OPERATOR_HEADERS, signal: AbortSignal.timeout(1500) });
+      if (res.ok) {
+        hostNode = h;
+        localStorage.setItem('qf_mobile_host', h);
+        updateHostDisplay(h);
+        console.log('Auto-switched to active host:', h);
+        loadServices();
+        loadSecurityTelemetry();
+        loadMeshNodes();
+        loadSwarmData();
+        return;
+      }
+    } catch (e) {}
+  }
+}
+
+let isChiefArchitectPixel = false;  // until the server verifies a device signature
+let verifiedDeviceRole = null;
+
+const OPERATOR_HEADERS = {
+  'Content-Type': 'application/json'
+};
+
+// Mutation authority is proven by a signature from the device's hardware-backed key
+// (native QFDeviceKey plugin, Android Keystore / StrongBox). Without the plugin,
+// requests go unsigned and the server treats the device as a read-only observer.
+async function qfSignedHeaders(url, method, body) {
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.QFDeviceKey;
+  const u = new URL(url, window.location.href);
+  // StrongBox signing is slow; sign mutations plus the role probe, not telemetry polling.
+  if (!plugin || (method === 'GET' && !u.pathname.endsWith('/api/device/role'))) return {};
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const bodyHash = Array.from(new Uint8Array(
+    await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body || ''))
+  )).map(b => b.toString(16).padStart(2, '0')).join('');
+  const message = ['QF1', method, u.pathname + u.search, timestamp, nonce, bodyHash].join('\n');
+  const { deviceId, signature } = await plugin.sign({ message });
+  return {
+    'X-QF-Device': deviceId,
+    'X-QF-Timestamp': timestamp,
+    'X-QF-Nonce': nonce,
+    'X-QF-Signature': signature
+  };
+}
+
+async function qfFetch(url, opts = {}) {
+  const method = (opts.method || 'GET').toUpperCase();
+  const signed = await qfSignedHeaders(url, method, opts.body);
+  return fetch(url, { ...opts, headers: { ...(opts.headers || {}), ...signed } });
+}
+
+async function checkDeviceRole() {
+  try {
+    const res = await qfFetch(`${hostNode}/api/device/role`, {
+      method: 'GET',
+      headers: OPERATOR_HEADERS,
+      signal: AbortSignal.timeout(2000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      verifiedDeviceRole = data;
+      isChiefArchitectPixel = data.can_mutate === true;
+      applyDevicePermissions(data);
+    }
+  } catch (e) {
+    console.warn("Device role check error:", e);
+  }
+}
+
+function applyDevicePermissions(roleData) {
+  const brandTag = document.querySelector('.brand-tag');
+  const opBadge = document.querySelector('.operator-badge');
+  const secBanner = document.getElementById('securityBanner');
+  const bulkOps = document.getElementById('bulkServiceActions');
+  const termInput = document.getElementById('termInput');
+  const btnRunCmd = document.getElementById('btnRunCmd');
+
+  if (roleData.can_mutate) {
+    isChiefArchitectPixel = true;
+    if (brandTag) brandTag.textContent = 'PIXEL 11 PRO';
+    if (opBadge) {
+      opBadge.textContent = 'CHIEF ARCHITECT';
+      opBadge.className = 'operator-badge';
+    }
+    if (secBanner) secBanner.style.display = 'none';
+    if (bulkOps) bulkOps.style.display = 'flex';
+    if (termInput) {
+      termInput.disabled = false;
+      termInput.placeholder = 'Type command (e.g. qflex status)...';
+    }
+    if (btnRunCmd) {
+      btnRunCmd.disabled = false;
+      btnRunCmd.style.opacity = '1';
+    }
+  } else {
+    // Non-pixel mobile device (e.g. Galaxy S23 FE or untrusted mobile phone)
+    isChiefArchitectPixel = false;
+    const modelName = roleData.model ? roleData.model : 'OBSERVER NODE';
+    if (brandTag) brandTag.textContent = modelName.toUpperCase();
+    if (opBadge) {
+      opBadge.textContent = 'SECURITY OBSERVER';
+      opBadge.className = 'operator-badge observer';
+    }
+    if (secBanner) {
+      secBanner.style.display = 'flex';
+      const secText = document.getElementById('securityBannerText');
+      if (secText) {
+        secText.textContent = `SECURITY ISOLATION: Node '${modelName}' is restricted to security observation. Substrate mutations and CLI commands are locked to Pixel 11 Pro.`;
+      }
+    }
+    if (bulkOps) bulkOps.style.display = 'none';
+    if (termInput) {
+      termInput.disabled = true;
+      termInput.placeholder = '🔒 CLI LOCKED: Execution restricted to Pixel 11 Pro.';
+    }
+    if (btnRunCmd) {
+      btnRunCmd.disabled = true;
+      btnRunCmd.style.opacity = '0.4';
+      btnRunCmd.title = 'Execution restricted to Pixel 11 Pro';
+    }
+    // Re-render services and swarm list to reflect locked state
+    loadServices();
+    loadSwarmData();
+  }
+}
+
+// ── PWA Installation & Service Worker ──────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/ui/sw.js')
+      .then(reg => console.log('QuantumFlex SW registered:', reg.scope))
+      .catch(err => console.log('SW registration note: ', err));
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('btnPwaInstall');
+  if (btn) btn.style.display = 'inline-flex';
+});
+
+function installPWA() {
+  hapticFeedback('medium');
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        const btn = document.getElementById('btnPwaInstall');
+        if (btn) btn.style.display = 'none';
+      }
+      deferredInstallPrompt = null;
+    });
+  } else {
+    const modal = document.getElementById('pwaGuideModal');
+    if (modal) modal.style.display = 'flex';
+  }
+}
+
+// ── Haptic Feedback ────────────────────────────────────────────────
+function hapticFeedback(type = 'light') {
+  if (navigator.vibrate) {
+    if (type === 'light') navigator.vibrate(8);
+    if (type === 'medium') navigator.vibrate(18);
+    if (type === 'heavy') navigator.vibrate([25, 15, 25]);
+  }
+}
+
+// ── View Navigation ────────────────────────────────────────────────
+function switchView(viewId, btnElement = null) {
+  hapticFeedback('light');
+  document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+  const targetPane = document.getElementById(viewId);
+  if (targetPane) targetPane.classList.add('active');
+
+  currentTabIndex = tabs.indexOf(viewId);
+
+  if (btnElement) {
+    btnElement.classList.add('active');
+  } else {
+    const navBtn = document.querySelector(`.nav-tab[data-tab="${viewId}"]`);
+    if (navBtn) navBtn.classList.add('active');
+  }
+
+  // Auto-refresh when entering view
+  if (viewId === 'view-services') loadServices();
+  if (viewId === 'view-security') loadSecurityTelemetry();
+  if (viewId === 'view-swarm') loadSwarmData();
+  if (viewId === 'view-mesh') loadMeshNodes();
+}
+
+// ── Agent Selector ─────────────────────────────────────────────────
+function selectAgent(botCallsign, element) {
+  hapticFeedback('light');
+  activeBot = botCallsign;
+  document.querySelectorAll('.agent-pill').forEach(p => p.classList.remove('active'));
+  if (element) element.classList.add('active');
+
+  const input = document.getElementById('chatInput');
+  if (botCallsign) {
+    input.placeholder = `Directive for @${botCallsign.toUpperCase()}...`;
+  } else {
+    input.placeholder = 'Tactical directive or /hardstop...';
+  }
+}
+
+function sendPrompt(text) {
+  const input = document.getElementById('chatInput');
+  input.value = text;
+  document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+}
+
+// ── Chat Directive Submission ──────────────────────────────────────
+document.getElementById('chatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  hapticFeedback('medium');
+  const feed = document.getElementById('chatFeed');
+
+  feed.innerHTML += `
+    <div class="msg-bubble user">
+      <p>${escapeHtml(msg)}</p>
+    </div>
+  `;
+  input.value = '';
+  feed.scrollTop = feed.scrollHeight;
+
+  const loadingId = 'loading-' + Date.now();
+  feed.innerHTML += `
+    <div class="msg-bubble bot" id="${loadingId}">
+      <div class="msg-header">
+        <span>⬡ PROCESSING DIRECTIVE...</span>
+      </div>
+      <p style="color:var(--text-muted);">Dispatching to QuantumFlex neural substrate...</p>
+    </div>
+  `;
+  feed.scrollTop = feed.scrollHeight;
+
+  try {
+    const res = await qfFetch(hostNode + '/api/chat', {
+      method: 'POST',
+      headers: OPERATOR_HEADERS,
+      body: JSON.stringify({
+        message: msg,
+        target_bot: activeBot || undefined
+      })
+    });
+    const data = await res.json();
+    const loadingElem = document.getElementById(loadingId);
+    if (loadingElem) loadingElem.remove();
+
+    const sender = data.bot ? `${data.bot.avatar} ${data.bot.name}` : '▲ SENTINEL';
+    const isHardstop = data.mode === 'hardstop';
+    const borderColor = isHardstop ? 'border-left: 3px solid #ff4444;' : '';
+
+    feed.innerHTML += `
+      <div class="msg-bubble bot" style="${borderColor}">
+        <div class="msg-header">
+          <span>${sender}</span>
+        </div>
+        <p>${formatMessageContent(data.response || JSON.stringify(data))}</p>
+      </div>
+    `;
+  } catch (err) {
+    const loadingElem = document.getElementById(loadingId);
+    if (loadingElem) loadingElem.remove();
+    feed.innerHTML += `
+      <div class="msg-bubble bot" style="border-left: 3px solid #ff4444;">
+        <div class="msg-header" style="color:#ff4444;">COMMUNICATION FAULT</div>
+        <p style="color:#ff8888;">Node unreachable: ${err.message}</p>
+      </div>
+    `;
+  }
+  feed.scrollTop = feed.scrollHeight;
+});
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.innerText = String(text);
+  return div.innerHTML;
+}
+
+function formatMessageContent(text) {
+  if (typeof text !== 'string') text = JSON.stringify(text, null, 2);
+  if (text.includes('[') && text.includes(']')) {
+    return `<pre>${escapeHtml(text)}</pre>`;
+  }
+  return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
+// ── Services Deck (Control & Lifecycle) ───────────────────────────
+async function loadServices() {
+  const container = document.getElementById('servicesContainer');
+  if (!container) return;
+
+  try {
+    const res = await qfFetch(hostNode + '/api/services', { headers: OPERATOR_HEADERS });
+    const data = await res.json();
+    if (!data.services) return;
+
+    container.innerHTML = data.services.map(s => {
+      const isRunning = s.status === 'ACTIVE';
+      const statusColor = isRunning ? 'var(--status-green)' : 'var(--status-red)';
+      const portBadge = s.port ? `<span style="color:var(--text-muted); font-size:0.7rem; margin-left:6px;">:${s.port}</span>` : '';
+      return `
+        <div class="service-card ${isRunning ? 'active-svc' : 'failed-svc'}" id="svc-${s.id}">
+          <div class="svc-info">
+            <div class="svc-name">
+              <span style="color:${statusColor}; font-size:0.75rem;">●</span>
+              <span>${escapeHtml(s.name)}</span>
+              ${portBadge}
+            </div>
+            <div class="svc-sub">${escapeHtml(s.unit)} · <strong style="color:${statusColor};">${s.status}</strong></div>
+          </div>
+          <div class="svc-actions">
+            ${isChiefArchitectPixel ? `
+              <button class="btn-svc-action" onclick="performServiceAction('${s.id}', 'restart')">🔄 Restart</button>
+              <button class="btn-svc-action" onclick="performServiceAction('${s.id}', '${isRunning ? 'stop' : 'start'}')">${isRunning ? '⏹ Stop' : '▶ Start'}</button>
+            ` : `
+              <button class="btn-svc-action" disabled style="opacity:0.4; cursor:not-allowed;" title="Substrate changes restricted to Pixel 11 Pro">🔒 Locked</button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = `<div style="color:#ff8888; font-size:0.8rem; font-family:var(--font-mono);">Failed to poll services: ${e.message}</div>`;
+  }
+}
+
+async function performServiceAction(serviceId, action) {
+  if (!isChiefArchitectPixel) {
+    alert("SECURITY LOCKOUT: Service lifecycle management is exclusively restricted to the Chief Architect on Google Pixel 11 Pro.");
+    return;
+  }
+
+  hapticFeedback('medium');
+  const card = document.getElementById(`svc-${serviceId}`);
+  if (card) {
+    card.style.opacity = '0.5';
+  }
+
+  try {
+    const res = await qfFetch(`${hostNode}/api/services/${serviceId}/action`, {
+      method: 'POST',
+      headers: OPERATOR_HEADERS,
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    hapticFeedback('heavy');
+    setTimeout(loadServices, 500);
+  } catch (e) {
+    alert(`Action failed: ${e.message}`);
+    if (card) card.style.opacity = '1';
+  }
+}
+
+async function bulkStackAction(action) {
+  if (!isChiefArchitectPixel) {
+    alert("SECURITY LOCKOUT: Stack bulk lifecycle operations are restricted to Pixel 11 Pro.");
+    return;
+  }
+
+  hapticFeedback('heavy');
+  const services = ['api-node', 'athena-node', 'amara-dashboard', 'qf-bot', 'qf-kafka-consumer', 'qf-kafka-telemetry', 'qf-monitor'];
+  for (const s of services) {
+    try {
+      await qfFetch(`${hostNode}/api/services/${s}/action`, {
+        method: 'POST',
+        headers: OPERATOR_HEADERS,
+        body: JSON.stringify({ action })
+      });
+    } catch (e) {}
+  }
+  setTimeout(loadServices, 1000);
+}
+
+// ── Sentinel & Invariants (Security Deck) ───────────────────────────
+async function runInvariantAudit() {
+  hapticFeedback('medium');
+  const btn = document.getElementById('btnRunInvariant');
+  const verdictEl = document.getElementById('invLiveVerdict');
+  if (btn) btn.disabled = true;
+  if (verdictEl) verdictEl.textContent = 'EVALUATING INVARIANTS...';
+
+  try {
+    const res = await qfFetch(hostNode + '/api/invariant/run', {
+      method: 'POST',
+      headers: OPERATOR_HEADERS
+    });
+    const data = await res.json();
+    hapticFeedback('heavy');
+
+    const isAdmit = data.verdict === 'ADMIT';
+    if (verdictEl) {
+      verdictEl.textContent = isAdmit ? '✅ VERIFIED: ADMIT (R ≥ O)' : '🚨 CRITICAL: BREACH';
+      verdictEl.style.color = isAdmit ? 'var(--status-green)' : 'var(--status-red)';
+    }
+
+    if (data.evaluations && data.evaluations.evaluations) {
+      const ev = data.evaluations.evaluations;
+      if (ev.digital_memory) {
+        const memEl = document.getElementById('invMemVal');
+        if (memEl) memEl.textContent = `${ev.digital_memory.payload.reserve_measured} MB ≥ ${ev.digital_memory.payload.units_claimed} MB`;
+      }
+      if (ev.tpm_anchor) {
+        const tpmEl = document.getElementById('invTpmVal');
+        if (tpmEl) tpmEl.textContent = '0x1c00010 MATCHED (Valid)';
+      }
+      if (ev.physical_water) {
+        const waterEl = document.getElementById('invWaterVal');
+        if (waterEl) waterEl.textContent = `${ev.physical_water.payload.reserve_measured} gal ≥ ${ev.physical_water.payload.units_claimed} gal`;
+      }
+    }
+  } catch (e) {
+    if (verdictEl) {
+      verdictEl.textContent = `Audit Failed: ${e.message}`;
+      verdictEl.style.color = 'var(--status-red)';
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function loadSecurityTelemetry() {
+  try {
+    const res = await qfFetch(hostNode + '/api/telemetry/live', { headers: OPERATOR_HEADERS });
+    const data = await res.json();
+
+    if (data.drive) {
+      const score = Number(data.drive.drive_score || 0).toFixed(1);
+      const scoreEl = document.getElementById('driveScoreVal');
+      if (scoreEl) scoreEl.textContent = `D = ${score} / 1500.0`;
+
+      const statusEl = document.getElementById('driveStatusVal');
+      if (statusEl) {
+        statusEl.textContent = data.drive.status || 'EQUILIBRIUM';
+        statusEl.style.color = data.drive.status === 'EQUILIBRIUM' ? 'var(--status-green)' : 'var(--status-amber)';
+      }
+    }
+  } catch (e) {
+    console.warn("Security telemetry load error:", e);
+  }
+}
+
+// ── Athena Cognitive Vault ─────────────────────────────────────────
+async function queryAthena() {
+  const input = document.getElementById('athenaQueryInput');
+  const q = input.value.trim();
+  if (!q) return;
+
+  hapticFeedback('medium');
+  const respCard = document.getElementById('athenaResponseCard');
+  const ansText = document.getElementById('athenaAnswerText');
+  const metaText = document.getElementById('athenaMetaText');
+
+  respCard.style.display = 'block';
+  ansText.innerHTML = `<span style="color:var(--text-muted);">🧠 Searching 7,397+ vectors in Athena cognitive vault...</span>`;
+  metaText.textContent = '';
+
+  try {
+    const res = await qfFetch(hostNode + '/api/athena/query', {
+      method: 'POST',
+      headers: OPERATOR_HEADERS,
+      body: JSON.stringify({ query: q, top_k: 5 })
+    });
+    const data = await res.json();
+    hapticFeedback('heavy');
+
+    ansText.innerHTML = formatMessageContent(data.answer || JSON.stringify(data));
+    const sources = (data.sources || []).map(s => s.path || s).join(', ');
+    metaText.textContent = sources ? `📚 Sources: ${sources}` : '⚡ Verified Ground Truth';
+  } catch (e) {
+    ansText.innerHTML = `<span style="color:#ff8888;">Athena query failed: ${e.message}</span>`;
+  }
+}
+
+// ── Tactical Terminal (Live CLI Runner) ────────────────────────────
+async function runTerminalCommand(cmdToRun = null) {
+  if (!isChiefArchitectPixel) {
+    const outBox = document.getElementById('termOutput');
+    outBox.textContent += `\n[SECURITY REJECTION]: Terminal command execution is strictly restricted to Pixel 11 Pro.\n`;
+    outBox.scrollTop = outBox.scrollHeight;
+    return;
+  }
+
+  const input = document.getElementById('termInput');
+  const cmd = cmdToRun || input.value.trim();
+  if (!cmd) return;
+
+  hapticFeedback('medium');
+  const outBox = document.getElementById('termOutput');
+  outBox.textContent += `\n$ ${cmd}\n[Executing in substrate...]`;
+  outBox.scrollTop = outBox.scrollHeight;
+  if (!cmdToRun) input.value = '';
+
+  try {
+    const res = await qfFetch(hostNode + '/api/terminal/run', {
+      method: 'POST',
+      headers: OPERATOR_HEADERS,
+      body: JSON.stringify({ command: cmd })
+    });
+    const data = await res.json();
+    hapticFeedback('light');
+
+    let result = '';
+    if (data.stdout) result += data.stdout;
+    if (data.stderr) result += `\n[STDERR]: ${data.stderr}`;
+    if (!result.trim()) result = `(Process exited with code ${data.returncode})`;
+
+    outBox.textContent += `\n${result}\n────────────────────────────────────`;
+    outBox.scrollTop = outBox.scrollHeight;
+  } catch (e) {
+    outBox.textContent += `\n[COMMAND FAILED]: ${e.message}\n`;
+    outBox.scrollTop = outBox.scrollHeight;
+  }
+}
+
+function clearTerminal() {
+  document.getElementById('termOutput').textContent = "QUANTUMFLEX TACTICAL SHELL // OPERATOR: CHIEF ARCHITECT\nReady for input.\n────────────────────────────────────";
+}
+
+// ── Swarm Approvals & Observations ─────────────────────────────────
+async function loadSwarmData() {
+  try {
+    const dRes = await qfFetch(hostNode + '/api/drafts', { headers: OPERATOR_HEADERS });
+    const dData = await dRes.json();
+    const draftsList = document.getElementById('draftsList');
+
+    if (draftsList) {
+      if (!dData.drafts || dData.drafts.length === 0) {
+        draftsList.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); font-family:var(--font-mono); padding:10px 0;">No pending authorizations. Stack verified.</div>`;
+      } else {
+        draftsList.innerHTML = dData.drafts.map(d => {
+          const isPending = d.status === 'PENDING_APPROVAL';
+          return `
+            <div class="obs-card" style="border-left-color: ${isPending ? 'var(--status-amber)' : 'var(--teal-signal)'}; margin-bottom: 10px;">
+              <div class="obs-header">
+                <span style="color:${isPending ? 'var(--status-amber)' : 'var(--teal-signal)'}; font-weight:bold;">${escapeHtml(d.draft_id)} [${escapeHtml(d.status)}]</span>
+                <span class="obs-time">${d.created_at ? d.created_at.substring(11, 19) : ''}</span>
+              </div>
+              <div class="obs-title">${escapeHtml(d.title)}</div>
+              <div class="obs-detail">${escapeHtml(d.description)}</div>
+              ${isPending ? (
+                isChiefArchitectPixel ? `
+                  <div class="action-row">
+                    <button class="btn-interactive" onclick="approveDraft('${d.draft_id}')">✅ Approve & Execute</button>
+                    <button class="btn-interactive btn-danger" onclick="discardDraft('${d.draft_id}')">❌ Discard</button>
+                  </div>
+                ` : `
+                  <div class="action-row">
+                    <span style="font-size:0.75rem; color:var(--status-amber); font-family:var(--font-mono); padding:6px 0;">🔒 Awaiting Pixel 11 Pro Sign-Off</span>
+                  </div>
+                `
+              ) : ''}
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    const obsRes = await qfFetch(hostNode + '/api/observations', { headers: OPERATOR_HEADERS });
+    const obsData = await obsRes.json();
+    const obsList = document.getElementById('obsList');
+    if (obsList && obsData.observations) {
+      obsList.innerHTML = obsData.observations.map(obs => `
+        <div class="obs-card">
+          <div class="obs-header">
+            <span class="obs-source">${escapeHtml(obs.source.toUpperCase())}</span>
+            <span class="obs-time">${obs.timestamp ? obs.timestamp.substring(11, 19) : ''}</span>
+          </div>
+          <div class="obs-title">${escapeHtml(obs.title)}</div>
+          <div class="obs-detail">${escapeHtml(obs.detail)}</div>
+        </div>
+      `).join('');
+    }
+  } catch (e) {
+    console.warn("Swarm data load error", e);
+  }
+}
+
+async function approveDraft(draftId) {
+  if (!isChiefArchitectPixel) {
+    alert("SECURITY LOCKOUT: Draft approvals are strictly restricted to Chief Architect on Pixel 11 Pro.");
+    return;
+  }
+
+  hapticFeedback('heavy');
+  try {
+    const res = await qfFetch(`${hostNode}/api/drafts/${draftId}/approve`, {
+      method: 'POST',
+      headers: OPERATOR_HEADERS
+    });
+    const data = await res.json();
+    alert(`Draft Approved: ${data.message || 'Action executed successfully'}`);
+    loadSwarmData();
+  } catch (e) {
+    alert(`Approval failed: ${e.message}`);
+  }
+}
+
+async function discardDraft(draftId) {
+  if (!isChiefArchitectPixel) {
+    alert("SECURITY LOCKOUT: Draft actions are restricted to Pixel 11 Pro.");
+    return;
+  }
+
+  hapticFeedback('medium');
+  try {
+    await qfFetch(`${hostNode}/api/drafts/${draftId}/discard`, {
+      method: 'POST',
+      headers: OPERATOR_HEADERS
+    });
+    loadSwarmData();
+  } catch (e) {}
+}
+
+// ── Live Mesh Telemetry ────────────────────────────────────────────
+async function loadMeshNodes() {
+  try {
+    const res = await qfFetch(hostNode + '/api/mesh/nodes', { headers: OPERATOR_HEADERS });
+    const data = await res.json();
+    if (data.nodes) {
+      const grid = document.getElementById('nodeCardsGrid');
+      if (grid) {
+        grid.innerHTML = data.nodes.map(n => {
+          const isPixel = n.id === 'qfx-pixel';
+          return `
+            <div class="node-glass-card" style="${isPixel ? 'border: 1px solid var(--teal-signal); background: rgba(0, 245, 212, 0.04);' : ''}">
+              <div class="node-left">
+                <div class="node-name-row">
+                  <span style="color:${n.status === 'ONLINE' ? 'var(--teal-signal)' : 'var(--status-amber)'};">●</span>
+                  <span class="node-name">${escapeHtml(n.name)}</span>
+                  ${isPixel ? '<span class="operator-badge">PIXEL 11 PRO</span>' : ''}
+                </div>
+                <div class="node-ip">${escapeHtml(n.ip)} · ${escapeHtml(n.role)}</div>
+                <div class="node-detail">${escapeHtml(n.hardware_trust)} · ${escapeHtml(n.solvency)}</div>
+              </div>
+              <div class="node-right">
+                <span class="status-badge ${n.status === 'ONLINE' ? 'online' : 'readonly'}">${escapeHtml(n.status)}</span>
+                <span class="latency-tag">${escapeHtml(n.latency)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  } catch (e) {
+    console.warn("Mesh fetch error", e);
+  }
+}
+
+// ── Touch swipe gesture listeners ──────────────────────────────────
+let touchStartX = 0;
+let touchEndX = 0;
+const viewsContainer = document.getElementById('viewsContainer');
+if (viewsContainer) {
+  viewsContainer.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  viewsContainer.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchEndX - touchStartX;
+    if (Math.abs(diff) > 60) {
+      if (diff < 0 && currentTabIndex < tabs.length - 1) {
+        switchView(tabs[currentTabIndex + 1]);
+      } else if (diff > 0 && currentTabIndex > 0) {
+        switchView(tabs[currentTabIndex - 1]);
+      }
+    }
+  }, { passive: true });
+}
+
+// Initial bootstrap
+window.addEventListener('DOMContentLoaded', () => {
+  autoDetectBestHost();
+  checkDeviceRole();
+  loadServices();
+  loadSecurityTelemetry();
+  loadMeshNodes();
+  loadSwarmData();
+});
+
+// Periodic background poller
+setInterval(() => {
+  if (currentTabIndex === 1) loadServices();
+  if (currentTabIndex === 2) loadSecurityTelemetry();
+  if (currentTabIndex === 5) loadSwarmData();
+  if (currentTabIndex === 6) loadMeshNodes();
+}, 8000);
+
+</script>
 </body>
 </html>

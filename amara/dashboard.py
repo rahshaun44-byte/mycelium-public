@@ -295,8 +295,9 @@ async def toggle_threat(request: Request, x_api_key: str = Header(None)):
 
 
 @app.post("/api/internal/webhook_transition")
-async def webhook_transition(request: Request):
+async def webhook_transition(request: Request, x_api_key: str = Header(None)):
     """Internal webhook called by immune_daemon in the background thread."""
+    check_dashboard_api_key(x_api_key)
     data = await request.json()
     data["type"] = "TRANSITION"
     await manager.broadcast(data)
@@ -414,8 +415,9 @@ async def process_and_shard_vector(chunk: DocumentChunk):
         print(f"[ATHENA] Ingestion Error: {e}")
 
 @app.post("/v1/athena/ingest", status_code=202)
-async def ingest_buffer(chunk: DocumentChunk, background_tasks: BackgroundTasks):
+async def ingest_buffer(chunk: DocumentChunk, background_tasks: BackgroundTasks, x_api_key: str = Header(None)):
     """Zero-lock async endpoint for Alpine quarantine chamber telemetry."""
+    check_dashboard_api_key(x_api_key)
     background_tasks.add_task(process_and_shard_vector, chunk)
     return {"status": "queued", "chunk_id": chunk.chunk_id}
 
@@ -989,7 +991,7 @@ async def index():
 
   <script>
     async function executeMobileAction(action) {{
-      const apiKey = document.getElementById('api-key-input').value || 'quantum-admin-2026';
+      const apiKey = document.getElementById('api-key-input').value;
       const payload = {{ action: action }};
       if (action === 'directive') {{
         payload.directive = document.getElementById('directive-input').value;
@@ -1293,7 +1295,7 @@ async def index():
     try {{
       const res = await fetch('/v1/athena/ingest', {{
         method: 'POST',
-        headers: {{'Content-Type': 'application/json'}},
+        headers: {{'Content-Type': 'application/json', 'x-api-key': document.getElementById('api-key-input').value}},
         body: JSON.stringify({{
           chunk_id: chunkId,
           payload: text,
@@ -1317,7 +1319,7 @@ async def index():
     const input = document.getElementById('cli-input');
     const btn   = document.getElementById('cli-btn');
     const out   = document.getElementById('cli-output');
-    const apiKey = document.getElementById('api-key-input').value || 'quantum-admin-2026';
+    const apiKey = document.getElementById('api-key-input').value;
     const cmd = input.value.trim();
     if (!cmd) return;
 

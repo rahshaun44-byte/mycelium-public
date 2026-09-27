@@ -102,4 +102,7 @@ s23fe/
 /package.json
 /package-lock.json
 /posthog-self-driving-report.md
+/scripts/posthog_client.js
+/scripts/posthog_smoke.js
 /.claude/skills/replay-vision-*/
+.android/

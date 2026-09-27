@@ -130,34 +130,35 @@ def resolve_node_identity() -> NodeIdentity:
     local_ips = _detect_local_ips()
 
     # 1. Google Pixel 11 Pro Check
-    is_pixel_model = any("Pixel 11" in m for m in [model, product_name]) or "grizzly" in [product_name, device_name]
-    has_pixel_ip = "100.64.1.18" in local_ips or "pixel-11-pro" in hostname.lower()
+    is_pixel_model = any("Pixel 11" in str(m) for m in [model, product_name]) or any("grizzly" in str(m) for m in [product_name, device_name])
+    has_pixel_ip = any(ip in local_ips for ip in ["100.64.1.11", "100.64.1.18"]) or "pixel" in hostname.lower()
 
     if is_pixel_model or has_pixel_ip:
-        transport = "usb+tailscale" if "100.64.1.18" in local_ips else "tailscale"
+        tail_ip = "100.64.1.11" if "100.64.1.11" in local_ips else ("100.64.1.18" if "100.64.1.18" in local_ips else "100.64.1.11")
+        transport = "usb+tailscale" if any(ip in local_ips for ip in ["100.64.1.11", "100.64.1.18"]) else "tailscale"
         return NodeIdentity(
             node_id="pixel-11-pro",
             role="shard-custodian",
             model="Google Pixel 11 Pro (grizzly)",
-            tailscale_ip="100.64.1.18",
+            tailscale_ip=tail_ip,
             transport=transport,
             privileged=True,
             details="Hardware Titan M2 Enclave | Shamir Shard Custodian #2 | OOB Signer"
         )
 
-    # 2. Samsung Galaxy S23 FE Check
+    # 2. Samsung Galaxy S23 FE Check (Strictly Restricted to Security Observer)
     is_s23_model = any("S23 FE" in m or "SM-S711" in m for m in [model, product_name])
     has_s23_ip = "100.64.1.32" in local_ips or "s23" in hostname.lower()
 
     if is_s23_model or has_s23_ip:
         return NodeIdentity(
             node_id="s23-fe",
-            role="field-workstation",
+            role="field-observer",
             model="Samsung Galaxy S23 FE",
             tailscale_ip="100.64.1.32",
             transport="tailscale+wifi",
-            privileged=True,
-            details="Knox Vault Hardware | DeX Desktop Workstation | Field Operations"
+            privileged=False,
+            details="Knox Vault Hardware | Security Telemetry & Read-Only Invariant Auditor | Substrate Mutation DENIED"
         )
 
     # 3. Host Node Check (Fedora Master)

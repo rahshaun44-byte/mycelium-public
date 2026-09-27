@@ -97,20 +97,38 @@ def test_athena_api_ingest_unauthenticated(monkeypatch):
     assert res.status_code == 401, f"Expected 401, got {res.status_code}"
 
 
-def test_bot_server_approval_unauthenticated(monkeypatch):
-    """Verify bot_server /api/drafts/{id}/approve rejects unauthenticated requests with 401."""
+def test_bot_server_approval_unauthenticated(monkeypatch, tmp_path):
+    """Verify bot_server draft approval requires an enrolled device signature; nothing else grants authority."""
+    import base64, secrets, time
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from mcp_layer.qf_bot import device_auth
+
     client = TestClient(bot_server.app)
     monkeypatch.setenv("QFBOT_API_KEY", "bot_secret_key")
-    
-    res = client.post("/api/drafts/draft_42/approve", json={})
-    assert res.status_code == 401, f"Expected 401, got {res.status_code}"
-    
-    res = client.post(
-        "/api/drafts/draft_42/approve",
-        json={},
-        headers={"x-api-key": "bad_token"}
-    )
-    assert res.status_code == 401, f"Expected 401, got {res.status_code}"
+    monkeypatch.setenv("QF_DEVICE_KEYS_DIR", str(tmp_path))
+    path = "/api/drafts/draft_42/approve"
+
+    denied = [
+        {},
+        {"x-api-key": "bad_token"},
+        {"x-api-key": "bot_secret_key"},  # a shared key no longer confers authority
+        {"x-forwarded-for": "100.64.1.11", "x-device-model": "Pixel 11 Pro",
+         "x-device-serial": "PIXEL-SERIAL-REDACTED", "x-operator-id": "chief_architect_pixel11pro"},
+    ]
+    for headers in denied:
+        res = client.post(path, content=b"{}", headers={"content-type": "application/json", **headers})
+        assert res.status_code == 403, f"Expected 403 for {headers}, got {res.status_code}"
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    (tmp_path / "pixel-11-pro.pem").write_bytes(key.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
+    ts, nonce = str(int(time.time())), secrets.token_hex(16)
+    sig = key.sign(device_auth.canonical_message("POST", path, ts, nonce, b"{}"), ec.ECDSA(hashes.SHA256()))
+    res = client.post(path, content=b"{}", headers={
+        "content-type": "application/json", "x-qf-device": "pixel-11-pro", "x-qf-timestamp": ts,
+        "x-qf-nonce": nonce, "x-qf-signature": base64.b64encode(sig).decode()})
+    assert res.status_code == 404, f"Signed request should pass the gate (unknown draft -> 404), got {res.status_code}"
 
 
 # ------------------------------------------------------------------------------

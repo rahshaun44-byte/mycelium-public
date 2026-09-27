@@ -77,7 +77,7 @@ body::before {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 10px 16px;
+  padding: 46px 16px 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -570,7 +570,7 @@ body::before {
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-around;
-  padding: 8px 0 12px 0;
+  padding: 8px 4px 28px 4px;
   flex-shrink: 0;
 }
 
@@ -581,14 +581,15 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 16px;
-  border-radius: 12px;
+  padding: 4px 6px;
+  border-radius: 8px;
   transition: all 0.2s;
+  flex: 1;
 }
 
 .nav-tab .tab-icon {
@@ -663,3 +664,258 @@ body::before {
   flex-direction: column;
   gap: 10px;
 }
+
+/* ── Interactive Operator Cockpit Extensions ───────────────────────── */
+.operator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 245, 212, 0.12);
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--teal-signal);
+}
+
+.operator-badge.observer {
+  background: rgba(255, 183, 3, 0.12);
+  border: 1px solid rgba(255, 183, 3, 0.35);
+  color: var(--status-amber);
+}
+
+.security-isolation-banner {
+  background: linear-gradient(90deg, rgba(255, 183, 3, 0.15) 0%, rgba(255, 68, 68, 0.15) 100%);
+  border-bottom: 1px solid rgba(255, 183, 3, 0.3);
+  color: #ffcc00;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+  z-index: 20;
+}
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-interactive {
+  background: var(--teal-signal);
+  color: #060911;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-interactive:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-danger {
+  background: rgba(255, 68, 68, 0.18);
+  color: #ff6666;
+  border: 1px solid rgba(255, 68, 68, 0.35);
+}
+
+.btn-danger:active {
+  background: rgba(255, 68, 68, 0.3);
+}
+
+/* Services Control Grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.service-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+
+.service-card.active-svc {
+  border-left: 3px solid var(--teal-signal);
+}
+
+.service-card.failed-svc {
+  border-left: 3px solid var(--status-red);
+}
+
+.svc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.svc-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.svc-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.svc-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-svc-action {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-svc-action:active {
+  background: rgba(0, 245, 212, 0.2);
+  color: var(--teal-signal);
+}
+
+/* Tactical Terminal */
+.terminal-card {
+  background: rgba(6, 10, 18, 0.95);
+  border: 1px solid var(--border-active);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  color: var(--teal-signal);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 6px;
+}
+
+.terminal-out {
+  background: #020408;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #00f5d4;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.terminal-form {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.terminal-input:focus {
+  outline: none;
+  border-color: var(--teal-signal);
+}
+
+/* Athena Search Vault */
+.athena-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.athena-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.athena-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.athena-input:focus {
+  outline: none;
+  border-color: var(--teal-signal);
+}
+
+.athena-response {
+  background: rgba(0, 245, 212, 0.04);
+  border: 1px solid rgba(0, 245, 212, 0.15);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  display: none;
+}
+
+.athena-meta {
+  font-size: 0.7rem;
+  color: var(--teal-signal);
+  font-family: var(--font-mono);
+  margin-top: 6px;
+}
+

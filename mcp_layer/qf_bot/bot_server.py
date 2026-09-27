@@ -12,6 +12,9 @@ Exposes the multi-agent teammate swarm over loopback and Tailscale mesh:
 
 import os
 import sys
+import json
+import shlex
+import subprocess
 import hmac
 import hashlib
 from pathlib import Path
@@ -33,6 +36,7 @@ try:
 except Exception:
     evaluate_all_invariants = None
 
+from qf_bot import device_auth
 from qf_bot.orchestrator import QFBotOrchestrator
 from qf_bot.routines import ROUTINE_CATALOG
 
@@ -45,15 +49,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8080",
-        "http://localhost:8080",
-        "http://127.0.0.1:9000",
-        "http://localhost:9000",
-    ],
-    allow_credentials=True,
+    allow_origins=[o.strip() for o in os.environ.get(
+        "QF_BOT_CORS_ORIGINS",
+        "https://localhost,capacitor://localhost,https://fedora.example-tailnet.ts.net",
+    ).split(",") if o.strip()],
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -71,6 +71,16 @@ class ActionRequest(BaseModel):
 
 class ConsultRequest(BaseModel):
     student_query: Optional[str] = ""
+
+class ServiceActionRequest(BaseModel):
+    action: str  # restart, start, stop
+
+class TerminalRunRequest(BaseModel):
+    command: str
+
+class AthenaQueryRequest(BaseModel):
+    query: str
+    top_k: Optional[int] = 5
 
 # ── API Endpoints ─────────────────────────────────────────────────────────────
 @app.get("/api/status")
@@ -113,18 +123,62 @@ async def get_history():
     """Returns the conversation history."""
     return {"messages": orchestrator.conversation_history}
 
+async def get_request_authority(request: Request) -> Dict[str, Any]:
+    """
+    Mutation authority comes only from a request signed by an enrolled device key
+    (see qf_bot/device_auth.py). Source IP and client-supplied identity headers are
+    ignored: tailscale serve forwards every tailnet peer as 127.0.0.1, and headers
+    are whatever the caller chooses to send.
+    """
+    path = request.url.path + (f"?{request.url.query}" if request.url.query else "")
+    body = await request.body()
+    headers = {k.lower(): v for k, v in request.headers.items()}
+    device_id = device_auth.verify(request.method, path, headers, body)
+    if device_id:
+        return device_auth.operator_authority(device_id)
+    return device_auth.observer_authority(
+        "No valid hardware-key signature. Read-only security observation; "
+        "substrate mutations require an enrolled device."
+    )
+
+@app.get("/api/device/role")
+async def get_device_role(request: Request):
+    """Returns the caller's verified hardware role and mutation permissions."""
+    return await get_request_authority(request)
+
 @app.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest, request: Request):
     """Dispatches a prompt to a specific teammate or triggers multi-bot collaboration."""
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    auth = await get_request_authority(request)
+    msg_lower = req.message.lower().strip()
+    mutative_keywords = ["/hardstop", "restart", "stop service", "start service", "kill", "deploy", "wipe", "override"]
+    if not auth["can_mutate"] and any(kw in msg_lower for kw in mutative_keywords):
+        return {
+            "response": f"🚨 DIRECTIVE BLOCKED BY SENTINEL:\nNode '{auth['model']}'  is registered as a Field Security Observer. Substrate mutative directives, emergency freezes, and overrides can only be issued by the Chief Architect on the Google Pixel 11 Pro.",
+            "bot": {"name": "SENTINEL", "avatar": "▲"},
+            "mode": "blocked"
+        }
 
     result = await orchestrator.handle_message(req.message, target_bot=req.target_bot)
     return result
 
 @app.get("/api/mesh/nodes")
 async def get_mesh_nodes():
-    """Returns live telemetry on qfx-yoga, qfx-pixel, qfx-edge, and lyceum-peer."""
+    """Returns live telemetry on qfx-yoga, qfx-pixel (Pixel 11 Pro), qf-pavilion, and qfx-edge."""
+    pixel_rtt = "12ms"
+    try:
+        p = subprocess.run(["ping", "-c", "1", "-W", "1", "100.64.1.11"], capture_output=True, text=True, timeout=1.5)
+        if p.returncode == 0:
+            for line in p.stdout.splitlines():
+                if "time=" in line:
+                    t = line.split("time=")[-1].split()[0]
+                    pixel_rtt = f"{float(t):.1f}ms"
+    except Exception:
+        pass
+
     return {
         "nodes": [
             {
@@ -139,6 +193,18 @@ async def get_mesh_nodes():
                 "pqc_cipher": "ML-KEM-768 / ML-DSA-65"
             },
             {
+                "id": "qfx-pixel",
+                "name": "Pixel 11 Pro",
+                "ip": "100.64.1.11",
+                "serial": "PIXEL-SERIAL-REDACTED",
+                "role": "Tactical HUD & Mobile Sentinel (Current Device)",
+                "status": "ONLINE",
+                "latency": pixel_rtt,
+                "hardware_trust": "Titan M2 HSM / WireGuard P2P Direct",
+                "solvency": "AUTHENTICATED (Chief Architect)",
+                "pqc_cipher": "ML-KEM-768 Session"
+            },
+            {
                 "id": "qf-pavilion",
                 "name": "HP Pavilion Worker Node 2",
                 "ip": "100.64.1.34",
@@ -151,46 +217,260 @@ async def get_mesh_nodes():
                 "pqc_cipher": "Kafka KRaft Mesh Stream"
             },
             {
-                "id": "qfx-pixel",
-                "name": "Pixel 11 Pro",
-                "ip": "100.64.1.18",
-                "role": "Mobile Operator",
-                "status": "ONLINE",
-                "latency": "12ms",
-                "hardware_trust": "WireGuard P2P Direct",
-                "solvency": "AUTHENTICATED",
-                "pqc_cipher": "ML-KEM-768 Session"
-            },
-            {
                 "id": "qfx-edge",
                 "name": "Galaxy S23 FE",
                 "ip": "100.64.1.32",
-                "role": "Field Operator",
+                "role": "Field Observer (Security Only — Mutation Denied)",
                 "status": "ONLINE",
                 "latency": "14ms",
-                "hardware_trust": "WireGuard P2P Direct",
-                "solvency": "AUTHENTICATED",
+                "hardware_trust": "Knox Vault / WireGuard P2P",
+                "solvency": "OBSERVATION ONLY",
                 "pqc_cipher": "ML-KEM-768 Session"
             }
         ]
     }
+
+def _run_systemctl(args: List[str], timeout: float = 5.0) -> subprocess.CompletedProcess:
+    env = os.environ.copy()
+    uid = os.getuid()
+    env["XDG_RUNTIME_DIR"] = f"/run/user/{uid}"
+    env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
+    return subprocess.run(["systemctl", "--user"] + args, capture_output=True, text=True, timeout=timeout, env=env)
+
+@app.get("/api/services")
+async def list_services():
+    """Returns real-time status of all QuantumFlex substrate services."""
+    services_to_check = [
+        {"id": "api-node", "name": "API Gateway Node", "unit": "api-node.service", "port": 8080},
+        {"id": "athena-node", "name": "Athena Cognitive Memory", "unit": "athena-node.service", "port": 8001},
+        {"id": "amara-dashboard", "name": "AMARA Sync Dashboard", "unit": "amara-dashboard.service", "port": 8000},
+        {"id": "qf-bot", "name": "Multi-Agent Swarm Server", "unit": "qf-bot.service", "port": 9000},
+        {"id": "qf-kafka-consumer", "name": "Kafka Telemetry Consumer", "unit": "qf-kafka-consumer.service", "port": None},
+        {"id": "qf-kafka-telemetry", "name": "Kafka Telemetry Forwarder", "unit": "qf-kafka-telemetry.service", "port": None},
+        {"id": "qf-monitor", "name": "AMARA Biological Monitor", "unit": "qf-monitor.service", "port": None},
+        {"id": "amara-matrix", "name": "PostgreSQL Matrix DB", "unit": "amara-matrix.service", "port": 5432},
+    ]
+    results = []
+    for svc in services_to_check:
+        try:
+            p = _run_systemctl(["is-active", svc["unit"]], timeout=2.0)
+            status = p.stdout.strip().upper()
+            if not status and p.stderr:
+                status = f"ERR: {p.stderr.strip()}"
+        except Exception as e:
+            status = f"EXC: {type(e).__name__}: {str(e)}"
+        results.append({
+            "id": svc["id"],
+            "name": svc["name"],
+            "unit": svc["unit"],
+            "port": svc["port"],
+            "status": "ACTIVE" if status == "ACTIVE" else ("FAILED" if status == "FAILED" else "INACTIVE"),
+            "raw_status": status
+        })
+    return {"services": results, "timestamp": datetime.now().isoformat()}
+
+ALLOWED_UNITS = {
+    "api-node": "api-node.service",
+    "athena-node": "athena-node.service",
+    "amara-dashboard": "amara-dashboard.service",
+    "qf-bot": "qf-bot.service",
+    "qf-kafka-consumer": "qf-kafka-consumer.service",
+    "qf-kafka-telemetry": "qf-kafka-telemetry.service",
+    "qf-monitor": "qf-monitor.service",
+    "amara-matrix": "amara-matrix.service",
+}
+
+@app.post("/api/services/{service_id}/action")
+async def service_action(service_id: str, req: ServiceActionRequest, request: Request):
+    """Executes a lifecycle action on a QuantumFlex systemd user service."""
+    auth = await get_request_authority(request)
+    if not auth["can_mutate"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"SECURITY LOCKOUT: Device '{auth['model']}'  is in Security Observation Mode. Substrate service lifecycle control (start/stop/restart) is exclusively reserved for the Chief Architect on Pixel 11 Pro."
+        )
+
+    if service_id not in ALLOWED_UNITS:
+        raise HTTPException(status_code=404, detail=f"Service '{service_id}' not managed.")
+    if req.action not in ["restart", "start", "stop"]:
+        raise HTTPException(status_code=400, detail="Action must be 'restart', 'start', or 'stop'.")
+    
+    unit = ALLOWED_UNITS[service_id]
+    try:
+        p = _run_systemctl([req.action, unit], timeout=10.0)
+        p2 = _run_systemctl(["is-active", unit], timeout=2.0)
+        active_status = p2.stdout.strip()
+        return {
+            "service": service_id,
+            "unit": unit,
+            "action": req.action,
+            "success": p.returncode == 0,
+            "status": active_status,
+            "output": p.stdout.strip() or p.stderr.strip()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/invariant/run")
+async def run_invariant_audit():
+    """Triggers an on-demand universal invariant evaluation from the operator cockpit."""
+    if not evaluate_all_invariants:
+        return {"error": "Invariant gate module not loaded", "verdict": "ERROR"}
+    try:
+        res = evaluate_all_invariants(evaluator="chief_architect_pixel11pro")
+        return {
+            "verdict": "ADMIT" if res.get("all_allowed") else "BLOCK",
+            "evaluations": res,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {"error": str(e), "verdict": "ERROR"}
+
+@app.post("/api/athena/query")
+async def athena_query_endpoint(req: AthenaQueryRequest):
+    """Queries Athena cognitive memory vector vault on behalf of the mobile operator."""
+    import urllib.request
+    try:
+        url = "http://127.0.0.1:8001/query"
+        payload = json.dumps({
+            "question": req.query,
+            "top_k": req.top_k or 5,
+            "mode": "tactical"
+        }).encode("utf-8")
+        hreq = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(hreq, timeout=25.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data
+    except Exception as e:
+        return {
+            "answer": f"Athena query failed: {str(e)}",
+            "sources": [],
+            "error": str(e)
+        }
+
+@app.post("/api/terminal/run")
+async def terminal_run_endpoint(req: TerminalRunRequest, request: Request):
+    """Executes permitted QuantumFlex tactical operator commands."""
+    auth = await get_request_authority(request)
+    if not auth["can_mutate"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"SECURITY LOCKOUT: Device '{auth['model']}'  is in Security Observation Mode. Terminal execution is exclusively restricted to the Chief Architect on Pixel 11 Pro."
+        )
+
+    cmd = req.command.strip()
+    if not cmd:
+        raise HTTPException(status_code=400, detail="Command cannot be empty")
+    
+    # Exact argv prefixes, executed without a shell: no ;, &&, |, $(), redirection.
+    allowed_argv_prefixes = [
+        ["qflex"],
+        ["python3", "mobile/qflex_cli.py"],
+        ["/home/quant/mycelium/venv/bin/python3", "mobile/qflex_cli.py"],
+        ["systemctl", "--user", "status"],
+        ["systemctl", "--user", "is-active"],
+        ["git", "status"],
+        ["git", "log"],
+        ["git", "diff"],
+        ["tailscale", "status"],
+        ["tailscale", "ping"],
+        ["ss", "-tuln"],
+        ["ps", "aux"],
+        ["uptime"],
+    ]
+    # git options that write files or run programs.
+    forbidden_arg_prefixes = ("--output", "--ext-diff", "--textconv", "--exec", "--upload-pack",
+                              "--git-dir", "--work-tree", "-c", "-o")
+    try:
+        argv = shlex.split(cmd)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Command could not be parsed.")
+    is_allowed = any(argv[:len(prefix)] == prefix for prefix in allowed_argv_prefixes)
+    if argv and argv[0] == "git" and any(a.startswith(forbidden_arg_prefixes) for a in argv[2:]):
+        is_allowed = False
+    if not is_allowed:
+        raise HTTPException(status_code=403, detail=f"Command '{cmd}' is outside authorized operator whitelist.")
+
+    import time
+    start_t = time.time()
+    try:
+        p = subprocess.run(
+            argv,
+            cwd=str(ROOT_DIR),
+            capture_output=True,
+            text=True,
+            timeout=25.0
+        )
+        duration_ms = int((time.time() - start_t) * 1000)
+        return {
+            "command": cmd,
+            "stdout": p.stdout,
+            "stderr": p.stderr,
+            "returncode": p.returncode,
+            "duration_ms": duration_ms
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "command": cmd,
+            "stdout": "",
+            "stderr": "Execution timed out (25s limit)",
+            "returncode": -1,
+            "duration_ms": 25000
+        }
+    except Exception as e:
+        return {
+            "command": cmd,
+            "stdout": "",
+            "stderr": str(e),
+            "returncode": -1,
+            "duration_ms": 0
+        }
+
+@app.get("/api/telemetry/live")
+async def get_live_telemetry():
+    """Aggregates real-time system metrics, Sentinel drive score, and invariant status."""
+    import urllib.request
+    telemetry = {
+        "node": "quantumflex",
+        "operator": "Chief Architect (Pixel 11 Pro)",
+        "timestamp": datetime.now().isoformat(),
+        "drive": None,
+        "invariants": None,
+        "cpu_usage": 0.0,
+        "mem_usage_pct": 0.0,
+    }
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/api/telemetry", timeout=1.5) as r:
+            amara_data = json.loads(r.read().decode("utf-8"))
+            telemetry["drive"] = amara_data.get("drive")
+            telemetry["invariants"] = amara_data.get("invariants")
+            if amara_data.get("telemetry_history"):
+                latest = amara_data["telemetry_history"][0]
+                telemetry["cpu_load_1m"] = latest.get("cpu_load_1m")
+                telemetry["mem_usage_pct"] = latest.get("ram_used_pct")
+    except Exception:
+        pass
+    
+    if not telemetry["invariants"] and evaluate_all_invariants:
+        try:
+            telemetry["invariants"] = evaluate_all_invariants(evaluator="qf_bot_live_telemetry")
+        except Exception:
+            pass
+    return telemetry
 
 @app.get("/api/observations")
 async def get_observations():
     """Returns the observation ledger (e.g. handoffs from Lyceum consultations)."""
     return {"observations": orchestrator.observations}
 
-
-
 @app.get("/api/alerts")
 async def get_alerts():
     """Returns active security alerts, invariant warnings, and tripwire state."""
     alerts = []
-    # Query invariant
     if evaluate_all_invariants:
         try:
             inv = evaluate_all_invariants(evaluator="qf_bot_alerts")
-            if not inv["all_allowed"]:
+            if not inv.get("all_allowed", True):
                 alerts.append({
                     "level": "CRITICAL",
                     "title": "Universal Invariant Breach",
@@ -214,21 +494,29 @@ async def list_drafts():
 @app.post("/api/drafts/{draft_id}/approve")
 async def approve_draft(draft_id: str, request: Request):
     """Executes a staged draft action upon operator sign-off."""
-    expected_key = os.environ.get("QFBOT_API_KEY", os.environ.get("DASHBOARD_API_KEY"))
-    if not expected_key:
-        raise HTTPException(status_code=401, detail="Unauthorized: Service locked. API key not configured.")
-    x_api_key = request.headers.get("x-api-key")
-    if not x_api_key or not hmac.compare_digest(x_api_key, expected_key):
-        raise HTTPException(status_code=401, detail="Unauthorized: Operator authentication required.")
-    operator = request.headers.get("x-operator-id", "authenticated_operator")
+    auth = await get_request_authority(request)
+    if not auth["can_mutate"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"SECURITY LOCKOUT: Device '{auth['model']}' cannot sign or approve drafts. Authorizations require the Titan M2 hardware anchor on Pixel 11 Pro."
+        )
+
+    # Authorized by the verified device signature above.
     res = await orchestrator.draft_queue.approve_draft(draft_id)
     if "error" in res and res.get("status") == "NOT_FOUND":
         raise HTTPException(status_code=404, detail=res["error"])
     return res
 
 @app.post("/api/drafts/{draft_id}/discard")
-async def discard_draft(draft_id: str):
+async def discard_draft(draft_id: str, request: Request):
     """Discards a staged draft action."""
+    auth = await get_request_authority(request)
+    if not auth["can_mutate"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"SECURITY LOCKOUT: Device '{auth['model']}' cannot discard drafts. Actions are strictly restricted to Pixel 11 Pro."
+        )
+
     res = orchestrator.draft_queue.discard_draft(draft_id)
     if "error" in res and res.get("status") == "NOT_FOUND":
         raise HTTPException(status_code=404, detail=res["error"])
