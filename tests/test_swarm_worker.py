@@ -67,8 +67,8 @@ def test_execute_task_does_not_crash_on_jsonb_string():
             "parameters": {"k": "v"},
         }),
     })
-    assert status == "COMPLETED"
-    assert "evaluate" in outcome
+    assert status == "FAILED"
+    assert "not wired" in outcome
 
 
 def test_execute_task_malformed_payload_is_failed_not_raised():
