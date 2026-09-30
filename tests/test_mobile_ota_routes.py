@@ -19,7 +19,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "mcp_layer"))
 sys.path.insert(0, str(ROOT_DIR))
 
-from qf_bot.bot_server import app
+from qf_bot.bot_server import APK_FILE, app
 
 
 class TestMobileOTARoutes(unittest.TestCase):
@@ -69,6 +69,7 @@ class TestMobileOTARoutes(unittest.TestCase):
         self.assertIsNotNone(sha256)
         self.assertEqual(len(sha256), 64)
 
+    @unittest.skipUnless(APK_FILE.is_file(), "Android APK not built on this host (gitignored build output)")
     def test_apk_download_headers(self):
         """APK download endpoint emits proper MIME type and SHA-256 header."""
         resp = self.client.get("/mobile/download/apk")

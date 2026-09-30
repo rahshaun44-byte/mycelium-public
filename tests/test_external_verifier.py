@@ -6,7 +6,6 @@ Validates architectural separation:
 """
 
 import base64
-import json
 import os
 import shutil
 import subprocess
@@ -17,6 +16,7 @@ import pytest
 from scripts.build_external_verifier import transform_verifier, OLD_PATTERN
 
 EXTERNAL_VERIFIER = os.path.expanduser("~/.local/libexec/quantumflex/verify-provenance")
+RUNTIME_ADMIT = os.path.expanduser("~/.local/libexec/quantumflex/qf-runtime-admit")
 TRUST_ANCHOR = os.path.expanduser("~/.local/libexec/quantumflex/release_signing_key.pub")
 WORKSPACE = os.environ.get("QUANTUMFLEX_WORKSPACE", str(Path(__file__).resolve().parents[1]))
 
@@ -40,42 +40,44 @@ def test_repository_provenance_stale_manifest_fails_closed():
     When artifacts drift from PROVENANCE_MANIFEST.json,
     the verifier must refuse stale provenance and fail closed (exit code 1).
     """
-    res = subprocess.run([EXTERNAL_VERIFIER, WORKSPACE], capture_output=True, text=True)
+    manifest = os.path.join(WORKSPACE, "release", "PROVENANCE_MANIFEST.json")
+    res = subprocess.run([EXTERNAL_VERIFIER, manifest], capture_output=True, text=True)
     if res.returncode == 0:
-        # Active workspace is clean/valid. Verify that tampering causes fail-closed
+        # Active workspace is clean/valid. A copy of release/ without the
+        # declared artifacts must fail closed on the first missing artifact.
         with tempfile.TemporaryDirectory() as tmp_repo:
             shutil.copytree(os.path.join(WORKSPACE, "release"), os.path.join(tmp_repo, "release"))
-            with open(os.path.join(tmp_repo, "tampered.txt"), "w") as f:
-                f.write("tampered content")
-            res_tampered = subprocess.run([EXTERNAL_VERIFIER, tmp_repo], capture_output=True, text=True)
+            res_tampered = subprocess.run(
+                [EXTERNAL_VERIFIER, os.path.join(tmp_repo, "release", "PROVENANCE_MANIFEST.json")],
+                capture_output=True, text=True)
             assert res_tampered.returncode == 1, "Verifier must fail-closed on tampered artifacts"
-            assert "FAIL-CLOSED" in res_tampered.stdout or "DENY" in res_tampered.stdout
+            assert "TAMPER BREACH" in res_tampered.stderr
+            assert "VERDICT: TRUSTED" not in res_tampered.stdout
     else:
         assert res.returncode == 1, "Verifier must fail-closed on stale repository artifacts"
-        assert "FAIL-CLOSED" in res.stdout
+        assert "ADMISSION DENIED" in res.stderr or "TAMPER BREACH" in res.stderr
+        assert "VERDICT: TRUSTED" not in res.stdout
 
 
-def test_package_admission_verification():
-    """Test package admission mode of external verifier using signed admission fixture."""
+def test_runtime_admission_fails_closed_without_binding():
+    """Runtime admission (QF-A6) must refuse to exec a binary with no signed binding."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
-        receipt_file = tmp_path / "QuantumFlexAdmission.json"
-        receipt_data = {
-            "schema": "QuantumFlexAdmission/v1",
-            "package": "QuantumFlex",
-            "version": "2.1.0",
-            "artifacts": []
-        }
-        receipt_file.write_text(json.dumps(receipt_data, indent=2))
+        marker = tmp_path / "executed"
+        payload = tmp_path / "payload.sh"
+        payload.write_text(f"#!/bin/sh\ntouch '{marker}'\n")
+        payload.chmod(0o700)
 
-        # We can test admission rejection when provenance files are missing
         res = subprocess.run([
-            EXTERNAL_VERIFIER,
-            "--admit-package",
-            "--receipt", str(receipt_file)
+            RUNTIME_ADMIT,
+            "--executable", str(payload),
+            "--binding", str(tmp_path / "missing_binding.json"),
+            "--sig", str(tmp_path / "missing_binding.sig"),
+            "--a5-manifest", os.path.join(WORKSPACE, "release", "PROVENANCE_MANIFEST.json"),
+            "--repo-root", WORKSPACE,
         ], capture_output=True, text=True)
-        assert res.returncode == 1
-        assert "FAIL-CLOSED" in res.stdout
+        assert res.returncode != 0, "Runtime admission must fail closed without a binding"
+        assert not marker.exists(), "Unadmitted executable must never run"
 
 
 def test_build_transformation_assertions():
@@ -138,6 +140,9 @@ def test_adversarial_trust_anchor_substitution_fails_closed():
             f.write(f"SIGNATURE_ALGORITHM=Ed25519\nPUBLIC_KEY_PIN=release_signing_key.pub\nSIGNATURE_B64={sig_b64}\nTIMESTAMP=2026-09-19T00:00:00+00:00\n")
 
         # 3. External verifier must reject the rogue repo
-        res = subprocess.run([EXTERNAL_VERIFIER, rogue_repo], capture_output=True, text=True)
+        res = subprocess.run(
+            [EXTERNAL_VERIFIER, os.path.join(rogue_repo, "release/PROVENANCE_MANIFEST.json")],
+            capture_output=True, text=True)
         assert res.returncode == 1, "External verifier must exit with code 1"
-        assert "[FAIL-CLOSED] Cryptographic signature invalid!" in res.stdout
+        assert "Cryptographic signature mismatch" in res.stderr
+        assert "VERDICT: TRUSTED" not in res.stdout

@@ -62,7 +62,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     podman \
     uidmap \
     slirp4netns \
-    pasta \
+    passt \
     fuse-overlayfs \
     firewalld \
     power-profiles-daemon \
@@ -143,7 +143,8 @@ fi
 log_info "Compiling native C++ Evidence Engine & Genesis Tool..."
 sudo -u "$TARGET_USER" bash -c "
   cd '$REPO_ROOT'
-  cmake -S . -B build_check -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+  export OPENSSL_ROOT_DIR="${TARGET_HOME}/.local/openssl-3.5"
+  cmake -S . -B build_check -DOPENSSL_ROOT_DIR="${TARGET_HOME}/.local/openssl-3.5" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
   cmake --build build_check -j\$(nproc)
 "
 

@@ -289,6 +289,18 @@ void StateManager::sweep_boot_recovery() {
     sqlite3_finalize(stmt);
 }
 
+namespace {
+class TelemetryReceiver : public pqxx::notification_receiver {
+public:
+    TelemetryReceiver(pqxx::connection& c, std::string_view channel)
+        : pqxx::notification_receiver(c, channel) {}
+    void operator()(const std::string& payload, int backend_pid) override {
+        std::cout << "[StateManager] PostgreSQL NOTIFY received on quantum_telemetry_channel [PID: " << backend_pid << "]\n";
+        std::cout << "[StateManager] Event Payload: " << payload << "\n";
+    }
+};
+} // namespace
+
 void StateManager::start_postgres_listener(const std::string& pg_conn_str) {
     if (listening_) return;
     
@@ -296,12 +308,7 @@ void StateManager::start_postgres_listener(const std::string& pg_conn_str) {
     listen_thread_ = std::thread([this, pg_conn_str]() {
         try {
             pg_conn_ = std::make_unique<pqxx::connection>(pg_conn_str);
-            
-            pg_conn_->listen("quantum_telemetry_channel", [](pqxx::notification notif) {
-                std::cout << "[StateManager] PostgreSQL NOTIFY received on quantum_telemetry_channel [PID: " << notif.backend_pid << "]\n";
-                std::cout << "[StateManager] Event Payload: " << notif.payload << "\n";
-                // Here we can trigger the C++ async logic based on the PostgreSQL insert
-            });
+            TelemetryReceiver receiver(*pg_conn_, "quantum_telemetry_channel");
             
             std::cout << "[StateManager] PostgreSQL LISTEN active on quantum_telemetry_channel\n";
             

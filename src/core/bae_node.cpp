@@ -59,7 +59,7 @@ namespace quantumflex::node {
             "  committed_at TIMESTAMPTZ DEFAULT NOW()"
             ")");
 
-        const pqxx::result exists = txn.exec("SELECT to_regclass($1)", pqxx::params{partition_name});
+        const pqxx::result exists = txn.exec_params("SELECT to_regclass($1)", partition_name);
         if (exists[0][0].is_null()) {
             throw std::runtime_error("Partition does not exist: " + partition_name);
         }
@@ -84,14 +84,13 @@ namespace quantumflex::node {
             throw std::runtime_error("AuditProof failed cryptographic verification for partition: " + partition_name);
         }
 
-        txn.exec(
+        txn.exec_params(
             "INSERT INTO akashic_ledger (k_value, hybrid_sig, volume_purged, audit_proof) "
             "VALUES ($1, $2, $3, $4::jsonb)",
-            pqxx::params{
-                proof.k_t_ascension_hash,
-                proof.hybrid_signature,
-                static_cast<int64_t>(proof.volume_purged_bytes),
-                proof.to_canonical_json()});
+            proof.k_t_ascension_hash,
+            proof.hybrid_signature,
+            static_cast<int64_t>(proof.volume_purged_bytes),
+            proof.to_canonical_json());
 
         // Same transaction as the ledger insert above: if this fails, the
         // INSERT rolls back too, so the ledger can never claim a purge that
