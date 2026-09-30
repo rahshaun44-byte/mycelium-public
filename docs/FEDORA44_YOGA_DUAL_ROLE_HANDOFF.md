@@ -67,7 +67,6 @@ Do **not** run that script against this Yoga as a Day-1 bootstrap. It is not a G
 Planning/sales only — not runtime:
 
 - `docs/CISO_DISCOVERY_DIAGNOSTIC_FRAMEWORK.md`
-- `docs/AFWERX_SBIR_VOLUME_2_SLIDES_1_TO_5.md`
 - `docs/QUANTUM_WEALTH_ELEVATION_STRATEGY.md`
 - `sentinel/knowledge_base/OMB_M_26_15_CMMC_GUIDELINES.md`
 

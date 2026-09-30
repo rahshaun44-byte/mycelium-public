@@ -418,17 +418,17 @@ tests/test_mobile_ota_routes.py::test_mobile_manifest_endpoint PASSED [100%]
 
 ---
 
-## 5. Commercial & SBIR Transition Blueprint
+## 5. Commercial Transition Blueprint
 
 ### Dual-Use Defense & Enterprise Applications
 1. **Contested Tactical Enclaves (DAF/AFRL/DARPA):** Airborne edge nodes running on unmanned systems where dropped sockets or CPU crashes during key rollover risk mission failure.
 2. **Critical Infrastructure SCADA/ICS Networks:** Sensor grids requiring deterministic 15-second telemetry without susceptibility to buffer poisoning or unauthenticated command injection.
 3. **Enterprise Zero-Trust Post-Quantum Migration:** Corporate infrastructures transitioning to NIST FIPS 203 (ML-KEM) requiring continuous cryptographic visibility, live CBOM generation, and auditable memory destruction.
 
-### Phase I to Phase II Technical Roadmap
+### Technical Roadmap
 * **Milestone 1 (Current):** Completed operational prototype demonstrating zero memory leakage, automated shock absorption, and dual-anchored intelligence across distributed nodes.
-* **Milestone 2 (SBIR Phase I Option):** CAVP automated test bench harness integration and accredited laboratory pre-assessment engagement.
-* **Milestone 3 (SBIR Phase II):** Silicon-hardened TPM 2.0 enclave integration and real-time F-16/tactical pod hardware-in-the-loop (HIL) telemetry streaming.
+* **Milestone 2:** CAVP automated test bench harness integration and accredited laboratory pre-assessment engagement.
+* **Milestone 3:** Silicon-hardened TPM 2.0 enclave integration and real-time hardware-in-the-loop (HIL) telemetry streaming.
 
 ---
 

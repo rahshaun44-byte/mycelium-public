@@ -32,11 +32,11 @@ decision: FREEZE_A7
 
 ---
 
-## 2. AFWERX Claim Ledger Integration
+## 2. Security Claim Verification
 
 - **CL-02 (Local Ghost Sink Absorption)**: Updated with live verified SHA-256 hash-chained JSONL ledger receipts on `127.0.0.1:19443` ($H_{\text{attack}} = 0$).
 - **CL-15 (TLS 1.3 Protocol Floor & Downgrade Rejection)**: Added and verified with 4/4 live transport controls.
-- **Commit Baseline**: Bumped to `507e046` / `9fd9569` in [`docs/AFWERX_CLAIM_LEDGER.md`](file:///home/quant/mycelium/docs/AFWERX_CLAIM_LEDGER.md).
+- **Commit Baseline**: Bumped to `507e046` / `9fd9569`.
 
 ---
 

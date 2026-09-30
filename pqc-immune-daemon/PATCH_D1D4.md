@@ -3,7 +3,7 @@
 **Component:** `pqc-immune-daemon`
 **Status:** Verified and Merged
 
-This document summarizes the specific patches applied to resolve the four structural gaps (D-1 through D-4) identified during the SBIR technical readiness audit.
+This document summarizes the specific patches applied to resolve the four structural gaps (D-1 through D-4) identified during the technical readiness audit.
 
 ## Patch D-1: Cold-Start Default Configuration
 * **Vulnerability:** The daemon assumed a hardcoded `/opt/pqc-worker/crypto_provider.conf` path, leading to a `FileNotFoundError` crash during a cold start with `--once --dry-run` if the environment wasn't fully scaffolded.

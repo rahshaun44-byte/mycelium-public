@@ -24,7 +24,7 @@ The Python daemon contains **zero hardcoded retry logic or fallback algorithms**
 
 ## 2. Resolution of Audit Hard Stops (D-1 to D-4)
 
-The "fail-open" vulnerability identified in the AFWERX SBIR technical audit has been structurally eliminated.
+The "fail-open" vulnerability identified in the technical audit has been structurally eliminated.
 
 - **[D-2] The "Reachable-but-Empty" Vulnerability:** (CRITICAL) Previously, if OPA returned HTTP 200 with an empty JSON body `{}`, the daemon defaulted to `UNKNOWN` and continued polling silently (fail-open). **Resolution:** `query_opa()` now explicitly validates the response dictionary structure; empty/malformed responses return `None`, routing directly into the fail-secure Quarantine circuit breaker.
 - **[D-3] Unknown Algorithm Downgrade:** **Resolution:** Any active algorithm resolving to `NONE` in the fallback chain logs an exhaustion alert and halts cleanly without attempting an invalid config write.
@@ -50,16 +50,3 @@ A dedicated test suite (`test_immune_daemon.py`) enforces 12 immutable security 
 10. **[Q-2]** The circuit breaker trips into terminal collapse after `max_retries` failures.
 11. **[Q-3]** Quarantine mode atomically applies the designated `safe_mode_cipher` to the config.
 12. **[Q-4]** The `recovery_map` thresholds are parsed directly from the OPA `.rego` file.
-
----
-
-## 4. Next Steps & External Dependencies
-
-The technical baseline is now **100% complete** for the SBIR proposal submission. 
-
-To finalize the proposal package, the operator must complete two non-technical administrative requirements:
-
-1. **Entity Verification (SAM.gov):** Pull the live SAM.gov portal screenshot today to confirm active status, UEI, CAGE code, and expiration date for FinallyFungus LLC.
-2. **Submission Lane Verification (DSIP):** On the August 26 opening date, confirm whether the submission is utilizing the open-ended "Open Topic" lane, or targeting a specific, numbered AFRL requirement.
-
-*Codebase pushed to `origin/main` at `github.com/rahshaun44-byte/pqc-immune-daemon`.*
