@@ -78,3 +78,39 @@ def test_composite_system_integrity_structure():
     assert "tpm_attestation" in evals
     assert evals["tpm_attestation"]["verdict"] == "NOT_ATTESTED"
     assert "overall_verdict" in res
+
+
+def _stub_composite(monkeypatch, attestation_allowed: bool):
+    """Stub every measurement and evaluation so only the composition rule is under test."""
+    import sentinel.invariant_gate as gate_mod
+
+    for name, rtype in (
+        ("check_system_solvency", "SYSTEM_SOLVENCY"),
+        ("check_tpm_anchor", "TPM_ANCHOR"),
+        ("check_tpm_attestation", "TPM_ATTESTATION"),
+    ):
+        monkeypatch.setattr(gate_mod, name, lambda rtype=rtype: {"resource_type": rtype})
+    monkeypatch.setattr(gate_mod, "check_tpm_pcr", lambda idx=15: {"resource_type": "TPM_PCR15"})
+
+    def fake_evaluate(payload, evaluator="test"):
+        allowed = attestation_allowed if payload["resource_type"] == "TPM_ATTESTATION" else True
+        return {"allowed": allowed, "verdict": "STUB", "reason": "stub", "payload": payload}
+
+    monkeypatch.setattr(gate_mod, "evaluate_invariant", fake_evaluate)
+    return gate_mod
+
+
+def test_composite_denies_without_verified_attestation(monkeypatch):
+    """Admission requires attestation: solvency, anchor, and PCR alone must not ADMIT."""
+    gate_mod = _stub_composite(monkeypatch, attestation_allowed=False)
+    res = gate_mod.evaluate_all_invariants(evaluator="pytest_attestation_required")
+    assert res["all_allowed"] is False
+    assert res["overall_verdict"] == "DENY"
+
+
+def test_composite_admits_only_when_all_four_allow(monkeypatch):
+    """Guard against over-correction: all four invariants allowing still yields ADMIT."""
+    gate_mod = _stub_composite(monkeypatch, attestation_allowed=True)
+    res = gate_mod.evaluate_all_invariants(evaluator="pytest_attestation_required")
+    assert res["all_allowed"] is True
+    assert res["overall_verdict"] == "ADMIT"

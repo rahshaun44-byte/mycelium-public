@@ -308,8 +308,14 @@ def evaluate_all_invariants(evaluator: str = "invariant_gate_all") -> Dict[str, 
     attestation_payload = check_tpm_attestation()
     attestation_res = evaluate_invariant(attestation_payload, evaluator=evaluator)
 
-    # Core admission requires Solvency, Anchor Integrity, and PCR observation:
-    all_allowed = solvency_res["allowed"] and anchor_res["allowed"] and pcr_res["allowed"]
+    # Admission requires attestation: Solvency, Anchor Integrity, PCR observation,
+    # AND a cryptographically verified TPM quote. Observation alone never admits.
+    all_allowed = (
+        solvency_res["allowed"]
+        and anchor_res["allowed"]
+        and pcr_res["allowed"]
+        and attestation_res["allowed"]
+    )
     
     return {
         "all_allowed": all_allowed,
