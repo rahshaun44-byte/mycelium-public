@@ -461,8 +461,10 @@ async def index():
     # Confidence = inverse of drive relative to tolerance (1500)
     conf     = max(0, min(1.0, 1.0 - (drive_score / 1500.0)))
     alerts   = []
-    if lockout:
+    if lockout is True:
         alerts.append("LOCKOUT ACTIVE: Integrity registry breach detected")
+    elif lockout is None:
+        alerts.append("INTEGRITY UNVERIFIED: Database offline -- lockout status unknown")
     if hash_pen > 0:
         alerts.append(f"HASH MISMATCH: Cryptographic penalty {hash_pen}")
     if drive_score > 1125:

@@ -253,6 +253,12 @@ def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
         data_str = f"{previous_hash}{ram:.1f}{cpu:.2f}{io:.2f}{hash_penalty:.0f}{drive:.2f}{status}"
         block_hash = hashlib.sha256(data_str.encode('utf-8')).hexdigest()
         
+        # SNT-07: Anchor ledger block into Pluton TPM and flag unanchored state
+        anchored = anchor_to_hardware_tpm(block_hash)
+        if not anchored:
+            status = f"{status}_UNANCHORED"
+            print(f"[SENTINEL] CRITICAL: TPM anchor FAILED for block {block_hash[:16]}... Ledger entry committed with UNANCHORED status flag.")
+
         scur.execute(
             """INSERT INTO sentinel_ledger (cpu_usage, mem_usage, io_wait, hash_penalty, drive_score, status, previous_hash, block_hash)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
@@ -261,11 +267,6 @@ def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
         sconn.commit()
         scur.close()
         sconn.close()
-        
-        # Anchor committed ledger block into Pluton TPM
-        anchored = anchor_to_hardware_tpm(block_hash)
-        if not anchored:
-            print(f"[SENTINEL] CRITICAL: Ledger block {block_hash[:16]}... committed but TPM anchor FAILED. State is UNANCHORED.")
     except Exception as e:
         print(f"[SENTINEL] Failed to commit to sentinel_ledger: {e}")
 
