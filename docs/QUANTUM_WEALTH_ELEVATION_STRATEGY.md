@@ -46,7 +46,7 @@ True capital expansion requires **high-dimensional cognitive leverage**: product
   3. 25-page Executive Cryptographic Risk & Remediation PDF.
   4. Dynamic Crypto-Agility Fallback Blueprint.
 - **Target Profile:** Mid-market FedRAMP-certified SaaS vendors, defense contractors (CMMC Level 2/3), and financial API providers.
-- **Delivery Mechanism:** Executed autonomously via n8n workflow [`03_pqc_cbom_audit_pipeline.json`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows/03_pqc_cbom_audit_pipeline.json).
+- **Delivery Mechanism:** Executed via n8n workflow [`03_pqc_cbom_audit_pipeline.json`](../n8n_workflows/03_pqc_cbom_audit_pipeline.json).
 - **Price Point:** $2,000 – $5,000 per fixed-scope pilot (architectural gap analysis) to establish reference credibility, targeting larger retainers post-pilot.
 
 ---
@@ -57,7 +57,7 @@ True capital expansion requires **high-dimensional cognitive leverage**: product
   - Local Qwen2.5-Coder inference running 24/7 on host hardware.
   - `n8n` workflow orchestration running locally on port `5678`.
 - **Concrete Deliverables Package:**
-  1. **Instant AI Lead-Triage Webhook:** Auto-qualifies inbound inquiries via [`02_autonomous_lead_triage.json`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows/02_autonomous_lead_triage.json) in <15 seconds.
+  1. **Instant AI Lead-Triage Webhook:** Auto-qualifies inbound inquiries via [`02_autonomous_lead_triage.json`](../n8n_workflows/02_autonomous_lead_triage.json) in <15 seconds.
   2. **Automated GMB Reputation & Review Dispatcher:** Analyzes sentiment and drafts personalized Google Maps review responses.
 - **Target Profile:** 5 selected high-margin local service operators.
 - **Price Point:** $750 setup fee + $500 – $1,500/month recurring retainer.

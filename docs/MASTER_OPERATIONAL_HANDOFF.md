@@ -97,7 +97,7 @@ The Ingestion Gateway (`api_node/main.py`) acts as the cryptographically verifie
 * **Auto-Restoration Engine (`immune_daemon.py`):**
   * Solved the one-way downgrade bug. If OPA experiences a transient outage and recovers, the daemon automatically probes `ML-KEM-768` and **promotes the cipher back up to NIST post-quantum standard**.
   * Logs loud `[PQC DEGRADED]` warnings if running on classical fallback (`X25519`).
-* **Test Verification:** 15/15 invariants passing in [`tests/test_immune_daemon.py`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/pqc-immune-daemon/test_immune_daemon.py).
+* **Test Verification:** 15/15 invariants passing in [`tests/test_immune_daemon.py`](tests/test_immune_daemon.py).
 
 ---
 
@@ -105,7 +105,7 @@ The Ingestion Gateway (`api_node/main.py`) acts as the cryptographically verifie
 
 Athena's neural intelligence is fully indexed and operational:
 
-* **Vector Database:** [`sentinel/intelligence/athena_vectors.db`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/sentinel/intelligence/athena_vectors.db)
+* **Vector Database:** [`sentinel/intelligence/athena_vectors.db`](sentinel/intelligence/athena_vectors.db)
 * **Total Grounded Vectors:** **382 Active Vectors** (expanded from 0).
 * **Indexed Corpus:** 41 master knowledge artifacts including `LEGAL_COMPLIANCE_AUDIT.md`, `ADR_003_DATABASE_LAYER.md`, `WINDOWS_NATIVE_VERIFICATION_GUIDE.md`, and `QUANTUM_FLEX_INFRASTRUCTURE_AUDIT_MAP.md`.
 * **Embedding Model:** Ollama `nomic-embed-text` (768-dimensional embeddings).
@@ -114,7 +114,7 @@ Athena's neural intelligence is fully indexed and operational:
 
 ## 7. Alpha Node Packaging & P0 Compliance Shield
 
-* **Bundle Location:** [`dist/quantum-flex-alpha-node-windows-x64.zip`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/dist/quantum-flex-alpha-node-windows-x64.zip) (22.27 MB).
+* **Bundle Location:** [`dist/quantum-flex-alpha-node-windows-x64.zip`](dist/quantum-flex-alpha-node-windows-x64.zip) (22.27 MB).
 * **Contents:**
   1. `sentinel_push.exe` (C++20 Windows Event Log telemetry agent).
   2. 29 native PostgreSQL runtime DLLs (`libpq.dll`, OpenSSL, etc.).

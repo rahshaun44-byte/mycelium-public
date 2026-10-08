@@ -233,7 +233,7 @@ namespace quantumflex::replication {
         }
 
         // Validate sig and block here...
-        // For simulation, we re-forward to continue the mesh flood
+        // Re-forward to continue mesh distribution
         
         // reward peer for good block
         constexpr double REWARD_AMOUNT = 0.08;

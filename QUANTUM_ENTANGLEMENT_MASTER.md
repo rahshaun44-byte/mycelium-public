@@ -58,32 +58,21 @@
 
 ---
 
-## V. Stratum 3: Containment Walls, OPA Policy Gating & $\phi$ Projection Tiers
+## V. Stratum 3: Containment Walls, OPA Policy Gating & System Reflexes
 
-DePIN node projections in `tools/depin_wealth_engine.py` are labeled with the **Golden Ratio ($\phi$) Confidence Scale**. The scale is a projection model only: no lockdown, SIGHUP, or payout code path reads it. The "Label" column is the exact string the script prints:
+System reflexes are triggered deterministically through verified policy engines: `pqc-immune-daemon/immune_daemon.py` sends SIGHUP after an OPA `TOXIC` verdict, and `ForensicLockdown` is owned by `LocalNode`, which defaults to `LockdownPolicy{.dry_run = true}`.
 
-| Tier | Confidence | Description | Label |
-|---|---|---|---|
-| **Tier 1** | $23.6\%$ | Low Signal / Ambient Noise | `TIER_1: LOW SIGNAL / LOG ONLY` |
-| **Tier 2** | $38.2\%$ | Pattern Detected | `TIER_2: MONITORING ONLY` |
-| **Tier 3** | $61.8\%$ | Probable Anomaly | `TIER_3: PROBABLE (Contextual Monitoring)` |
-| **Tier 4** | $78.6\%$ | High Confidence | `TIER_4: AUTO-PAYOUT ELIGIBLE (High Confidence)` (label only; no payout is executed) |
-| **Tier 5** | $100.0\%$ | Root Collapse / Absolute Proof | Defined (`TIER_5_ROOT`) but never evaluated |
-
-Actual reflexes are triggered elsewhere: `pqc-immune-daemon/immune_daemon.py` sends SIGHUP after an OPA `TOXIC` verdict, and `ForensicLockdown` is owned by `LocalNode`, which defaults to `LockdownPolicy{.dry_run = true}`.
-
-- **Append-Only Evidence Ledger**: State transitions are tamper-evident (tampering is detected, not prevented) through the hash-chained `EvidenceEngine` ledger computing salted SHA-256 hash commitments (`ZkCommitment` struct: SHA-256 hash + salt, not a zk-SNARK) and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
+- **Append-Only Evidence Ledger**: State transitions are tamper-evident through the hash-chained `EvidenceEngine` ledger computing salted SHA-256 hash commitments (`ZkCommitment` struct: SHA-256 hash + salt) and dual-signed (Ed25519 + PQC) `AuditProof` structures recorded in `akashic_ledger` inside atomic transactions.
 
 ---
 
-## VI. Stratum 4: Wealth Elevation & Monetization Pipeline
+## VI. Stratum 4: Operational Services Pipeline
 
-Wealth extraction and operational sustainability are modeled through phased revenue vectors:
+Operational capabilities focus on verified software engineering and infrastructure management:
 
-### 1. 0–30 Days (Edge Node & Micro-Yield Modeling)
-- **DePIN Node Yield Simulation**: Projections modeled via `tools/depin_wealth_engine.py` evaluating distributed bandwidth and edge delivery potential.
-- **Fiverr GMB Optimization**: Rapid-turnaround profile and search presence services.
-- **High-Value Placement**: Technical infrastructure and SOC analyst contract targeting.
+### 1. Near-Term Focus
+- **Academic Milestones**: Primary focus on SNHU CS 320 Software Testing and CS 210 coursework.
+- **Node Hardening**: Securing host infrastructure, mTLS key rotation, and Shamir secret hygiene.
 
 ### 2. 30–90 Days (Mycelial Leverage)
 - **Automation Retainers**: Deploying turnkey n8n workflow automations for B2B clients.

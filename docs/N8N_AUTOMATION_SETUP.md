@@ -26,13 +26,13 @@
 ## II. How to Launch n8n
 
 ### Option A: From QuantumFlex HUD Console
-```powershell
-python C:\Users\quant\.gemini\antigravity-ide\scratch\repos\mycelium\qflex.py n8n
+```bash
+python qflex.py n8n
 ```
 
-### Option B: Direct PowerShell Launcher
-```powershell
-powershell -ExecutionPolicy Bypass -File C:\Users\quant\.gemini\antigravity-ide\scratch\repos\mycelium\Start-N8nNode.ps1
+### Option B: Direct Shell Launcher
+```bash
+./Start-N8nNode.sh
 ```
 
 Once launched, navigate to:
@@ -42,19 +42,19 @@ Once launched, navigate to:
 
 ## III. Pre-Wired Workflow Blueprints
 
-The following workflow templates are located in [`mycelium/n8n_workflows/`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows):
+The following workflow templates are located in [`n8n_workflows/`](n8n_workflows/):
 
-### 1. [`01_athena_rag_bridge.json`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows/01_athena_rag_bridge.json)
+### 1. [`01_athena_rag_bridge.json`](n8n_workflows/01_athena_rag_bridge.json)
 - **Webhook Endpoint:** `POST http://127.0.0.1:5678/webhook/athena-ask`
 - **Payload:** `{"question": "How does the immune daemon handle vein collapse?"}`
-- **Action:** Queries Athena's 75 active vector chunks and returns synthesized tactical response via `athena:latest`.
+- **Action:** Queries Athena's active vector chunks and returns synthesized tactical response via `athena:latest`.
 
-### 2. [`02_autonomous_lead_triage.json`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows/02_autonomous_lead_triage.json)
+### 2. [`02_autonomous_lead_triage.json`](n8n_workflows/02_autonomous_lead_triage.json)
 - **Webhook Endpoint:** `POST http://127.0.0.1:5678/webhook/lead-triage`
 - **Payload:** `{"name": "Client", "email": "ceo@example.com", "budget": "$5,000", "message": "Need PQC migration assessment"}`
 - **Action:** Local Qwen evaluates lead intent and routes high-ticket leads ($1k+) to VIP alert pipelines.
 
-### 3. [`03_pqc_cbom_audit_pipeline.json`](file:///C:/Users/quant/.gemini/antigravity-ide/scratch/repos/mycelium/n8n_workflows/03_pqc_cbom_audit_pipeline.json)
+### 3. [`03_pqc_cbom_audit_pipeline.json`](n8n_workflows/03_pqc_cbom_audit_pipeline.json)
 - **Webhook Endpoint:** `POST http://127.0.0.1:5678/webhook/pqc-audit`
 - **Action:** Passes CycloneDX CBOM to local OPA sidecar (`:8181`) and generates instant compliance remediation report.
 
@@ -63,5 +63,5 @@ The following workflow templates are located in [`mycelium/n8n_workflows/`](file
 ## IV. Importing Workflows into n8n
 1. Open `http://127.0.0.1:5678` in your browser.
 2. Click **Workflows** $\rightarrow$ **Import from File...**
-3. Select any `.json` file from `C:\Users\quant\.gemini\antigravity-ide\scratch\repos\mycelium\n8n_workflows`.
+3. Select any `.json` file from `n8n_workflows/`.
 4. Click **Activate Workflow** (Toggle in top right corner).

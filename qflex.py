@@ -216,14 +216,6 @@ def cmd_pqc_status():
     print("Provider selection follows OpenSSL configuration and QF_KEM_PROPERTIES; validation is not inferred.")
     print("Deployment, traffic enforcement, and test results: NOT VERIFIED by this command.\n")
 
-def cmd_wealth_status():
-    """Runs DePIN wealth elevation telemetry."""
-    wealth_script = ROOT_DIR / "tools" / "depin_wealth_engine.py"
-    if wealth_script.exists():
-        subprocess.run([sys.executable, str(wealth_script)])
-    else:
-        print(f"{RED}[!] depin_wealth_engine.py missing.{RESET}\n")
-
 def cmd_invariant_status():
     """Evaluates the Universal Reserve Invariant (R >= O) across Digital and Physical Strata."""
     try:
@@ -400,8 +392,6 @@ def main():
         cmd_invariant_status()
     elif cmd in ("pqc", "crypto", "kem"):
         cmd_pqc_status()
-    elif cmd in ("wealth", "depin", "yield"):
-        cmd_wealth_status()
     elif cmd in ("rotate", "vault"):
         cmd_rotate_credentials()
     elif cmd in ("start", "up"):
@@ -418,12 +408,11 @@ def main():
         print("""
 QuantumFlex Unified Command Console
 Usage:
-  python qflex.py                - Open interactive Cyberpunk HUD
-  python qflex.py status         - Check health of all biological strata
+  python qflex.py                - Open interactive HUD
+  python qflex.py status         - Check health of strata
   python qflex.py ask "<query>"  - Interrogate Athena Vector Memory (athena:latest)
   python qflex.py claw "<task>"  - Decompose and queue swarm directive
   python qflex.py invariant      - Evaluate Universal Invariant Gate (R >= O)
-  python qflex.py wealth         - View Sovereign Wealth Elevation Engine
   python qflex.py pqc            - Inspect post-quantum KEM/DSA agility status
   python qflex.py n8n            - Launch n8n Autonomous Workflow Engine
   python qflex.py backup         - Save & archive entire stack to Master Host Vault
