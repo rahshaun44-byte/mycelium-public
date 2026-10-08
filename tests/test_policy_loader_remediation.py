@@ -262,3 +262,91 @@ def test_scenario_11_python_mirror_enabled(monkeypatch, valid_quantum_input):
     assert res["evaluator"] == "python_mirror_DEVELOPMENT_ONLY"
     assert res["degraded"] is True
     assert any("admission prohibited" in r for r in res["reasons"])
+
+
+# ── Scenario 12: Stale telemetry fails closed ─────────────────────────────────
+def test_scenario_12_stale_telemetry_fails_closed():
+    """Stale telemetry exceeding freshness SLA strictly fails closed to DENY."""
+    import time
+    from sentinel.policies.wasm_gatekeeper import get_reserve_wasm_gatekeeper
+    reserve_gate = get_reserve_wasm_gatekeeper()
+    assert reserve_gate is not None
+
+    payload = {
+        "domain": "digital",
+        "resource_type": "SYSTEM_SOLVENCY",
+        "available": 16384.0,
+        "obligated": 8192.0,
+        "telemetry_timestamp": int(time.time()) - 300,  # 5 minutes stale
+        "max_staleness_seconds": 30,
+    }
+    allow, verdict, reason = reserve_gate.evaluate_invariant(payload)
+    assert allow is False
+    assert verdict == "DENY"
+    assert "stale" in reason.lower()
+
+
+# ── Scenario 13: Nonexistent and empty ledger fail closed (LDG-01) ─────────────
+def test_scenario_13_absent_and_empty_ledger_fail_closed(tmp_path):
+    """Nonexistent and zero-entry ledgers strictly return valid=False (LDG-01)."""
+    from ledger import EvidenceLedger
+
+    # 1. Nonexistent file
+    absent_path = tmp_path / "nonexistent_ledger.jsonl"
+    ledger_absent = EvidenceLedger(filepath=absent_path)
+    valid, errors = ledger_absent.verify_integrity()
+    assert valid is False
+    assert any("does not exist" in e.lower() for e in errors)
+
+    # 2. Empty file (0 entries)
+    empty_path = tmp_path / "empty_ledger.jsonl"
+    empty_path.write_text("")
+    ledger_empty = EvidenceLedger(filepath=empty_path)
+    valid, errors = ledger_empty.verify_integrity()
+    assert valid is False
+    assert any("zero entries" in e.lower() for e in errors)
+
+
+# ── Scenario 14: Database offline fails closed (INV-01) ───────────────────────
+def test_scenario_14_database_offline_fails_closed(monkeypatch):
+    """Database offline conditions produce ERROR_DB_OFFLINE and fail closed to DENY."""
+    import sentinel.invariant_gate as ig
+
+    def mock_db_conn(*args, **kwargs):
+        raise ig.DatabaseUnavailableError("Simulated database network partition")
+
+    monkeypatch.setattr(ig, "get_db_connection", mock_db_conn)
+    telemetry = ig.check_tpm_anchor()
+    assert telemetry["ledger_tip"] == "ERROR_DB_OFFLINE"
+
+    # Evaluate against invariant policy
+    allow, verdict, reason = ig.query_opa_invariant(telemetry)
+    assert allow is False
+    assert verdict in {"DENY", "ANCHOR_DESYNC"}
+
+
+# ── Scenario 15: PCR 15 extension failure fails closed (QFX-01) ───────────────
+def test_scenario_15_pcr_extension_failure_fails_closed(monkeypatch, tmp_path):
+    """Failure to extend Pluton TPM PCR 15 must raise RuntimeError and prevent completion."""
+    import qflex_quantum
+
+    orig_run = subprocess.run
+
+    def mock_run(cmd, *args, **kwargs):
+        if len(cmd) > 0 and "tpm2_pcrextend" in cmd[0]:
+            raise subprocess.CalledProcessError(1, cmd, stderr="Simulated TPM NV/PCR error")
+        return orig_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    out_file = str(tmp_path / "entropy_test.hex")
+
+    with pytest.raises(RuntimeError) as exc_info:
+        qflex_quantum.extract_quantum_entropy(
+            target="local",
+            shots=64,
+            qubits=2,
+            extend_pcr=True,
+            out_file=out_file,
+        )
+
+    assert "TPM PCR 15 extension failed" in str(exc_info.value)
