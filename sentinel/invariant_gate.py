@@ -157,18 +157,24 @@ def check_digital_memory() -> Dict[str, Any]:
 
 
 def check_tpm_anchor() -> Dict[str, Any]:
-    """Reads physical TPM 2.0 NVRAM index 0x1c00010 and PostgreSQL sentinel_ledger tip.
-    Fails closed by returning explicit distinct sentinel error strings if either read fails."""
-    tpm_tip = None
+    """Reads static NVRAM genesis anchor and live PCR 15 runtime state."""
+    nvram_tip = None
     try:
-        res = subprocess.run(
-            ["tpm2_nvread", "-C", "o", "-s", "32", "0x1c00010"],
-            capture_output=True, timeout=3
-        )
-        if res.returncode == 0 and len(res.stdout) == 32:
-            tpm_tip = res.stdout.hex()
+        res_nv = subprocess.run(["tpm2_nvread", "-C", "o", "-s", "32", "0x1c00010"], capture_output=True, timeout=3)
+        if res_nv.returncode == 0 and len(res_nv.stdout) == 32:
+            nvram_tip = res_nv.stdout.hex()
     except Exception:
-        tpm_tip = None
+        pass
+
+    pcr15_state = None
+    try:
+        res_pcr = subprocess.run(["tpm2_pcrread", "sha256:15"], capture_output=True, text=True, timeout=3)
+        if res_pcr.returncode == 0:
+            for line in res_pcr.stdout.splitlines():
+                if line.strip().startswith("15:"):
+                    pcr15_state = line.split("15:")[1].strip().lower().replace("0x", "")
+    except Exception:
+        pass
 
     ledger_tip = None
     conn = get_db_connection()
@@ -182,13 +188,14 @@ def check_tpm_anchor() -> Dict[str, Any]:
             cur.close()
             conn.close()
         except Exception:
-            ledger_tip = None
+            pass
 
     return {
         "domain": "digital",
-        "resource_type": "TPM_ANCHOR",
-        "reserve_measured": tpm_tip if tpm_tip else "UNAVAILABLE_TPM_READ_FAILED",
+        "resource_type": "DUAL_TPM_ANCHOR",
+        "reserve_measured": nvram_tip if nvram_tip else "UNAVAILABLE_NVRAM_READ_FAILED",
         "units_claimed": ledger_tip if ledger_tip else "UNAVAILABLE_LEDGER_READ_FAILED",
+        "pcr15_runtime_measured": pcr15_state if pcr15_state else "UNAVAILABLE_PCR_READ_FAILED",
         "telemetry_timestamp": int(time.time()),
         "max_staleness_seconds": 60,
     }

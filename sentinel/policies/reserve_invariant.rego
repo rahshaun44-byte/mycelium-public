@@ -29,13 +29,15 @@ is_fresh if {
     age <= effective_max_staleness
 }
 
-# Cryptographic Anchor Check (Physical TPM 2.0 vs Ledger Tip)
+# Cryptographic Dual-Anchor Check (NVRAM Baseline + PCR 15 Runtime)
 is_anchor_valid if {
-    input.resource_type == "TPM_ANCHOR"
+    input.resource_type == "DUAL_TPM_ANCHOR"
     input.reserve_measured != null
     input.units_claimed != null
+    input.pcr15_runtime_measured != null
     regex.match("^[0-9a-fA-F]{64}$", input.reserve_measured)
     regex.match("^[0-9a-fA-F]{64}$", input.units_claimed)
+    regex.match("^[0-9a-fA-F]{64}$", input.pcr15_runtime_measured)
     input.reserve_measured != "0000000000000000000000000000000000000000000000000000000000000000"
     lower(input.reserve_measured) == lower(input.units_claimed)
 }
@@ -82,7 +84,7 @@ verdict := "ADMIT" if {
 reason := "Stale telemetry: measurement age exceeds maximum SLA" if {
     not is_fresh
 } else := "ANCHOR_DESYNC: Hardware TPM NVRAM tip does not match ledger root hash" if {
-    input.resource_type == "TPM_ANCHOR"
+    input.resource_type == "DUAL_TPM_ANCHOR"
     not is_anchor_valid
 } else := "INSOLVENT: Outstanding claims exceed measured physical reserve (R < O)" if {
     is_numeric_resource
