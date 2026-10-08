@@ -2,7 +2,7 @@
 
 #include "quantum-flex/crypto_hasher.hpp"
 
-#include <pqxx/pqxx>
+#include "quantum-flex/pqxx_compat.hpp"
 
 #include <cstdint>
 #include <ctime>

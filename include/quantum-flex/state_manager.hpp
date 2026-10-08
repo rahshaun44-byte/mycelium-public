@@ -11,7 +11,7 @@
 #include "quantum-flex/audit_proof.hpp"
 #include "sqlite3.h"
 
-#include <pqxx/pqxx>
+#include "quantum-flex/pqxx_compat.hpp"
 #include <thread>
 #include <atomic>
 
