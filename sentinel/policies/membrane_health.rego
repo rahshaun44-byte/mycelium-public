@@ -6,8 +6,11 @@ import rego.v1
 # QUANTUM FLEX — Membrane Health Policy
 # The Biological Imperative: Autonomous Cryptographic Compliance
 #
-# Input: CycloneDX CBOM JSON (from CBOMkit-theia scan)
-# Output: Structured verdict with per-component compliance status
+# Authoritative States Enforced:
+#   MISSING, INVALID, ERROR, UNVERIFIED, STALE, OBSERVED,
+#   VERIFIED, ADMITTED, DENIED, SIMULATED, DEVELOPMENT_ONLY
+#
+# Core Governance Rule: ABSENCE OF EVIDENCE MUST NEVER BECOME VERIFIED.
 # ═══════════════════════════════════════════════════════════════════
 
 # ── Approved Algorithm Registry ──────────────────────────────────
@@ -47,16 +50,71 @@ fallback_approved := {
 # Union of all approved algorithms
 all_approved := quantum_safe_kem | quantum_safe_sig | classical_approved | fallback_approved
 
-# ── Threat Flags ─────────────────────────────────────────────────
-# These are set via OPA data API by Sentinel or external threat feed.
-# Default: no algorithms are compromised.
-default ml_kem_compromised := false
-ml_kem_compromised if data.threat_flags.ML_KEM_COMPROMISED == true
+# Valid compliance profiles (Task 5)
+valid_profiles := {"fips_strict", "iso_strict", "agility"}
 
-default frodokem_compromised := false
-frodokem_compromised if data.threat_flags.FRODOKEM_COMPROMISED == true
+# ── Compliance Profile Validation (Task 5) ────────────────────────
+deny contains "Missing compliance profile" if {
+    not input.requested_profile
+}
 
-# Dynamic compromised set — built from active threat flags
+deny contains "Unknown compliance profile" if {
+    input.requested_profile
+    not input.requested_profile in valid_profiles
+}
+
+# ── Inventory & CBOM Completeness Checks (Task 6) ──────────────────
+deny contains "Missing inventory: CBOM components array missing" if {
+    not input.components
+}
+
+deny contains "Empty inventory: CBOM contains no cryptographic components" if {
+    input.components
+    count(input.components) == 0
+}
+
+deny contains "Missing crypto-assets: CBOM contains zero assessed crypto-asset components" if {
+    input.components
+    count(input.components) > 0
+    count(findings) == 0
+}
+
+# ── Threat Flags Intelligence (Task 7) ─────────────────────────────
+# Distinguish:
+# - data.threat_flags missing/incomplete -> UNVERIFIED / deny
+# - threat flag true -> COMPROMISED
+# - threat flag explicitly false -> VERIFIED safe
+ml_kem_compromised if {
+    data.threat_flags.ML_KEM_COMPROMISED == true
+}
+
+frodokem_compromised if {
+    data.threat_flags.FRODOKEM_COMPROMISED == true
+}
+
+ml_kem_verified_safe if {
+    data.threat_flags.ML_KEM_COMPROMISED == false
+}
+
+frodokem_verified_safe if {
+    data.threat_flags.FRODOKEM_COMPROMISED == false
+}
+
+# Active algorithm threat feed check
+deny contains "Threat feed unverified: active algorithm has no threat attestation" if {
+    some kem in active_kems
+    kem in {"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024"}
+    not ml_kem_compromised
+    not ml_kem_verified_safe
+}
+
+deny contains "Threat feed unverified: active algorithm has no threat attestation" if {
+    some kem in active_kems
+    kem in {"FrodoKEM-640-AES", "FrodoKEM-976-AES", "FrodoKEM-1344-AES"}
+    not frodokem_compromised
+    not frodokem_verified_safe
+}
+
 compromised_algorithms contains "ML-KEM-512" if ml_kem_compromised
 compromised_algorithms contains "ML-KEM-768" if ml_kem_compromised
 compromised_algorithms contains "ML-KEM-1024" if ml_kem_compromised
@@ -64,10 +122,23 @@ compromised_algorithms contains "FrodoKEM-640-AES" if frodokem_compromised
 compromised_algorithms contains "FrodoKEM-976-AES" if frodokem_compromised
 compromised_algorithms contains "FrodoKEM-1344-AES" if frodokem_compromised
 
-# ── Per-Component Evaluation ─────────────────────────────────────
-# Evaluates each cryptographic component in the CBOM
+# Profile-specific algorithm restrictions
+deny contains "ISO compliance violation: FrodoKEM-640 is not an ISO standard" if {
+    input.requested_profile == "iso_strict"
+    some comp in input.components
+    comp.type == "crypto-asset"
+    comp.cryptoProperties.algorithmProperties.algorithm == "FrodoKEM-640-AES"
+}
 
-# Profile checks and compromise checks are mutually exclusive to avoid eval conflicts.
+deny contains "FIPS compliance violation: Non-FIPS algorithm in fips_strict profile" if {
+    input.requested_profile == "fips_strict"
+    some comp in input.components
+    comp.type == "crypto-asset"
+    algo := comp.cryptoProperties.algorithmProperties.algorithm
+    not algo in (quantum_safe_kem | quantum_safe_sig)
+}
+
+# ── Per-Component Evaluation ───────────────────────────────────────
 component_verdict(comp) := {"algorithm": algo, "status": "TOXIC", "reason": "Algorithm outside fips_strict registry (FIPS 203/204/205)"} if {
     algo := comp.cryptoProperties.algorithmProperties.algorithm
     input.requested_profile == "fips_strict"
@@ -83,9 +154,6 @@ component_verdict(comp) := {"algorithm": algo, "status": "TOXIC", "reason": "Alg
     algo in all_approved
 }
 
-# ── Aggregate Verdict ────────────────────────────────────────────
-# The node is TOXIC if ANY component is TOXIC
-
 findings contains finding if {
     some comp in input.components
     comp.type == "crypto-asset"
@@ -97,23 +165,7 @@ toxic_findings contains f if {
     f.status == "TOXIC"
 }
 
-default node_status := "COMPLIANT"
-node_status := "TOXIC" if count(toxic_findings) > 0
-node_status := "TOXIC" if count(deny) > 0
-
-# ── Primary Decision Endpoint ────────────────────────────────────
-# Query: POST /v1/data/membrane/health/verdict
-verdict := {
-    "node_status": node_status,
-    "total_components": count(findings),
-    "toxic_count": count(toxic_findings),
-    "findings": findings,
-    "recommended_fallback": recommended_fallback,
-    "evaluated_at": input.metadata.timestamp,
-}
-
-# ── Fallback Recommendation ─────────────────────────────────────
-# Verified ISO/IEC 18033-2:2006/Amd 2:2026 Profile
+# ── Fallback Maps ──────────────────────────────────────────────────
 iso_fallback_map := {
     "ML-KEM-1024": "FrodoKEM-1344-AES",
     "ML-KEM-768": "FrodoKEM-976-AES",
@@ -122,26 +174,6 @@ iso_fallback_map := {
     "X25519": "NONE",
 }
 
-# Explicitly Isolated Draft/Experimental Profile
-experimental_fallback_map := {
-    "ML-KEM-512": "FrodoKEM-640-AES",
-    "FrodoKEM-640-AES": "X25519",
-}
-
-# Enforce rejection if an ISO profile attempts to negotiate 640
-deny contains "ISO compliance violation: FrodoKEM-640 is not an ISO standard" if {
-    input.requested_profile == "iso_strict"
-    input.cipher == "FrodoKEM-640-AES"
-}
-
-deny contains "ISO compliance violation: FrodoKEM-640 is not an ISO standard" if {
-    input.requested_profile == "iso_strict"
-    some comp in input.components
-    comp.type == "crypto-asset"
-    comp.cryptoProperties.algorithmProperties.algorithm == "FrodoKEM-640-AES"
-}
-
-# Dynamically match ML-KEM size variants to equivalent security-tier FrodoKEM variants
 fallback_map := {
     "ML-KEM-512": "FrodoKEM-640-AES",
     "ML-KEM-768": "FrodoKEM-976-AES",
@@ -152,9 +184,17 @@ fallback_map := {
     "X25519": "NONE",
 }
 
-# ── Recovery Map (Self-Healing / Quarantine Parameters) ──────────
-# Authoritative recovery parameters for the circuit breaker / quarantine state.
-# The Python daemon reads these values — they are NEVER hardcoded in the binary.
+fips_fallback_map := {
+    "ML-KEM-1024": "NONE",
+    "ML-KEM-768": "NONE",
+    "ML-KEM-512": "NONE",
+}
+
+experimental_fallback_map := {
+    "ML-KEM-512": "FrodoKEM-640-AES",
+    "FrodoKEM-640-AES": "X25519",
+}
+
 recovery_map := {
     "max_retries": 3,
     "timeout_window_sec": 60,
@@ -170,32 +210,16 @@ active_kems contains algo if {
     algo in (quantum_safe_kem | fallback_approved)
 }
 
-# Strict Federal Compliance Fallback Map (FIPS 203 strict)
-# Constrains fallbacks exclusively within FIPS-approved parameters; fails closed rather than switching to non-FIPS
-fips_fallback_map := {
-    "ML-KEM-1024": "NONE",
-    "ML-KEM-768": "NONE",
-    "ML-KEM-512": "NONE",
-}
-
-deny contains "FIPS compliance violation: Non-FIPS algorithm in fips_strict profile" if {
-    input.requested_profile == "fips_strict"
-    some comp in input.components
-    comp.type == "crypto-asset"
-    algo := comp.cryptoProperties.algorithmProperties.algorithm
-    not algo in (quantum_safe_kem | quantum_safe_sig)
-}
-
-# Active fallback map selection based on profile
 active_fallback_map := fips_fallback_map if {
     input.requested_profile == "fips_strict"
 } else := iso_fallback_map if {
     input.requested_profile == "iso_strict"
-} else := fallback_map
+} else := fallback_map if {
+    input.requested_profile == "agility"
+} else := {}
 
-# If an active ML-KEM is toxic and FrodoKEM is healthy, pick the equivalent tier
 recommended_fallback := active_fallback_map[kem] if {
-    object.get(input, "requested_profile", "agility") != "fips_strict"
+    input.requested_profile in {"iso_strict", "agility"}
     count(deny) == 0
     some kem in active_kems
     kem in compromised_algorithms
@@ -203,9 +227,8 @@ recommended_fallback := active_fallback_map[kem] if {
     active_fallback_map[kem]
 }
 
-# If FrodoKEM is also compromised, step down to approved classical (X25519)
 recommended_fallback := "X25519" if {
-    object.get(input, "requested_profile", "agility") != "fips_strict"
+    input.requested_profile in {"iso_strict", "agility"}
     count(deny) == 0
     some kem in active_kems
     kem in compromised_algorithms
@@ -214,21 +237,51 @@ recommended_fallback := "X25519" if {
 
 default recommended_fallback := "NONE"
 
-# A misspelled profile must never silently enable agility.
-deny contains "Unknown compliance profile" if {
-    not object.get(input, "requested_profile", "agility") in {"fips_strict", "iso_strict", "agility"}
-}
+# ── Authoritative Verification State (Task 2 & Core Governance Rule) ────
+default verification_state := "UNVERIFIED"
 
-# ── Inventory Completeness Checks ─────────────────────────────────
-deny contains "Empty inventory: CBOM contains no cryptographic components" if {
+verification_state := "MISSING" if {
     not input.components
+} else := "INVALID" if {
+    not input.requested_profile
+} else := "INVALID" if {
+    not input.requested_profile in valid_profiles
+} else := "UNVERIFIED" if {
+    "Threat feed unverified: active algorithm has no threat attestation" in deny
+} else := "VERIFIED" if {
+    count(toxic_findings) > 0
+} else := "DENIED" if {
+    count(deny) > 0
+} else := "VERIFIED" if {
+    count(findings) > 0
+    count(toxic_findings) == 0
+    count(deny) == 0
 }
 
-deny contains "Empty inventory: CBOM contains no cryptographic components" if {
-    count(input.components) == 0
+# ── Node Status (Task 6 & Task 7) ─────────────────────────────────
+default node_status := "UNVERIFIED"
+
+node_status := "TOXIC" if {
+    count(toxic_findings) > 0
+} else := "TOXIC" if {
+    count(deny) > 0
+} else := "COMPLIANT" if {
+    count(findings) > 0
+    count(toxic_findings) == 0
+    count(deny) == 0
 }
 
-deny contains "Missing crypto-assets: CBOM contains zero assessed crypto-asset components" if {
-    count(input.components) > 0
-    count(findings) == 0
+# Timestamp safe extraction (guarantees verdict is never undefined)
+meta_timestamp := object.get(object.get(input, "metadata", {}), "timestamp", null)
+
+# ── Primary Decision Endpoint ────────────────────────────────────
+verdict := {
+    "node_status": node_status,
+    "verification_state": verification_state,
+    "total_components": count(findings),
+    "toxic_count": count(toxic_findings),
+    "deny_reasons": deny,
+    "findings": findings,
+    "recommended_fallback": recommended_fallback,
+    "evaluated_at": meta_timestamp,
 }
