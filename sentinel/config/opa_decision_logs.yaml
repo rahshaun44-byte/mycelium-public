@@ -1,0 +1,18 @@
+# OPA Decision Logging Configuration for Quantum Flex Gatekeeper
+# Decouples policy evaluation from telemetry collection and containment enforcement.
+
+services:
+  gatekeeper:
+    url: http://127.0.0.1:9090
+    headers:
+      # Optional: set X-OPA-Secret or Authorization header for authenticated log ingestion
+      X-OPA-Secret: "${GATEKEEPER_SHARED_SECRET:-quantumflex-telemetry-secret}"
+
+decision_logs:
+  service: gatekeeper
+  resource: /logs
+  reporting:
+    trigger: immediate
+  labels:
+    app: quantumflex
+    component: opa
