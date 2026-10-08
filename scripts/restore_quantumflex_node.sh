@@ -68,8 +68,12 @@ if [[ -d "$RESTORE_TMP/.ssh" ]]; then
     log_info "Restoring SSH identities..."
     mkdir -m 700 -p "$HOME/.ssh"
     cp -a "$RESTORE_TMP/.ssh/"* "$HOME/.ssh/"
-    chmod 600 "$HOME/.ssh/id_ed25519" 2>/dev/null || true
-    chmod 644 "$HOME/.ssh/id_ed25519.pub" 2>/dev/null || true
+    if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
+        chmod 600 "$HOME/.ssh/id_ed25519"
+    fi
+    if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+        chmod 644 "$HOME/.ssh/id_ed25519.pub"
+    fi
     log_success "SSH configuration restored."
 fi
 

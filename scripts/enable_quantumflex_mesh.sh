@@ -12,12 +12,16 @@ set -euo pipefail
 echo "[*] Initializing QuantumFlex Private Tailscale Mesh Services..."
 
 # 1. Ensure Tailscale is running and accessible
-if ! tailscale status >/dev/null 2>&1; then
-    echo "[!] Error: Tailscale is not running or accessible." >&2
+if ! TS_STATUS_OUTPUT="$(tailscale status 2>&1)"; then
+    echo "[!] Error: Tailscale is not running or accessible: ${TS_STATUS_OUTPUT}" >&2
     exit 1
 fi
 
-TS_IP="$(tailscale ip -4 2>/dev/null || echo "")"
+TS_IP="$(tailscale ip -4 || true)"
+if [[ -z "${TS_IP}" ]]; then
+    echo "[!] Error: Failed to obtain Tailscale IPv4 address." >&2
+    exit 1
+fi
 DNS_NAME="$(tailscale status --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))')"
 
 echo "[+] Node Tailscale IP: ${TS_IP}"

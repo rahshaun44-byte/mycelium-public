@@ -52,10 +52,14 @@ echo "  [+] Enabled and started qf-cpu-performance.service"
 
 echo "[4/4] Live enforcement on all 16 vCPU threads..."
 for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-    echo performance > "$g" 2>/dev/null || true
+    if [[ -w "$g" ]]; then
+        echo performance > "$g"
+    fi
 done
 for e in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
-    echo performance > "$e" 2>/dev/null || true
+    if [[ -w "$e" ]]; then
+        echo performance > "$e"
+    fi
 done
 
 echo

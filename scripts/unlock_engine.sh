@@ -22,16 +22,30 @@ DATA_DIR="${QF_DATA_DIR:-$HOME/.local/share/quantum-flex-mycelium}"
 PORT="${QF_BIND_PORT:-9444}"
 HOST="${QF_BIND_ADDRESS:-127.0.0.1}"
 
-# Any 3 of the 5 shards suffice. Use SHARD_FILES="a,b,c" to name them explicitly
-# (e.g. two on disk plus one just Taildropped into /tmp); otherwise take the
-# first three shard_*.txt found in SHARDS_DIR.
+# Any 3 of the 5 shards suffice.
+# If only 1 shard is kept on this host (as per sovereign security posture),
+# the operator provides the remaining shards interactively or via SHARD_FILES.
 if [[ -z "${SHARD_FILES:-}" ]]; then
-    mapfile -t found < <(ls "$SHARDS_DIR"/shard_*.txt 2>/dev/null | head -n 3)
+    shopt -s nullglob
+    found=("$SHARDS_DIR"/shard_*.txt)
+    shopt -u nullglob
+
     if [[ ${#found[@]} -lt 3 ]]; then
-        echo "[!] Need 3 shard files; found ${#found[@]} in $SHARDS_DIR. Set SHARD_FILES=a,b,c" >&2
+        echo "[*] Local shards found in $SHARDS_DIR: ${#found[@]}"
+        echo "[*] 3-of-5 threshold required for unsealing ceremony."
+        if [[ -t 0 ]]; then
+            echo "[*] Please provide paths or strings for the required external shards:"
+            read -r -p "Enter comma-separated shard paths (or paste SHARD_FILES=f1,f2,f3): " INPUT_SHARDS
+            SHARD_FILES="$INPUT_SHARDS"
+        fi
+    else
+        SHARD_FILES="$(IFS=,; echo "${found[*]:0:3}")"
+    fi
+
+    if [[ -z "${SHARD_FILES:-}" ]]; then
+        echo "[!] Need 3 shard files; found ${#found[@]} in $SHARDS_DIR. Set SHARD_FILES=shard1,shard2,shard3" >&2
         exit 1
     fi
-    SHARD_FILES="$(IFS=,; echo "${found[*]}")"
 fi
 
 UNLOCK_LINE=$("$GENESIS_TOOL" recover --quiet \

@@ -1,4 +1,4 @@
-# Prevent Antigravity IDE from indexing sensitive files
+# Prevent indexers from indexing sensitive files
 .env*
 *.pem
 *.key

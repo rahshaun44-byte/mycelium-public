@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/USERNAME/.gemini/antigravity-ide/scratch/quantum-flex_HIDDEN/bin/threat_processor.py /home/USERNAME/.gemini/antigravity-ide/scratch/quantum-flex_HIDDEN
+ExecStart=/usr/bin/python3 /home/USERNAME/.local/share/quantum-flex/bin/threat_processor.py /home/USERNAME/.local/share/quantum-flex
 Restart=always
 RestartSec=10
 

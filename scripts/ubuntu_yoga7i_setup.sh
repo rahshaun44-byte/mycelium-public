@@ -102,16 +102,19 @@ net.ipv4.ip_forward = 1
 net.ipv6.conf.all.forwarding = 1
 EOF
 fi
-sysctl --system >/dev/null
+log_info "Applying sysctl parameters..."
+sysctl --system
 
 # 3. Firewalld Zero-Trust Configuration (Preserving QF zone architecture)
 log_info "Configuring firewalld mesh zone..."
 systemctl enable --now firewalld
-firewall-cmd --permanent --new-zone=qf-tailscale >/dev/null 2>&1 || true
-firewall-cmd --permanent --zone=qf-tailscale --add-source=100.64.0.0/10 || true
-firewall-cmd --permanent --zone=qf-tailscale --add-interface=tailscale0 || true
-firewall-cmd --permanent --zone=qf-tailscale --add-port=443/tcp --add-port=8443/tcp --add-port=8000/tcp --add-port=8080/tcp --add-port=9000/tcp || true
-firewall-cmd --reload >/dev/null || true
+if ! firewall-cmd --get-zones | grep -qw "qf-tailscale"; then
+    firewall-cmd --permanent --new-zone=qf-tailscale
+fi
+firewall-cmd --permanent --zone=qf-tailscale --add-source=100.64.0.0/10
+firewall-cmd --permanent --zone=qf-tailscale --add-interface=tailscale0
+firewall-cmd --permanent --zone=qf-tailscale --add-port=443/tcp --add-port=8443/tcp --add-port=8000/tcp --add-port=8080/tcp --add-port=9000/tcp
+firewall-cmd --reload
 
 # 4. User lingering for 24/7 background systemd services
 log_info "Enabling user lingering for ${TARGET_USER}..."
@@ -152,7 +155,7 @@ sudo -u "$TARGET_USER" bash -c "
 if [[ -d "${REPO_ROOT}/quantumflex-ghost-sink" ]]; then
     log_info "Compiling Rust Ghost Sink..."
     sudo -u "$TARGET_USER" bash -c "
-      source \$HOME/.cargo/env 2>/dev/null || true
+      if [[ -f "\$HOME/.cargo/env" ]]; then source "\$HOME/.cargo/env"; fi
       cd '${REPO_ROOT}/quantumflex-ghost-sink'
       cargo build --release
     "

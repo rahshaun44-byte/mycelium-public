@@ -118,7 +118,7 @@ def secure_archive_quantumflex(vault_dir: Path = DEFAULT_VAULT_DIR):
 ### Restoration Instructions
 To restore the entire QuantumFlex stack from this vault:
 ```powershell
-Expand-Archive -Path "{archive_zip_path}" -DestinationPath "C:\\Users\\quant\\.gemini\\antigravity-ide\\scratch\\repos" -Force
+Expand-Archive -Path "{archive_zip_path}" -DestinationPath "C:\\Users\\quant\\mycelium" -Force
 ```
 """, encoding="utf-8")
 

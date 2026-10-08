@@ -14,7 +14,10 @@ RESET="\033[0m"
 echo -e "${BOLD}${CYAN}[*] Running QuantumFlex Hertzbleed & DVFS Preflight Gate...${RESET}"
 
 # 1. Governor Verification
-GOVERNORS=$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | sort -u || true)
+GOVERNORS=""
+if compgen -G "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor" > /dev/null; then
+    GOVERNORS=$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor | sort -u)
+fi
 
 if [[ -z "$GOVERNORS" ]]; then
     echo -e "${YELLOW}[!] Warning: Unable to read cpufreq scaling governors from sysfs.${RESET}"
@@ -30,10 +33,22 @@ else
 fi
 
 # 2. Driver & Frequencies Baseline
-DRIVER=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || echo "unknown")
-CUR_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq 2>/dev/null || echo "0")
-MIN_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 2>/dev/null || echo "0")
-MAX_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2>/dev/null || echo "0")
+DRIVER="unknown"
+CUR_FREQ="0"
+MIN_FREQ="0"
+MAX_FREQ="0"
+if [[ -f "/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver" ]]; then
+    DRIVER=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver)
+fi
+if [[ -f "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq" ]]; then
+    CUR_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq)
+fi
+if [[ -f "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq" ]]; then
+    MIN_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)
+fi
+if [[ -f "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" ]]; then
+    MAX_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)
+fi
 
 echo -e "    CPU Scaling Driver  : ${DRIVER}"
 echo -e "    Baseline Frequencies: cur=${CUR_FREQ} kHz, min=${MIN_FREQ} kHz, max=${MAX_FREQ} kHz"
