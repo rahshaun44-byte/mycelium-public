@@ -61,6 +61,7 @@ def test_membrane_health_wasm_evaluation_compliant(membrane_gate):
     cbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
+        "requested_profile": "agility",
         "metadata": {"timestamp": now},
         "components": [
             {
@@ -82,7 +83,7 @@ def test_membrane_health_wasm_evaluation_compliant(membrane_gate):
         ],
     }
 
-    verdict = membrane_gate.evaluate_verdict(cbom)
+    verdict = membrane_gate.evaluate_verdict(cbom, threat_flags={"ML_KEM_COMPROMISED": False, "FRODOKEM_COMPROMISED": False})
     assert verdict["node_status"] == "COMPLIANT"
     assert verdict["toxic_count"] == 0
     assert verdict["total_components"] == 2
@@ -95,6 +96,7 @@ def test_membrane_health_wasm_evaluation_toxic_threat_flag(membrane_gate):
     cbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
+        "requested_profile": "agility",
         "metadata": {"timestamp": now},
         "components": [
             {
@@ -117,7 +119,7 @@ def test_membrane_health_wasm_evaluation_toxic_threat_flag(membrane_gate):
     }
 
     # Inject threat flag: ML_KEM_COMPROMISED
-    verdict = membrane_gate.evaluate_verdict(cbom, threat_flags={"ML_KEM_COMPROMISED": True})
+    verdict = membrane_gate.evaluate_verdict(cbom, threat_flags={"ML_KEM_COMPROMISED": True, "FRODOKEM_COMPROMISED": False})
     assert verdict["node_status"] == "TOXIC"
     assert verdict["toxic_count"] == 1
     assert verdict["recommended_fallback"] == "FrodoKEM-976-AES"

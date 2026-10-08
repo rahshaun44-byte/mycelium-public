@@ -37,7 +37,8 @@ def test_strict_rejects_non_approved_without_eval_conflict(kem, flags):
 @pytest.mark.parametrize('kem', ['ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024'])
 def test_family_compromise_never_downgrades(kem):
     gate = MembraneHealthWasmGatekeeper()
-    assert gate.evaluate_verdict(cbom(kem))['node_status'] == 'COMPLIANT'
+    clean_flags = {'ML_KEM_COMPROMISED': False, 'FRODOKEM_COMPROMISED': False}
+    assert gate.evaluate_verdict(cbom(kem), clean_flags)['node_status'] == 'COMPLIANT'
     for flags in ({'ML_KEM_COMPROMISED': True}, {'ML_KEM_COMPROMISED': True, 'FRODOKEM_COMPROMISED': True}):
         verdict = gate.evaluate_verdict(cbom(kem), flags)
         assert verdict['node_status'] == 'TOXIC'

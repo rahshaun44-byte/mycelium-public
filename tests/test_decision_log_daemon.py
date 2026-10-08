@@ -25,14 +25,14 @@ def test_server():
     """Spins up a test instance of ThreadedDecisionLogServer on loopback with an ephemeral port."""
     hook_calls = []
 
-    def mock_hook(ip, entry):
+    def recorder_hook(ip, entry):
         hook_calls.append((ip, entry))
 
     server = ThreadedDecisionLogServer(
         ("127.0.0.1", 0),
         dry_run=True,
         shared_secret="test-token-xyz",
-        containment_hook=mock_hook,
+        containment_hook=recorder_hook,
     )
     port = server.server_port
     server_thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -254,14 +254,14 @@ def test_live_enforcement_mode():
     """In live enforcement mode (dry_run=False), the containment hook is executed."""
     hook_calls = []
 
-    def mock_hook(ip, entry):
+    def recorder_hook(ip, entry):
         hook_calls.append((ip, entry))
 
     server = ThreadedDecisionLogServer(
         ("127.0.0.1", 0),
         dry_run=False,
         shared_secret="secret-key",
-        containment_hook=mock_hook,
+        containment_hook=recorder_hook,
     )
     server_thread = threading.Thread(target=server.serve_forever, daemon=True)
     server_thread.start()
