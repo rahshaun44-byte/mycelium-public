@@ -8,7 +8,6 @@ Wraps Open Policy Agent (OPA) on http://127.0.0.1:8181.
 Evaluates:
   - Digital Host Memory Headroom (Host RAM vs Process Claims)
   - Physical TPM 2.0 Hardware NVRAM Anchor (Index 0x1c00010 vs Ledger)
-  - Physical Operational Reserves (FinallyFungus Tank Gallons vs Claims)
 Persists all audit evaluations to PostgreSQL telemetry: invariant_audit_ledger.
 """
 
@@ -201,19 +200,6 @@ def check_tpm_anchor() -> Dict[str, Any]:
     }
 
 
-def check_physical_water(reserve_gal: float, claimed_gal: float, delta_gal: float = 0.0) -> Dict[str, Any]:
-    """Formats physical water tank sensor measurements for FinallyFungus."""
-    return {
-        "domain": "physical",
-        "resource_type": "WATER_GALLONS",
-        "reserve_measured": float(reserve_gal),
-        "units_claimed": float(claimed_gal),
-        "requested_delta": float(delta_gal),
-        "telemetry_timestamp": int(time.time()),
-        "max_staleness_seconds": 60,
-    }
-
-
 def evaluate_invariant(payload: Dict[str, Any], evaluator: str = "invariant_gate") -> Dict[str, Any]:
     """
     Core functional evaluation endpoint.
@@ -244,18 +230,14 @@ def evaluate_invariant(payload: Dict[str, Any], evaluator: str = "invariant_gate
 
 
 def evaluate_all_invariants(evaluator: str = "invariant_gate_all") -> Dict[str, Any]:
-    """Runs a full composite evaluation across Digital RAM, Pluton TPM 2.0, and Physical Water."""
+    """Runs a full composite evaluation across verified hardware (Digital RAM + Pluton TPM 2.0)."""
     mem_payload = check_digital_memory()
     mem_res = evaluate_invariant(mem_payload, evaluator=evaluator)
 
     tpm_payload = check_tpm_anchor()
     tpm_res = evaluate_invariant(tpm_payload, evaluator=evaluator)
 
-    # FinallyFungus 500 gallon reservoir standard baseline (500 gal reserve, 350 gal allocated)
-    water_payload = check_physical_water(500.0, 350.0, 0.0)
-    water_res = evaluate_invariant(water_payload, evaluator=evaluator)
-
-    all_allowed = mem_res["allowed"] and tpm_res["allowed"] and water_res["allowed"]
+    all_allowed = mem_res["allowed"] and tpm_res["allowed"]
     
     return {
         "all_allowed": all_allowed,
@@ -263,8 +245,7 @@ def evaluate_all_invariants(evaluator: str = "invariant_gate_all") -> Dict[str, 
         "timestamp": int(time.time()),
         "evaluations": {
             "digital_memory": mem_res,
-            "tpm_anchor": tpm_res,
-            "physical_water": water_res
+            "tpm_anchor": tpm_res
         }
     }
 
@@ -277,19 +258,13 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # all command
-    subparsers.add_parser("all", help="Evaluate composite invariant (Digital RAM + TPM 2.0 + Physical Water)")
+    subparsers.add_parser("all", help="Evaluate composite hardware invariant (Digital RAM + TPM 2.0)")
 
     # memory command
     subparsers.add_parser("memory", help="Check host memory solvency (R_RAM >= O_USED)")
 
     # tpm command
     subparsers.add_parser("tpm", help="Verify TPM 2.0 NVRAM anchor against sentinel_ledger tip")
-
-    # water command
-    water_p = subparsers.add_parser("water", help="Evaluate FinallyFungus physical water tank solvency")
-    water_p.add_argument("--reserve", type=float, required=True, help="Physical tank reserve measured (gallons)")
-    water_p.add_argument("--claimed", type=float, required=True, help="Outstanding usage claims (gallons)")
-    water_p.add_argument("--delta", type=float, default=0.0, help="Requested redemption/draw (gallons)")
 
     args = parser.parse_args()
 
@@ -316,9 +291,6 @@ def main():
     elif args.command == "tpm":
         payload = check_tpm_anchor()
         title = "Pluton TPM 2.0 Hardware Anchor Invariant"
-    elif args.command == "water":
-        payload = check_physical_water(args.reserve, args.claimed, args.delta)
-        title = "FinallyFungus Water Tank Invariant"
     else:
         sys.exit(1)
 

@@ -4,10 +4,10 @@ import rego.v1
 
 # ═══════════════════════════════════════════════════════════════════
 # QUANTUM FLEX — Universal Reserve Invariant Policy (R >= O)
-# The Physical Imperative: Fail-Secure Solvency & Hardware Anchoring
+# The Hardware Imperative: Fail-Secure Solvency & Hardware Anchoring
 #
 # Enforces the fundamental invariant: R >= O (Reserve >= Obligations)
-# Applicable to both Digital Infrastructure and Physical Operations.
+# Applicable to verified host infrastructure (RAM, Disk) and TPM 2.0 anchors.
 # ═══════════════════════════════════════════════════════════════════
 
 # Default posture is strictly FAIL-CLOSED
@@ -44,7 +44,7 @@ is_anchor_valid if {
 
 # Numeric Invariant Check (R >= O)
 is_numeric_resource if {
-    input.resource_type in {"MEMORY_MB", "DISK_GB", "WATER_GALLONS", "POWER_AMPS", "CRYPTO_RESERVE"}
+    input.resource_type in {"MEMORY_MB", "DISK_GB"}
 }
 
 is_numeric_solvent if {
@@ -86,13 +86,13 @@ reason := "Stale telemetry: measurement age exceeds maximum SLA" if {
 } else := "ANCHOR_DESYNC: Hardware TPM NVRAM tip does not match ledger root hash" if {
     input.resource_type == "DUAL_TPM_ANCHOR"
     not is_anchor_valid
-} else := "INSOLVENT: Outstanding claims exceed measured physical reserve (R < O)" if {
+} else := "INSOLVENT: Outstanding claims exceed measured system reserve (R < O)" if {
     is_numeric_resource
     input.reserve_measured < input.units_claimed
-} else := "EXCEEDS_HEADROOM: Requested transaction would breach physical reserve" if {
+} else := "EXCEEDS_HEADROOM: Requested transaction would breach system reserve" if {
     is_numeric_resource
     input.reserve_measured >= input.units_claimed
     not is_numeric_solvent
-} else := "Invariant holds: physical reserve strictly covers obligations (R >= O)" if {
+} else := "Invariant holds: system reserve strictly covers obligations (R >= O)" if {
     allow
 } else := "Denied by fail-secure invariant default"
