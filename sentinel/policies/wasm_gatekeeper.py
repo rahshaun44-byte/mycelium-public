@@ -183,14 +183,21 @@ class ReserveInvariantWasmGatekeeper:
         self.engine = OPAWasmEngine(target_path)
         self.ep_invariant = self.engine.entrypoints.get("quantumflex/invariant", 0)
 
-    def evaluate_invariant(self, payload: Dict[str, Any]) -> Tuple[bool, str, str]:
+    def evaluate_invariant(self, payload: Dict[str, Any], use_domain_verdict: bool = False) -> Tuple[bool, str, str]:
+        res = self.evaluate_result(payload)
+        allow = res.get("allow", False)
+        if use_domain_verdict:
+            verdict = res.get("domain_verdict", res.get("verdict", "DENY"))
+        else:
+            verdict = res.get("verdict", "DENY")
+        reason = res.get("reason", "Invariant evaluation failed")
+        return allow, verdict, reason
+
+    def evaluate_result(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         res = self.engine.evaluate(input_data=payload, data={}, entrypoint_id=self.ep_invariant)
         if isinstance(res, dict):
-            allow = res.get("allow", False)
-            verdict = res.get("verdict", "DENY")
-            reason = res.get("reason", "Invariant evaluation failed")
-            return allow, verdict, reason
-        return False, "DENY", "Invalid evaluation payload"
+            return res
+        return {"allow": False, "verdict": "DENY", "domain_verdict": "DENY", "reason": "Invalid evaluation payload"}
 
 
 _MEMBRANE_GATEKEEPER: Optional[MembraneHealthWasmGatekeeper] = None
