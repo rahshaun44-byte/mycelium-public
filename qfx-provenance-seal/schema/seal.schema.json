@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QuantumFlexProvenanceSeal",
+  "type": "object",
+  "required": [
+    "seal_version",
+    "node_id",
+    "content_sha256",
+    "policy_epoch",
+    "kem_suite",
+    "ts_unix",
+    "nonce",
+    "alg",
+    "sig"
+  ],
+  "properties": {
+    "seal_version": { "type": "string", "const": "1.0.0" },
+    "node_id": { "type": "string", "minLength": 1 },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "policy_epoch": { "type": "string", "minLength": 1 },
+    "kem_suite": {
+      "type": "string",
+      "enum": ["ML-KEM-768", "ML-KEM-1024", "FrodoKEM-976-AES", "FrodoKEM-1344-AES", "X25519"]
+    },
+    "ts_unix": { "type": "integer" },
+    "nonce": { "type": "string", "minLength": 16 },
+    "alg": { "type": "string", "enum": ["HMAC-SHA256", "Ed25519", "ML-DSA-65"] },
+    "sig": { "type": "string", "minLength": 32 }
+  },
+  "additionalProperties": false
+}
