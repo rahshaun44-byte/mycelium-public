@@ -123,9 +123,10 @@ def _get_db_conn():
 # ── Data helpers ──────────────────────────────────────────────────────────────
 def get_sentinel_drive(limit: int = 1) -> dict:
     """Pulls the latest Euclidean Drive telemetry from sentinel_ledger."""
+    _DB_OFFLINE = {"drive_score": None, "status": "ERROR_DB_OFFLINE", "cpu_usage": None, "mem_usage": None, "io_wait": None, "hash_penalty": None}
     conn = _get_db_conn()
     if not conn:
-        return {"drive_score": 0.0, "status": "OPTIMAL", "cpu_usage": 0.0, "mem_usage": 0.0, "io_wait": 0.0, "hash_penalty": 0}
+        return _DB_OFFLINE
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT * FROM sentinel_ledger ORDER BY id DESC LIMIT %s", (limit,))
@@ -134,9 +135,9 @@ def get_sentinel_drive(limit: int = 1) -> dict:
         conn.close()
         if row:
             return dict(row)
-        return {"drive_score": 0.0, "status": "OPTIMAL", "cpu_usage": 0.0, "mem_usage": 0.0, "io_wait": 0.0, "hash_penalty": 0}
+        return {"drive_score": 0.0, "status": "NO_DATA", "cpu_usage": 0.0, "mem_usage": 0.0, "io_wait": 0.0, "hash_penalty": 0}
     except Exception:
-        return {"drive_score": 0.0, "status": "OPTIMAL", "cpu_usage": 0.0, "mem_usage": 0.0, "io_wait": 0.0, "hash_penalty": 0}
+        return _DB_OFFLINE
 
 
 def get_sentinel_history(limit: int = 10) -> list:
@@ -157,18 +158,19 @@ def get_sentinel_history(limit: int = 10) -> list:
 
 def get_integrity_status() -> dict:
     """Reads the integrity_registry for cryptographic baseline status."""
+    _DB_OFFLINE = {"node_id": "quantum-core", "lockout_status": None, "status": "ERROR_DB_OFFLINE"}
     conn = _get_db_conn()
     if not conn:
-        return {"node_id": "quantum-core", "lockout_status": False}
+        return _DB_OFFLINE
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT * FROM integrity_registry LIMIT 1")
         row = cur.fetchone()
         cur.close()
         conn.close()
-        return dict(row) if row else {"node_id": "quantum-core", "lockout_status": False}
+        return dict(row) if row else {"node_id": "quantum-core", "lockout_status": None, "status": "NO_REGISTRY_ENTRY"}
     except Exception:
-        return {"node_id": "quantum-core", "lockout_status": False}
+        return _DB_OFFLINE
 
 
 def get_pg_history(limit: int = 10) -> list:
