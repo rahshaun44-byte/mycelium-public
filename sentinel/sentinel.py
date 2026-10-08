@@ -263,7 +263,9 @@ def log_to_truth_bus(conn, drive, ram, cpu, io, hash_penalty):
         sconn.close()
         
         # Anchor committed ledger block into Pluton TPM
-        anchor_to_hardware_tpm(block_hash)
+        anchored = anchor_to_hardware_tpm(block_hash)
+        if not anchored:
+            print(f"[SENTINEL] CRITICAL: Ledger block {block_hash[:16]}... committed but TPM anchor FAILED. State is UNANCHORED.")
     except Exception as e:
         print(f"[SENTINEL] Failed to commit to sentinel_ledger: {e}")
 
@@ -478,8 +480,6 @@ def enforce_homeostasis():
         if not recovered:
             print(f"[{ts}] Lockout persists. Skipping telemetry cycle.")
             return
-
-    simulate_high_frequency_signing(12000)
 
     ram, cpu, io, current_hash = get_current_telemetry()
 
