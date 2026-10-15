@@ -13,7 +13,8 @@ def test_http_get(host, port, path, desc):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.0)
         s.connect((host, port))
-        request = f"GET {path} HTTP/1.1\r\nHost: {host}:{port}\r\nUser-Agent: Tester\r\nConnection: close\r\n\r\n"
+        host_header = "127.0.0.1" if port == 9000 else host
+        request = f"GET {path} HTTP/1.1\r\nHost: {host_header}:{port}\r\nUser-Agent: Tester\r\nConnection: close\r\n\r\n"
         s.sendall(request.encode())
         data = s.recv(1024).decode(errors="replace")
         s.close()

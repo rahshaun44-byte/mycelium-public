@@ -8,6 +8,7 @@ __pycache__/
 dist/
 build/
 build_check/
+build_recovery_check/
 
 # Keys and Certificates
 *.key

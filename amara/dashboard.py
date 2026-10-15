@@ -1170,7 +1170,8 @@ async def index():
   setTimeout(() => location.reload(), 30000);
 
   // ── WebSocket State Reconciliation (The UI Pulse) ──
-  const ws = new WebSocket(`ws://${{window.location.host}}/ws`);
+  const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const ws = new WebSocket(`${wsProto}://${{window.location.host}}/ws`);
   
   ws.onmessage = function(event) {{
       const data = JSON.parse(event.data);

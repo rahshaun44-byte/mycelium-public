@@ -272,6 +272,7 @@ STATUS             : {hs_data['posture']}"""
     async def _dispatch_single_bot(self, bot, user_text: str) -> Dict[str, Any]:
         """Direct query to a specific unit with verified context."""
         context = ""
+        response_text = None
 
         if bot.callsign == "sentinel":
             try:
@@ -287,14 +288,14 @@ STATUS             : {hs_data['posture']}"""
             context = f"Verified Live Mesh Telemetry:\n{json.dumps(mesh_data, indent=2)}"
 
         elif bot.callsign == "athena":
-            vec_res = self.athena.query_vector_store(user_text, top_k=3)
-            chunks = [f"Source: {c['source']}\n{c['content']}" for c in vec_res.get("chunks", [])]
-            context = "\n---\n".join(chunks)
+            vec_res = await asyncio.to_thread(self.athena.query_vector_store, user_text, top_k=3)
+            response_text = vec_res.get("answer") or "ATHENA retrieval unavailable; no grounded answer was produced."
 
         elif bot.callsign == "aria":
             context = f"Sovereign Swarm Roster:\n4 Active Agents (MYCELIA, SENTINEL, ARIA, ATHENA)"
 
-        response_text = await bot.generate_response(user_text, context=context)
+        if response_text is None:
+            response_text = await bot.generate_response(user_text, context=context)
 
         bot_msg = {
             "id": str(uuid.uuid4()),

@@ -101,23 +101,30 @@ python3 scripts/qf_ipc_client.py \
   --ca ~/.local/share/quantum-flex-mycelium/mtls/ca.crt \
   --line "STATUS"
 ```
-*Expected Output:* `ERR|NODE_LOCKED`. The engine is sealed, holding genesis in memory, awaiting Shamir quorum.
+*Expected Output:* `ERR|NODE_LOCKED`. The existing ledger is suspended in memory, awaiting its matching Shamir quorum. The client returns exit code 1 for this expected locked-state response; this is not an unlock failure.
 
 ### Step 3: Unsealing Ceremony (Transition to ACTIVE)
+**Current hold (2026-10-14):** Three complete shares exposed in a conversation authenticate the existing ledger. The recovery helper is locally held against live unlock. Keep the engine LOCKED while using non-secret personal research and read-only monitoring. Offline checking remains available. Do not clear the hold or reuse this authority until a reviewed migration to a new authority is completed; the disabled rotation script does not implement that migration.
+
 When you are ready to promote the engine from `LOCKED` to `ACTIVE`:
 ```bash
-# Provide 3 valid shards (threshold k=3, n=5)
-# Shard 1 resides on disk (~/qfx-shards/shard_1.txt)
-# Shard 2 is brought in from S23 FE Vault (e.g. /tmp/shard_2.txt via offline QR)
-# Shard 3 is transcribed from physical paper custody (e.g. /tmp/shard_3.txt)
+# Encrypted custody: privately enter both passwords in your terminal.
+# This verifies the existing ledger offline and does not contact the engine.
+./venv/bin/python3 tools/qf_recovery.py --check
 
-SHARD_FILES="$HOME/qfx-shards/shard_1.txt,/tmp/shard_2.txt,/tmp/shard_3.txt" \
-  ./scripts/unlock_engine.sh
-
-# Immediately wipe temporary shards 2 & 3 from disk
-shred -u -z -n 3 /tmp/shard_2.txt /tmp/shard_3.txt
+# Future use only: MATCH plus a reviewed new-authority migration and hold release.
+# Currently refused by the exposure hold; do not run to bypass it.
+./venv/bin/python3 tools/qf_recovery.py --unlock
 ```
-*Verification:* The engine logs `[+] Node Unlocked. Superposition collapsed into ACTIVE state.` in under 5 ms.
+The tool reads the encrypted USB vault and local encrypted share into process memory without extracting plaintext files. Passwords are hidden and are never command arguments. `MISMATCH` or a validation error stops before IPC. Do not guess generations, use plaintext `/tmp` extraction, or fall back to a local steganographic image.
+
+Live unlock requires a match, an unchanged ledger bound to the running local engine, the supported empty legacy evidence root, a confirmed `LOCKED` response, and the exact `ACK|NODE_UNLOCKED` acknowledgement. It does not establish deployed binary provenance or overall alpha readiness. Python/TLS memory erasure is not guaranteed. For three existing plaintext share files, `scripts/unlock_engine.sh` delegates to the same offline check rather than sending shares unchecked.
+
+### Step 4: Shut Down Engine
+When testing or operations conclude, cleanly stop the engine so it does not run unmonitored:
+```bash
+systemctl --user stop quantum-flex-engine-mycelium.service
+```
 
 ---
 
@@ -128,10 +135,9 @@ shred -u -z -n 3 /tmp/shard_2.txt /tmp/shard_3.txt
 - **Why `scripts/package_alpha_node.py` was removed:** The script attempted to package keys into ZIP archives, directly violating the zero-key shipping invariant.
 
 ### Invariant 2: Shard Custody Matrix
-- **Shard 1:** Kept on host disk at `~/qfx-shards/shard_1.txt` (`chmod 600`).
-- **Shard 2:** Stored in the offline Knox Vault / secure storage of the Samsung S23 FE. Transferred strictly via offline animated QR code—**never** over Taildrop, cloud sync, or chat.
-- **Shards 3, 4, and 5:** Written by hand onto archival physical paper cards and stored in $\ge 2$ geographically distinct, secure physical locations.
-- **Disk Posture:** Shards 2 through 5 must never remain on the Yoga 7i's disk.
+- **Current recovery:** One encrypted local share and the encrypted USB vault are available. The operator holds both passwords. Matching the files to the current ledger remains a private terminal check; a filename or date alone does not establish their generation.
+- **Target custody:** Retain only one share on the host and keep the remaining shares in separate offline locations. Do not paste values or passwords into chat or copy decrypted shares to the host SSD.
+- **Custody issue:** A local image contains the expected steganographic marker. If it holds two matching shares, it conflicts with the target distribution. Preserve existing recovery material until a matching quorum is established, then plan verified custody remediation. Hiding shares in image pixels does not encrypt them.
 
 ### Invariant 3: Single-Thread Synchronous IPC Constraint
 - The engine's ingestion loop in `src/main.cpp` executes `server.process_single_connection()` synchronously.

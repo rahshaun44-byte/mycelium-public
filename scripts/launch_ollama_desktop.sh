@@ -20,13 +20,13 @@ echo -e "${BOLD}${CYAN}═══════════════════
 
 # 1. Check Ollama System Service
 echo -ne "  [1/4] Checking Ollama Daemon (:11434)... "
-if ! curl -s -m 2 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+if ! curl -fsS -m 2 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
     echo -e "${YELLOW}Starting system service...${RESET}"
     sudo systemctl start ollama 2>/dev/null || systemctl start ollama 2>/dev/null || true
     sleep 1
 fi
 
-if curl -s -m 2 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+if curl -fsS -m 2 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
     echo -e "${GREEN}ONLINE${RESET}"
 else
     echo -e "${RED}FAILED${RESET}"
@@ -47,18 +47,19 @@ else
     echo -e "${GREEN}VERIFIED (127.0.0.1 ONLY)${RESET}"
 fi
 
-# 3. Check QF-Bot Cockpit Server (:9000)
-echo -ne "  [3/4] Checking QuantumFlex Cockpit Service (:9000)... "
-if ! curl -s -m 2 http://127.0.0.1:9000/api/status > /dev/null 2>&1; then
+# 3. Check QF-Bot Cockpit Server (:9001)
+echo -ne "  [3/4] Checking QuantumFlex Cockpit Service (:9001)... "
+if ! curl -fsS -m 2 http://127.0.0.1:9001/api/status > /dev/null 2>&1; then
     echo -ne "${YELLOW}Starting user service... ${RESET}"
     systemctl --user start qf-bot.service 2>/dev/null || true
     sleep 1
 fi
 
-if curl -s -m 2 http://127.0.0.1:9000/api/status > /dev/null 2>&1; then
+if curl -fsS -m 2 http://127.0.0.1:9001/api/status > /dev/null 2>&1; then
     echo -e "${GREEN}ONLINE${RESET}"
 else
-    echo -e "${YELLOW}STARTING IN-PROCESS...${RESET}"
+    echo -e "${RED}FAILED: cockpit service is unavailable.${RESET}"
+    exit 1
 fi
 
 # 4. Launch Desktop Studio
@@ -70,7 +71,7 @@ mkdir -p "${PROFILE_DIR}"
 if [ -n "${CHROME_BIN}" ]; then
     # Launch in standalone application mode (no address bar, feels like native app)
     "${CHROME_BIN}" \
-        --app="http://127.0.0.1:9000" \
+        --app="http://127.0.0.1:9001" \
         --user-data-dir="${PROFILE_DIR}" \
         --class="QuantumFlexNeuralStudio" \
         --name="QuantumFlex Neural Studio" \
@@ -79,7 +80,7 @@ if [ -n "${CHROME_BIN}" ]; then
     echo -e "  ${GREEN}[+] Desktop Studio launched via Chrome App Mode.${RESET}"
 else
     # Fallback to default browser
-    xdg-open "http://127.0.0.1:9000" > /dev/null 2>&1 &
+    xdg-open "http://127.0.0.1:9001" > /dev/null 2>&1 &
     disown
     echo -e "  ${GREEN}[+] Desktop Studio opened in default browser.${RESET}"
 fi

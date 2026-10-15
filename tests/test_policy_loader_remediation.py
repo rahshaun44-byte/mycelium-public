@@ -27,7 +27,7 @@ from pathlib import Path
 import pytest
 
 # Ensure qf repository is accessible for policy_engine tests
-QF_DIR = Path("/home/quant/Documents/qf")
+QF_DIR = Path("/home/quant/quantumflex/qf")
 if str(QF_DIR) not in sys.path:
     sys.path.insert(0, str(QF_DIR))
 
@@ -329,6 +329,11 @@ def test_scenario_14_database_offline_fails_closed(monkeypatch):
 def test_scenario_15_pcr_extension_failure_fails_closed(monkeypatch, tmp_path):
     """Failure to extend Pluton TPM PCR 15 must raise RuntimeError and prevent completion."""
     import qflex_quantum
+    from ledger import EvidenceLedger
+
+    # Keep the run out of the real evidence ledger.
+    test_ledger = tmp_path / "ledger.jsonl"
+    monkeypatch.setattr(qflex_quantum, "EvidenceLedger", lambda: EvidenceLedger(filepath=test_ledger))
 
     orig_run = subprocess.run
 

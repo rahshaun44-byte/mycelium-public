@@ -327,7 +327,7 @@ async def run_invariant_audit():
         return {"error": str(e), "verdict": "ERROR"}
 
 @app.post("/api/athena/query")
-async def athena_query_endpoint(req: AthenaQueryRequest):
+def athena_query_endpoint(req: AthenaQueryRequest):
     """Queries Athena cognitive memory vector vault on behalf of the mobile operator."""
     import urllib.request
     try:
@@ -338,12 +338,15 @@ async def athena_query_endpoint(req: AthenaQueryRequest):
             "mode": "tactical"
         }).encode("utf-8")
         hreq = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(hreq, timeout=25.0) as resp:
+        # Run blocking local inference in FastAPI's worker pool. The proxy budget
+        # covers the embedding (30 s) and generation (90 s) upstream limits.
+        with urllib.request.urlopen(hreq, timeout=150.0) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data
     except Exception as e:
         return {
             "answer": f"Athena query failed: {str(e)}",
+            "answer_verified": False, "retrieval_status": "ERROR",
             "sources": [],
             "error": str(e)
         }

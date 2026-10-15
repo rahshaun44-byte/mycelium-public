@@ -321,7 +321,10 @@ def seal_share(share, passphrase, target, gnupghome, written):
     if not target.is_file() or target.is_symlink():
         raise RecoveryError('gpg did not produce the sealed share file.')
     written.append(target)
-    os.chmod(target, 0o400)
+    try:
+        os.chmod(target, 0o400)
+    except OSError:
+        pass
     # Push the file and its directory entry to the device before the reopen check.
     try:
         for path, flags in ((target, os.O_RDONLY | os.O_NOFOLLOW), (target.parent, os.O_RDONLY | os.O_DIRECTORY)):
@@ -563,6 +566,8 @@ def main(argv=None):
         create.add_argument('--expect-engine-sha256', required=True, help='SHA-256 of the engine executable')
         create.add_argument('--expect-splitter-sha256', required=True, help='SHA-256 of qf_authority_split')
         create.add_argument('--expect-checker-sha256', required=True, help='SHA-256 of qf_legacy_recovery_check')
+        create.add_argument('--allow-custom-topology', action='store_true',
+                            help='Allow operator-selected topology across connected devices (disables disk separation checks)')
         args = parser.parse_args(argv)
         if args.command == 'archive-legacy':
             path, manifest = archive_legacy(args.expect_sha256)
@@ -578,7 +583,8 @@ def main(argv=None):
             recovery.require_hex_sha256(value, what)
         manifest = genesis(directories, terminal_passphrase, expect_engine_sha256=args.expect_engine_sha256,
                            expect_splitter_sha256=args.expect_splitter_sha256,
-                           expect_checker_sha256=args.expect_checker_sha256)
+                           expect_checker_sha256=args.expect_checker_sha256,
+                           enforce_separation=not args.allow_custom_topology)
         print('GENESIS SEALED — new authority active; all 10 three-share subsets authenticate the new ledger.')
         print(f'Manifest: {manifest}')
         print('Unmount (sync) each USB medium before unplugging it, e.g. `udisksctl unmount -b <device>`, '

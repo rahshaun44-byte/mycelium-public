@@ -37,7 +37,7 @@ class BaseTeammate:
         self.callsign = callsign
         self.role = role
         self.avatar = avatar
-        self.model = model
+        self.model = os.environ.get("QF_BOT_MODEL", model)
         self.system_prompt = system_prompt
 
     async def generate_response(self, user_query: str, context: Optional[str] = None) -> str:
@@ -55,9 +55,9 @@ class BaseTeammate:
                 )
                 if r.status_code == 200:
                     return r.json().get("response", "").strip()
-                return f"[{self.callsign.upper()} Response] System in equilibrium. Operational context verified."
+                return f"[{self.callsign.upper()}] Local inference unavailable (HTTP {r.status_code})."
         except Exception:
-            return f"[{self.callsign.upper()} Response] Telemetry verified. System running in sovereign equilibrium."
+            return f"[{self.callsign.upper()}] Local inference unavailable; check the Ollama service and configured model."
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -215,7 +215,7 @@ You synthesize architectural specifications, query neural vector stores on loopb
 
     def query_vector_store(self, query: str, top_k: int = 3) -> Dict[str, Any]:
         try:
-            r = httpx.post(f"{ATHENA_URL}/query", json={"question": query}, timeout=10.0)
+            r = httpx.post(f"{ATHENA_URL}/query", json={"question": query, "top_k": top_k}, timeout=120.0)
             if r.status_code == 200:
                 data = r.json()
                 return {"count": len(data.get("sources", [])), "chunks": data.get("sources", []), "answer": data.get("answer", "")}

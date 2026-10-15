@@ -11,10 +11,11 @@ Academic Integrity:
   • Local-only: no internet, no cloud API calls, no logging to 3rd parties.
 
 Usage:
-  python3 study_tutor.py                    # Interactive menu
-  python3 study_tutor.py quiz "topic"       # Start quiz on topic
-  python3 study_tutor.py explain "concept"  # Explain a concept
-  python3 study_tutor.py drill "topic"      # Rapid-fire drill mode
+  qf-study                                  # Interactive menu
+  qf-study quiz "topic"                     # Start quiz on topic
+  qf-study explain "concept"                # Explain a concept
+  qf-study drill "topic"                    # Rapid-fire drill mode (gemma3:4b)
+  qf-study review <file>                    # Socratic code review & JUnit test coach
 """
 
 import os
@@ -24,6 +25,7 @@ import time
 import readline
 import urllib.request
 import urllib.error
+from pathlib import Path
 from typing import Optional
 
 # ─── ANSI Colors ───────────────────────────────────────────────────
@@ -40,9 +42,9 @@ WHITE  = "\033[97m"
 
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
-# Best model for study: 7b for depth, 1.5b for speed
+# Aligned with Yoga 7 installed Ollama models (qwen2.5-coder:7b for depth, gemma3:4b for speed)
 STUDY_MODEL = os.environ.get("STUDY_MODEL", "qwen2.5-coder:7b")
-FAST_MODEL  = os.environ.get("FAST_MODEL",  "gemma2:2b")
+FAST_MODEL  = os.environ.get("FAST_MODEL",  "gemma3:4b")
 
 # ─── System personas ───────────────────────────────────────────────
 TUTOR_SYSTEM = """You are a brilliant, direct academic tutor. Your style:
@@ -245,6 +247,35 @@ def mode_chat(topic: Optional[str] = None):
         history.append({"role": "assistant", "content": response})
 
 
+def mode_review(filepath: str):
+    """Socratic coursework code review (Academic Integrity Safe — never rewrites the file for copy-paste)."""
+    p = Path(filepath).expanduser().resolve()
+    if not p.is_file():
+        print(f"{RED}[!] File not found: {p}{RESET}")
+        sys.exit(1)
+    snippet = p.read_text(encoding="utf-8", errors="replace")[:16000]
+    print(f"\n{GREEN}🔍 Socratic Code & Test Coach: {BOLD}{p.name}{RESET}")
+    print_integrity_notice()
+    prompt = (
+        f"Review this student coursework file ({p.name}) as a Socratic CS tutor:\n"
+        f"1. State what the code currently does well.\n"
+        f"2. Point out any missing boundary checks, null/empty/length validations, or missing JUnit 5 test cases (without writing copy-paste code for the student).\n"
+        f"3. Ask me ONE question to verify I can explain how this code works in my own words.\n\n"
+        f"```java\n{snippet}\n```"
+    )
+    history = [{"role": "user", "content": prompt}]
+    while True:
+        response = stream_ollama(STUDY_MODEL, history, TUTOR_SYSTEM)
+        history.append({"role": "assistant", "content": response})
+        user_input = input(f"{BOLD}{WHITE}You (or 'quit') → {RESET}").strip()
+        if user_input.lower() in ("quit", "exit", "q", "stop"):
+            print(f"\n{GREEN}Review complete. You own this code.{RESET}")
+            break
+        if not user_input:
+            continue
+        history.append({"role": "user", "content": user_input})
+
+
 def interactive_menu():
     """Interactive mode selection menu."""
     banner()
@@ -263,10 +294,12 @@ def interactive_menu():
     print(f"""{BOLD}SELECT A MODE:{RESET}
   {CYAN}[1]{RESET} 💬  Study Chat      — Ask anything, get clear explanations
   {CYAN}[2]{RESET} 🧪  Quiz Me         — Socratic Q&A, one question at a time
-  {CYAN}[3]{RESET} ⚡  Rapid Drill     — Fast-fire memorization mode
+  {CYAN}[3]{RESET} ⚡  Rapid Drill     — Fast-fire memorization mode ({FAST_MODEL})
   {CYAN}[4]{RESET} 📖  Explain Concept — Deep dive on a single topic
-  {YELLOW}[5]{RESET} 🎓  Study CS 320    — Software Testing & QA
-  {YELLOW}[6]{RESET} 🎓  Study CS 210    — Programming Languages
+  {YELLOW}[5]{RESET} 🎓  Study CS 320    — Software Testing, JUnit 5 & QA (Appointment/Contact/Task)
+  {YELLOW}[6]{RESET} 🎓  Study CS 210    — Programming Languages (C++, Java, Python)
+  {MAGENTA}[7]{RESET} 🛡️  Study PQC & Sec — Post-Quantum Crypto (ML-KEM, GAUGE, Least-Privilege DB Walls)
+  {GREEN}[8]{RESET} 🔍  Review My Code  — Socratic coach on a coursework file (no copy-paste)
   {CYAN}[q]{RESET} 🚪  Quit
 """)
 
@@ -299,13 +332,25 @@ def interactive_menu():
 
     elif choice == "5":
         print(f"\n{GREEN}Loading CS 320: Software Testing, Automation, and Quality Assurance...{RESET}")
-        topic = "CS 320 Software Testing, JUnit 5, continuous integration, dynamic and static testing, test strategies, and SDLC"
+        topic = "CS 320 Software Testing, JUnit 5 assertions (assertThrows, assertEquals), boundary value analysis, equivalence partitioning, Contact/Task/Appointment service validation, and SDLC"
         mode_quiz(topic)
 
     elif choice == "6":
         print(f"\n{GREEN}Loading CS 210: Programming Languages...{RESET}")
-        topic = "CS 210 Programming Languages, C++, Java, Python syntax comparison, secure coding practices, and file operations"
+        topic = "CS 210 Programming Languages, C++, Java, Python syntax comparison, memory safety, secure coding practices, and file operations"
         mode_quiz(topic)
+
+    elif choice == "7":
+        print(f"\n{MAGENTA}Loading Post-Quantum Cryptography & Zero-Trust Systems...{RESET}")
+        topic = "NIST PQC standards (FIPS 203 ML-KEM, FIPS 204 ML-DSA), hybrid X25519 + ML-KEM-768 handshakes, adversary cost models (GAUGE), and PostgreSQL least-privilege role containment"
+        mode_quiz(topic)
+
+    elif choice == "8":
+        fpath = input(f"{BOLD}Path to your coursework file (e.g. ~/Documents/CS320/...) → {RESET}").strip()
+        if fpath:
+            mode_review(fpath)
+        else:
+            print(f"{RED}Need a file path.{RESET}")
 
     elif choice in ("q", "quit", "exit"):
         print(f"\n{GREEN}Degree doesn't fail itself. Keep going.{RESET}\n")
@@ -330,9 +375,26 @@ if __name__ == "__main__":
     elif args[0] == "explain" and len(args) > 1:
         banner()
         mode_explain(" ".join(args[1:]))
+    elif args[0] == "review" and len(args) > 1:
+        banner()
+        mode_review(args[1])
+    elif args[0] == "preflight":
+        from bot import inspect_cs320_workspace
+        data = inspect_cs320_workspace()
+        print(f"\n{BOLD}{CYAN}=== 1. PROF. ANTOUN EMAIL / SUBMISSION RULES ==={RESET}\n{data['email_text']}")
+        print(f"\n{BOLD}{CYAN}=== 2. CS 320 WORKSPACE FILES ==={RESET}")
+        for f in data["files_found"]:
+            print(f"  • {f}")
+        print(f"\n{BOLD}{CYAN}=== 3. ZIP ARCHIVE CONTENTS ==={RESET}")
+        for zname, zfiles in data["zip_inventories"].items():
+            print(f"  [{zname}] -> {len(zfiles)} entries: {', '.join(zfiles[:10])}")
+        print(f"\n{BOLD}{CYAN}=== 4. CODE OWNERSHIP & SIMPLICITY AUDIT ==={RESET}")
+        for sc in data["style_checks"]:
+            print(f"  • {sc['file']} ({sc['lines']} lines): {'; '.join(sc['flags'])}")
+        print(f"\n{BOLD}{CYAN}=== 5. MAVEN TEST STATUS ==={RESET}\n{data['maven_summary']}\n")
     elif args[0] == "chat":
         banner()
         mode_chat(" ".join(args[1:]) if len(args) > 1 else None)
     else:
-        print(f"{RED}Usage: python3 study_tutor.py [quiz|drill|explain|chat] <topic>{RESET}")
+        print(f"{RED}Usage: qf-study [preflight|quiz|drill|explain|review|chat] [topic_or_file]{RESET}")
         sys.exit(1)
