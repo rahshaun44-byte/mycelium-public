@@ -8,14 +8,39 @@ import hashlib
 import hmac
 import os
 import urllib.request
+from pathlib import Path
 from typing import Dict, Any, Optional
 
-CIRCLE_API_BASE = os.environ.get("CIRCLE_API_BASE", "https://api.circle.com/v1/w3s")
-CIRCLE_API_KEY = os.environ.get("CIRCLE_API_KEY", "")
+CONFIG_FILE = Path.home() / ".config" / "qf" / "circle.env"
+
+def _load_circle_config():
+    key = os.environ.get("CIRCLE_API_KEY")
+    base = os.environ.get("CIRCLE_API_BASE")
+    wallet = os.environ.get("CIRCLE_WALLET_ID")
+    if CONFIG_FILE.exists():
+        try:
+            for line in CONFIG_FILE.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k, v = k.strip(), v.strip().strip("\"'")
+                    if k == "CIRCLE_API_KEY" and not key: key = v
+                    elif k == "CIRCLE_API_BASE" and not base: base = v
+                    elif k == "CIRCLE_WALLET_ID" and not wallet: wallet = v
+        except Exception:
+            pass
+    return (
+        key or "",
+        base or "https://api.circle.com/v1/w3s",
+        wallet or "mock-vault-wallet-id"
+    )
+
+CIRCLE_API_KEY, CIRCLE_API_BASE, DEFAULT_WALLET_ID = _load_circle_config()
 
 class QuantumFlexUSDCSettler:
-    def __init__(self, wallet_id: Optional[str] = None):
-        self.wallet_id = wallet_id or os.environ.get("CIRCLE_WALLET_ID", "mock-vault-wallet-id")
+    def __init__(self, wallet_id: Optional[str] = None, live: bool = False):
+        self.wallet_id = wallet_id or DEFAULT_WALLET_ID
+        self.live = live
 
     @staticmethod
     def verify_quantum_proof(proof: Dict[str, Any]) -> bool:
@@ -69,14 +94,15 @@ class QuantumFlexUSDCSettler:
             "tokenAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" # USDC on Polygon / Base / Arbitrum
         }
 
-        # If live API key is present, submit to Circle API, else return verified mock attestation
-        if CIRCLE_API_KEY:
+        # If live execution is enabled and live API key is present, submit to Circle API
+        if self.live and CIRCLE_API_KEY:
             req = urllib.request.Request(
                 f"{CIRCLE_API_BASE}/developer/transactions/transfer",
                 data=json.dumps(payload).encode("utf-8"),
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {CIRCLE_API_KEY}"
+                    "Authorization": f"Bearer {CIRCLE_API_KEY}",
+                    "User-Agent": "QuantumFlex-Settler/1.0 (Linux; x86_64)"
                 }
             )
             try:
