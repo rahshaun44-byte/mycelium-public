@@ -458,46 +458,69 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
     print(f"     Setting 5 (YYX) : <Y0 Y1 X2>        = {exp_yyx:+.4f} (Ideal: -1.0000)")
 
     # Complete State Fidelity and Witness Calculation
-    # Fidelity: F = 1/8 * (1 + <Z0 Z1> + <Z1 Z2> + <Z0 Z2> + <X0 X1 X2> - <X0 Y1 Y2> - <Y0 X1 Y2> - <Y0 Y1 X2>)
-    fidelity = (1.0 + exp_z0z1 + exp_z1z2 + exp_z0z2 + exp_xxx - exp_xyy - exp_yxy - exp_yyx) / 8.0
+    # Joint covariance calculation for shared Z-basis data:
+    # Let U_s = Z0Z1(s) + Z1Z2(s) + Z0Z2(s) for each measured bitstring s.
+    # The sample mean is <U> = <Z0 Z1> + <Z1 Z2> + <Z0 Z2>.
+    # The sample variance of <U> accounts for the exact covariance between the three correlated terms:
+    mean_U = exp_z0z1 + exp_z1z2 + exp_z0z2
+    mean_U_sq = 0.0
+    for s, cnt in counts_zzz.items():
+        u1 = +1 if (int(s[2]) + int(s[1])) % 2 == 0 else -1
+        u2 = +1 if (int(s[1]) + int(s[0])) % 2 == 0 else -1
+        u3 = +1 if (int(s[2]) + int(s[0])) % 2 == 0 else -1
+        u_val = u1 + u2 + u3
+        mean_U_sq += (cnt / total_zzz) * (u_val ** 2)
+
+    var_U_shot = max(0.0, mean_U_sq - (mean_U ** 2))
+    var_mean_U = var_U_shot / total_zzz
+
+    # Fidelity: F = 1/8 * (1 + <U> + <XXX> - <XYY> - <YXY> - <YYX>)
+    fidelity = (1.0 + mean_U + exp_xxx - exp_xyy - exp_yxy - exp_yyx) / 8.0
     witness_exp = 0.5 - fidelity
 
-    # Statistical variance & standard error
-    var_terms = [
-        (1.0 - exp_z0z1 ** 2) / total_zzz,
-        (1.0 - exp_z1z2 ** 2) / total_zzz,
-        (1.0 - exp_z0z2 ** 2) / total_zzz,
-        (1.0 - exp_xxx ** 2) / total_xxx,
-        (1.0 - exp_xyy ** 2) / total_xyy,
-        (1.0 - exp_yxy ** 2) / total_yxy,
-        (1.0 - exp_yyx ** 2) / total_yyx,
-    ]
-    sigma_fidelity = (1.0 / 8.0) * math.sqrt(sum(var_terms))
+    # Independent variance terms for the remaining 4 physical circuit settings
+    var_xxx = max(0.0, 1.0 - exp_xxx ** 2) / total_xxx
+    var_xyy = max(0.0, 1.0 - exp_xyy ** 2) / total_xyy
+    var_yxy = max(0.0, 1.0 - exp_yxy ** 2) / total_yxy
+    var_yyx = max(0.0, 1.0 - exp_yyx ** 2) / total_yyx
+
+    # Total variance of F accounting for joint Z covariance and independent settings:
+    var_fidelity = (1.0 / 64.0) * (var_mean_U + var_xxx + var_xyy + var_yxy + var_yyx)
+    sigma_fidelity = math.sqrt(var_fidelity)
     sigma_witness = sigma_fidelity
 
     # 95% Confidence Upper Bound on Witness: W_upper = <W> + 1.96 * sigma
     witness_upper_95 = witness_exp + 1.96 * sigma_witness
 
     print("\n   Complete GHZ Witness Analysis:")
+    label_tag = "[SIMULATED BASELINE]" if dry_run else "[HARDWARE MEASUREMENT]"
+    print(f"     Execution Classification        : {label_tag}")
     print(f"     State Fidelity F(|GHZ><GHZ|)    : {fidelity:.4f} +/- {sigma_fidelity:.4f}")
+    print(f"     Joint Z-Basis Var(<U>)/Var(F)   : {var_mean_U:.6e} / {var_fidelity:.6e}")
     print(f"     Witness Expectation <W>         : {witness_exp:+.4f} +/- {sigma_witness:.4f} (Ideal: -0.5000)")
     print(f"     95% Confidence Upper Bound      : {witness_upper_95:+.4f}")
 
-    if witness_upper_95 < 0.0 and not dry_run:
+    if dry_run:
+        entanglement_certified = False
+        cert_note = (
+            "Genuine tripartite entanglement has not been certified. "
+            "This execution was a local statevector dry-run simulation and does not constitute "
+            "physical hardware evidence from ibm_kingston. Experimental certification requires "
+            "physical QPU execution of the complete 5-setting witness with an upper 95% confidence bound < 0."
+        )
+    elif witness_upper_95 < 0.0:
         entanglement_certified = True
         cert_note = (
-            f"Genuine tripartite entanglement certified at 95% confidence level. "
+            f"Genuine tripartite entanglement certified at 95% confidence level from ibm_kingston QPU data. "
             f"Measured witness expectation <W> = {witness_exp:+.4f} +/- {sigma_witness:.4f} "
             f"with 95% upper bound {witness_upper_95:+.4f} < 0."
         )
     else:
         entanglement_certified = False
         cert_note = (
-            "Genuine tripartite entanglement has not been certified. "
-            "Certification requires the complete GHZ witness, including "
-            "ZZZ, XXX, XYY, YXY, and YYX measurement settings, together "
-            "with statistical uncertainty analysis. Partial measurement "
-            "data are insufficient to establish the complete witness."
+            f"Genuine tripartite entanglement not certified. "
+            f"Measured witness expectation <W> = {witness_exp:+.4f} +/- {sigma_witness:.4f} "
+            f"with 95% upper bound {witness_upper_95:+.4f} >= 0."
         )
 
     print(f"\n   Entanglement Certified: {entanglement_certified}")
@@ -584,11 +607,14 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
                 "y0_x1_y2": round(exp_yxy, 4),
                 "y0_y1_x2": round(exp_yyx, 4)
             },
+            "joint_z_covariance_variance_U": round(var_mean_U, 8),
             "ghz_state_fidelity": round(fidelity, 6),
             "ghz_state_fidelity_stderr": round(sigma_fidelity, 6),
             "witness_expectation": round(witness_exp, 6),
             "witness_stderr": round(sigma_witness, 6),
             "witness_95_upper_confidence_bound": round(witness_upper_95, 6),
+            "data_classification": "simulated_local_baseline" if dry_run else "hardware_qpu_measurement",
+            "hardware_validated": not dry_run,
             "entanglement_certified": entanglement_certified,
             "entanglement_certification_note": cert_note
         },
