@@ -91,7 +91,8 @@ class QuantumFlexUSDCSettler:
             "destinationAddress": recipient_address,
             "amounts": [amount_usdc],
             "feeLevel": "MEDIUM",
-            "tokenAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" # USDC on Polygon / Base / Arbitrum
+            "tokenId": "bdf128b4-827b-5267-8f9e-243694989b5f", # Base Sepolia USDC Token ID
+            "tokenAddress": "0x036cbd53842c5426634e7929541ec2318f3dcf7e" # Base Sepolia USDC
         }
 
         # If live execution is enabled and live API key is present, submit to Circle API
