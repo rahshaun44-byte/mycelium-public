@@ -247,3 +247,68 @@ class ClawTeammate(MyceliaTeammate):
             "athena-node.service": "active",
             "amara-dashboard.service": "active",
         }
+
+
+class AntigravityTeammate(BaseTeammate):
+    """Antigravity Cloud AI Pair Programmer Relay."""
+    def __init__(self):
+        super().__init__(
+            name="ANTIGRAVITY",
+            callsign="antigravity",
+            role="Active Pair Programmer Relay & Mobile Directive Queue",
+            avatar="🚀",
+            model="antigravity-relay",
+            system_prompt="Antigravity Cloud AI Relay",
+        )
+
+    async def generate_response(self, user_query: str, context: Optional[str] = None) -> str:
+        inbox_file = Path("/home/quant/Documents/qf/mobile_inbox.jsonl")
+        entry = {
+            "id": f"DIR-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            "timestamp": datetime.now().isoformat(),
+            "from": "Pixel 11 Pro",
+            "directive": user_query,
+            "status": "QUEUED"
+        }
+        with open(inbox_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+
+        latest_file = Path("/home/quant/.config/qf/mobile_directive.txt")
+        latest_file.parent.mkdir(parents=True, exist_ok=True)
+        latest_file.write_text(f"[{entry['timestamp']}] Pixel 11 Pro: {user_query}\n", encoding="utf-8")
+
+        return (
+            f"🚀 [ANTIGRAVITY RELAY] Directive Staged Successfully!\n\n"
+            f"• Directive ID: {entry['id']}\n"
+            f"• Source: Google Pixel 11 Pro\n"
+            f"• Directive: \"{user_query}\"\n"
+            f"• Status: QUEUED in ~/Documents/qf/mobile_inbox.jsonl\n\n"
+            f"Antigravity on your Yoga 7 will read and process this directive."
+        )
+
+
+class PartnerTeammate(BaseTeammate):
+    """QuantumFlex Sovereign Local Partner (Truth Log & Architecture)."""
+    def __init__(self):
+        super().__init__(
+            name="PARTNER",
+            callsign="partner",
+            role="Offline Sovereign Partner & Architecture Truth Keeper",
+            avatar="🧠",
+            model="quantumflex-partner:latest",
+            system_prompt="You are QuantumFlex Partner, Rocky's offline AI partner running locally on his Lenovo Yoga 7 via Ollama. Answer directly, concisely, and grounded in verified project facts.",
+        )
+
+
+class TutorTeammate(BaseTeammate):
+    """CS 320 & SNHU Academic Code Coach."""
+    def __init__(self):
+        super().__init__(
+            name="CS 320 TUTOR",
+            callsign="tutor",
+            role="SNHU CS 320 Quality Assurance & JUnit 5 Coach",
+            avatar="🎓",
+            model="gemma3:4b",
+            system_prompt="""You are an expert academic tutor for SNHU CS 320 (Software Testing, Automation, and Quality Assurance).
+Your job is to explain testing concepts (JUnit 5, Mockito, boundary value analysis, equivalence partitioning, test coverage) with clear examples and help the student understand and master the material. Never write full graded assignments to be copy-pasted; guide and explain step-by-step.""",
+        )

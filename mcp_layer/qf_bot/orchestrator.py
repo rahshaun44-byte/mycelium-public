@@ -39,6 +39,9 @@ from qf_bot.teammates import (
     SentinelTeammate,
     AriaTeammate,
     AthenaTeammate,
+    AntigravityTeammate,
+    PartnerTeammate,
+    TutorTeammate,
 )
 from qf_bot.routines import RoutineRunner, ROUTINE_CATALOG, log_memory
 
@@ -112,12 +115,18 @@ class QFBotOrchestrator:
         self.sentinel = SentinelTeammate()
         self.aria = AriaTeammate()
         self.athena = AthenaTeammate()
+        self.antigravity = AntigravityTeammate()
+        self.partner = PartnerTeammate()
+        self.tutor = TutorTeammate()
 
         self.teammates = {
             "mycelia": self.mycelia,
             "sentinel": self.sentinel,
             "aria": self.aria,
             "athena": self.athena,
+            "antigravity": self.antigravity,
+            "partner": self.partner,
+            "tutor": self.tutor,
         }
 
         self.observations: List[Dict[str, Any]] = []
