@@ -239,8 +239,13 @@ def build_ghz_yyx_circuit() -> tuple[QuantumCircuit, dict]:
     return qc, meta
 
 
-def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run: bool = True):
-    mode_str = "[DRY-RUN / LOCAL VERIFICATION]" if dry_run else "[HARDWARE CRYOGENIC EXECUTION]"
+def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run: bool = True, retrieve_job_id: str | None = None):
+    if retrieve_job_id:
+        dry_run = False
+        mode_str = f"[RETRIEVING PHYSICAL EXECUTION: {retrieve_job_id}]"
+    else:
+        mode_str = "[DRY-RUN / LOCAL VERIFICATION]" if dry_run else "[HARDWARE CRYOGENIC EXECUTION]"
+
     print("=" * 75)
     print(" QUANTUMFLEX PHYSICAL QPU RESEARCH: QAOA & COMPLETE GHZ WITNESS")
     print(f" Execution Mode : {mode_str}")
@@ -307,24 +312,44 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
             }
         }
 
-        # Simulate ideal counts for each circuit
         counts_list = []
         for qc in circuits:
             uc = qc.remove_final_measurements(inplace=False)
             sv = Statevector.from_instruction(uc)
             probs = sv.probabilities_dict()
-            # Generate deterministic sample counts matching probabilities
             sim_counts = {}
             for s, p in probs.items():
                 c = int(round(p * shots))
                 if c > 0:
                     sim_counts[s] = c
-            # Adjust rounding difference on largest state
             diff = shots - sum(sim_counts.values())
             if diff != 0:
                 top_s = max(sim_counts.keys(), key=lambda k: sim_counts[k])
                 sim_counts[top_s] += diff
             counts_list.append(sim_counts)
+
+    elif retrieve_job_id:
+        print(f"      [RETRIEVE] Fetching completed physical job: {retrieve_job_id}")
+        job = service.job(retrieve_job_id)
+        job_id = job.job_id()
+        raw_status = job.status()
+        status_name = raw_status if isinstance(raw_status, str) else getattr(raw_status, "name", str(raw_status))
+        print(f"      Job ID: {job_id} | Status: {status_name}")
+        if status_name != "DONE":
+            raise RuntimeError(f"Job {job_id} terminated with status: {status_name}")
+
+        result = job.result()
+        retrieval_time_utc = datetime.now(timezone.utc).isoformat()
+        job_metrics = {}
+        try:
+            job_metrics = job.metrics()
+        except Exception as e:
+            print(f"      Note: Could not retrieve server job metrics: {e}")
+
+        submission_time_utc = job_metrics.get("timestamps", {}).get("created", str(job.creation_date))
+        elapsed = job_metrics.get("usage", {}).get("qpu_charge_time_seconds", 3)
+        counts_list = [list(pub.data.values())[0].get_counts() for pub in result]
+
     else:
         print("      [CONFIRMED] Submitting Batched PUB Execution to Physical Cryostat...")
         submission_time_utc = datetime.now(timezone.utc).isoformat()
@@ -339,15 +364,16 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
         last_status = None
         while True:
             job_status = job.status()
-            if job_status != last_status:
-                print(f"      [{int(time.time() - start_time)}s] Job Status: {job_status.name}")
-                last_status = job_status
-            if job_status.name in ("DONE", "CANCELLED", "ERROR"):
+            status_name = job_status if isinstance(job_status, str) else getattr(job_status, "name", str(job_status))
+            if status_name != last_status:
+                print(f"      [{int(time.time() - start_time)}s] Job Status: {status_name}")
+                last_status = status_name
+            if status_name in ("DONE", "CANCELLED", "ERROR"):
                 break
             time.sleep(3)
 
-        if job_status.name != "DONE":
-            raise RuntimeError(f"Physical execution terminated with status: {job_status.name}")
+        if status_name != "DONE":
+            raise RuntimeError(f"Physical execution terminated with status: {status_name}")
 
         elapsed = round(time.time() - start_time, 2)
         print(f"      [+] Physical execution completed in {elapsed}s!")
@@ -647,10 +673,11 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="QuantumFlex QAOA & GHZ Witness Experiment Runner")
     parser.add_argument("--submit", action="store_true", help="Submit actual cryogenic job to IBM QPU (requires confirmation)")
+    parser.add_argument("--retrieve", type=str, default=None, help="Retrieve and analyze an existing completed physical IBM job ID")
     parser.add_argument("--backend", default="ibm_kingston", help="Target QPU backend name (default: ibm_kingston)")
     parser.add_argument("--shots", type=int, default=256, help="Shots per circuit (default: 256)")
     args = parser.parse_args()
 
-    # Default to safe dry-run unless --submit is explicitly provided
-    is_dry_run = not args.submit
-    run_experiment(backend_name=args.backend, shots=args.shots, dry_run=is_dry_run)
+    # If --retrieve is given, fetch that job. Otherwise, default to safe dry-run unless --submit is explicitly provided.
+    is_dry_run = not args.submit and (args.retrieve is None)
+    run_experiment(backend_name=args.backend, shots=args.shots, dry_run=is_dry_run, retrieve_job_id=args.retrieve)
