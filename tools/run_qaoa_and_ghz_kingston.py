@@ -137,8 +137,19 @@ def build_ghz_x_basis_circuit() -> tuple[QuantumCircuit, dict]:
     
     In the X basis, an ideal GHZ state produces only even parity bitstrings ('000', '011', '101', '110')
     with equal probability (25% each), giving <X0 X1 X2> = +1.0.
-    This measurement measures off-diagonal coherence terms needed to distinguish true entanglement
-    from classical statistical mixtures.
+    
+    SCIENTIFIC QUALIFICATION:
+      Measuring all three qubits in the X-basis alone produces <X0 X1 X2> = +1 and verifies phase
+      coherence between |000> and |111>. However, a single X-basis measurement setting is NOT sufficient
+      on its own to certify genuine tripartite entanglement. A classical mixture can reproduce Z-basis
+      correlations, and other non-GHZ quantum states can reproduce specific single-basis correlations.
+      
+      To certify genuine tripartite entanglement, one must evaluate an entanglement witness across multiple
+      bases, such as:
+          W = 0.5 * I - |GHZ_3><GHZ_3|
+      A negative expectation value (<W> < 0) under appropriate calibration assumptions certifies genuine
+      tripartite entanglement. Until multi-basis witness or tomography data is collected,
+      entanglement_certified must remain False.
     """
     qc = QuantumCircuit(3, 3, name="ghz_3q_x_basis")
     qc.h(0)
@@ -154,7 +165,9 @@ def build_ghz_x_basis_circuit() -> tuple[QuantumCircuit, dict]:
         "measurement_basis": "Pauli_X",
         "num_qubits": 3,
         "ideal_x_parity_expectation": 1.0,
-        "purpose": "Phase coherence and multi-basis entanglement certification"
+        "purpose": "Phase coherence verification (single basis; insufficient alone to certify tripartite entanglement)",
+        "entanglement_certified": False,
+        "entanglement_note": "Multi-basis witness evaluation (e.g. W = 0.5*I - |GHZ><GHZ|) required for tripartite certification."
     }
     return qc, meta
 
@@ -186,15 +199,20 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 1024):
     pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
     isa_qaoa = pm.run(qc_qaoa)
     isa_ghz = pm.run(qc_ghz)
-    print(f"      ISA Circuit A: Depth {isa_qaoa.depth()} | Ops: {dict(isa_qaoa.count_ops())}")
-    print(f"      ISA Circuit B: Depth {isa_ghz.depth()} | Ops: {dict(isa_ghz.count_ops())}")
+    
+    layout_qaoa = isa_qaoa.layout.final_index_layout() if hasattr(isa_qaoa, "layout") and isa_qaoa.layout else None
+    layout_ghz = isa_ghz.layout.final_index_layout() if hasattr(isa_ghz, "layout") and isa_ghz.layout else None
+
+    print(f"      ISA Circuit A: Depth {isa_qaoa.depth()} | Layout: {layout_qaoa} | Ops: {dict(isa_qaoa.count_ops())}")
+    print(f"      ISA Circuit B: Depth {isa_ghz.depth()} | Layout: {layout_ghz} | Ops: {dict(isa_ghz.count_ops())}")
 
     print(f"\n[4/5] Submitting Batched PUB Execution to Physical Cryostat...")
+    submission_time_utc = datetime.now(timezone.utc).isoformat()
     sampler = Sampler(mode=backend)
     job = sampler.run([isa_qaoa, isa_ghz], shots=shots)
     job_id = job.job_id()
     print(f"      Job ID: {job_id}")
-    print(f"      Submission Time: {datetime.now(timezone.utc).isoformat()}")
+    print(f"      Submission Time: {submission_time_utc}")
     print(f"      Waiting for physical silicon execution...")
 
     start_time = time.time()
@@ -216,7 +234,14 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 1024):
 
     print(f"\n[5/5] Extracting Real Measurement Histograms & Epistemic Analysis...")
     result = job.result()
-    
+    retrieval_time_utc = datetime.now(timezone.utc).isoformat()
+
+    job_metrics = {}
+    try:
+        job_metrics = job.metrics()
+    except Exception as e:
+        print(f"      Note: Could not retrieve server job metrics: {e}")
+
     # Process Circuit A: QAOA
     pub_qaoa = result[0]
     counts_qaoa = list(pub_qaoa.data.values())[0].get_counts()
@@ -234,12 +259,10 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 1024):
     print(f" Total Measurement Shots: {total_qaoa}")
     print(" Observed Portfolios (Binary string = [Asset2, Asset1, Asset0]):")
     
-    # Sort by probability
     sorted_qaoa = sorted(counts_qaoa.items(), key=lambda x: x[1], reverse=True)
     valid_budget_counts = 0
     for state, cnt in sorted_qaoa:
         prob = (cnt / total_qaoa) * 100
-        # Check budget constraint (sum of bits == 2)
         ones_count = state.count("1")
         valid_tag = "[VALID 2-ASSET BUDGET]" if ones_count == 2 else "[BUDGET PENALIZED]"
         if ones_count == 2:
@@ -267,7 +290,6 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 1024):
     other_population_pct = (other_shots / total_ghz) * 100
 
     # ZZZ expectation value: <Z0 Z1 Z2> = sum_s (-1)^{parity(s)} P(s)
-    # Even number of 1s -> +1, Odd number of 1s -> -1
     zzz_exp = sum((+1 if s.count("1") % 2 == 0 else -1) * cnt for s, cnt in counts_ghz.items()) / total_ghz
 
     print(f"\n Computational Basis Target Population (|000> + |111>): {target_population_pct:.2f}% ({target_shots}/{total_ghz})")
@@ -276,54 +298,115 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 1024):
     print(" Note: Computational-basis (Z) statistics demonstrate population alignment")
     print("       but cannot certify entanglement without complementary basis measurements (e.g. X-basis).")
 
-    # Provenance Archiving
+    # --- Structured Scientific Provenance Archiving ---
     prov_dir = Path("/home/quant/qf-research") / f"ibm-qaoa-ghz-kingston-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     prov_dir.mkdir(parents=True, exist_ok=True)
-    prov_file = prov_dir / "provenance.json"
 
-    prov_data = {
-        "provenance_type": "research_provenance_record",
+    # 1. Immutable Raw Acquisition Record
+    raw_file = prov_dir / "raw_acquisition.json"
+    raw_data = {
+        "record_type": "raw_acquisition_record",
         "job_id": job_id,
         "backend": backend.name,
         "backend_qubits": backend.num_qubits,
-        "utc_timestamp": datetime.now(timezone.utc).isoformat(),
-        "shots_per_circuit": shots,
-        "total_shots": shots * 2,
-        "elapsed_seconds": elapsed,
-        "option_a_qaoa": {
-            "meta": meta_qaoa,
-            "counts": counts_qaoa,
-            "valid_budget_pct": round(valid_pct, 4),
-            "best_classical_portfolio": "101 (Tech_Growth + Treasury_Bond)"
+        "timestamps": {
+            "submission_utc": submission_time_utc,
+            "created_utc": job_metrics.get("timestamps", {}).get("created"),
+            "running_utc": job_metrics.get("timestamps", {}).get("running"),
+            "finished_utc": job_metrics.get("timestamps", {}).get("finished"),
+            "retrieved_utc": retrieval_time_utc
         },
-        "option_b_ghz": {
-            "meta": meta_ghz,
-            "counts": counts_ghz,
-            "target_basis_population_pct": round(target_population_pct, 4),
-            "other_basis_population_pct": round(other_population_pct, 4),
-            "zzz_expectation": round(zzz_exp, 4),
-            "entanglement_certified": False,
-            "entanglement_note": "Z-basis measurement alone cannot distinguish GHZ state from classical mixture. Multi-basis measurement (e.g., X-basis) is required to certify entanglement."
+        "hardware_execution": {
+            "elapsed_seconds": elapsed,
+            "qpu_charge_time_seconds": job_metrics.get("usage", {}).get("qpu_charge_time_seconds"),
+            "circuits_execution_time_ns": job_metrics.get("circuits_execution_time_ns"),
+            "shots_per_circuit": shots,
+            "total_shots": shots * 2
+        },
+        "transpiled_circuit_metadata": {
+            "circuit_a_qaoa": {
+                "name": qc_qaoa.name,
+                "depth": isa_qaoa.depth(),
+                "ops": dict(isa_qaoa.count_ops()),
+                "physical_layout": layout_qaoa
+            },
+            "circuit_b_ghz": {
+                "name": qc_ghz.name,
+                "depth": isa_ghz.depth(),
+                "ops": dict(isa_ghz.count_ops()),
+                "physical_layout": layout_ghz
+            }
+        },
+        "raw_counts": {
+            "circuit_a_qaoa": counts_qaoa,
+            "circuit_b_ghz": counts_ghz
         },
         "engine_state": "LOCKED",
         "entropy_credit": 0.0,
         "epistemic_standard": "External empirical physics research only. Zero secret entropy."
     }
 
-    with open(prov_file, "w") as fp:
-        json.dump(prov_data, fp, indent=2)
+    with open(raw_file, "w") as fp:
+        json.dump(raw_data, fp, indent=2)
 
-    sha256_hash = hashlib.sha256(prov_file.read_bytes()).hexdigest()
-    sha_file = prov_dir / "provenance.sha256"
-    sha_file.write_text(f"{sha256_hash}  provenance.json\n")
+    raw_hash = hashlib.sha256(raw_file.read_bytes()).hexdigest()
 
-    os.chmod(sha_file, 0o600)
-    os.chmod(prov_file, 0o600)
-    print(f"\n[+] Research Provenance Record Saved:")
-    print(f"    -> {prov_file} (mode 0600)")
-    print(f"    -> {sha_file} (SHA-256: {sha256_hash})")
+    # 2. Derived Scientific Analysis Record
+    analysis_file = prov_dir / "analysis_record.json"
+    analysis_data = {
+        "record_type": "scientific_analysis_record",
+        "analysis_timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "source_raw_acquisition": {
+            "file": "raw_acquisition.json",
+            "sha256": raw_hash,
+            "job_id": job_id,
+            "backend": backend.name
+        },
+        "option_a_qaoa_analysis": {
+            "meta": meta_qaoa,
+            "valid_budget_pct": round(valid_pct, 4),
+            "best_classical_portfolio": "101 (Tech_Growth + Treasury_Bond)",
+            "best_classical_cost": -0.165000
+        },
+        "option_b_ghz_analysis": {
+            "meta": meta_ghz,
+            "target_basis_population_pct": round(target_population_pct, 4),
+            "other_basis_population_pct": round(other_population_pct, 4),
+            "zzz_expectation": round(zzz_exp, 4),
+            "entanglement_certified": False,
+            "entanglement_certification_note": (
+                "Computational Z-basis measurements alone cannot distinguish a genuine GHZ state "
+                "from a classical statistical mixture. Furthermore, a single X-basis measurement "
+                "setting is insufficient to certify genuine tripartite entanglement. "
+                "Certification requires multi-basis measurements evaluating an entanglement witness "
+                "(e.g., W = 0.5*I - |GHZ><GHZ|) across {Z, X, Y} settings or quantum state tomography. "
+                "Zero entanglement is certified from single-basis data."
+            )
+        },
+        "engine_state": "LOCKED",
+        "entropy_credit": 0.0,
+        "epistemic_standard": "External empirical physics research only. Zero secret entropy."
+    }
+
+    with open(analysis_file, "w") as fp:
+        json.dump(analysis_data, fp, indent=2)
+
+    analysis_hash = hashlib.sha256(analysis_file.read_bytes()).hexdigest()
+
+    # 3. Checksums manifest
+    checksum_file = prov_dir / "checksums.sha256"
+    checksum_file.write_text(f"{raw_hash}  raw_acquisition.json\n{analysis_hash}  analysis_record.json\n")
+
+    os.chmod(raw_file, 0o600)
+    os.chmod(analysis_file, 0o600)
+    os.chmod(checksum_file, 0o600)
+
+    print(f"\n[+] Scientific Research Provenance Archived:")
+    print(f"    -> Raw Acquisition : {raw_file} (SHA-256: {raw_hash})")
+    print(f"    -> Analysis Record : {analysis_file} (SHA-256: {analysis_hash})")
+    print(f"    -> Checksum File   : {checksum_file}")
     print("=" * 75)
-    return prov_data
+    return analysis_data
 
 
 if __name__ == "__main__":
