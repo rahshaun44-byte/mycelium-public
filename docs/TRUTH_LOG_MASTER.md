@@ -366,3 +366,10 @@ Earlier recovery MATCH proves compatibility with the saved ledger, not secret cu
 | **QPU Telemetry** | Physical quantum experiments verified and isolated from seed pool | PASS | `ibm_fez` jobs `db8lbbtckpjs73b17plg` and `db8lc6694fic73etkmt0` recorded with zero engine entropy credit |
 | **Multi-Node Stream** | Signed Ed25519 telemetry streaming from G6 to Kafka broker | PASS | `qf-kafka-publisher.service` streaming heartbeats into `qf-telemetry-heartbeat` |
 
+### G. Gemini 4 Argon Reasoning Engine & Antigravity 1.3.6 Multi-Node Upgrade
+- **Antigravity CLI Version Alignment**: Upgraded both Master Node (Yoga 7) and Target Node 1 (HP ProBook G6) to Google Antigravity `1.3.6` (`/home/quant/.local/bin/agy` and `/usr/local/bin/agy`).
+- **Gemini 4 Argon Deployment (Google AI Pro Tier)**:
+  - Google released **Gemini 4 Argon**—its flagship reasoning model built for multi-step software architecture, high-depth code synthesis, and agentic workflows—with dedicated access for Google AI Pro and Ultra subscribers.
+  - Features dedicated weekly-only Argon quotas supplementing standard token pools.
+  - Configured into Antigravity invocation profiles (`agy --model gemini-4-argon`) and updated in the Mobile Handoff Protocol (`docs/GEMINI_MOBILE_HANDOFF.md` & `mcp_layer/qf_bot/ui/academy.html`).
+

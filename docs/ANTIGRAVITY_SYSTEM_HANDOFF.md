@@ -39,14 +39,20 @@ The CLI is a lightweight, low-latency terminal interface designed for direct ope
 * **Executable Path**:
   * Yoga 7: `/home/quant/.local/bin/agy`
   * ProBook G6: `/usr/local/bin/agy`
-* **Version**: `1.3.3`
+* **Version**: `1.3.6` (verified live on Yoga 7 master and ProBook G6 node)
+* **Flagship Reasoning Model**: Supports **Gemini 4 Argon** for paid Google AI Pro and Ultra plan subscribers, featuring dedicated weekly Argon quotas for deep agentic reasoning and large-scale refactors.
 * **Key Commands**:
   ```bash
-  # Launch interactive TUI session:
+  # Launch interactive TUI session with default model:
   agy
 
-  # Check CLI version and options:
+  # Launch with Gemini 4 Argon reasoning engine:
+  agy --model gemini-4-argon
+
+  # Check CLI version, available models, and options:
   agy --version
+  agy models
+  agy update
   agy --help
 
   # Exit session:
@@ -174,7 +180,29 @@ ssh -N -L 8090:localhost:8090 qf-g6 &
 
 ---
 
-## 7. Integrity & Assurance Sign-Off
+## 7. Gemini 4 Argon Reasoning Architecture & Google AI Pro Tier Integration
+
+Google rolled out **Gemini 4 Argon**—the advanced reasoning engine engineered for complex software architecture, multi-turn agentic task planning, and deep code synthesis—with dedicated availability for **Google AI Pro** and **Ultra** plan subscribers:
+
+1. **Model Capabilities & Epistemic Alignment**:
+   - **Multi-Step Agentic Reasoning**: High-depth planning across large codebases with rigorous verification loops.
+   - **Direct Instruction-Following**: Eliminates conversational hedging, providing concise, verifiable technical execution.
+   - **Mathematical & Cryptographic Acumen**: Optimized for verifying complex state transitions, invariants, and protocol boundaries.
+2. **Antigravity CLI & Desktop Integration**:
+   - Available directly in Google Antigravity (CLI and IDE).
+   - Launch in terminal:
+     ```bash
+     agy --model gemini-4-argon
+     ```
+   - In the Antigravity Desktop IDE, select **Gemini 4 Argon** from the model selector menu (`+` / Model dropdown).
+3. **Pro Plan Dedicated Quota**:
+   - Google AI Pro subscribers receive a dedicated weekly-only Argon quota specifically allocated for heavy, complex reasoning workflows, separate from standard token/model pools.
+4. **Mobile & Search Integration**:
+   - Available on mobile via the Google Gemini app on Android (Pixel 11 Pro) with full multi-turn conversational reasoning and voice interaction.
+
+---
+
+## 8. Integrity & Assurance Sign-Off
 
 * **Dual-Hardware Root Verification**: Passed (AMD Pluton on Yoga 7, Hardware TPM 2.0 on HP ProBook G6).
 * **Dynamic Linker Resolution**: 100% of libraries verified (`ldd` returns zero missing dependencies).
