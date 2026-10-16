@@ -18,6 +18,7 @@ import asyncio
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import random
 import sys
@@ -230,53 +231,71 @@ class AsyncLedgerManager:
 
         # Thread-safe ledger commit under lock
         async with self._commit_lock:
-            last_entry = self.ledger.get_last_entry()
-            prev_hash = last_entry["entry_hash"] if last_entry else GENESIS_HASH
-            entry_index = (last_entry["entry_index"] + 1) if last_entry else 1
+            with self.ledger.file_lock():
+                if self.ledger.has_job_id(job_id):
+                    print(f"[!] Idempotency warning: Job {job_id} already committed in ledger. Skipping duplicate write.")
+                    with open(self.ledger.filepath, "r", encoding="utf-8") as f:
+                        for line in f:
+                            stripped = line.strip()
+                            if not stripped:
+                                continue
+                            try:
+                                e = json.loads(stripped)
+                                if e.get("job_id") == job_id:
+                                    return e
+                            except Exception:
+                                continue
+                    return self.ledger.get_last_entry()
 
-            payload = {
-                "entry_index": entry_index,
-                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                "experiment_name": experiment_name,
-                "requested_by": "Quantum_Flex_Async_Manager",
-                "authorization": {
-                    "decision": "ALLOW",
-                    "verification_state": "ASYNC_LEDGER_POLICY_VERIFIED",
-                    "policy_file": "quantum_admission.rego",
-                    "evaluator": "async_pool_manager"
-                },
-                "target_type": "LOCAL_VALIDATION" if (self.dry_run or mock_job) else "REAL_QPU",
-                "provider": "Local Qiskit Reference Engine" if (self.dry_run or mock_job) else "IBM Quantum Platform",
-                "backend_name": backend_name,
-                "job_id": job_id,
-                "shots": total_shots,
-                "counts": counts,
-                "circuit_info": circuit_info,
-                "result_sha256": result_sha256,
-                "verification": {
-                    "hardware_confirmed": not (self.dry_run or mock_job),
-                    "simulator": bool(self.dry_run or mock_job),
-                    "async_monitored": True
-                },
-                "metadata": {
-                    "engine_state": "LOCKED",
-                    "entropy_credit": 0.0,
-                    "epistemic_standard": "External empirical physics research only. Zero secret entropy.",
-                    "elapsed_polling_seconds": elapsed
-                },
-                "prev_hash": prev_hash,
-            }
+                last_entry = self.ledger.get_last_entry()
+                prev_hash = last_entry["entry_hash"] if last_entry else GENESIS_HASH
+                entry_index = (last_entry["entry_index"] + 1) if last_entry else 1
 
-            entry_hash = compute_hash(payload)
-            full_entry = {**payload, "entry_hash": entry_hash}
+                payload = {
+                    "entry_index": entry_index,
+                    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                    "experiment_name": experiment_name,
+                    "requested_by": "Quantum_Flex_Async_Manager",
+                    "authorization": {
+                        "decision": "ALLOW",
+                        "verification_state": "ASYNC_LEDGER_POLICY_VERIFIED",
+                        "policy_file": "quantum_admission.rego",
+                        "evaluator": "async_pool_manager"
+                    },
+                    "target_type": "LOCAL_VALIDATION" if (self.dry_run or mock_job) else "REAL_QPU",
+                    "provider": "Local Qiskit Reference Engine" if (self.dry_run or mock_job) else "IBM Quantum Platform",
+                    "backend_name": backend_name,
+                    "job_id": job_id,
+                    "shots": total_shots,
+                    "counts": counts,
+                    "circuit_info": circuit_info,
+                    "result_sha256": result_sha256,
+                    "verification": {
+                        "hardware_confirmed": not (self.dry_run or mock_job),
+                        "simulator": bool(self.dry_run or mock_job),
+                        "async_monitored": True
+                    },
+                    "metadata": {
+                        "engine_state": "LOCKED",
+                        "entropy_credit": 0.0,
+                        "epistemic_standard": "External empirical physics research only. Zero secret entropy.",
+                        "elapsed_polling_seconds": elapsed
+                    },
+                    "prev_hash": prev_hash,
+                }
 
-            with open(self.ledger.filepath, "a", encoding="utf-8") as f:
-                f.write(json.dumps(full_entry) + "\n")
+                entry_hash = compute_hash(payload)
+                full_entry = {**payload, "entry_hash": entry_hash}
 
-            print(f"[✓] Committed Ledger Entry #{entry_index} for Job {job_id[:16]}...")
-            print(f"    -> Block Hash : {entry_hash}")
-            print(f"    -> Prev Hash  : {prev_hash[:16]}...")
-            return full_entry
+                with open(self.ledger.filepath, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(full_entry) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+
+                print(f"[✓] Committed Ledger Entry #{entry_index} for Job {job_id[:16]}...")
+                print(f"    -> Block Hash : {entry_hash}")
+                print(f"    -> Prev Hash  : {prev_hash[:16]}...")
+                return full_entry
 
     async def dispatch_circuit(
         self,
