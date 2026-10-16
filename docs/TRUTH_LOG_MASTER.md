@@ -373,3 +373,71 @@ Earlier recovery MATCH proves compatibility with the saved ledger, not secret cu
   - Features dedicated weekly-only Argon quotas supplementing standard token pools.
   - Configured into Antigravity invocation profiles (`agy --model gemini-4-argon`) and updated in the Mobile Handoff Protocol (`docs/GEMINI_MOBILE_HANDOFF.md` & `mcp_layer/qf_bot/ui/academy.html`).
 
+---
+
+## 16. Multi-QPU Physical Validation (`ibm_fez` & `ibm_kingston`), Hash Serialization Resolution, Laptop Lid Power Guard & Hardened Asynchronous Multi-Backend Ledger Manager (2026-10-16)
+
+### A. Physical QPU Execution & Hash Serialization Resolution (`ibm_fez` — Job `db8r00tckpjs73b1i2b0`)
+- **Backend Profile**: `ibm_fez` (156 Qubits, Heron Rev 2, operational).
+- **Parameters**: 2 physical qubits, Bell state $|\Phi^+\rangle$, 256 requested shots.
+- **Job Status**: `DONE` retrieved directly via IBM Quantum Runtime Service.
+- **Empirical Counts**:
+  - $|11\rangle: 133$ ($51.95\%$)
+  - $|00\rangle: 104$ ($40.63\%$)
+  - $|01\rangle: 10$ ($3.91\%$)
+  - $|10\rangle: 9$ ($3.52\%$)
+  - Total: 256 shots (100%). Bell state correlation: **$92.58\%$** ($237/256$).
+- **Hash Discrepancy Root Cause & Resolution**:
+  - Original script output: `result_sha256 = "1d24be6c2ffafca4858a8c48a44064fcba7f3f7bb37caab69d0b427fd4fa9d43"`.
+  - Independent check computed via standard `json.dumps(counts, sort_keys=True)` produced a mismatch because `ledger.py` defines `canonical_json` with compact separators: `json.dumps(data, sort_keys=True, separators=(",", ":"))`.
+  - Recomputing with compact separators `separators=(",", ":")` yields the exact matching SHA-256 digest `1d24be6c2...`.
+  - Resolution: Canonical JSON serialization standard (`sort_keys=True`, `separators=(',', ':')`) frozen in `ledger.py` as ground truth.
+
+### B. Multi-QPU Physical Validation & Epistemic Entanglement Bound (`ibm_kingston` — Job `db8nsvob3g5c73egl760`)
+- **Backend Profile**: `ibm_kingston` (156 Physical Transmon Qubits, heavy-hex topology).
+- **QAOA 3-Asset Portfolio Optimization**:
+  - Problem formulation: Assets `[Tech_Growth, Energy_Dividend, Treasury_Bond]`, risk-return penalty, constraint $\sum x_i = 2$.
+  - Best feasible portfolio: $x=(1, 0, 1)$ (Tech + Treasury) with analytical cost $-0.165000$.
+  - Hardware observation: Observed $|101\rangle$ in 11/256 shots ($4.30\%$, feasible subspace probability $11.72\%$). Ground-truth optimal state observed on physical silicon.
+- **GHZ 3-Qubit Entanglement Witness Evaluation**:
+  - Witness operator: $\mathcal{W} = \frac{1}{2} I - \frac{1}{2} (|000\rangle\langle 000| + |111\rangle\langle 111|) - \frac{1}{4}(XXX - XYY - YXY - YYX)$.
+  - Point estimate: $\widehat{\mathcal{F}} = 0.5078125$, $\langle \widehat{\mathcal{W}} \rangle = -0.0078125$.
+  - Statistical bound & variance: Using exact joint $Z$-basis covariance $U(s) = 4 I_T(s) - 1$, standard error is $\sigma_{\mathcal{F}} = 0.020399$.
+  - Confidence bounds:
+    - Normal 95% single-tailed UCB: $\mathcal{W}_{\text{UCB}} = -0.0078125 + 1.95996 \times 0.020399 = \mathbf{+0.032169} \ge 0$.
+    - Bootstrap 97.5% empirical UCB: $+0.032227 \ge 0$.
+    - Distribution-free Hoeffding 95% UCB: $+0.046276 \ge 0$.
+  - **Verdict**: Invariant preserved: because $\mathcal{W}_{\text{UCB}} > 0$, genuine tripartite entanglement is **NOT** certified at 95% statistical confidence (`entanglement_certified: false`).
+  - **Archival Provenance**: `/home/quant/qf-research/ibm-qaoa-ghz-kingston-20261016T013409Z/` (`raw_acquisition.json` SHA-256 `be8024f4...`, `analysis_record.json` SHA-256 `2c2f12fc...`). Verified via `tools/verify_hardware_run_db8nsvob.py` and documented in `docs/HARDWARE_RUN_DB8NSVOB_VALIDATION.md`.
+
+### C. Continuous Workload Laptop Lid Sleep Policy & User Service (`qf-lid-guard.service`)
+- **System Posture**: Yoga 7 host must maintain uninterrupted headless compute (local LLM inference, Kafka streaming, async QPU monitoring) when the laptop lid is closed.
+- **Power Configuration**:
+  - GNOME power policy: `org.gnome.settings-daemon.plugins.power lid-close-ac-action 'nothing'` and `lid-close-battery-action 'nothing'`.
+  - User systemd service: `~/.config/systemd/user/qf-lid-guard.service` executing `systemd-inhibit --what=handle-lid-switch:sleep sleep infinity`.
+  - Automation script: `tools/apply_lid_sleep_policy.sh`.
+  - Status: Active (running under PID 62491), blocking system suspend on lid close.
+
+### D. Hardened Asynchronous Multi-Backend Ledger Manager (`async_ledger_manager.py` & `ledger.py`)
+- **Cross-Process Advisory Locking (`fcntl.flock`)**:
+  - Implemented `file_lock()` context manager on `evidence_ledger.lock` with exclusive advisory locks (`fcntl.LOCK_EX` / `fcntl.LOCK_UN`).
+  - Serializes concurrent appends across independent processes (`quantum_worker.py`, `async_ledger_manager.py`, and background daemons).
+- **Synchronous Disk Flushing (`os.fsync`)**:
+  - Implemented `f.flush()` and `os.fsync(f.fileno())` prior to lock release, preventing unbuffered writes or corruption across sudden host power loss.
+- **Idempotency & Replay Protection**:
+  - Added `has_job_id(job_id)`. For all `target_type == "REAL_QPU"` executions, duplicate submissions are rejected with `ValueError`, preventing duplicate block replay or evidence ledger pollution.
+- **Dual-Layer Concurrency Model**:
+  - Intra-process: `asyncio.Lock` protects coroutine scheduling inside the event loop.
+  - Inter-process: `fcntl.flock` protects cross-process file writes.
+- **Per-Backend ISA Pass Manager**:
+  - Transpilation dynamically compiles abstract circuits to physical backend topologies (`ibm_kingston`, `ibm_fez`, `ibm_marrakesh`) via `generate_preset_pass_manager(backend=backend, optimization_level=1)`.
+- **Zero-Secret Entropy & Fail-Closed Posture**:
+  - Metadata explicitly sets `engine_state: "LOCKED"` and `entropy_credit: 0.0`.
+- **Concurrency & Stress Verification**:
+  - `tools/test_async_ledger_manager.py` verifies:
+    1. Async 3-backend parallel dispatch.
+    2. Multi-process stress test: 5 concurrent OS processes writing simultaneously (30 entries total) with zero forks, contiguous `entry_index` 1..30, and 100% valid cryptographic hash chain.
+    3. Replay rejection of duplicate physical job IDs.
+    4. Precise detection and error flagging of simulated payload tampering.
+  - Production ledger (`/home/quant/Documents/qf/evidence_ledger.jsonl`): 35 historical entries, 100% valid chain.
+
