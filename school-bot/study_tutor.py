@@ -381,7 +381,17 @@ if __name__ == "__main__":
     elif args[0] == "preflight":
         from bot import inspect_cs320_workspace
         data = inspect_cs320_workspace()
-        print(f"\n{BOLD}{CYAN}=== 1. PROF. ANTOUN EMAIL / SUBMISSION RULES ==={RESET}\n{data['email_text']}")
+        email_odt = Path("/home/quant/Documents/SNHU-emails/email-cs320-antoun.odt")
+        email_str = "No email draft found"
+        if email_odt.exists():
+            try:
+                import zipfile, xml.etree.ElementTree as ET
+                with zipfile.ZipFile(email_odt) as z:
+                    tree = ET.fromstring(z.read("content.xml"))
+                    email_str = " ".join(tree.itertext()).strip()
+            except Exception as e:
+                email_str = f"Error reading email draft: {e}"
+        print(f"\n{BOLD}{CYAN}=== 1. PROF. ANTOUN EMAIL / SUBMISSION RULES ==={RESET}\n{email_str}")
         print(f"\n{BOLD}{CYAN}=== 2. CS 320 WORKSPACE FILES ==={RESET}")
         for f in data["files_found"]:
             print(f"  • {f}")
