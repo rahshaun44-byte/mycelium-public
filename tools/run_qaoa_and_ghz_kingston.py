@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-QuantumFlex Physical Quantum Experiment Runner: QAOA Portfolio & Multi-Basis GHZ
+QuantumFlex Physical Quantum Experiment Runner: QAOA Portfolio & Complete Multi-Basis GHZ Witness
 Target QPU: ibm_kingston (Heron Revision 2, 156 Physical Transmon Qubits)
 Epistemic Boundary: Physical research testbed; zero entropy admitted to engine.
 Engine Posture: LOCKED (fail-closed zero-trust boundary maintained).
 """
 
+import argparse
 import hashlib
 import itertools
 import json
@@ -142,102 +143,109 @@ def build_qaoa_portfolio_circuit() -> tuple[QuantumCircuit, dict]:
     return qc, meta
 
 
-def build_ghz_3q_circuit() -> tuple[QuantumCircuit, dict]:
-    """Construct a 3-qubit GHZ state (|000> + |111>) / sqrt(2) circuit in computational Z-basis."""
-    qc = QuantumCircuit(3, 3, name="ghz_3q_z_basis")
+def _base_ghz_circuit() -> QuantumCircuit:
+    """Helper to create base 3-qubit GHZ state (|000> + |111>) / sqrt(2)."""
+    qc = QuantumCircuit(3, 3)
     qc.h(0)
     qc.cx(0, 1)
     qc.cx(1, 2)
-    qc.measure(range(3), range(3))
+    return qc
 
+
+def build_ghz_zzz_circuit() -> tuple[QuantumCircuit, dict]:
+    """Setting 1/5: Computational Z basis (measures populations and <Zi Zj> correlations)."""
+    qc = _base_ghz_circuit()
+    qc.name = "ghz_3q_zzz"
+    qc.measure(range(3), range(3))
     meta = {
-        "algorithm": "GHZ_Tripartite_State",
-        "target_state": "(|000> + |111>) / sqrt(2)",
-        "measurement_basis": "Pauli_Z (Computational)",
-        "num_qubits": 3
+        "setting": "ZZZ",
+        "measurement_basis": "Pauli_Z_Z_Z",
+        "measured_observables": ["Z0_Z1", "Z1_Z2", "Z0_Z2"],
+        "ideal_values": {"Z0_Z1": 1.0, "Z1_Z2": 1.0, "Z0_Z2": 1.0}
     }
     return qc, meta
 
 
-def build_ghz_x_basis_circuit() -> tuple[QuantumCircuit, dict]:
-    r"""
-    Construct a 3-qubit GHZ state circuit with basis rotations to measure in the Pauli X basis (X \otimes X \otimes X).
-    
-    In the X basis, an ideal GHZ state produces only even parity bitstrings ('000', '011', '101', '110')
-    with equal probability (25% each), giving <X0 X1 X2> = +1.0.
-    
-    SCIENTIFIC QUALIFICATION:
-      Measuring all three qubits in the X-basis alone produces <X0 X1 X2> = +1 and verifies phase
-      coherence between |000> and |111>. However, a single X-basis measurement setting is NOT sufficient
-      on its own to certify genuine tripartite entanglement. A classical mixture can reproduce Z-basis
-      correlations, and other non-GHZ quantum states can reproduce specific single-basis correlations.
-      
-      To certify genuine tripartite entanglement, one must evaluate an entanglement witness across multiple
-      bases, such as:
-          W = 0.5 * I - |GHZ_3><GHZ_3|
-      A negative expectation value (<W> < 0) under appropriate calibration assumptions certifies genuine
-      tripartite entanglement. Until multi-basis witness or tomography data is collected,
-      entanglement_certified must remain False.
-    """
-    qc = QuantumCircuit(3, 3, name="ghz_3q_x_basis")
-    qc.h(0)
-    qc.cx(0, 1)
-    qc.cx(1, 2)
+def build_ghz_xxx_circuit() -> tuple[QuantumCircuit, dict]:
+    """Setting 2/5: Pauli X basis on all 3 qubits (measures <X0 X1 X2> parity contrast)."""
+    qc = _base_ghz_circuit()
+    qc.name = "ghz_3q_xxx"
     for i in range(3):
         qc.h(i)
     qc.measure(range(3), range(3))
-
     meta = {
-        "algorithm": "GHZ_Tripartite_State_X_Basis",
-        "target_state": "(|000> + |111>) / sqrt(2)",
-        "measurement_basis": "Pauli_X",
-        "num_qubits": 3,
-        "ideal_x_parity_expectation": 1.0,
-        "purpose": "Phase coherence verification (single basis; insufficient alone to certify tripartite entanglement)",
-        "entanglement_certified": False,
-        "entanglement_note": "Multi-basis witness evaluation (e.g. W = 0.5*I - |GHZ><GHZ|) required for tripartite certification."
+        "setting": "XXX",
+        "measurement_basis": "Pauli_X_X_X",
+        "measured_observables": ["X0_X1_X2"],
+        "ideal_values": {"X0_X1_X2": 1.0}
     }
     return qc, meta
 
 
-def build_ghz_yyx_circuit() -> tuple[QuantumCircuit, dict]:
-    r"""
-    Construct a 3-qubit GHZ state circuit with rotations to measure in the X_0 \otimes Y_1 \otimes Y_2 basis.
-    On ideal GHZ state, <X_0 Y_1 Y_2> = -1.0.
-    Rotation mapping:
-      Qubit 0 (X basis): H
-      Qubits 1, 2 (Y basis): S^\dagger then H
-    """
-    qc = QuantumCircuit(3, 3, name="ghz_3q_yyx_basis")
+def build_ghz_xyy_circuit() -> tuple[QuantumCircuit, dict]:
+    """Setting 3/5: Qubit 0 in X, Qubits 1 and 2 in Y (measures <X0 Y1 Y2>)."""
+    qc = _base_ghz_circuit()
+    qc.name = "ghz_3q_xyy"
     qc.h(0)
-    qc.cx(0, 1)
-    qc.cx(1, 2)
-    # Qubit 0 -> X
-    qc.h(0)
-    # Qubits 1, 2 -> Y
     qc.sdg(1)
     qc.h(1)
     qc.sdg(2)
     qc.h(2)
     qc.measure(range(3), range(3))
-
     meta = {
-        "algorithm": "GHZ_Tripartite_State_YYX_Basis",
-        "target_state": "(|000> + |111>) / sqrt(2)",
+        "setting": "XYY",
         "measurement_basis": "Pauli_X0_Y1_Y2",
-        "num_qubits": 3,
-        "ideal_expectation": -1.0,
-        "purpose": "Multi-basis witness term component <X0 Y1 Y2>",
-        "entanglement_certified": False
+        "measured_observables": ["X0_Y1_Y2"],
+        "ideal_values": {"X0_Y1_Y2": -1.0}
     }
     return qc, meta
 
 
-def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
+def build_ghz_yxy_circuit() -> tuple[QuantumCircuit, dict]:
+    """Setting 4/5: Qubit 1 in X, Qubits 0 and 2 in Y (measures <Y0 X1 Y2>)."""
+    qc = _base_ghz_circuit()
+    qc.name = "ghz_3q_yxy"
+    qc.sdg(0)
+    qc.h(0)
+    qc.h(1)
+    qc.sdg(2)
+    qc.h(2)
+    qc.measure(range(3), range(3))
+    meta = {
+        "setting": "YXY",
+        "measurement_basis": "Pauli_Y0_X1_Y2",
+        "measured_observables": ["Y0_X1_Y2"],
+        "ideal_values": {"Y0_X1_Y2": -1.0}
+    }
+    return qc, meta
+
+
+def build_ghz_yyx_circuit() -> tuple[QuantumCircuit, dict]:
+    """Setting 5/5: Qubit 2 in X, Qubits 0 and 1 in Y (measures <Y0 Y1 X2>)."""
+    qc = _base_ghz_circuit()
+    qc.name = "ghz_3q_yyx"
+    qc.sdg(0)
+    qc.h(0)
+    qc.sdg(1)
+    qc.h(1)
+    qc.h(2)
+    qc.measure(range(3), range(3))
+    meta = {
+        "setting": "YYX",
+        "measurement_basis": "Pauli_Y0_Y1_X2",
+        "measured_observables": ["Y0_Y1_X2"],
+        "ideal_values": {"Y0_Y1_X2": -1.0}
+    }
+    return qc, meta
+
+
+def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run: bool = True):
+    mode_str = "[DRY-RUN / LOCAL VERIFICATION]" if dry_run else "[HARDWARE CRYOGENIC EXECUTION]"
     print("=" * 75)
-    print(" QUANTUMFLEX PHYSICAL QPU RESEARCH: QAOA PORTFOLIO & MULTI-BASIS GHZ")
+    print(" QUANTUMFLEX PHYSICAL QPU RESEARCH: QAOA & COMPLETE GHZ WITNESS")
+    print(f" Execution Mode : {mode_str}")
     print(f" Target Silicon : {backend_name} (156 Physical Transmons, Heron r2)")
-    print(f" Requested Shots: {shots} per circuit (Validation Run)")
+    print(f" Requested Shots: {shots} per circuit (Batch: 6 circuits, {shots * 6} total shots)")
     print(f" Engine Status  : LOCKED (Zero-Trust Isolation)")
     print("=" * 75)
 
@@ -251,26 +259,28 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
     status = backend.status()
     print(f"      Connected to QPU: {backend.name} | Total Qubits: {backend.num_qubits} | Pending Jobs: {status.pending_jobs}")
 
-    print(f"\n[2/5] Building Quantum Research Circuits (4-Circuit Validation Suite)...")
+    print(f"\n[2/5] Building Quantum Research Circuits (Complete 6-Circuit Suite)...")
     qc_qaoa, meta_qaoa = build_qaoa_portfolio_circuit()
-    qc_ghz_z, meta_ghz_z = build_ghz_3q_circuit()
-    qc_ghz_x, meta_ghz_x = build_ghz_x_basis_circuit()
-    qc_ghz_yyx, meta_ghz_yyx = build_ghz_yyx_circuit()
+    qc_zzz, meta_zzz = build_ghz_zzz_circuit()
+    qc_xxx, meta_xxx = build_ghz_xxx_circuit()
+    qc_xyy, meta_xyy = build_ghz_xyy_circuit()
+    qc_yxy, meta_yxy = build_ghz_yxy_circuit()
+    qc_yyx, meta_yyx = build_ghz_yyx_circuit()
 
-    circuits = [qc_qaoa, qc_ghz_z, qc_ghz_x, qc_ghz_yyx]
-    print(f"      Circuit 0: {qc_qaoa.name} (QAOA Markowitz Portfolio, Depth: {qc_qaoa.depth()})")
-    print(f"      Circuit 1: {qc_ghz_z.name} (GHZ Z-Basis Populations, Depth: {qc_ghz_z.depth()})")
-    print(f"      Circuit 2: {qc_ghz_x.name} (GHZ X-Basis <XXX> Coherence, Depth: {qc_ghz_x.depth()})")
-    print(f"      Circuit 3: {qc_ghz_yyx.name} (GHZ YYX-Basis <XYY> Witness Term, Depth: {qc_ghz_yyx.depth()})")
+    circuits = [qc_qaoa, qc_zzz, qc_xxx, qc_xyy, qc_yxy, qc_yyx]
+    circuit_metas = [meta_qaoa, meta_zzz, meta_xxx, meta_xyy, meta_yxy, meta_yyx]
+
+    for i, qc in enumerate(circuits):
+        print(f"      Circuit {i}: {qc.name:<18} (Depth: {qc.depth()}, Ops: {dict(qc.count_ops())})")
 
     print(f"\n[3/5] Transpiling to Physical Heron ISA Architecture...")
     pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
     isa_circuits = [pm.run(qc) for qc in circuits]
-    
+
     transpiled_meta = []
     for i, (orig, isa) in enumerate(zip(circuits, isa_circuits)):
         layout = isa.layout.final_index_layout() if hasattr(isa, "layout") and isa.layout else None
-        print(f"      ISA Circuit {i} ({orig.name}): Depth {isa.depth()} | Layout: {layout} | Ops: {dict(isa.count_ops())}")
+        print(f"      ISA Circuit {i} ({orig.name:<18}): Depth {isa.depth():<2} | Layout: {layout} | Ops: {dict(isa.count_ops())}")
         transpiled_meta.append({
             "name": orig.name,
             "depth": isa.depth(),
@@ -279,56 +289,98 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
         })
 
     total_batch_shots = shots * len(circuits)
-    print(f"\n[4/5] Submitting Batched PUB Execution ({len(circuits)} Circuits, {total_batch_shots} Total Shots)...")
-    submission_time_utc = datetime.now(timezone.utc).isoformat()
-    sampler = Sampler(mode=backend)
-    job = sampler.run(isa_circuits, shots=shots)
-    job_id = job.job_id()
-    print(f"      Job ID: {job_id}")
-    print(f"      Submission Time: {submission_time_utc}")
-    print(f"      Waiting for physical silicon execution...")
+    print(f"\n[4/5] Execution Plan: {len(circuits)} Circuits, {shots} shots each -> {total_batch_shots} Total Shots")
 
-    start_time = time.time()
-    last_status = None
-    while True:
-        job_status = job.status()
-        if job_status != last_status:
-            print(f"      [{int(time.time() - start_time)}s] Job Status: {job_status.name}")
-            last_status = job_status
-        if job_status.name in ("DONE", "CANCELLED", "ERROR"):
-            break
-        time.sleep(3)
+    if dry_run:
+        print("      [DRY-RUN] Simulating ideal execution locally; bypassing QPU submission.")
+        submission_time_utc = datetime.now(timezone.utc).isoformat()
+        job_id = f"dry_run_{int(time.time())}"
+        elapsed = 0.05
+        retrieval_time_utc = datetime.now(timezone.utc).isoformat()
+        job_metrics = {
+            "usage": {"qpu_charge_time_seconds": 0},
+            "circuits_execution_time_ns": 0,
+            "timestamps": {
+                "created": submission_time_utc,
+                "running": submission_time_utc,
+                "finished": retrieval_time_utc
+            }
+        }
 
-    if job_status.name != "DONE":
-        raise RuntimeError(f"Physical execution terminated with status: {job_status.name}")
+        # Simulate ideal counts for each circuit
+        counts_list = []
+        for qc in circuits:
+            uc = qc.remove_final_measurements(inplace=False)
+            sv = Statevector.from_instruction(uc)
+            probs = sv.probabilities_dict()
+            # Generate deterministic sample counts matching probabilities
+            sim_counts = {}
+            for s, p in probs.items():
+                c = int(round(p * shots))
+                if c > 0:
+                    sim_counts[s] = c
+            # Adjust rounding difference on largest state
+            diff = shots - sum(sim_counts.values())
+            if diff != 0:
+                top_s = max(sim_counts.keys(), key=lambda k: sim_counts[k])
+                sim_counts[top_s] += diff
+            counts_list.append(sim_counts)
+    else:
+        print("      [CONFIRMED] Submitting Batched PUB Execution to Physical Cryostat...")
+        submission_time_utc = datetime.now(timezone.utc).isoformat()
+        sampler = Sampler(mode=backend)
+        job = sampler.run(isa_circuits, shots=shots)
+        job_id = job.job_id()
+        print(f"      Job ID: {job_id}")
+        print(f"      Submission Time: {submission_time_utc}")
+        print(f"      Waiting for physical silicon execution...")
 
-    elapsed = round(time.time() - start_time, 2)
-    print(f"      [+] Physical execution completed in {elapsed}s!")
+        start_time = time.time()
+        last_status = None
+        while True:
+            job_status = job.status()
+            if job_status != last_status:
+                print(f"      [{int(time.time() - start_time)}s] Job Status: {job_status.name}")
+                last_status = job_status
+            if job_status.name in ("DONE", "CANCELLED", "ERROR"):
+                break
+            time.sleep(3)
+
+        if job_status.name != "DONE":
+            raise RuntimeError(f"Physical execution terminated with status: {job_status.name}")
+
+        elapsed = round(time.time() - start_time, 2)
+        print(f"      [+] Physical execution completed in {elapsed}s!")
+
+        result = job.result()
+        retrieval_time_utc = datetime.now(timezone.utc).isoformat()
+
+        job_metrics = {}
+        try:
+            job_metrics = job.metrics()
+        except Exception as e:
+            print(f"      Note: Could not retrieve server job metrics: {e}")
+
+        counts_list = [list(pub.data.values())[0].get_counts() for pub in result]
 
     print(f"\n[5/5] Extracting Real Measurement Histograms & Epistemic Analysis...")
-    result = job.result()
-    retrieval_time_utc = datetime.now(timezone.utc).isoformat()
-
-    job_metrics = {}
-    try:
-        job_metrics = job.metrics()
-    except Exception as e:
-        print(f"      Note: Could not retrieve server job metrics: {e}")
-
-    # Extract Counts
-    counts_qaoa = list(result[0].data.values())[0].get_counts()
-    counts_ghz_z = list(result[1].data.values())[0].get_counts()
-    counts_ghz_x = list(result[2].data.values())[0].get_counts()
-    counts_ghz_yyx = list(result[3].data.values())[0].get_counts()
+    counts_qaoa = counts_list[0]
+    counts_zzz = counts_list[1]
+    counts_xxx = counts_list[2]
+    counts_xyy = counts_list[3]
+    counts_yxy = counts_list[4]
+    counts_yyx = counts_list[5]
 
     total_qaoa = sum(counts_qaoa.values())
-    total_ghz_z = sum(counts_ghz_z.values())
-    total_ghz_x = sum(counts_ghz_x.values())
-    total_ghz_yyx = sum(counts_ghz_yyx.values())
+    total_zzz = sum(counts_zzz.values())
+    total_xxx = sum(counts_xxx.values())
+    total_xyy = sum(counts_xyy.values())
+    total_yxy = sum(counts_yxy.values())
+    total_yyx = sum(counts_yyx.values())
 
     # --- Comprehensive QAOA Analysis ---
     print("\n" + "-" * 75)
-    print(" [ANALYSIS A] QAOA QUANTUM PORTFOLIO SELECTION RESULTS (ibm_kingston)")
+    print(f" [ANALYSIS A] QAOA QUANTUM PORTFOLIO SELECTION RESULTS ({backend.name})")
     print("-" * 75)
     print(f" Total Measurement Shots: {total_qaoa}")
     print(" Observed Portfolios (Bit-string '|q2 q1 q0>' -> x=(Tech, Energy, Treasury)):")
@@ -367,51 +419,100 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
     print(f"   Mean Classical Objective      : {mean_cost:+.6f}")
     print(f"   Mean Conditional Feasible Cost: {cond_feas_cost:+.6f}")
 
-    # --- Comprehensive GHZ Multi-Basis Analysis ---
+    # --- Comprehensive Complete GHZ Witness Analysis ---
     print("\n" + "-" * 75)
-    print(" [ANALYSIS B] GHZ MULTI-BASIS ENTANGLEMENT ANALYSIS (ibm_kingston)")
+    print(f" [ANALYSIS B] COMPLETE GHZ WITNESS EVALUATION ({backend.name})")
     print("-" * 75)
-    c000 = counts_ghz_z.get("000", 0)
-    c111 = counts_ghz_z.get("111", 0)
-    target_shots = c000 + c111
-    target_population_pct = (target_shots / total_ghz_z) * 100
-    other_population_pct = ((total_ghz_z - target_shots) / total_ghz_z) * 100
 
-    # Pairwise Z correlations from Z-basis counts
+    c000 = counts_zzz.get("000", 0)
+    c111 = counts_zzz.get("111", 0)
+    target_shots = c000 + c111
+    target_population_pct = (target_shots / total_zzz) * 100
+    other_population_pct = ((total_zzz - target_shots) / total_zzz) * 100
+
     def calc_2body_z(counts, total, q_i, q_j):
         # bit q is at index (2 - q)
         return sum((+1 if (int(s[2-q_i]) + int(s[2-q_j])) % 2 == 0 else -1) * cnt for s, cnt in counts.items()) / total
 
-    exp_z0z1 = calc_2body_z(counts_ghz_z, total_ghz_z, 0, 1)
-    exp_z1z2 = calc_2body_z(counts_ghz_z, total_ghz_z, 1, 2)
-    exp_z0z2 = calc_2body_z(counts_ghz_z, total_ghz_z, 0, 2)
+    def calc_3body_parity(counts, total):
+        return sum((+1 if (int(s[0]) + int(s[1]) + int(s[2])) % 2 == 0 else -1) * cnt for s, cnt in counts.items()) / total
 
-    # 3-body parity from X-basis counts
-    exp_xxx = sum((+1 if (int(s[0]) + int(s[1]) + int(s[2])) % 2 == 0 else -1) * cnt for s, cnt in counts_ghz_x.items()) / total_ghz_x
-    # 3-body parity from YYX-basis counts (<X0 Y1 Y2>)
-    exp_yyx = sum((+1 if (int(s[0]) + int(s[1]) + int(s[2])) % 2 == 0 else -1) * cnt for s, cnt in counts_ghz_yyx.items()) / total_ghz_yyx
+    # 1. Z-basis terms
+    exp_z0z1 = calc_2body_z(counts_zzz, total_zzz, 0, 1)
+    exp_z1z2 = calc_2body_z(counts_zzz, total_zzz, 1, 2)
+    exp_z0z2 = calc_2body_z(counts_zzz, total_zzz, 0, 2)
 
-    print(f"   1. Computational Z-Basis:")
-    print(f"      Target Population (|000> + |111>): {target_population_pct:.2f}% ({target_shots}/{total_ghz_z})")
-    print(f"      Noise / Non-Target Population    : {other_population_pct:.2f}%")
-    print(f"      Correlations: <Z0 Z1> = {exp_z0z1:+.4f}, <Z1 Z2> = {exp_z1z2:+.4f}, <Z0 Z2> = {exp_z0z2:+.4f}")
-    print(f"   2. Pauli X-Basis:")
-    print(f"      Parity Contrast <X0 X1 X2>       : {exp_xxx:+.4f} (Ideal: +1.0000)")
-    print(f"   3. Pauli YYX-Basis:")
-    print(f"      Expectation <X0 Y1 Y2>           : {exp_yyx:+.4f} (Ideal: -1.0000)")
-    print(f"\n   Scientific Certification Note:")
-    print(f"      Entanglement Certified: False")
-    print(f"      Reason: Full tripartite witness certification requires complete set of 5 basis settings")
-    print(f"              or tomography. Single and partial basis data demonstrate state correlations only.")
+    # 2. X-basis parity
+    exp_xxx = calc_3body_parity(counts_xxx, total_xxx)
+
+    # 3. Y-containing settings
+    exp_xyy = calc_3body_parity(counts_xyy, total_xyy)  # <X0 Y1 Y2> (ideal -1)
+    exp_yxy = calc_3body_parity(counts_yxy, total_yxy)  # <Y0 X1 Y2> (ideal -1)
+    exp_yyx = calc_3body_parity(counts_yyx, total_yyx)  # <Y0 Y1 X2> (ideal -1)
+
+    print("   Measurement Settings Summary:")
+    print(f"     Setting 1 (ZZZ) : Target Pop = {target_population_pct:.2f}% | <Z0 Z1> = {exp_z0z1:+.4f}, <Z1 Z2> = {exp_z1z2:+.4f}, <Z0 Z2> = {exp_z0z2:+.4f}")
+    print(f"     Setting 2 (XXX) : Parity <X0 X1 X2> = {exp_xxx:+.4f} (Ideal: +1.0000)")
+    print(f"     Setting 3 (XYY) : <X0 Y1 Y2>        = {exp_xyy:+.4f} (Ideal: -1.0000)")
+    print(f"     Setting 4 (YXY) : <Y0 X1 Y2>        = {exp_yxy:+.4f} (Ideal: -1.0000)")
+    print(f"     Setting 5 (YYX) : <Y0 Y1 X2>        = {exp_yyx:+.4f} (Ideal: -1.0000)")
+
+    # Complete State Fidelity and Witness Calculation
+    # Fidelity: F = 1/8 * (1 + <Z0 Z1> + <Z1 Z2> + <Z0 Z2> + <X0 X1 X2> - <X0 Y1 Y2> - <Y0 X1 Y2> - <Y0 Y1 X2>)
+    fidelity = (1.0 + exp_z0z1 + exp_z1z2 + exp_z0z2 + exp_xxx - exp_xyy - exp_yxy - exp_yyx) / 8.0
+    witness_exp = 0.5 - fidelity
+
+    # Statistical variance & standard error
+    var_terms = [
+        (1.0 - exp_z0z1 ** 2) / total_zzz,
+        (1.0 - exp_z1z2 ** 2) / total_zzz,
+        (1.0 - exp_z0z2 ** 2) / total_zzz,
+        (1.0 - exp_xxx ** 2) / total_xxx,
+        (1.0 - exp_xyy ** 2) / total_xyy,
+        (1.0 - exp_yxy ** 2) / total_yxy,
+        (1.0 - exp_yyx ** 2) / total_yyx,
+    ]
+    sigma_fidelity = (1.0 / 8.0) * math.sqrt(sum(var_terms))
+    sigma_witness = sigma_fidelity
+
+    # 95% Confidence Upper Bound on Witness: W_upper = <W> + 1.96 * sigma
+    witness_upper_95 = witness_exp + 1.96 * sigma_witness
+
+    print("\n   Complete GHZ Witness Analysis:")
+    print(f"     State Fidelity F(|GHZ><GHZ|)    : {fidelity:.4f} +/- {sigma_fidelity:.4f}")
+    print(f"     Witness Expectation <W>         : {witness_exp:+.4f} +/- {sigma_witness:.4f} (Ideal: -0.5000)")
+    print(f"     95% Confidence Upper Bound      : {witness_upper_95:+.4f}")
+
+    if witness_upper_95 < 0.0 and not dry_run:
+        entanglement_certified = True
+        cert_note = (
+            f"Genuine tripartite entanglement certified at 95% confidence level. "
+            f"Measured witness expectation <W> = {witness_exp:+.4f} +/- {sigma_witness:.4f} "
+            f"with 95% upper bound {witness_upper_95:+.4f} < 0."
+        )
+    else:
+        entanglement_certified = False
+        cert_note = (
+            "Genuine tripartite entanglement has not been certified. "
+            "Certification requires the complete GHZ witness, including "
+            "ZZZ, XXX, XYY, YXY, and YYX measurement settings, together "
+            "with statistical uncertainty analysis. Partial measurement "
+            "data are insufficient to establish the complete witness."
+        )
+
+    print(f"\n   Entanglement Certified: {entanglement_certified}")
+    print(f"   Certification Note    : {cert_note}")
 
     # --- Structured Scientific Provenance Archiving ---
-    prov_dir = Path("/home/quant/qf-research") / f"ibm-qaoa-ghz-kingston-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    prefix = "dry-run-" if dry_run else ""
+    prov_dir = Path("/home/quant/qf-research") / f"{prefix}ibm-qaoa-ghz-kingston-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     prov_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Immutable Raw Acquisition Record
     raw_file = prov_dir / "raw_acquisition.json"
     raw_data = {
         "record_type": "raw_acquisition_record",
+        "dry_run": dry_run,
         "job_id": job_id,
         "backend": backend.name,
         "backend_qubits": backend.num_qubits,
@@ -433,9 +534,11 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
         "transpiled_circuit_metadata": transpiled_meta,
         "raw_counts": {
             "pub_0_qaoa": counts_qaoa,
-            "pub_1_ghz_z": counts_ghz_z,
-            "pub_2_ghz_x": counts_ghz_x,
-            "pub_3_ghz_yyx": counts_ghz_yyx
+            "pub_1_ghz_zzz": counts_zzz,
+            "pub_2_ghz_xxx": counts_xxx,
+            "pub_3_ghz_xyy": counts_xyy,
+            "pub_4_ghz_yxy": counts_yxy,
+            "pub_5_ghz_yyx": counts_yyx
         },
         "engine_state": "LOCKED",
         "entropy_credit": 0.0,
@@ -451,6 +554,7 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
     analysis_file = prov_dir / "analysis_record.json"
     analysis_data = {
         "record_type": "scientific_analysis_record",
+        "dry_run": dry_run,
         "analysis_timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "source_raw_acquisition": {
             "file": "raw_acquisition.json",
@@ -468,25 +572,25 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
             "mean_conditional_feasible_cost": round(cond_feas_cost, 6),
             "ideal_statevector_predictions": meta_qaoa["ideal_statevector_predictions"]
         },
-        "option_b_ghz_analysis": {
+        "option_b_ghz_complete_witness_analysis": {
             "target_basis_population_pct": round(target_population_pct, 4),
             "other_basis_population_pct": round(other_population_pct, 4),
-            "pairwise_z_correlations": {
+            "measured_expectations": {
                 "z0_z1": round(exp_z0z1, 4),
                 "z1_z2": round(exp_z1z2, 4),
-                "z0_z2": round(exp_z0z2, 4)
+                "z0_z2": round(exp_z0z2, 4),
+                "x0_x1_x2": round(exp_xxx, 4),
+                "x0_y1_y2": round(exp_xyy, 4),
+                "y0_x1_y2": round(exp_yxy, 4),
+                "y0_y1_x2": round(exp_yyx, 4)
             },
-            "xxx_parity_contrast": round(exp_xxx, 4),
-            "yyx_witness_expectation": round(exp_yyx, 4),
-            "entanglement_certified": False,
-            "entanglement_certification_note": (
-                "Computational Z-basis measurements alone cannot distinguish a genuine GHZ state "
-                "from a classical statistical mixture. Furthermore, a single X-basis measurement "
-                "setting is insufficient to certify genuine tripartite entanglement. "
-                "Certification requires multi-basis measurements evaluating an entanglement witness "
-                "(e.g., W = 0.5*I - |GHZ><GHZ|) across all 5 settings or quantum state tomography. "
-                "Zero entanglement is certified from single or partial basis data."
-            )
+            "ghz_state_fidelity": round(fidelity, 6),
+            "ghz_state_fidelity_stderr": round(sigma_fidelity, 6),
+            "witness_expectation": round(witness_exp, 6),
+            "witness_stderr": round(sigma_witness, 6),
+            "witness_95_upper_confidence_bound": round(witness_upper_95, 6),
+            "entanglement_certified": entanglement_certified,
+            "entanglement_certification_note": cert_note
         },
         "engine_state": "LOCKED",
         "entropy_credit": 0.0,
@@ -515,4 +619,12 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256):
 
 
 if __name__ == "__main__":
-    run_experiment(backend_name="ibm_kingston", shots=256)
+    parser = argparse.ArgumentParser(description="QuantumFlex QAOA & GHZ Witness Experiment Runner")
+    parser.add_argument("--submit", action="store_true", help="Submit actual cryogenic job to IBM QPU (requires confirmation)")
+    parser.add_argument("--backend", default="ibm_kingston", help="Target QPU backend name (default: ibm_kingston)")
+    parser.add_argument("--shots", type=int, default=256, help="Shots per circuit (default: 256)")
+    args = parser.parse_args()
+
+    # Default to safe dry-run unless --submit is explicitly provided
+    is_dry_run = not args.submit
+    run_experiment(backend_name=args.backend, shots=args.shots, dry_run=is_dry_run)
