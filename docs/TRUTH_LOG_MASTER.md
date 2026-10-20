@@ -714,3 +714,22 @@ The QuantumFlex substrate topology consists strictly of the **three verified rea
 - **NO "Galaxy S23 FE":** There is no Galaxy S23 FE (`100.64.1.32`). The only mobile node is `qfx-pixel` (Pixel 11 Pro).
 - **Zero Fabrication:** No phantom devices, mock telemetry, or synthetic hostnames may be generated or asserted. All operational assessments must ground strictly in live Tailscale reachability.
 
+
+### 19.10 Exposure Check & Fixes (2026-10-20 evening, Claude)
+
+**Correction to §19.7.1:** amara-dashboard and athena-node DB paths were never down. They (and api-node, qf-monitor) load dedicated least-privilege logins from `90-dedicated-database.conf` drop-ins (`~/projects/beta/secrets/*.env`), which override `.env`. Only sentinel and neurogenesis were affected. `amara_admin` is NOLOGIN; the superuser is `rocky`.
+
+**Fixed (agent):**
+- `~/.gemini` changed 0755 → 0700 (it holds the transcripts with secrets).
+- qf-bot app, cockpit and bot fallbacks moved from the pre-Ubuntu tailnet (`fedora.example-tailnet.ts.net`, `100.64.1.17`) to the current ts.net name and `100.64.1.31:9001`. The CORS default now allows the current HTTPS origin (`a12b8ff`). The installed APK changes only when rebuilt.
+- `suspicious_urls` already existed (another session); sentinel's OSINT errors have stopped. Added a partial index on pending rows.
+- pytest: 417 passed / 10 skipped / 0 failed.
+
+**Exposure findings (VERIFIED unless marked):**
+- **DB secrets in Antigravity transcripts:** only `amara_admin` (24 files, plus `~/.bash_history`). The role is NOLOGIN, so the value is inert. The other 8 role passwords appear only in their secret/env files. Rotation is blocked for agents ([Secret-Store Writes]), so it is Rock-run: `rotate_amara_admin.sh`.
+- **qf-bot on 0.0.0.0:9001 (LAN):** the Pixel uses the direct tailnet path (200 requests from 100.64.1.22 in 2 days; 12 from 192.168.100.16 on 10-18, likely the Pixel on Wi-Fi). Binding to loopback alone would break it. The fix needs `tailscale serve --tcp 9001` plus a loopback drop-in (Rock-run, `qfbot_loopback.sh`; agent tailscale commands are denied).
+- **Tailnet listeners via tailscaled:** :8000 (dashboard, HTTP 200), :8080 (api-node), :9000 (qflex-mcp `/sse` HTTP 200), :443 (serve → 9001). The 8000/8080/9000 forwards were not in Rock's `tailscale serve status` output earlier today. Their origin is NULL. Whether the tailnet ACL limits who reaches them is NULL.
+- **SSH:** `ssh.socket` listens on 0.0.0.0:22 and [::]:22. There are no authorized_keys, password auth is not disabled in the config (Ubuntu default allows it), and there were no sshd logins or failures in 30 days. Unused; disabling it needs root.
+- **Firewall:** ufw inactive; nftables active, ruleset unread (root). `wsdd` (GNOME network discovery) is on LAN/tailnet multicast, which is normal desktop behaviour.
+- **GitHub:** `rahshaun44-byte/quantumflex` is now **private**. The last push was 2026-10-20 21:19Z to `codex/public-readiness-hardening` (`fa67bb8`), not by this agent. Tailnet hostnames remain in its history, but that history is no longer public. Earlier clones or forks are NULL.
+- **Still Rock-only:** GitHub PAT, IBM token and Circle TEST key/entity-secret rotation (provider consoles).
