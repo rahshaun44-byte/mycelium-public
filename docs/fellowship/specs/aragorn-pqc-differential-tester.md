@@ -6,12 +6,16 @@ author: aragorn
 # Requirements: PQC Differential Tester
 
 **Defined:** 2026-10-20
-**Locked decisions:** D-01, D-02
+**Locked decisions:** D-01 to D-06
 
 ## Locked Decisions
 
 - **D-01:** Two separate products. The **home system** (QuantumFlex/Mycelium) v1 is the current re-alignment only: the sentinel realign (done 2026-10-20), the engine `ledger.dat` 0600 deploy, and credential rotation. No new services or features are added there. **Earning** is a separate product, and its v1 is this tester.
 - **D-02:** The tester is published as a **new, clean public repository** with no history from `mycelium` or `qf-public`. This is a deliberate exception to the "no push / remotes out of scope" line in `product.md`, and it applies only to that new repo. The `mycelium` push policy (quest log 2026-10-08, Option A) is unchanged.
+- **D-03:** Adapters use Crucible's harness protocol (JSON lines over stdin/stdout; `symbolicsoft/crucible`) for the KAT, negative and differential suites. dudect timing runs **in-process**, through a native timing harness per target, never over the pipe. Crucible's own "Timing" category tests deterministic and hedged signing consistency only, not constant time.
+- **D-04:** The first targets are RustCrypto `ml-dsa`/`ml-kem` (Rust), `@noble/post-quantum` (JS) and Go `crypto/mldsa` (Go 1.26+). The fallback for Go is `libcrux-ml-dsa`.
+- **D-05:** The licence is Apache-2.0. Any Crucible harness template that is copied keeps its notices and attribution.
+- **D-06:** Disclosure follows each upstream's `SECURITY.md` policy, defaulting to a 90-day embargo when there is none.
 
 ## Problem Statement
 
@@ -40,12 +44,12 @@ This product pulls that capability out and points it at other people's code. Its
   - Malformed, truncated and out-of-range public keys, ciphertexts and signatures must be rejected.
   - ML-DSA signature malleability, and acceptance of non-canonical encodings, are flagged.
   - The cases cover both bug classes in the Bernstein paper.
-- **[CORE-04]** (P1): The tester runs a dudect constant-time check on decapsulation and signing, with a fixed seed and a stated confidence threshold.
+- **[CORE-04]** (P1): The tester runs a dudect constant-time check on decapsulation and signing, with a fixed seed and a stated confidence threshold. It is measured in-process in the target's own language (D-03).
 - **[CORE-05]** (P1): ML-KEM-1024 and ML-DSA-87 are supported.
 
 ### Targets
 
-- **[TGT-01]** (P0): Adapters exist for at least **three outside open-source implementations** in at least two languages. They are chosen from actively used Rust, Go, JS or embedded-C libraries; the list is fixed in Open Questions before the build starts.
+- **[TGT-01]** (P0): Crucible-protocol adapters exist for the three D-04 targets: RustCrypto `ml-dsa`/`ml-kem`, `@noble/post-quantum` and Go `crypto/mldsa`, or `libcrux-ml-dsa` in place of the Go target.
 - **[TGT-02]** (P1): Each adapter is pinned to an exact upstream version or commit.
 
 ### Output
@@ -118,13 +122,14 @@ Gimli may not implement these in v1.
 
 ## Open Questions
 
-- [ ] Which three outside implementations come first? Research (2026-10-20) proposes the list below. It is not locked; Rock decides.
+- [x] Which three outside implementations come first? Locked as D-04. The research behind it:
   - **Prior work:** Symbolic Software's open-source **Crucible** (March 2026) already runs 78 ML-KEM and 51 ML-DSA conformance tests over 15 implementations, through a JSON-line stdin/stdout shim. It published ML-KEM results only: two conformance gaps and no vulnerabilities. Our differentiation has to be ML-DSA signing-side exploitability (the Bernstein bug classes), differential runs against OpenSSL 3.5, dudect timing, and targets Crucible did not cover.
   - **1. RustCrypto `ml-dsa` + `ml-kem` (Rust).** Pure Rust, pre-1.0, no published audit. Two 2026 ML-DSA CVEs: CVE-2026-24850 (duplicate hint indices accepted) and CVE-2026-22705 (Decompose timing). It is the recommended migration target as PQClean is archived (RUSTSEC-2026-0161). Not in Crucible.
   - **2. `@noble/post-quantum` (JS).** Widely used on npm, no ML-DSA audit or advisory found, and JS makes constant-time behaviour hard to guarantee, so dudect has real work to do. Not in Crucible.
   - **3. Go `crypto/mldsa` (Go standard library, new in 1.26).** Young code with a reported verify edge case (golang/go#79959). Hit probability is low, but a finding would carry the most credibility. Not in Crucible (it covered `crypto/mlkem`).
   - **Alternate:** `libcrux-ml-dsa` (Rust; RUSTSEC-2026-0125, AVX2 `use_hint` CVSS 8.2), in place of #3 if Go proves too well reviewed.
-  - **Open:** Crucible-compatible adapters (reuse its shim protocol) or our own interface?
-- [ ] The repo name and licence: Apache-2.0 or MIT? (Rock)
-- [ ] Should the GitHub account be `rahshaun44-byte` or a new one kept separate from the home system? (Rock)
-- [ ] Is the default embargo 90 days, or does each upstream's own policy win? (Rock)
+  - Crucible-compatible adapters or our own interface? Locked as D-03.
+- [x] Licence: Apache-2.0 (D-05).
+- [x] Embargo: each upstream's `SECURITY.md` wins, otherwise 90 days (D-06).
+- [ ] Repo name. (Rock)
+- [ ] GitHub account: `rahshaun44-byte`, which links the tester to the public `quantumflex` repo, or a new account kept separate from the home system? (Rock)
