@@ -687,3 +687,10 @@ Append-only. Verification of substrate, test suites, database remediation, and p
 - Rebuilding engine binary with committed ledger 0600 fix and recording new hash remains Rock-run.
 - Port 9001 (`qf-bot.service`) still binds `0.0.0.0:9001` (LAN); rebind to `127.0.0.1:9001` once Pixel direct HTTPS URL is confirmed.
 - Credential rotation (GitHub PAT, IBM token, Circle test keys, DB passwords).
+
+### 19.9 Engine Redeploy: ledger 0600 fix (2026-10-20, Rock-run)
+
+- **VERIFIED:** `build_check/quantum_flex_engine` was rebuilt from `ef7b0a5` (`serialize_state` creates the temp ledger with 0600 and runs `fchmod`). New SHA-256: `d1e900028fa839389f65dc16d1f8275c169ad2c4069e809c7cd837e3e024aa17`. The previous genesis binary `601f3e02…` is kept as `build_check/quantum_flex_engine.genesis-601f3e02`. The binary no longer matches the genesis manifest's `engine_sha256`; this entry is the record of that change.
+- **VERIFIED:** restarted at 17:33:17 with 0 restarts. It booted LOCKED and is listening on 127.0.0.1:9444.
+- **Expected, fail-closed:** on halt the old process logged `Serialization Failed: FATAL: Cannot serialize a locked or unverified state.` A LOCKED engine refuses to write state, so `ledger.dat` was not touched: still 0600, mtime 2026-10-19 15:23:45, SHA-256 `2880c2c4…` (unchanged).
+- NULL: the 0600 path itself runs only on the next serialization, after an SSS unlock. The scratch build was tested under umask 002 (§19.6).

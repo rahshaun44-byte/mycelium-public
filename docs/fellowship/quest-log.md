@@ -20,7 +20,7 @@ Decisions and commitments that survive across sessions. One line per entry, date
 - 2026-10-20 — DECIDED (Rock): all agents' output (Antigravity, Codex, Claude) is Rock's own work. This supersedes the 10-14 "only Claude sessions" note.
 - 2026-10-20 — DONE: fixes committed as `ef7b0a5` ("szf"): MCP Host/Origin allowlist, IBM runner `--submit` dry-run default, mainnet settlement guard, engine ledger 0600 source fix, CLAUDE.md runtime reality.
 - 2026-10-20 — DONE: all user units enabled and running (Antigravity). Sentinel realigned and verified 15:55: digest read inside the container, baseline rebaselined to the container's postgres, DB_USER → ghostnode (`.env.bak-20261020-sentinel` kept), drive 486 < 1500, amara-matrix running. A leftover live-fire `ML_KEM_COMPROMISED=true` was cleared; ML-KEM-768 restored 15:48:38 after 4h on FrodoKEM.
-- 2026-10-20 — OPEN: deploy the engine ledger 0600 fix (build + restart; Rock-run, the classifier blocks agents). The new binary hash will differ from the genesis manifest `601f3e02…`; record it.
+- 2026-10-20 — DONE (Rock-run 17:33): engine ledger 0600 fix deployed. New binary `d1e90002…` (truth log §19.9); genesis binary kept. Engine is LOCKED, and ledger.dat is unchanged.
 - 2026-10-20 — OPEN: rotate creds exposed in ~/.gemini/antigravity transcripts: GitHub PAT first, then IBM token, Circle TEST key + entity secret, DB passwords, and possibly the seal key.
 - 2026-10-20 — DONE: `suspicious_urls` table provisioned in Postgres; Sentinel OSINT errors cleared. Neurogenesis tested directly with ghostnode credentials (exit 0) and systemd failed state reset.
 - 2026-10-20 — DONE: public settlement hardening committed (`fa67bb8`) and pushed to `origin/codex/public-readiness-hardening` on `rahshaun44-byte/quantumflex`.
