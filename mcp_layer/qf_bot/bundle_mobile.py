@@ -52,7 +52,7 @@ host_bar = """
       </div>
       <div style="display:flex; gap:6px;">
         <button onclick="setHostNode('http://192.168.100.11:9050')" style="background:rgba(0,245,212,0.15); border:1px solid rgba(0,245,212,0.35); color:var(--teal); font-size:0.68rem; padding:3px 8px; border-radius:6px; cursor:pointer;">Wi-Fi</button>
-        <button onclick="setHostNode('http://100.64.1.17:9050')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:var(--text); font-size:0.68rem; padding:3px 8px; border-radius:6px; cursor:pointer;">Tailscale</button>
+        <button onclick="setHostNode('http://100.64.1.31:9050')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:var(--text); font-size:0.68rem; padding:3px 8px; border-radius:6px; cursor:pointer;">Tailscale</button>
       </div>
     </div>
 """

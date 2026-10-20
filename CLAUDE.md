@@ -65,9 +65,12 @@ systemd **user** service. Since 2026-10-20 (afternoon) every user unit is enable
 (**0.0.0.0:9001**, the only non-loopback listener, for the Pixel app), `quantum-flex-engine-mycelium`,
 `opa-immune`, `amara-matrix`, `qf-lid-guard`, `immune-daemon`, `swarm-worker`, `active-defense`
 (alert-only), `qflex-mcp` (:9000), plus `sentinel-drive.timer` (30s), `amara-predict.timer` (5m),
-`neurogenesis.timer` (03:00). dashboard/athena/sentinel/neurogenesis prefer `DB_USER` over
-`GHOSTNODE_DB_USER`; since 2026-10-20 `.env` points `DB_USER` at the ghostnode role (the old
-`amara_admin` login failed). Sentinel hashes postgres inside the container, and the
+`neurogenesis.timer` (03:00). amara-dashboard, api-node, athena-node and qf-monitor each have
+a dedicated least-privilege login (`amara_dashboard_service`, `api_node_service`, `athena_reader`,
+`qf_monitor_writer`) from a `90-dedicated-database.conf` drop-in pointing at
+`~/projects/beta/secrets/*.env`, which overrides `.env`. sentinel and neurogenesis read `.env`
+`DB_USER`; since 2026-10-20 that is the ghostnode role (the old `amara_admin` is NOLOGIN). The DB
+superuser is `rocky`. Inside the container, `pg_hba` trusts local and 127.0.0.1 connections. Sentinel hashes postgres inside the container, and the
 `integrity_registry` baseline is the `postgres:15-alpine` binary. If the image changes, rebaseline
 first: on a mismatch, sentinel's hardstop runs `podman pause amara-matrix`. OPA threat flags can be changed at runtime with
 `PUT /v1/data/threat_flags`; what `threat_flags.json` says may not be live. A root system unit,

@@ -224,7 +224,7 @@ STATUS             : {hs_data['posture']}"""
         if any(w in clean_text for w in ["mesh status", "mesh", "nodes", "topology"]):
             mesh_nodes = self.mycelia.inspect_mesh()
             resp_text = f"""[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]
-● qfx-yoga    : 100.64.1.17 | Host Engine | ONLINE (0.1ms) | TPM 2.0 Matched
+● qfx-yoga    : 100.64.1.31 | Host Engine | ONLINE (0.1ms) | TPM 2.0 Matched
 ● qf-pavilion : 100.64.1.34  | Worker (Kafka Stream) | ONLINE (0.8ms) | P2P Direct
 ● qfx-pixel   : 100.64.1.11  | Mobile (Pixel 11 Pro) | ONLINE (12ms) | P2P Direct
 ● qfx-edge    : 100.64.1.32  | Operator (S23 FE) | ONLINE (14ms) | P2P Direct"""
