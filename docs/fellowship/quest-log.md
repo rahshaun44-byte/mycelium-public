@@ -23,4 +23,5 @@ Decisions and commitments that survive across sessions. One line per entry, date
 - 2026-10-20 — OPEN: deploy the engine ledger 0600 fix (build + restart; Rock-run, the classifier blocks agents). The new binary hash will differ from the genesis manifest `601f3e02…`; record it.
 - 2026-10-20 — OPEN: rotate creds exposed in ~/.gemini/antigravity transcripts: GitHub PAT first, then IBM token, Circle TEST key + entity secret, DB passwords, and possibly the seal key.
 - 2026-10-20 — OPEN: `sentinel/sentinel.py` patch (container digest; compromise flag only on a measured mismatch) is uncommitted. `suspicious_urls` table missing (OSINT step errors, non-fatal). Neurogenesis' first run with the new creds is at 03:00 10-21; unverified.
-- 2026-10-20 — OPEN: `tailscale serve` exposure of 11434/8080/9001/443 is unverified; decide whether qf-bot moves from 0.0.0.0:9001 to the tailnet IP.
+- 2026-10-20 — DONE (Rock ran `tailscale serve status`): the only serve is tailnet-only HTTPS `/` → `http://127.0.0.1:9001`. The claimed 11434/8080 serves do not exist.
+- 2026-10-20 — OPEN: qf-bot still also listens on 0.0.0.0:9001 (LAN). Serve proxies to loopback, so binding qf-bot to 127.0.0.1 keeps the Pixel's HTTPS path working and closes the LAN port. Confirm the Pixel app uses the ts.net HTTPS name first.

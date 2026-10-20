@@ -118,7 +118,13 @@ Gimli may not implement these in v1.
 
 ## Open Questions
 
-- [ ] Which three outside implementations come first? (Research needed: pick by recent downloads, review status, and whether they have a security policy or bug bounty.)
+- [ ] Which three outside implementations come first? Research (2026-10-20) proposes the list below. It is not locked; Rock decides.
+  - **Prior work:** Symbolic Software's open-source **Crucible** (March 2026) already runs 78 ML-KEM and 51 ML-DSA conformance tests over 15 implementations, through a JSON-line stdin/stdout shim. It published ML-KEM results only: two conformance gaps and no vulnerabilities. Our differentiation has to be ML-DSA signing-side exploitability (the Bernstein bug classes), differential runs against OpenSSL 3.5, dudect timing, and targets Crucible did not cover.
+  - **1. RustCrypto `ml-dsa` + `ml-kem` (Rust).** Pure Rust, pre-1.0, no published audit. Two 2026 ML-DSA CVEs: CVE-2026-24850 (duplicate hint indices accepted) and CVE-2026-22705 (Decompose timing). It is the recommended migration target as PQClean is archived (RUSTSEC-2026-0161). Not in Crucible.
+  - **2. `@noble/post-quantum` (JS).** Widely used on npm, no ML-DSA audit or advisory found, and JS makes constant-time behaviour hard to guarantee, so dudect has real work to do. Not in Crucible.
+  - **3. Go `crypto/mldsa` (Go standard library, new in 1.26).** Young code with a reported verify edge case (golang/go#79959). Hit probability is low, but a finding would carry the most credibility. Not in Crucible (it covered `crypto/mlkem`).
+  - **Alternate:** `libcrux-ml-dsa` (Rust; RUSTSEC-2026-0125, AVX2 `use_hint` CVSS 8.2), in place of #3 if Go proves too well reviewed.
+  - **Open:** Crucible-compatible adapters (reuse its shim protocol) or our own interface?
 - [ ] The repo name and licence: Apache-2.0 or MIT? (Rock)
 - [ ] Should the GitHub account be `rahshaun44-byte` or a new one kept separate from the home system? (Rock)
 - [ ] Is the default embargo 90 days, or does each upstream's own policy win? (Rock)
