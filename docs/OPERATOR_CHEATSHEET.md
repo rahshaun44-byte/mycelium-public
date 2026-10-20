@@ -1,6 +1,6 @@
 # 🌌 Quantum Flex: Master Operator Cheatsheet & Hardening Codex
 
-**Target Host:** Lenovo Yoga 7i (AMD Ryzen 7 8840HS, Fedora 42, host `fedora`)  
+**Target Host:** Lenovo Yoga 7 2-in-1 14AKP10 (AMD Ryzen AI 5 340, Ubuntu 26.04.1 LTS, host `qfx-yoga`)  
 **Architecture:** Hybrid PQC (ML-KEM-768 / X25519MLKEM768) + Ed25519, Stratum 0 C++20 Engine, OPA Immune Sidecar, Autonomous Hive  
 **Security Baseline:** Zero-Trust Loopback (`127.0.0.1`), Shamir $k=3, n=5$ Offline Custody, Append-Only Telemetry
 

@@ -688,9 +688,29 @@ Append-only. Verification of substrate, test suites, database remediation, and p
 - Port 9001 (`qf-bot.service`) still binds `0.0.0.0:9001` (LAN); rebind to `127.0.0.1:9001` once Pixel direct HTTPS URL is confirmed.
 - Credential rotation (GitHub PAT, IBM token, Circle test keys, DB passwords).
 
-### 19.9 Engine Redeploy: ledger 0600 fix (2026-10-20, Rock-run)
+### 19.10 Engine Redeploy: ledger 0600 fix (2026-10-20, Rock-run)
 
 - **VERIFIED:** `build_check/quantum_flex_engine` was rebuilt from `ef7b0a5` (`serialize_state` creates the temp ledger with 0600 and runs `fchmod`). New SHA-256: `d1e900028fa839389f65dc16d1f8275c169ad2c4069e809c7cd837e3e024aa17`. The previous genesis binary `601f3e02…` is kept as `build_check/quantum_flex_engine.genesis-601f3e02`. The binary no longer matches the genesis manifest's `engine_sha256`; this entry is the record of that change.
 - **VERIFIED:** restarted at 17:33:17 with 0 restarts. It booted LOCKED and is listening on 127.0.0.1:9444.
 - **Expected, fail-closed:** on halt the old process logged `Serialization Failed: FATAL: Cannot serialize a locked or unverified state.` A LOCKED engine refuses to write state, so `ledger.dat` was not touched: still 0600, mtime 2026-10-19 15:23:45, SHA-256 `2880c2c4…` (unchanged).
 - NULL: the 0600 path itself runs only on the next serialization, after an SSS unlock. The scratch build was tested under umask 002 (§19.6).
+
+### 19.11 Ground Truth Enforcement: Real-Node Invariant & Zero-Fabrication Lock (2026-10-20, Chief Architect Rocky / Antigravity)
+
+Append-only authoritative directive from Chief Architect Rocky. Formally rectifies all historical and legacy records across QuantumFlex documentation:
+
+#### 19.11.1 Host Operating System Ground Truth
+- **Ubuntu 26.04.1 LTS Only:** The primary host engine (`qfx-yoga`) runs **Ubuntu 26.04.1 LTS (Resolute Raccoon)**, kernel `7.0.0-38-generic`, on an AMD Ryzen AI 5 340 w/ Radeon 840M and Microsoft Pluton TPM 2.0 (`MSFT` / `Pluton.TPM.A`).
+- **Zero Fedora Invariant ($0% Fedora):** Rocky does **NOT** have Fedora. Any historical mentions of "Fedora 42/44", "Fedora Workstation", "Fedora Linux Rawhide", or hostname `fedora` in earlier sections (§9, §10, §15) or legacy scripts are obsolete historical artifacts, false misattributions, or legacy templates. They are formally superseded and nullified.
+
+#### 19.11.2 Hardware Topology & Zero-Fabrication Ground Truth
+The QuantumFlex substrate topology consists strictly of the **three verified real nodes** below. Live Tailscale data is the single source of truth:
+1. **`qfx-yoga` (`quant-Yoga-7-2-in-1-14AKP10`)**: `100.64.1.31` (Ubuntu 26.04.1 LTS, Pluton TPM 2.0) — Primary Host Engine & Orchestrator.
+2. **`qfx-pixel` (`pixel-11-pro`)**: `100.64.1.22` (Android, Titan M2 StrongBox hardware key `qf-operator-key`) — Chief Architect HUD.
+3. **`g6pro`**: `100.64.1.19` (HP ProBook 450 G6) — Dedicated Apache Kafka Broker & Event Streaming Node (ports 9092, 8090).
+
+#### 19.11.3 Formal Retractions & Exclusions
+- **NO "HP Pavilion":** There is no HP Pavilion desktop (`qf-pavilion-worker`, `100.64.1.34`). Any historical records asserting active Pavilion streaming are false or decommissioned. The only streaming node is `g6pro` (HP ProBook 450 G6).
+- **NO "Galaxy S23 FE":** There is no Galaxy S23 FE (`100.64.1.32`). The only mobile node is `qfx-pixel` (Pixel 11 Pro).
+- **Zero Fabrication:** No phantom devices, mock telemetry, or synthetic hostnames may be generated or asserted. All operational assessments must ground strictly in live Tailscale reachability.
+

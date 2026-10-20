@@ -1,6 +1,6 @@
 # 📖 QuantumFlex: Sovereign Owner & Operator Handbook
 **System:** QuantumFlex Sovereign Core  
-**Hardware Host:** Lenovo Yoga 7i (AMD Ryzen 7 8840HS, Fedora Workstation)  
+**Hardware Host:** Lenovo Yoga 7 2-in-1 14AKP10 (AMD Ryzen AI 5 340, Ubuntu 26.04.1 LTS)  
 **Security Standard:** Zero-Trust Loopback (`127.0.0.1`), Shamir (3-of-5) Airgap Custody, Offline-First Architecture
 
 ---

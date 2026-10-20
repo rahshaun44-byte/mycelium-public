@@ -2,9 +2,9 @@
 
 **Date:** 2026-09-07 (architecture lock)  
 **Verified on host:** 2026-09-11  
-**Host:** Fedora Linux 44 Workstation  
-**Kernel (live):** `7.2.4-200.fc44.x86_64`  
-**Kernel (original lock):** `7.1.13-200.fc44.x86_64`
+**Host:** Ubuntu 26.04.1 LTS (Resolute Raccoon) on Lenovo Yoga 7 2-in-1 14AKP10 (`qfx-yoga`)  
+**Kernel (live):** `7.0.0-38-generic` (Ubuntu SMP PREEMPT_DYNAMIC)  
+**Historical Note:** Migrated from pre-production testbed; Zero Fedora invariant strictly enforced.
 
 Interactive operator: `quant`. Repo: `/home/quant/mycelium`.
 
