@@ -665,3 +665,25 @@ Earning product (D-01). Work lives outside this repo, in `~/projects/pqc-difftes
 - **SUPPORTED, not a finding:** an all-`0xFF` expanded ML-DSA-65 signing key panics in signing (`assertion failed: z.0 <= (a + b).0`). Upstream documents that malformed expanded keys may panic (`ExpandedSigningKey::from_expanded`).
 - Conformance passing is only the baseline, so no claim is made about the library's security. Not built yet: differential vs OpenSSL 3.5 (CORE-02), Bernstein-class negatives (CORE-03), in-process dudect (CORE-04).
 - Still open (Rock): the repo name and the publishing GitHub account. The first local commit uses the global identity `rahshaun44-byte`.
+
+### 19.9 Full Substrate Audit, OSINT Table Provisioning & Settlement Release (2026-10-20, Antigravity)
+
+Append-only. Verification of substrate, test suites, database remediation, and public settlement push.
+
+#### 19.9.1 Audit verifications
+- **VERIFIED, C++ native crypto:** 8/8 test suites in `build_check/` pass bit-exact (`test_dudect_timing` with Welch t = -0.133 < 4.5, `test_hybrid_kem` 5/5 invariants, `test_known_answer_vectors` 5/5 KAT suites, `test_mlkem768`, `test_verified_core` 4/4 formal invariants, `test_wire_framing`, `test_wire_fuzz_negative` 6/6 negative fuzz invariants, `test_zeroization` 3/3 scrub invariants).
+- **VERIFIED, Python mycelium test suite:** `pytest` collected 412 tests: **402 passed, 10 skipped, 0 failed** in 37.73s.
+- **VERIFIED, Rust Ghost-Sink:** `cargo test` on `quantumflex-ghost-sink` passed 5/5 integration tests.
+- **VERIFIED, EVM Foundry suite:** 11/11 tests pass in `QuantumFlexUSDCSettler.t.sol` under `evm_version = "paris"`. 6-decimal USDC precision verified.
+- **VERIFIED, TypeScript compliance:** `settlement/ts` `npm test` passed 100% (assertions and live execution safety guards).
+- **VERIFIED, Hardware & Invariants:** Microsoft Pluton TPM 2.0 confirmed (`MSFT` / `Pluton.TPM.A`). Real-node invariant confirmed via live Tailscale (`qfx-yoga`, `pixel-11-pro`, `g6pro`). Zero cloud spend maintained ($0.00, local Ollama on `127.0.0.1:11434`).
+
+#### 19.9.2 Remediations applied
+- **Table `suspicious_urls` provisioned:** Created in PostgreSQL `telemetry` database with permissions granted to `ghostnode`. Sentinel log confirmed: non-fatal OSINT error (`relation "suspicious_urls" does not exist`) eliminated. Sentinel cycles run clean with drive `488.14 < 1500.0` (penalty: 0.0).
+- **`neurogenesis.py` verified:** Tested directly with `ghostnode` credentials; executed retention cycle cleanly (exit 0). Systemd unit `neurogenesis.service` reset from failed to clean inactive standby; timer `neurogenesis.timer` active for daily 03:00 run.
+- **Public settlement hardening pushed:** Staged, committed (`fa67bb8`), and pushed `codex/public-readiness-hardening` to `origin` (`rahshaun44-byte/quantumflex`). Hardens `QuantumFlexUSDCSettler`, live mainnet settlement safety guard in TypeScript, and sanitizes private IP addresses in mobile template.
+
+#### 19.9.3 Operational open items
+- Rebuilding engine binary with committed ledger 0600 fix and recording new hash remains Rock-run.
+- Port 9001 (`qf-bot.service`) still binds `0.0.0.0:9001` (LAN); rebind to `127.0.0.1:9001` once Pixel direct HTTPS URL is confirmed.
+- Credential rotation (GitHub PAT, IBM token, Circle test keys, DB passwords).
