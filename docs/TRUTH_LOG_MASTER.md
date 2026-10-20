@@ -441,3 +441,191 @@ Earlier recovery MATCH proves compatibility with the saved ledger, not secret cu
     4. Precise detection and error flagging of simulated payload tampering.
   - Production ledger (`/home/quant/Documents/qf/evidence_ledger.jsonl`): 35 historical entries, 100% valid chain.
 
+
+---
+
+## 17. Audit Correction Entry (2026-10-17)
+
+**Author**: Claude (claude-opus-5-5), read-only audit at Rock's request. No commands were run on the host. The evidence was file reads and `stat` metadata only.
+**Method**: This entry is append-only. Earlier sections are left unchanged so the history stays auditable. Where this entry conflicts with an earlier section, this entry governs.
+
+### 17.1 Confirmed on disk (2026-10-17)
+- The genesis manifest `~/.local/state/quantum-flex-mycelium/authority-genesis-20261015T121219Z.json` exists with mode 0600. Its hashes match §15A.
+- Share 1 is at `~/qfx-authority-share1/…share1.gpg`: 133 B, mode 0400.
+- `~/qfx-authority-share2` is absent from the Yoga, which is consistent with the move to G6. The copy on G6 is `NULL`: not checked from this host.
+- `ledger.dat` was recreated 2026-10-15 13:15 UTC. Its hash `1d479c6a…` was **not** recomputed in this audit.
+- `subsets_verified: 10` is the tool reporting on itself. No independent re-check has been run.
+
+### 17.2 Open items (verified present on disk)
+1. The legacy exposed share `~/qfx-shards-genesis/shard_1.enc` still exists. The legacy retirement step is **NOT DONE**.
+2. `~/.local/state/quantum-flex-mycelium/unlock.hold` is still present. This is safe, but the post-genesis close-out was not completed.
+3. `ledger.dat` mode is **0664**. Required: 0600.
+
+### 17.3 Downgrades of earlier claims
+| Ref | Earlier claim | Corrected status |
+| :--- | :--- | :--- |
+| §15A | "1-Share-Per-Location Invariant Verified" | **FALSE.** The manifest puts shares 3 **and** 4 on `QFX_SHARD_B`. The Yoga (share 1) plus `QFX_SHARD_B` (shares 3+4) makes 3, which is a full quorum on one host whenever that USB is mounted. At audit time it was not mounted. |
+| §15A | "No single compromised host possesses quorum" | **CONDITIONAL.** True only while `QFX_SHARD_B` is not attached to the Yoga. |
+| §15A | Ceremony separation guards applied | **NOT APPLIED.** `tools/qf_authority_ceremony.py` has `--allow-custom-topology`, which sets `enforce_separation=False` and disables every disk, fixed-disk and home-filesystem check. The genesis destinations, two shares under `/home/quant` and share 5 on a gvfs/MTP path whose disk cannot be determined, would each have been refused with separation enforced. So the flag was used. The manifest does not record that it was. |
+| §15A | Separation design | **GAP.** Even when enforced, the rules allow 1 share on home plus 2 on one removable disk. Those 3 can sit on one host at the same time. |
+| §15F | "Cryptographic Core — PASS" | **UNSUPPORTED.** The evidence cell is a policy statement, not a test result. |
+| §15F | "Quorum — PASS" | **UNSUPPORTED.** No negative test (2 shares must fail) is cited. |
+| §16B | "Ground-truth optimal state observed on physical silicon" | **NO EVIDENTIAL VALUE.** \|101⟩ appeared at 4.30%, against a uniform baseline of 12.5% (1/8). The feasible subspace was 11.72%, against a uniform baseline of 37.5% (3/8). Both are below random. No optimization advantage is shown. |
+| §8 | dudect \|t\|=2.16 "proving" identical distributions | **"No leak detected at n=5,000."** Failing to reject is not proof, and the sample is small for dudect. |
+| §13 | "True circuit error bounded at ≈0.82%" | **ESTIMATE, not a bound.** It comes from linear subtraction of SPAM error. |
+| §13 | 48.71/51.29 split shows "superior gate symmetry" | **UNSUPPORTED.** A single H plus measurement is dominated by readout asymmetry. |
+| §15C | "Conditioned HMAC-SHA256: 9a476893…" | **AMBIGUOUS.** If this is the conditioned output and not a digest of it, the seed is disclosed, which breaks the digests-only rule. Research-only, with zero entropy credit. Needs clarification. |
+| §6 | Physical Water 500.0 gal `[ADMIT]` | **NULL.** No sensor or measurement source is named. |
+
+### 17.4 Unverified external claims (`DATA NOT FOUND` until a primary source or DOI is attached)
+G7/CISA PQC guidance (3 Sep 2026) · EO 14412 · NIST IR 8610 HAWK withdrawal · "Astra ExploitBench" · "Gemini 4 Argon". The §1 "High" SNR ratings for these are suspended.
+
+### 17.5 System Conflicts (unresolved)
+- **Yoga hardware and OS**: §9 says Ryzen AI 5 340 on Fedora 44; §15B says Ryzen AI 7 PRO 360; `qf/HANDOFF.md` (2026-10-08) says Ubuntu.
+- **G6 Kafka exposure**: §14 says PLAINTEXT on 9092, published on all interfaces. `Documents/qf/CLAUDE_G6_TECHNICAL_HANDOFF.md` says never bound to 0.0.0.0.
+- **§3 unseal path**: still describes the retired `~/qfx-shards/shard_{1,2,3}.txt` flow. It is superseded by the §15A sealed-share authority.
+
+---
+
+## 18. Remote Fix Session (2026-10-17, Rock away from host, commands approved by Rock)
+
+- **Ledger hash mismatch found.** Live `ledger.dat` sha256 = `d6ed8e2efc7139cedaacd697a78d95e5fbdb806120e1d75e51c9b2ba63c07dd9`. The genesis manifest (§15A) records `1d479c6a…07b9`.
+  - **Cause (mechanical, verified):** `STATE_ROOT` = `f1db61d1…0860`, which equals sha256(`QUANTUM_FLEX_EMPTY_STATE`), the empty root. `STATUS|ACTIVE`. `TIMESTAMP|1792070139` = 2026-10-15 13:15:39 UTC, which matches the file mtime and comes 55 min after genesis (12:20 UTC). The engine rewrote the ACTIVE envelope with a new timestamp, so the signature changed. No state was added.
+  - **Not verified:** that the 13:15 signature was produced under the new authority. That needs `qf_recovery.py --check --sealed-shares` with 3 passphrases, run in person. Status: `NULL` until then.
+- **Done:** `chmod 600 ledger.dat`. Mode verified as 600. The hash is unchanged after the chmod (`d6ed8e2e…7dd9`).
+- **Deferred deliberately:** deletion of the legacy material (`~/qfx-shards-genesis/shard_1.enc`, the stego PNGs). Evidence is not destroyed while the live ledger's signer is unverified.
+- **Not possible remotely:** share-4 relocation (physical USBs), USB vault, `unlock.hold` removal (it stays until the share-4 relocation is done).
+- **New flag:** `qfx_seal_key.txt` (65 B, mode 0600) sits in the engine data dir alongside `ed_priv.pem` and `pqc_priv.pem`. Its purpose and its relation to the new authority are `NULL`. It was not read.
+
+---
+
+## 19. Node Hardening, Settlement Audit Remediation & Host Verification (2026-10-19 & 2026-10-20)
+
+**Authors**: Antigravity & Rock  
+**Epistemic Standard**: Strict Equation of Truth. Append-only record of verified technical implementations, network measurements, and cryptographic state checks.
+
+### 19.1 Target Node 1 (HP ProBook 450 G6 `g6pro`) Security Hardening (2026-10-19)
+- **Keyring Daemon Neutralization**:
+  - Binary permissions for `/usr/bin/gnome-keyring-daemon` revoked to `000` (`----------`).
+  - Legacy GNOME keyrings (`login.keyring`, `user.keystore`) archived to `~/.local/share/keyrings.quarantine/` (mode 0700).
+  - Verified 0 running `gnome-keyring-daemon` processes via `pgrep`.
+- **24/7 Dedicated Server Posture**:
+  - Masked systemd sleep targets: `sleep.target`, `suspend.target`, `hibernate.target`, `hybrid-sleep.target`.
+  - Configured `/etc/systemd/logind.conf.d/server-nosleep.conf` (`HandleLidSwitch=ignore`, `IdleAction=ignore`).
+  - NetworkManager Wi-Fi power saving disabled (`wifi.powersave = 2`).
+- **Network Interface Binding & Latency Remediation**:
+  - XRDP service (port 3389) rebound strictly to `127.0.0.1:3389` (external inbound blocked).
+  - Apache Kafka broker (port 9092) and telemetry publisher (port 8090) verified responding on Tailscale mesh (`100.64.1.19`).
+  - Yoga SSH client configuration updated with explicit KEX `curve25519-sha256` to resolve DERP relay packet fragmentation.
+
+### 19.2 Circle USDC Settlement Bridge & Smart Contract Remediation (2026-10-19)
+- **`escrowBalance()` Implementation**:
+  - Implemented `escrowBalance() external view returns (uint256)` in `QuantumFlexUSDCSettler.sol` across both `/home/quant/Documents/qf/` and `/home/quant/qf-public/`.
+  - Added Foundry test `test_Case11_EscrowBalance_ReturnsUsdcHeld()` in `test/solidity/QuantumFlexUSDCSettler.t.sol`. All 11/11 tests pass (`forge test -vvv`).
+- **TypeScript Settlement Bridge (`settlement/ts`) Hardening**:
+  - Implemented `validateSettlementRequest` fail-closed validator for EVM addresses, positive amounts, 6-decimal integer scaling, 32-byte proof hash, hex payloads, and zero entropy.
+  - Implemented `reconcileTransactionState` normalizing provider states to `PENDING`, `CONFIRMED`, `FAILED`, and `INDETERMINATE`. Timed-out or unparseable states fail-closed to `INDETERMINATE`.
+  - Implemented production live execution guard: requires both `QF_CIRCLE_ENABLE_LIVE=1` and `QF_CIRCLE_LIVE_ACK=I_UNDERSTAND_LIVE_USDC` prior to invoking `createContractExecutionTransaction()`.
+  - Added safety regression tests in `test_compliance.ts`; verified 100% pass rate (`npm test`).
+  - Published safety documentation in `qf-public/docs/SETTLEMENT_SAFETY.md`.
+- **On-Chain & Cloud API Verification**:
+  - Base Sepolia USDC contract verified at canonical proxy: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`.
+  - Developer-Controlled Wallet `0x57eb04f61f768fc604a028c14eda56346a3356bc` authenticated against Circle API (`/v1/w3s/wallets/{id}/balances`); verified exact balance: `20.000000 USDC` (`20,000,000n`).
+  - Fixed User-Agent header in `circle_usdc_settlement.py` to prevent Cloudflare 403 (Error 1010).
+  - Simulated `DeployQuantumFlexUSDCSettler.s.sol` execution via Foundry: gas verified at `1,317,152` gas (~0.000014 ETH).
+
+### 19.3 Host Operating System & Platform Security Baseline (2026-10-20)
+- **Host Engine (`qfx-yoga`) Specifications**:
+  - Model: Lenovo Yoga 7 2-in-1 14AKP10.
+  - Operating System: Ubuntu 26.04.1 LTS (`resolute`), Linux Kernel `7.0.0-38-generic`.
+  - Ubuntu Pro: Active under personal subscription (`rahshaun44-byte@users.noreply.github.com`, $0.00 spend). `esm-apps`, `esm-infra`, and `livepatch` enabled and covering Kernel 7.0 series.
+  - Hardware Security: Microsoft Pluton TPM 2.0 active at `/sys/class/tpm/tpm0`.
+  - Mandatory Access Control: AppArmor enabled (`/sys/module/apparmor/parameters/enabled = Y`).
+  - Kernel Sysctl Hardening: `fs.protected_regular = 2`, `kernel.kptr_restrict = 1`, `kernel.yama.ptrace_scope = 1`, `kernel.dmesg_restrict = 1`, `net.ipv4.tcp_syncookies = 1`, `net.ipv4.conf.all.rp_filter = 2`.
+  - Package Security: 0 pending security CVEs.
+
+### 19.4 Sovereign Custody & Stratum 0 Engine State (2026-10-20)
+- **Live Physical Shard Quorum Audit**:
+  - Share 1: `/home/quant/qfx-authority-share1/qf-authority-20261015T121219Z-share1.gpg` (Host, mode 0400).
+  - Share 3: `/run/media/quant/QFX_SHARD_B/share3/qf-authority-20261015T121219Z-share3.gpg` (USB `sda1`, mounted).
+  - Share 4: `/run/media/quant/QFX_SHARD_B/share4/qf-authority-20261015T121219Z-share4.gpg` (USB `sda1`, mounted).
+  - Quorum Analysis: Exactly 3 of 5 shares are physically reachable on the orchestrator bus (meets $k=3$ threshold).
+  - Engine Status: `quantum-flex-engine-mycelium.service` active on `127.0.0.1:9444`. System state is fail-closed in `LOCKED` awaiting local interactive SSS unsealing ceremony via `tools/qf_recovery.py`.
+- **Local Inference State**:
+  - `ollama.service` active on `127.0.0.1:11434`.
+  - `quantumflex-partner:latest` (7.6B, Q4_K_M) verified loaded with 100% GPU offload on Radeon iGPU (5.5 GB VRAM, 16k context window). Zero cloud egress ($0.00 spend).
+- **Tailscale Mesh Topology**:
+  - `100.64.1.31` (`qfx-yoga`): Online / Active.
+  - `100.64.1.22` (`qfx-pixel` / Pixel 11 Pro): Online / Active.
+  - `100.64.1.19` (`g6pro`): Offline (last seen 19h ago; powered down).
+
+
+### 19.5 Audit Correction Entry (2026-10-20, Claude)
+
+**Author**: Claude (claude-opus-5-5), at Rock's request. Commands were run on the Yoga only. g6pro was offline, and the Circle API was not called.
+**Method**: This entry is append-only. Where it conflicts with §19.1–19.4, this entry governs.
+
+#### 19.5.1 Re-checked on host (2026-10-20)
+- OS, kernel, Ubuntu Pro (esm-apps, esm-infra, livepatch), TPM 2.0 (`tpm_version_major = 2`), AppArmor `Y`, and the four sysctls `fs.protected_regular`, `kptr_restrict`, `ptrace_scope` and `tcp_syncookies` all match §19.3.
+- `forge test --offline`: 11/11 pass in both `~/Documents/qf` and `~/qf-public`. `QuantumFlexUSDCSettler.sol` is byte-identical in both (sha256 prefix `c8e41466…`).
+- The engine is LOCKED: `engine.log` records "Ledger suspended in memory. Engine is LOCKED. Awaiting SSS unlock." after the 07:55 boot. It listens on `127.0.0.1:9444`, with 0 restarts.
+- Share 2 is absent from `~/`, which is an improvement over §15A.
+
+#### 19.5.2 Downgrades of §19 claims
+| Ref | Claim | Corrected status |
+| :--- | :--- | :--- |
+| §19.4 | "Exactly 3 of 5 shares reachable … (meets k=3 threshold)" | **FINDING, not a pass.** Share 1 on `~/` plus shares 3+4 on the mounted `QFX_SHARD_B` made a full quorum readable by `quant` on one host. This is the §17.3 condition. **Remediated 2026-10-20:** `QFX_SHARD_B` was unmounted. Keep it detached except during a ceremony. |
+| §19.4 | `quantumflex-partner` "loaded, 100% GPU offload, 5.5 GB VRAM" | **POINT-IN-TIME only.** `/api/ps` showed no resident model at audit. The model is installed, at 4.7 GB on disk. |
+| §19.4 | "7.6B, Q4_K_M, 16k context" | **UNVERIFIED.** |
+| §19.3 | "0 pending security CVEs" | **UNVERIFIED.** `pro security-status` reports 20 updates received. It shows no pending count. |
+| §19.3 | "Microsoft Pluton" | **UNVERIFIED.** A TPM 2.0 is present; its vendor was not checked. |
+| §19.3 | `dmesg_restrict = 1`, `rp_filter = 2` | **UNVERIFIED.** Not re-checked. |
+| §19.1 | All g6pro hardening, plus Kafka 9092 and telemetry 8090 reachable | **NULL from this host.** g6pro was offline, last seen 19h ago. |
+| §19.2 | Circle wallet balance `20.000000 USDC`; TS `npm test` 100% | **NULL.** Not re-run: the balance needs Circle credentials, and `npm test` was skipped. |
+
+#### 19.5.3 New findings
+- **Unlock on 2026-10-19 ~15:23.** `engine.log` records "Node Unlocked … ACTIVE". `ledger.dat` was rewritten: sha256 `2880c2c4…d60c`, `TIMESTAMP|1792437825`. The state root is still the empty root `f1db61d1…`. `unlock.hold` is gone. The signer authority for this rewrite is `NULL`, as in §18.
+- **The §18 `ledger.dat` 0600 regressed to 0664.** Cause: `LocalNode::serialize_state` created `ledger.dat.tmp` under the process umask (002), and `rename()` carried that mode over. Fixed in source (`src/core/local_node.cpp`): the temp file is now created with `open(..., 0600)` plus `fchmod` before any write. The fix compiled clean and was exercised in an isolated data dir under umask 002, where `ledger.dat` was written at mode 0600. **The live binary was not replaced,** because a rebuild changes the engine hash recorded in the genesis manifest. Live `ledger.dat` was re-chmodded to 600, with its hash unchanged.
+- The legacy exposed material (`~/qfx-shards-genesis/shard_1.enc` and the stego PNG) is still present. Deletion stays deferred, per §18.
+
+### 19.6 Full-Host Audit & NULL Closure (2026-10-20, Claude)
+
+**Method**: Claude ran these checks itself on the Yoga. Four read-only audit agents covered `~/mycelium`, `~/Documents/qf` + `~/qf-public` + side trees, `~/.gemini/antigravity`, and the monetization research. No secret values were read into this log.
+
+#### 19.6.1 §19.5.2 items now closed
+| Item | Result |
+| :--- | :--- |
+| Pluton | **CONFIRMED.** `tpm2_getcap`: manufacturer `MSFT`, vendor string `Plut`. |
+| 0 pending CVEs | **CONFIRMED.** `pro security-status`: 0/0/0 pending; 0 security upgradable. |
+| `dmesg_restrict = 1`, `rp_filter = 2` | **CONFIRMED.** |
+| Model 7.6B Q4_K_M, 16k ctx | **CONFIRMED.** `ollama show`: 7.6B, Q4_K_M, `num_ctx 16384`. |
+| Circle 20 USDC | **CONFIRMED.** Read-only GET: `20 USDC`, BASE-SEPOLIA, EOA `0x57eb04…`. The key is a Circle **TEST_API_KEY**, so it cannot reach mainnet. |
+| TS `npm test` | **CONFIRMED PASS.** Plus a new mainnet-guard test, see 19.6.3. |
+| Crypto core (§15F "PASS, UNSUPPORTED") | **NOW SUPPORTED.** 8/8 `quantumflex` test binaries exit 0: KAT (5 suites), ML-KEM-768, hybrid KEM (5 invariants), zeroization, wire framing, wire fuzz (6), verified core, dudect (t < 4.5). The quorum negative test is still missing. |
+| g6pro hardening, Kafka | **NULL.** g6pro unreachable (`tailscale ping`: no reply). |
+
+#### 19.6.2 Running reality vs docs (from the `~/mycelium` audit)
+- **Running:** amara-dashboard :8000, api-node :8080, athena-node :8001, qf-monitor, qf-bot **0.0.0.0:9001**, engine 127.0.0.1:9444 (LOCKED, Postgres off), opa-immune, amara-matrix (podman Postgres on 5432), qf-lid-guard, and the root `gatekeeper-daemon` (`/opt/quantumflex/gatekeeper_daemon.py`, outside the repo, unreadable as quant).
+- **Disabled despite the docs:** immune-daemon, swarm-worker, sentinel-drive / neurogenesis / amara-predict timers, active-defense, qflex-mcp. CLAUDE.md is corrected.
+- `api_node/circle_usdc_settlement.py` is not imported by `main.py`. Settlement is a test-only path.
+- The IBM hardware jobs `db8nsvob…` (§16B) and `db8r00tc…` (§16A) are **not** in `~/Documents/qf/evidence_ledger.jsonl` (38 entries: 29 simulator, 9 hardware). The engine `ledger.dat` state root is still empty.
+- `pytest`: 427 collected. Before this session: 7 failed / 410 passed. After: **417 passed / 10 skipped / 0 failed**.
+
+#### 19.6.3 Fixes applied (uncommitted, working tree)
+1. `mcp_layer/quantum_flex_mcp.py`: implemented the tailnet Host/Origin allowlist (exact loopback + own Tailscale IPs in 100.64/10 and fd7a:115c:a1e0::/48 + own `*.ts.net`, no wildcards). `tests/test_mcp_tailnet_security.py` (added in e7b3345 without an implementation) now passes 24/24.
+2. `tools/ibm_experiment_runner.py`: dry-run by default; `--submit` is required to dispatch to QPU hardware.
+3. `~/qf-public/settlement/ts/src/index.ts`: the live-USDC guard now fires for **any non-testnet chain**, regardless of `NODE_ENV`. Previously, `blockchain: "BASE"` with a live key bypassed it. A regression test was added (6b).
+4. `~/qf-public/mcp_layer/qf_bot/mobile_apk/www/index.html:1275`: replaced the real tailnet hostname, Tailscale IP and LAN IP with placeholders. **The old values remain in public git history.**
+5. `src/core/local_node.cpp`: the ledger 0600 fix (§19.5.3). **Not deployed:** replacing the genesis-hashed binary (`601f3e02…`) was blocked by the session's permission guard and is left to Rock.
+6. `QFX_SHARD_B` unmounted (§19.5.2).
+
+#### 19.6.4 Antigravity audit findings (`~/.gemini/antigravity`)
+- **142 files hold secret material in plaintext:** the openssl password for legacy `shard_1.enc` (30), 64-hex Shamir share values (35; session 80dd8aaf appears to hold a full set of 5), Circle TEST API key (18), Circle entity secret (6), seal key (6), IBM Quantum token (20), a GitHub `ghp_` token from a fetched share page (4), and DB passwords (72). The earlier claim that shards were "never exposed on stdout" is **FALSE**.
+- **Credentials to treat as exposed and rotate:** IBM Quantum token, Circle TEST key + entity secret, the GitHub PAT, the Postgres passwords, and `qfx_seal_key.txt` if it matches the transcribed seal key.
+- Share 2 was `scp`'d to g6pro `~/qfx-authority-share2` and the local copy was shredded (consistent with §17.1).
+- Persistent `tailscale serve` was set on 11434, 8080, 9001 and 443→9001. It is **not verified** (permission denied) and may expose Ollama and api-node to the tailnet.
+- No `git push` by Antigravity. `~/qf-public` `main` was pushed by Rock 2026-10-10. `codex/public-readiness-hardening` was pushed 2026-10-19.
+- Unexplained autostart: `~/.config/autostart/remmina-applet.desktop` (Oct 12).
+
+#### 19.6.5 Monetization (research summary)
+Testnet USDC, QPU runs (below baseline, §17.3) and the current SOW tiers have **$0 near-term value**. The prepaid "Agent Execution Credit" and Settlement Bridge tiers carry FinCEN money-services-business / state money-transmitter risk. Realistic 90-day income is skills-based: PQC/OpenSSL 3.5 C++ contract or part-time work, a fixed-price "PQC Readiness Sprint" (CBOM + FIPS 203/204 + CNSA 2.0 memo), and audit contests. Full ranked list: `docs/MONETIZATION_ASSESSMENT_2026-10-20.md`.

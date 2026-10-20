@@ -1,13 +1,14 @@
 """
-QuantumFlex Track 4: Circle USDC Programmable Micro-Settlement Engine.
-Releases stablecoin bounties for verifiable quantum compute upon mathematical proof.
+QuantumFlex Track 4: experimental proof validation and settlement dry runs.
+Live transfers remain blocked until authenticated evidence, signing, and
+transaction reconciliation are implemented and commissioned.
 """
 
 import json
 import hashlib
-import hmac
+import math
 import os
-import urllib.request
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -37,10 +38,56 @@ def _load_circle_config():
 
 CIRCLE_API_KEY, CIRCLE_API_BASE, DEFAULT_WALLET_ID = _load_circle_config()
 
+
+class SettlementStatus(str, Enum):
+    PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
+    FAILED = "FAILED"
+    INDETERMINATE = "INDETERMINATE"
+
 class QuantumFlexUSDCSettler:
-    def __init__(self, wallet_id: Optional[str] = None, live: bool = False):
+    def __init__(self, wallet_id: Optional[str] = None, live: bool = False,
+                 authenticated_evidence_verifier=None, transport=None):
         self.wallet_id = wallet_id or DEFAULT_WALLET_ID
         self.live = live
+        self.authenticated_evidence_verifier = authenticated_evidence_verifier
+        self.transport = transport
+
+    @staticmethod
+    def verify_authenticated_evidence(evidence: Dict[str, Any], verifier) -> bool:
+        """Require an external trust-anchor verifier to authenticate evidence.
+
+        The settlement module intentionally does not load keys or infer trust from
+        a hash. ``verifier`` should validate the signed envelope against the
+        commissioned evidence authority and return a boolean.
+        """
+        if not isinstance(evidence, dict) or not evidence.get("signature"):
+            return False
+        if not callable(verifier):
+            return False
+        try:
+            return verifier(evidence) is True
+        except Exception:
+            return False
+
+    @staticmethod
+    def reconcile_transaction(response: Any, expected_idempotency_key: str,
+                              expected_amount: str, expected_recipient: str) -> Dict[str, Any]:
+        """Map an untrusted Circle response to a conservative ledger state."""
+        if not isinstance(response, dict):
+            return {"status": SettlementStatus.INDETERMINATE.value, "reason": "malformed response"}
+        state = str(response.get("status", "")).upper()
+        if state in {"CONFIRMED", "COMPLETE", "COMPLETED"}:
+            if (response.get("idempotencyKey") != expected_idempotency_key or
+                    str(response.get("amount")) != str(expected_amount) or
+                    response.get("destinationAddress") != expected_recipient):
+                return {"status": SettlementStatus.INDETERMINATE.value, "reason": "response does not match intent"}
+            return {"status": SettlementStatus.CONFIRMED.value, "transaction_id": response.get("id")}
+        if state in {"FAILED", "REJECTED", "CANCELED", "CANCELLED"}:
+            return {"status": SettlementStatus.FAILED.value, "reason": response.get("error", state)}
+        if state in {"PENDING", "PROCESSING", "QUEUED"}:
+            return {"status": SettlementStatus.PENDING.value, "transaction_id": response.get("id")}
+        return {"status": SettlementStatus.INDETERMINATE.value, "reason": "unknown transaction state"}
 
     @staticmethod
     def verify_quantum_proof(proof: Dict[str, Any]) -> bool:
@@ -51,8 +98,31 @@ class QuantumFlexUSDCSettler:
         3. Statistical significance threshold met (Bell correlation >= 0.85 or witness_ucb < 0)
         4. Zero secret entropy invariant (0.0 bits)
         """
+        if not isinstance(proof, dict):
+            return False
         required_fields = ["job_id", "canonical_payload", "block_hash", "correlation", "zero_entropy"]
         if not all(k in proof for k in required_fields):
+            return False
+        for key in ("correlation", "zero_entropy", "witness_ucb"):
+            value = proof.get(key, 1.0)
+            if type(value) not in (int, float) or not math.isfinite(value):
+                return False
+        if not 0 <= proof["correlation"] <= 1:
+            return False
+        try:
+            decoded = json.loads(proof["canonical_payload"])
+            if not isinstance(decoded, dict):
+                return False
+            if json.dumps(decoded, sort_keys=True, separators=(',', ':'), allow_nan=False) != proof["canonical_payload"]:
+                return False
+            if not proof["job_id"] or decoded.get("job_id") != proof["job_id"]:
+                return False
+            if proof["correlation"] >= 0.85:
+                if decoded.get("correlation") != proof["correlation"]:
+                    return False
+            elif decoded.get("witness_ucb", decoded.get("ucb")) != proof.get("witness_ucb"):
+                return False
+        except (TypeError, ValueError):
             return False
 
         # Invariant: Zero secret entropy
@@ -74,46 +144,28 @@ class QuantumFlexUSDCSettler:
 
     def execute_micro_settlement(self, recipient_address: str, amount_usdc: str, proof: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Settles pay-per-proof via Circle Developer-Controlled Wallets API.
+        Validate a proof in dry-run mode; never report a simulated payment as settled.
         """
+        if self.live:
+            return {
+                "status": SettlementStatus.INDETERMINATE.value,
+                "submitted": False,
+                "error": "Live settlement is fail-closed until an authenticated evidence verifier, entity-secret signer, transport, and reconciliation service are commissioned.",
+            }
         if not self.verify_quantum_proof(proof):
             return {
                 "status": "REJECTED",
-                "error": "Mathematical proof verification failed. Funds remain in escrow."
+                "submitted": False,
+                "error": "Proof validation failed; no transfer submitted."
             }
 
         # Idempotency key derived deterministically from proof hash
         idempotency_key = hashlib.sha256(proof["block_hash"].encode("utf-8")).hexdigest()
 
-        payload = {
-            "idempotencyKey": idempotency_key,
-            "walletId": self.wallet_id,
-            "destinationAddress": recipient_address,
-            "amounts": [amount_usdc],
-            "feeLevel": "MEDIUM",
-            "tokenId": "bdf128b4-827b-5267-8f9e-243694989b5f", # Base Sepolia USDC Token ID
-            "tokenAddress": "0x036cbd53842c5426634e7929541ec2318f3dcf7e" # Base Sepolia USDC
-        }
-
-        # If live execution is enabled and live API key is present, submit to Circle API
-        if self.live and CIRCLE_API_KEY:
-            req = urllib.request.Request(
-                f"{CIRCLE_API_BASE}/developer/transactions/transfer",
-                data=json.dumps(payload).encode("utf-8"),
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {CIRCLE_API_KEY}",
-                    "User-Agent": "QuantumFlex-Settler/1.0 (Linux; x86_64)"
-                }
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=15) as resp:
-                    return json.loads(resp.read().decode())
-            except Exception as e:
-                return {"status": "FAILED", "error": str(e)}
-
         return {
-            "status": "SETTLED_OFFLINE_VERIFIED",
+            "status": "PROOF_VERIFIED_DRY_RUN",
+            "settlement_state": SettlementStatus.PENDING.value,
+            "submitted": False,
             "proof_hash": proof["block_hash"],
             "idempotency_key": idempotency_key,
             "recipient": recipient_address,

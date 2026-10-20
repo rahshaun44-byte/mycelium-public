@@ -224,7 +224,13 @@ def main():
     parser.add_argument("option", choices=["1", "2", "all"], help="Option to run (1: Entropy, 2: Entanglement, all: Both)")
     parser.add_argument("--backend", default="ibm_fez", help="Target QPU backend name (default: ibm_fez)")
     parser.add_argument("--shots", type=int, default=1024, help="Shots per circuit (default: 1024)")
+    parser.add_argument("--submit", action="store_true", help="Actually dispatch to QPU hardware (default: dry-run)")
     args = parser.parse_args()
+
+    if not args.submit:
+        print(f"[DRY-RUN] Would run option {args.option} on {args.backend} with {args.shots} shots.")
+        print("[DRY-RUN] No job submitted. Re-run with --submit to dispatch to hardware.")
+        return
 
     if args.option in ["1", "all"]:
         ok1 = run_option1(backend_name=args.backend, shots=args.shots)

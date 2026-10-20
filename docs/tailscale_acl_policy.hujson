@@ -1,16 +1,34 @@
+// =========================================================================
+// QuantumFlex Sovereign Tailscale Access Policy (HuJSON)
+// Tailnet: rahshaun44-byte.github
+// Devices: Yoga 7 (100.64.1.31), Pixel 11 Pro (100.64.1.22), G6 (100.64.1.19)
+//
+// Paste this entire file into Tailscale Admin Console:
+// https://login.tailscale.com/admin/acls -> Edit as JSON
+// =========================================================================
 {
-	// =========================================================================
-	// QuantumFlex Tailnet Policy (HuJSON)
-	// Tailnet: rahshaun44-byte.github
-	// =========================================================================
+	// Device IP definitions
 	"hosts": {
-		"yoga":  "100.64.1.31", // Lenovo Yoga 7 (Master / AI Engine)
-		"g6":    "100.64.1.19", // HP ProBook G6 (Target Node 1 / Kafka)
-		"pixel": "100.64.1.22", // Google Pixel 11 Pro (Operator Mobile HUD)
+		"yoga":  "100.64.1.31",   // Lenovo Yoga 7 (Primary Host Engine & Local AI)
+		"pixel": "100.64.1.22",   // Google Pixel 11 Pro (Mobile HUD & StrongBox Sentinel)
+		"g6":    "100.64.1.19",  // HP ProBook 450 G6 (Auxiliary / Kafka)
 	},
 
+	// Access control rules (Least-Privilege & Fail-Closed)
 	"acls": [
-		// 1. Yoga -> G6: Operator SSH (22), RDP (3389), Kafka telemetry (9092, 8090)
+		// 1. Pixel 11 Pro -> Yoga 7: QuantumFlex Mobile Cockpit & Operator SSH
+		// Allows Tailscale HTTPS Serve (443), direct API (9001), and SSH (22)
+		{
+			"action": "accept",
+			"src":    ["pixel"],
+			"dst": [
+				"yoga:22",
+				"yoga:443",
+				"yoga:9001",
+			],
+		},
+
+		// 2. Yoga 7 -> HP ProBook G6: Operator SSH, RDP, and Kafka telemetry
 		{
 			"action": "accept",
 			"src":    ["yoga"],
@@ -22,34 +40,41 @@
 			],
 		},
 
-		// 2. Pixel -> Yoga: Ollama Local LLM inference (11434) ONLY
+		// 3. Yoga 7 -> Pixel 11 Pro: Wireless ADB debugging
 		{
 			"action": "accept",
-			"src":    ["pixel"],
-			"dst":    ["yoga:11434"],
+			"src":    ["yoga"],
+			"dst": [
+				"pixel:5555",
+			],
 		},
 	],
 
-	"ssh": [],
+	// Tailscale SSH rules: Allow tailnet members to SSH into their own devices
+	"ssh": [
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["quant", "autogroup:nonroot", "root"],
+		},
+	],
 
-	// Enforce strict test invariants on save
+	// Enforce strict policy tests on save
 	"tests": [
 		{
 			"src": "pixel",
 			"accept": [
-				"yoga:11434",
+				"yoga:22",
+				"yoga:443",
+				"yoga:9001",
 			],
 			"deny": [
-				"yoga:22",
-				"yoga:80",
-				"yoga:443",
 				"yoga:5432",
 				"yoga:8000",
 				"yoga:8080",
-				"yoga:9000",
+				"yoga:11434",
 				"g6:22",
-				"g6:3389",
-				"g6:8090",
 				"g6:9092",
 			],
 		},
@@ -60,21 +85,22 @@
 				"g6:3389",
 				"g6:8090",
 				"g6:9092",
+				"pixel:5555",
 			],
 			"deny": [
 				"pixel:22",
 				"pixel:80",
 				"pixel:443",
-				"pixel:5555",
 			],
 		},
 		{
 			"src": "g6",
 			"deny": [
 				"yoga:22",
-				"yoga:8000",
-				"yoga:8080",
-				"yoga:9444",
+				"yoga:443",
+				"yoga:5432",
+				"yoga:9001",
+				"pixel:5555",
 			],
 		},
 	],

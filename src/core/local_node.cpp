@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "quantum-flex/forensic_lockdown.hpp"
@@ -183,6 +185,18 @@ namespace quantumflex::node {
         }
 
         const std::string temp_path = filepath + ".tmp";
+
+        // Create the temp file owner-only before any bytes land in it; fchmod
+        // also tightens a stale .tmp left by an earlier crash.
+        const int fd = ::open(temp_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+        if (fd < 0 || ::fchmod(fd, 0600) != 0) {
+            if (fd >= 0) {
+                ::close(fd);
+            }
+            throw std::runtime_error("FATAL: Cannot create owner-only ledger file.");
+        }
+        ::close(fd);
+
         std::ofstream out(temp_path, std::ios::trunc);
         
         if (!out.is_open()) {

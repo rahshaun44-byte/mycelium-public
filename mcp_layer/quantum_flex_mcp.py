@@ -12,9 +12,11 @@ Reachable from the Samsung Galaxy S23 FE and local MCP clients via:
 """
 
 import asyncio
+import ipaddress
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -23,6 +25,7 @@ from typing import Dict, List, Optional, Any
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.transport_security import TransportSecuritySettings
 
 # ── Logging Configuration ───────────────────────────────────────────────────
 logging.basicConfig(
@@ -296,6 +299,50 @@ def service_action(service_name: str, action: str) -> dict:
     }
 
 
+# ── Transport Security ──────────────────────────────────────────────────────
+_TAILNET_NETS = (ipaddress.ip_network("100.64.0.0/10"), ipaddress.ip_network("fd7a:115c:a1e0::/48"))
+_TS_DNS_RE = re.compile(r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+ts\.net$")
+
+
+def _local_tailnet_identity() -> tuple[list[str], Optional[str]]:
+    """Return this node's own tailnet IPs and MagicDNS name; ([], None) on any doubt."""
+    try:
+        res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=5)
+        self_node = json.loads(res.stdout).get("Self")
+    except (OSError, subprocess.SubprocessError, ValueError, AttributeError):
+        return [], None
+    if not isinstance(self_node, dict):
+        return [], None
+
+    ips = []
+    raw_ips = self_node.get("TailscaleIPs")
+    for raw in raw_ips if isinstance(raw_ips, list) else []:
+        try:
+            ip = ipaddress.ip_address(raw)
+        except (TypeError, ValueError):
+            continue
+        if any(ip in net for net in _TAILNET_NETS):
+            ips.append(f"[{ip}]" if ip.version == 6 else str(ip))
+
+    dns = self_node.get("DNSName")
+    dns = dns.rstrip(".").lower() if isinstance(dns, str) else ""
+    return ips, dns if _TS_DNS_RE.match(dns) else None
+
+
+def _transport_security(port: int) -> TransportSecuritySettings:
+    """Exact Host/Origin allowlist: loopback plus this node's own tailnet identity, never wildcards."""
+    hosts = [f"127.0.0.1:{port}", f"localhost:{port}", f"[::1]:{port}"]
+    ips, dns = _local_tailnet_identity()
+    hosts += [f"{ip}:{port}" for ip in ips]
+    origins = [f"http://{h}" for h in hosts]
+    if dns:
+        hosts += [dns, f"{dns}:443", f"{dns}:{port}"]
+        origins += [f"https://{dns}", f"https://{dns}:443", f"http://{dns}:{port}"]
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True, allowed_hosts=hosts, allowed_origins=origins
+    )
+
+
 # ── Server Runner ───────────────────────────────────────────────────────────
 async def main():
     log.info("=" * 60)
@@ -306,7 +353,9 @@ async def main():
     log.info("=" * 60)
 
     # Loopback only. Remote access is Tailscale Serve, not 0.0.0.0.
-    await server.run_sse_async(host=MCP_HOST, port=MCP_PORT)
+    await server.run_sse_async(
+        host=MCP_HOST, port=MCP_PORT, transport_security=_transport_security(MCP_PORT)
+    )
 
 
 if __name__ == "__main__":

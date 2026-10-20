@@ -54,8 +54,9 @@ def run_real_verification():
     print(f"  ↳ Proof Digest: {block_hash[:16]}...")
     print(f"  ↳ Bell Correlation: 92.58% (Threshold: >= 85.0%)")
     print(f"  ↳ Settlement Status: {res_fez.get('status')}")
-    assert res_fez.get("status") == "SETTLED_OFFLINE_VERIFIED", "Case 1 failed"
-    print("  ✅ PASS: 25.00 USDC released for certified hardware correlation.")
+    assert res_fez.get("status") == "PROOF_VERIFIED_DRY_RUN", "Case 1 failed"
+    assert res_fez["submitted"] is False
+    print("  PASS: Proof accepted in dry run; no funds transferred.")
 
     # --------------------------------------------------------------------------
     # Case 2: Physical GHZ Witness on ibm_kingston (db8nsvob3g5c73egl760)
@@ -128,8 +129,9 @@ def run_real_verification():
     print(f"  ↳ Proof Digest: {block_hash_38[:16]}...")
     print(f"  ↳ GHZ Fidelity: {entry_38['bell_correlation'] * 100:.2f}% (Threshold: >= 85.0%)")
     print(f"  ↳ Settlement Status: {res_marrakesh.get('status')}")
-    assert res_marrakesh.get("status") == "SETTLED_OFFLINE_VERIFIED", "Case 4 failed"
-    print("  ✅ PASS: 20.00 USDC released for certified 156-qubit Heron r2 GHZ state.")
+    assert res_marrakesh.get("status") == "PROOF_VERIFIED_DRY_RUN", "Case 4 failed"
+    assert res_marrakesh["submitted"] is False
+    print("  PASS: Proof accepted in dry run; no funds transferred.")
 
     print("\n" + "=" * 70)
     print("  ALL REAL QPU VERIFICATION SETTLEMENT TESTS PASSED (100% EMPIRICAL)")

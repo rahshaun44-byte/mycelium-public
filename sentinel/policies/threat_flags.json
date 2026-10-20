@@ -1,0 +1,6 @@
+{
+  "threat_flags": {
+    "ML_KEM_COMPROMISED": false,
+    "FRODOKEM_COMPROMISED": false
+  }
+}

@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Quantum Flex is a personal, self-hosted security/telemetry system for a single Fedora host, modeled
+Quantum Flex is a personal, self-hosted security/telemetry system for a single host (Lenovo Yoga 7, Ubuntu 26.04 since
+Oct 2026; older docs say Fedora), modeled
 loosely on a biological homeostasis metaphor (docs map components to the life cycle of *Corydalus
 cornutus*, the Eastern Dobsonfly — see `quantum_flex_architecture.md`). It has two halves that must
 be read as separate systems that happen to share a Postgres instance:
@@ -54,13 +55,19 @@ listener's cert paths are resolved under it, and neither directory-creates for y
 `sentinel/requirements.txt`, `mcp_layer/requirements-worker.txt`, `api_node/requirements.txt`. The
 working venv used on this host is `~/mycelium/venv` (a symlink to `~/.venv/qflex`, Python 3.14);
 `immune-daemon` instead runs from the repo-local `.venv`. The repo includes
-a `pytest.ini` and integration/unit test suite under `tests/` (19 test files). Run tests with:
+a `pytest.ini` and integration/unit test suite under `tests/` (37 files, 427 tests collected as of 2026-10-20). Run tests with:
 `pytest` or `/home/quant/mycelium/venv/bin/python3 -m pytest -q`. (No `.clang-tidy` or `.clang-format`
 config currently exists).
 
 **How this actually runs**: not via a single entrypoint — each Python component is its own
-systemd **user** service (`systemctl --user status <name>`: `amara-dashboard`, `athena-node`,
-`qf-monitor`, `swarm-worker`, `immune-daemon`, `sentinel-drive.timer`, `neurogenesis.timer`). `systemd-backup/` in this repo is exactly
+systemd **user** service. Active as of 2026-10-20: `amara-dashboard` (:8000), `api-node` (:8080),
+`athena-node` (:8001), `qf-monitor`, `qf-bot` (**0.0.0.0:9001**, the only non-loopback listener,
+for the Pixel app), `quantum-flex-engine-mycelium`, `opa-immune`, `amara-matrix`, `qf-lid-guard`.
+Installed but **disabled**: `immune-daemon`, `swarm-worker`, `sentinel-drive.timer`,
+`neurogenesis.timer`, `amara-predict.timer`, `active-defense`, `qflex-mcp`. A root system unit,
+`gatekeeper-daemon.service`, runs `/opt/quantumflex/gatekeeper_daemon.py` (outside this repo).
+`opa-immune` also loads `~/Documents/qf/policies/quantum_admission.rego`. Ollama runs as the
+**system** `ollama.service`. `systemd-backup/` in this repo is exactly
 what it sounds like — backed-up unit files, not the live ones; the live units are under
 `~/.config/systemd/user/`. For local iteration, most Python scripts also run standalone
 (`python3 mcp_layer/athena_api.py`, etc.) since they read config from `.env` / env vars, not from
@@ -69,7 +76,9 @@ systemd `Environment=` lines.
 ## Architecture
 
 **Two separate Postgres backends — do not conflate them:**
-1. Native Postgres on `127.0.0.1:5432`, db `telemetry`. Dual-role: `ghostnode` (admin — full
+1. `127.0.0.1:5432`, db `telemetry`. Since the Ubuntu move this is **not native Postgres**: it is
+   the rootless podman container `amara-matrix` (`postgres:15-alpine`, unit `amara-matrix`,
+   forwarded by pasta), admin role `amara_admin`. Dual-role design: `ghostnode` (admin — full
    `memory_logs`/`integrity_registry` access) and `sentinel_service` (restricted — insert-only on
    `sentinel_ledger`), so a compromised Sentinel process can't corrupt the swarm's core memory.
    Used by nearly everything under `sentinel/` and `mcp_layer/`. Credentials come from
@@ -122,7 +131,8 @@ exists; `scripts/unlock_engine.sh` is the one known operator client.
 
 **Crypto-agility / "immune" subsystem** (`pqc-immune-daemon/immune_daemon.py`,
 `mcp_layer/crypto_provider.conf`, `sentinel/policies/membrane_health.rego`): a decision loop, not a
-one-off script, run by the `immune-daemon` user unit against OPA (`opa-immune`, `127.0.0.1:8181`).
+one-off script, run by the `immune-daemon` user unit (**disabled** as of 2026-10-20, so nothing
+rewrites the conf today) against OPA (`opa-immune`, `127.0.0.1:8181`).
 Every 500ms it generates a CBOM snapshot of the active PQC algorithm, POSTs it to OPA, and if the
 verdict is `TOXIC`, atomically rewrites `crypto_provider.conf` (`os.replace`) to the fallback.
 It signals or halts a worker only when `WORKER_PID` is set; the live unit runs `--profile agility`

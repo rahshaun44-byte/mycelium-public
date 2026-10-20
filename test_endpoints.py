@@ -1,43 +1,44 @@
 #!/usr/bin/env python3
 import os
-import socket
+import urllib.request
+import subprocess
+import json
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-TAILNET_IP = os.environ.get("TAILNET_IP", "100.64.1.17")
+TAILNET_HOST = json.loads(subprocess.check_output(["tailscale", "status", "--json"], timeout=10))["Self"]["DNSName"].rstrip(".")
 
 def test_http_get(host, port, path, desc):
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2.0)
-        s.connect((host, port))
-        host_header = "127.0.0.1" if port == 9000 else host
-        request = f"GET {path} HTTP/1.1\r\nHost: {host_header}:{port}\r\nUser-Agent: Tester\r\nConnection: close\r\n\r\n"
-        s.sendall(request.encode())
-        data = s.recv(1024).decode(errors="replace")
-        s.close()
-        status_line = data.split("\r\n")[0] if data else "NO_RESPONSE"
-        print(f"[PASS] {desc:<35} -> {status_line}")
+        scheme = "https" if port == 443 else "http"
+        with urllib.request.urlopen(f"{scheme}://{host}:{port}{path}", timeout=10) as response:
+            if not 200 <= response.status < 300:
+                raise ValueError(f"HTTP {response.status}")
+            print(f"[PASS] {desc:<35} -> HTTP {response.status}")
+        return True
     except Exception as e:
         print(f"[FAIL] {desc:<35} -> Error: {e}")
+        return False
 
 print("==================================================================")
 print("  QUANTUM FLEX: COMPREHENSIVE ENDPOINT VERIFICATION               ")
 print("==================================================================")
 
 endpoints = [
-    ("127.0.0.1", 9000, "/sse", "MCP SSE (Local)"),
-    (TAILNET_IP, 9000, "/sse", "MCP SSE (Tailscale Mesh)"),
+    ("127.0.0.1", 9001, "/api/status", "Cockpit status (Local)"),
+    (TAILNET_HOST, 443, "/api/status", "Cockpit status (Tailscale HTTPS)"),
     ("127.0.0.1", 8000, "/", "AMARA Dashboard (Local)"),
-    (TAILNET_IP, 8000, "/", "AMARA Dashboard (Tailscale)"),
-    (TAILNET_IP, 8000, "/api/telemetry", "AMARA Telemetry API (Tailscale)"),
-    (TAILNET_IP, 8080, "/status", "API Gateway (Tailscale)"),
+    (TAILNET_HOST, 443, "/ui/", "Cockpit UI (Tailscale HTTPS)"),
+    ("127.0.0.1", 8000, "/api/telemetry", "AMARA Telemetry API (Local)"),
+    ("127.0.0.1", 8080, "/status", "API Gateway (Local)"),
     ("127.0.0.1", 8001, "/health", "Athena RAG Node (Local)"),
 ]
 
-for host, port, path, desc in endpoints:
-    test_http_get(host, port, path, desc)
+results = [test_http_get(*endpoint) for endpoint in endpoints]
 
 print("==================================================================")
+print("HTTP reachability only; admission restrictions are reported in /api/status.")
+if __name__ == "__main__":
+    raise SystemExit(0 if all(results) else 1)

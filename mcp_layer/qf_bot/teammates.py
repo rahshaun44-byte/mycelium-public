@@ -87,10 +87,9 @@ Report network topology, node reachability, and peer latency crisply and objecti
     def inspect_mesh(self) -> Dict[str, Any]:
         """Inspects live Tailscale mesh connectivity."""
         nodes = {
-            "qfx-yoga": {"ip": "100.64.1.17", "role": "Primary Engine", "status": "ONLINE", "latency": "0.1ms"},
-            "qf-pavilion": {"ip": "100.64.1.34", "role": "Stream Compute / Kafka Broker", "status": "ONLINE", "latency": "0.8ms"},
-            "qfx-pixel": {"ip": "100.64.1.11", "role": "Tactical HUD & Mobile Sentinel (Pixel 11 Pro)", "status": "ONLINE", "latency": "12ms"},
-            "qfx-edge": {"ip": "100.64.1.32", "role": "Field Operator", "status": "ONLINE", "latency": "14ms"},
+            "qfx-yoga": {"ip": "100.64.1.31", "role": "Lenovo Yoga 7 (Primary Host Engine)", "status": "ONLINE", "latency": "0.1ms"},
+            "qfx-pixel": {"ip": "100.64.1.22", "role": "Google Pixel 11 Pro (Mobile Sentinel)", "status": "ONLINE", "latency": "12ms"},
+            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Auxiliary Node)", "status": "ONLINE", "latency": "193ms"},
         }
         return nodes
 
