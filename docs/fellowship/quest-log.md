@@ -1,6 +1,6 @@
 # Quest Log
 
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-20
 
 ## Open
 
@@ -15,3 +15,12 @@ Decisions and commitments that survive across sessions. One line per entry, date
 - 2026-10-15 — DONE: Physical IBM Quantum experiments executed on real silicon (`ibm_fez`, Heron r2 156-qubit; Job `db8lbbtckpjs73b17plg` QRNG 3.9831 bits entropy; Job `db8lc6694fic73etkmt0` Bell state 68.95% correlation). Kept strictly isolated as research with zero engine entropy credit per NIST SP 800-90B.
 - 2026-10-15 — DONE: Tailscale ACL policy updated and verified isolating Pixel 11 Pro (`100.64.1.22`) strictly to Yoga Ollama (`100.64.1.31:11434`), denying all sensitive services and node-to-node reachability.
 - 2026-10-15 — OPEN: destroy pre-genesis shard material (`~/qfx-shards-genesis/`, stego PNG) only after confirming the old shares no longer authenticate the ledger.
+- 2026-10-20 — DECIDED (Rock): D-01. Home system and earning are separate products. Home-system v1 is the current re-alignment only (sentinel realign, engine ledger 0600 deploy, credential rotation); no new home-system features. Earning v1 is the PQC differential tester. Spec: `docs/fellowship/specs/aragorn-pqc-differential-tester.md`.
+- 2026-10-20 — DECIDED (Rock): D-02. The tester ships as a new, clean public repo with no history from mycelium/qf-public. The exception is that repo only; the 10-08 Option A no-push rule for mycelium stands.
+- 2026-10-20 — DECIDED (Rock): all agents' output (Antigravity, Codex, Claude) is Rock's own work. This supersedes the 10-14 "only Claude sessions" note.
+- 2026-10-20 — DONE: fixes committed as `ef7b0a5` ("szf"): MCP Host/Origin allowlist, IBM runner `--submit` dry-run default, mainnet settlement guard, engine ledger 0600 source fix, CLAUDE.md runtime reality.
+- 2026-10-20 — DONE: all user units enabled and running (Antigravity). Sentinel realigned and verified 15:55: digest read inside the container, baseline rebaselined to the container's postgres, DB_USER → ghostnode (`.env.bak-20261020-sentinel` kept), drive 486 < 1500, amara-matrix running. A leftover live-fire `ML_KEM_COMPROMISED=true` was cleared; ML-KEM-768 restored 15:48:38 after 4h on FrodoKEM.
+- 2026-10-20 — OPEN: deploy the engine ledger 0600 fix (build + restart; Rock-run, the classifier blocks agents). The new binary hash will differ from the genesis manifest `601f3e02…`; record it.
+- 2026-10-20 — OPEN: rotate creds exposed in ~/.gemini/antigravity transcripts: GitHub PAT first, then IBM token, Circle TEST key + entity secret, DB passwords, and possibly the seal key.
+- 2026-10-20 — OPEN: `sentinel/sentinel.py` patch (container digest; compromise flag only on a measured mismatch) is uncommitted. `suspicious_urls` table missing (OSINT step errors, non-fatal). Neurogenesis' first run with the new creds is at 03:00 10-21; unverified.
+- 2026-10-20 — OPEN: `tailscale serve` exposure of 11434/8080/9001/443 is unverified; decide whether qf-bot moves from 0.0.0.0:9001 to the tailnet IP.

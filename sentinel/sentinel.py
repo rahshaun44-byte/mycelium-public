@@ -143,9 +143,9 @@ def execute_command(cmd):
 
 def get_current_telemetry():
     """Extracts V1 (RAM), V2 (CPU), V3 (IO Wait), V4 (Hash) from the physical node.
-    Postgres runs as a native systemd service on this host (postgresql.service),
-    not inside a Podman container named amara-matrix, so telemetry is read
-    directly from the postgres process tree and binary rather than `podman stats`."""
+    Since the Ubuntu move Postgres runs in the rootless podman container
+    amara-matrix. Its processes still appear in the host process table, but the
+    binary exists only inside the container, so the digest is taken there."""
     ps_raw = execute_command(
         "ps -eo comm,rss,%cpu | awk '$1==\"postgres\"{rss+=$2; cpu+=$3} END{print rss, cpu}'"
     )
@@ -163,7 +163,9 @@ def get_current_telemetry():
     except Exception:
         io_wait_pct = 0.0
 
-    current_digest = execute_command("sha256sum /usr/bin/postgres | cut -d' ' -f1")
+    current_digest = execute_command(
+        f"podman exec {TARGET_NODE} sh -c 'sha256sum \"$(command -v postgres)\"' | cut -d' ' -f1"
+    )
 
     return ram_mb, cpu_percent, io_wait_pct, current_digest
 
@@ -499,7 +501,9 @@ def enforce_homeostasis():
         process_suspicious_urls(conn)
 
     if drive > TOLERANCE:
-        if hash_penalty >= HASH_PENALTY_VALUE:
+        # Only a measured digest mismatch is a compromise signal; an unreachable
+        # Truth Log (conn is None) still breaches tolerance but is not one.
+        if conn and hash_penalty >= HASH_PENALTY_VALUE:
             update_opa_threat_flag("ML_KEM_COMPROMISED", True)
             
         if conn:

@@ -629,3 +629,27 @@ G7/CISA PQC guidance (3 Sep 2026) · EO 14412 · NIST IR 8610 HAWK withdrawal ·
 
 #### 19.6.5 Monetization (research summary)
 Testnet USDC, QPU runs (below baseline, §17.3) and the current SOW tiers have **$0 near-term value**. The prepaid "Agent Execution Credit" and Settlement Bridge tiers carry FinCEN money-services-business / state money-transmitter risk. Realistic 90-day income is skills-based: PQC/OpenSSL 3.5 C++ contract or part-time work, a fixed-price "PQC Readiness Sprint" (CBOM + FIPS 203/204 + CNSA 2.0 memo), and audit contests. Full ranked list: `docs/MONETIZATION_ASSESSMENT_2026-10-20.md`.
+
+### 19.7 Antigravity Launch Check, Sentinel Realignment & Scope Lock (2026-10-20, Claude)
+
+Append-only. This corrects the Antigravity "Substrate Audit & Operational Verification" report from the afternoon of 2026-10-20.
+
+#### 19.7.1 Report claims, checked
+- **VERIFIED:** all 13 user services and 3 timers are enabled and active. The engine is LOCKED on 127.0.0.1:9444. `amara-matrix` is running. qflex-mcp is on 127.0.0.1:9000, running the Host/Origin allowlist code (`ef7b0a5`). active-defense is alert-only.
+- **CORRECTED, "permissions verified":** `.env` `DB_USER=amara_admin` failed password authentication. dashboard, athena, sentinel and neurogenesis use `DB_USER` before `GHOSTNODE_DB_USER`, so their DB paths were down, and `neurogenesis.service` had failed.
+- **CORRECTED, "all operational":** live OPA had held `threat_flags.ML_KEM_COMPROMISED=true` since 11:40 (set by a runtime `PUT`; `sentinel/policies/threat_flags.json` says false). The immune daemon collapsed `ML-KEM-768 → FrodoKEM-976-AES` at 11:40:08 and logged about 28k "PQC DEGRADED" lines. The source matches a live-fire drill command given in Antigravity session `fe572957`. Who ran it is NULL.
+- **CORRECTED, root cause of the paused DB (SUPPORTED):** sentinel hashed the absent `/usr/bin/postgres`, which forced the 5000 hash penalty. `execute_hardstop` then ran `podman pause amara-matrix` whenever a DB connection succeeded, which happened when sentinel was run by hand with ghostnode credentials.
+
+#### 19.7.2 Fixes (Rock-approved; live steps run by Rock via `sentinel_realign.sh`)
+- `sentinel/sentinel.py`: the digest is now taken inside the container (`podman exec amara-matrix … command -v postgres`). `ML_KEM_COMPROMISED` is set only on a measured mismatch, not when the Truth Log is unreachable. pytest: 417 passed / 10 skipped / 0 failed. Uncommitted.
+- OPA threat flags reset to false. **VERIFIED:** `[PQC RESTORATION]` at 15:48:38, `active_kem=ML-KEM-768`.
+- `integrity_registry` for `amara-matrix` rebaselined from `105e7998…` (the pre-Ubuntu host binary) to `6707b108…` (the `postgres:15-alpine` container binary), with lockout cleared. Old and new values are logged in `memory_logs` as `Operator REBASELINE`.
+- `.env` `DB_USER`/`DB_PASSWORD` now point at the ghostnode role; backup `.env.bak-20261020-sentinel`.
+- **VERIFIED 15:55:29:** hash penalty 0, drive 486.02 < 1500, "System within equilibrium", `amara-matrix` running, and the dashboard and athena restarted active.
+- New finding: table `suspicious_urls` does not exist, so sentinel's OSINT step errors on every cycle (non-fatal). NULL: neurogenesis with the new creds runs first at 03:00 2026-10-21.
+- The classifier blocked agent-run steps (threat-flag reset: [Security Weaken]; rebaseline: [Logging/Audit Tampering]). They were run by Rock instead; no workaround was attempted.
+
+#### 19.7.3 Scope lock
+- **D-01 (Rock):** the home system and earning are separate products. Home-system v1 is the re-alignment only (this section, the engine ledger 0600 deploy, credential rotation). Earning v1 is a PQC differential tester for outside ML-KEM/ML-DSA implementations, built from the existing KAT, negative-fuzz and dudect harnesses.
+- **D-02 (Rock):** the tester is a new, clean public repo with no mycelium/qf-public history. The no-push rule for mycelium is unchanged.
+- Spec: `docs/fellowship/specs/aragorn-pqc-differential-tester.md`. Status: CLAIMED (requirements only; nothing built).

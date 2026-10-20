@@ -60,11 +60,17 @@ a `pytest.ini` and integration/unit test suite under `tests/` (37 files, 427 tes
 config currently exists).
 
 **How this actually runs**: not via a single entrypoint — each Python component is its own
-systemd **user** service. Active as of 2026-10-20: `amara-dashboard` (:8000), `api-node` (:8080),
-`athena-node` (:8001), `qf-monitor`, `qf-bot` (**0.0.0.0:9001**, the only non-loopback listener,
-for the Pixel app), `quantum-flex-engine-mycelium`, `opa-immune`, `amara-matrix`, `qf-lid-guard`.
-Installed but **disabled**: `immune-daemon`, `swarm-worker`, `sentinel-drive.timer`,
-`neurogenesis.timer`, `amara-predict.timer`, `active-defense`, `qflex-mcp`. A root system unit,
+systemd **user** service. Since 2026-10-20 (afternoon) every user unit is enabled and running:
+`amara-dashboard` (:8000), `api-node` (:8080), `athena-node` (:8001), `qf-monitor`, `qf-bot`
+(**0.0.0.0:9001**, the only non-loopback listener, for the Pixel app), `quantum-flex-engine-mycelium`,
+`opa-immune`, `amara-matrix`, `qf-lid-guard`, `immune-daemon`, `swarm-worker`, `active-defense`
+(alert-only), `qflex-mcp` (:9000), plus `sentinel-drive.timer` (30s), `amara-predict.timer` (5m),
+`neurogenesis.timer` (03:00). dashboard/athena/sentinel/neurogenesis prefer `DB_USER` over
+`GHOSTNODE_DB_USER`; since 2026-10-20 `.env` points `DB_USER` at the ghostnode role (the old
+`amara_admin` login failed). Sentinel hashes postgres inside the container, and the
+`integrity_registry` baseline is the `postgres:15-alpine` binary. If the image changes, rebaseline
+first: on a mismatch, sentinel's hardstop runs `podman pause amara-matrix`. OPA threat flags can be changed at runtime with
+`PUT /v1/data/threat_flags`; what `threat_flags.json` says may not be live. A root system unit,
 `gatekeeper-daemon.service`, runs `/opt/quantumflex/gatekeeper_daemon.py` (outside this repo).
 `opa-immune` also loads `~/Documents/qf/policies/quantum_admission.rego`. Ollama runs as the
 **system** `ollama.service`. `systemd-backup/` in this repo is exactly
