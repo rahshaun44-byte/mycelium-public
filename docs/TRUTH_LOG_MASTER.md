@@ -653,3 +653,15 @@ Append-only. This corrects the Antigravity "Substrate Audit & Operational Verifi
 - **D-01 (Rock):** the home system and earning are separate products. Home-system v1 is the re-alignment only (this section, the engine ledger 0600 deploy, credential rotation). Earning v1 is a PQC differential tester for outside ML-KEM/ML-DSA implementations, built from the existing KAT, negative-fuzz and dudect harnesses.
 - **D-02 (Rock):** the tester is a new, clean public repo with no mycelium/qf-public history. The no-push rule for mycelium is unchanged.
 - Spec: `docs/fellowship/specs/aragorn-pqc-differential-tester.md`. Status: CLAIMED (requirements only; nothing built).
+
+### 19.8 PQC Differential Tester: RustCrypto Adapter v0 (2026-10-20, Claude)
+
+Earning product (D-01). Work lives outside this repo, in `~/projects/pqc-difftest` (working name; fresh `git init`, no remote, D-02).
+
+- **VERIFIED:** Crucible-protocol adapter `harnesses/rustcrypto`, pinned to `ml-kem =0.3.3` (`hazmat`) and `ml-dsa =0.1.1`. It exposes the FIPS 203/204 internal KeyGen/Encaps/Decaps and KeyGen/Sign/Verify for all three parameter sets each. Library panics are caught and reported as `PANIC: …`, separate from rejections.
+- **VERIFIED:** Crucible `symbolicsoft/crucible` @ `0522518`, built locally at `~/projects/crucible`. ML-DSA battery: 60 tests, 60 passed. ML-KEM battery: 78 tests, 33 passed, 0 failed, 45 skipped (internal NTT/Compress/Sample functions that RustCrypto does not expose).
+- **VERIFIED:** adapter protocol tests (`tests/protocol.rs`): 6 passed.
+- **CORRECTED:** a concurrent session's edit (16:44) made ML-DSA Verify read `signature`. Crucible sends `sigma` (its battery source, `crates/crucible-ml-dsa`), so the battery fell to 30 passed / 30 errors. Fixed: the adapter reads `sigma` and falls back to `signature`, with a regression test for `sigma`.
+- **SUPPORTED, not a finding:** an all-`0xFF` expanded ML-DSA-65 signing key panics in signing (`assertion failed: z.0 <= (a + b).0`). Upstream documents that malformed expanded keys may panic (`ExpandedSigningKey::from_expanded`).
+- Conformance passing is only the baseline, so no claim is made about the library's security. Not built yet: differential vs OpenSSL 3.5 (CORE-02), Bernstein-class negatives (CORE-03), in-process dudect (CORE-04).
+- Still open (Rock): the repo name and the publishing GitHub account. The first local commit uses the global identity `rahshaun44-byte`.
