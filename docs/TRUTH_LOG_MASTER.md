@@ -733,3 +733,14 @@ The QuantumFlex substrate topology consists strictly of the **three verified rea
 - **Firewall:** ufw inactive; nftables active, ruleset unread (root). `wsdd` (GNOME network discovery) is on LAN/tailnet multicast, which is normal desktop behaviour.
 - **GitHub:** `rahshaun44-byte/quantumflex` is now **private**. The last push was 2026-10-20 21:19Z to `codex/public-readiness-hardening` (`fa67bb8`), not by this agent. Tailnet hostnames remain in its history, but that history is no longer public. Earlier clones or forks are NULL.
 - **Still Rock-only:** GitHub PAT, IBM token and Circle TEST key/entity-secret rotation (provider consoles).
+
+### 19.12 Scope Demarcation: Disavowal of Conspiracy Sites & QFS Mythology (2026-10-20, Chief Architect Rocky / Antigravity)
+
+Append-only directive from Chief Architect Rocky.
+
+- **Formal Disavowal & No-Business Stance:** Chief Architect Rocky explicitly disavows and rejects any connection to `qresear.ch`, `bad-boys.us`, QAnon, or related conspiracy databases. QuantumFlex has zero business with, zero reliance on, and zero affiliation with political conspiracy theories, external indictment aggregators, or anonymous imageboard tracker sites.
+- **External Ingestion Exclusion:** Any URLs, references, or queries regarding `qresear.ch` or similar fringe domains that appear in external browser tabs, chatbot recommendation feeds, or OSINT noise are strictly out of scope, irrelevant, and barred from inclusion in any QuantumFlex ingestion, database pipeline, or system logic.
+- **QFS ("Quantum Financial System") Rejection:** QuantumFlex explicitly rejects the internet conspiracy myth known as "QFS" (Quantum Financial System). QuantumFlex's financial architecture is strictly grounded in real-world, verified engineering:
+  1. Circle USDC smart contract settlement (`QuantumFlexUSDCSettler.sol`, 6-decimal precision invariant: `1 USDC = 1_000_000n`, `evm_version = "paris"`).
+  2. Concrete post-quantum cryptographic primitives (NIST FIPS 203 ML-KEM, FrodoKEM-976, RFC 7748 Curve25519, F* formally verified core).
+  3. Real local hardware topology (`qfx-yoga`, `qfx-pixel`, `g6pro`) under zero cloud spend ($0.00).
