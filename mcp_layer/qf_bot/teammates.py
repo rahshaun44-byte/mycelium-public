@@ -80,7 +80,7 @@ class MyceliaTeammate(BaseTeammate):
             avatar="🍄",
             model="qwen2.5-coder:1.5b",
             system_prompt="""You are MYCELIA, the sovereign network interconnect and mesh routing agent of QuantumFlex.
-You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), mobile operators (qfx-pixel, qfx-edge), and edge workers.
+You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), Chief Architect HUD (qfx-pixel), and dedicated Kafka broker (g6pro).
 Report network topology, node reachability, and peer latency crisply and objectively.""",
         )
 
@@ -88,9 +88,31 @@ Report network topology, node reachability, and peer latency crisply and objecti
         """Inspects live Tailscale mesh connectivity."""
         nodes = {
             "qfx-yoga": {"ip": "100.64.1.31", "role": "Lenovo Yoga 7 (Primary Host Engine)", "status": "ONLINE", "latency": "0.1ms"},
-            "qfx-pixel": {"ip": "100.64.1.22", "role": "Google Pixel 11 Pro (Mobile Sentinel)", "status": "ONLINE", "latency": "12ms"},
-            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Auxiliary Node)", "status": "ONLINE", "latency": "193ms"},
+            "qfx-pixel": {"ip": "100.64.1.22", "role": "Google Pixel 11 Pro (Chief Architect HUD)", "status": "OFFLINE", "latency": "N/A"},
+            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Kafka Broker)", "status": "OFFLINE", "latency": "N/A"},
         }
+        try:
+            res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=3)
+            if res.returncode == 0:
+                data = json.loads(res.stdout)
+                peers = data.get("Peer", {})
+                for _, peer in peers.items():
+                    hname = peer.get("HostName", "").lower()
+                    active = peer.get("Active", False)
+                    online = peer.get("Online", False)
+                    status_str = "ONLINE" if (active or online) else "OFFLINE"
+                    if "pixel" in hname:
+                        nodes["qfx-pixel"]["status"] = status_str
+                        ips = peer.get("TailscaleIPs", [])
+                        if ips:
+                            nodes["qfx-pixel"]["ip"] = ips[0]
+                    elif "g6pro" in hname:
+                        nodes["g6pro"]["status"] = status_str
+                        ips = peer.get("TailscaleIPs", [])
+                        if ips:
+                            nodes["g6pro"]["ip"] = ips[0]
+        except Exception:
+            pass
         return nodes
 
 

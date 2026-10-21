@@ -24,7 +24,10 @@ The legacy 3-of-5 authority is **retired, not recovered**:
 
 ## Built this session — written but NOT yet compiled or run
 
-Auto mode began blocking shell commands, so none of this has run.
+Historical note: this session reported that auto mode was blocking shell commands,
+so the listed steps were not verified as executed at that time. This note is not
+current system state; repository, service, and filesystem state must be checked
+independently before relying on it.
 
 | File | Purpose |
 |---|---|

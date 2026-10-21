@@ -41,73 +41,15 @@ def generate_tunnel_token() -> str:
 
 def rotate_all_credentials(env_path: Path = ENV_FILE) -> dict:
     """
-    Generates isolated, distinct credentials and updates the .env file atomically.
+    Windows-only legacy rotation function.
+    Fails closed on Linux to prevent destroying Linux host configuration.
     """
-    new_ghostnode_pass = generate_secure_password(24)
-    new_sentinel_pass = generate_secure_password(24)
-    new_postgres_pass = generate_secure_password(24)
-    new_dashboard_key = generate_api_key()
-    new_cf_token = generate_tunnel_token()
-
-    # Format the updated .env content
-    new_env_content = f"""# ═══════════════════════════════════════════════════════════════════
-# Quantum Flex: Windows Environment Configuration
-# Rotated & Secured via rotate_credentials.py
-# ═══════════════════════════════════════════════════════════════════
-
-# Core Data & Directory Paths
-QF_DATA_DIR=C:\\Users\\quant\\AppData\\Local\\QuantumFlex\\data
-PQC_PROVIDER_CONF={REPO_ROOT / 'mcp_layer' / 'crypto_provider.conf'}
-
-# Native Postgres Database (Telemetry / Sentinel)
-GHOSTNODE_DB_USER=ghostnode
-GHOSTNODE_DB_PASSWORD={new_ghostnode_pass}
-SENTINEL_DB_USER=sentinel_service
-SENTINEL_DB_PASSWORD={new_sentinel_pass}
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_NAME=telemetry
-
-# Logistics Postgres Database (C++ Engine / Amara Matrix)
-POSTGRES_PASSWORD={new_postgres_pass}
-QF_POSTGRES_CONNINFO=host=127.0.0.1 port=5433 dbname=amara_matrix user=amara_admin password={new_postgres_pass}
-
-# OPA Sidecar Endpoint
-OPA_ENDPOINT=http://127.0.0.1:8181
-
-# LLM Swarm Settings (Ollama)
-OLLAMA_HOST=http://127.0.0.1:11434
-OLLAMA_MODEL=gemma2:2b
-
-# Dashboard & API Ports
-DASHBOARD_PORT=8000
-ATHENA_PORT=8001
-API_NODE_PORT=8080
-MCP_PORT=9000
-
-# Tailscale Network IP Configuration
-TAILNET_IP=100.64.1.29
-S23_FE_IP=100.64.1.33
-DASHBOARD_API_KEY={new_dashboard_key}
-
-# Infrastructure & Edge Tunneling
-CLOUDFLARE_TUNNEL_TOKEN={new_cf_token}
-"""
-
-    # Atomic write to temporary file then replace
-    temp_env = env_path.with_suffix(".tmp")
-    with open(temp_env, "w", encoding="utf-8") as f:
-        f.write(new_env_content)
-    
-    temp_env.replace(env_path)
-
-    return {
-        "GHOSTNODE_DB_PASSWORD": new_ghostnode_pass,
-        "SENTINEL_DB_PASSWORD": new_sentinel_pass,
-        "POSTGRES_PASSWORD": new_postgres_pass,
-        "DASHBOARD_API_KEY": new_dashboard_key,
-        "CLOUDFLARE_TUNNEL_TOKEN": new_cf_token
-    }
+    if sys.platform != "win32":
+        raise RuntimeError(
+            "Windows-oriented rotate_credentials.py is strictly disabled on Linux. "
+            "Use tools/rotate_credentials_linux.py instead."
+        )
+    raise NotImplementedError("Windows execution disabled on this node.")
 
 def audit_credentials(env_path: Path = ENV_FILE) -> bool:
     """
@@ -152,8 +94,7 @@ def audit_credentials(env_path: Path = ENV_FILE) -> bool:
         if status == "[-] WEAK":
             all_passed = False
             
-        masked_val = val[:4] + "..." + val[-4:] if len(val) > 8 else "***"
-        print(f"  {status}: {key} (Length: {len(val)}, Entropy: {entropy:.2f} b/char, Total: ~{bit_strength:.0f} bits, Value: {masked_val})")
+        print(f"  {status}: {key} (Length: {len(val)}, Entropy: {entropy:.2f} b/char, Total: ~{bit_strength:.0f} bits, Value: [REDACTED])")
 
     # Audit .gitignore rules across scratch repos
     print("\n[*] Auditing .gitignore exclusions across workspace:")
@@ -189,6 +130,13 @@ def main():
     args = parser.parse_args()
 
     if args.rotate:
+        if sys.platform != "win32":
+            from tools.rotate_credentials_linux import CredentialRotationManager
+            print("[*] Linux host detected: Delegating to secure Linux credential manager...")
+            manager = CredentialRotationManager(workspace_root=REPO_ROOT)
+            manager.run(dry_run=True)
+            print("[!] Mutating rotation requires explicit provider confirmation. Run tools/rotate_credentials_linux.py --rotate when ready.")
+            return
         print("[*] Generating new isolated cryptographic secrets...")
         rotated = rotate_all_credentials()
         print("[+] Credentials successfully rotated into .env.")

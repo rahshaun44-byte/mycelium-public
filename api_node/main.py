@@ -35,9 +35,6 @@ _mobile_dir = Path(__file__).resolve().parent.parent / "mobile"
 if _mobile_dir.exists():
     app.mount("/mobile", StaticFiles(directory=str(_mobile_dir)), name="mobile")
 
-_s23fe_dir = Path(__file__).resolve().parent.parent / "s23fe"
-if _s23fe_dir.exists():
-    app.mount("/s23fe", StaticFiles(directory=str(_s23fe_dir)), name="s23fe")
 
 # Correct paths for this host
 BASE_DIR = Path(__file__).resolve().parent.parent
