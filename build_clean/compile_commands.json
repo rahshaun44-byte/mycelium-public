@@ -1,0 +1,176 @@
+[
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/main.cpp.o -c /home/quant/mycelium/src/main.cpp",
+  "file": "/home/quant/mycelium/src/main.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/bae_node.cpp.o -c /home/quant/mycelium/src/core/bae_node.cpp",
+  "file": "/home/quant/mycelium/src/core/bae_node.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/bae_node.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/evidence_engine.cpp.o -c /home/quant/mycelium/src/core/evidence_engine.cpp",
+  "file": "/home/quant/mycelium/src/core/evidence_engine.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/evidence_engine.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/ewma_lif_sentinel.cpp.o -c /home/quant/mycelium/src/core/ewma_lif_sentinel.cpp",
+  "file": "/home/quant/mycelium/src/core/ewma_lif_sentinel.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/ewma_lif_sentinel.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/forensic_lockdown.cpp.o -c /home/quant/mycelium/src/core/forensic_lockdown.cpp",
+  "file": "/home/quant/mycelium/src/core/forensic_lockdown.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/forensic_lockdown.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/gossipsub_handler.cpp.o -c /home/quant/mycelium/src/core/gossipsub_handler.cpp",
+  "file": "/home/quant/mycelium/src/core/gossipsub_handler.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/gossipsub_handler.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/ipc_server.cpp.o -c /home/quant/mycelium/src/core/ipc_server.cpp",
+  "file": "/home/quant/mycelium/src/core/ipc_server.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/ipc_server.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/ledger_manager.cpp.o -c /home/quant/mycelium/src/core/ledger_manager.cpp",
+  "file": "/home/quant/mycelium/src/core/ledger_manager.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/ledger_manager.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/local_node.cpp.o -c /home/quant/mycelium/src/core/local_node.cpp",
+  "file": "/home/quant/mycelium/src/core/local_node.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/local_node.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/pqxx_compat.cpp.o -c /home/quant/mycelium/src/core/pqxx_compat.cpp",
+  "file": "/home/quant/mycelium/src/core/pqxx_compat.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/pqxx_compat.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/replication_layer.cpp.o -c /home/quant/mycelium/src/core/replication_layer.cpp",
+  "file": "/home/quant/mycelium/src/core/replication_layer.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/replication_layer.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/quantum_flex_engine.dir/src/core/state_manager.cpp.o -c /home/quant/mycelium/src/core/state_manager.cpp",
+  "file": "/home/quant/mycelium/src/core/state_manager.cpp",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/state_manager.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/cc  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include  -o CMakeFiles/quantum_flex_engine.dir/src/core/verified_core.c.o -c /home/quant/mycelium/src/core/verified_core.c",
+  "file": "/home/quant/mycelium/src/core/verified_core.c",
+  "output": "CMakeFiles/quantum_flex_engine.dir/src/core/verified_core.c.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++   -std=gnu++20 -o CMakeFiles/sentinel_push.dir/sentinel_push.cpp.o -c /home/quant/mycelium/sentinel_push.cpp",
+  "file": "/home/quant/mycelium/sentinel_push.cpp",
+  "output": "CMakeFiles/sentinel_push.dir/sentinel_push.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -o CMakeFiles/qf_genesis_tool.dir/tools/genesis_tool.cpp.o -c /home/quant/mycelium/tools/genesis_tool.cpp",
+  "file": "/home/quant/mycelium/tools/genesis_tool.cpp",
+  "output": "CMakeFiles/qf_genesis_tool.dir/tools/genesis_tool.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/include -std=gnu++20 -o CMakeFiles/test_verified_core.dir/tools/test_verified_core.cpp.o -c /home/quant/mycelium/tools/test_verified_core.cpp",
+  "file": "/home/quant/mycelium/tools/test_verified_core.cpp",
+  "output": "CMakeFiles/test_verified_core.dir/tools/test_verified_core.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean",
+  "command": "/usr/bin/cc  -I/home/quant/mycelium/include  -o CMakeFiles/test_verified_core.dir/src/core/verified_core.c.o -c /home/quant/mycelium/src/core/verified_core.c",
+  "file": "/home/quant/mycelium/src/core/verified_core.c",
+  "output": "CMakeFiles/test_verified_core.dir/src/core/verified_core.c.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -fPIC -O2 -o CMakeFiles/quantumflex_crypto.dir/src/crypto/crypto_hasher.cpp.o -c /home/quant/mycelium/quantumflex/src/crypto/crypto_hasher.cpp",
+  "file": "/home/quant/mycelium/quantumflex/src/crypto/crypto_hasher.cpp",
+  "output": "quantumflex/CMakeFiles/quantumflex_crypto.dir/src/crypto/crypto_hasher.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -fPIC -O2 -o CMakeFiles/quantumflex_crypto.dir/src/crypto/crypto_shamir.cpp.o -c /home/quant/mycelium/quantumflex/src/crypto/crypto_shamir.cpp",
+  "file": "/home/quant/mycelium/quantumflex/src/crypto/crypto_shamir.cpp",
+  "output": "quantumflex/CMakeFiles/quantumflex_crypto.dir/src/crypto/crypto_shamir.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -fPIC -O2 -o CMakeFiles/quantumflex_crypto.dir/src/crypto/crypto_signer.cpp.o -c /home/quant/mycelium/quantumflex/src/crypto/crypto_signer.cpp",
+  "file": "/home/quant/mycelium/quantumflex/src/crypto/crypto_signer.cpp",
+  "output": "quantumflex/CMakeFiles/quantumflex_crypto.dir/src/crypto/crypto_signer.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -fPIC -O2 -o CMakeFiles/quantumflex_crypto.dir/src/crypto/hybrid_kem.cpp.o -c /home/quant/mycelium/quantumflex/src/crypto/hybrid_kem.cpp",
+  "file": "/home/quant/mycelium/quantumflex/src/crypto/hybrid_kem.cpp",
+  "output": "quantumflex/CMakeFiles/quantumflex_crypto.dir/src/crypto/hybrid_kem.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -fPIC -o CMakeFiles/quantumflex_wire.dir/src/wire/wire_framing.cpp.o -c /home/quant/mycelium/quantumflex/src/wire/wire_framing.cpp",
+  "file": "/home/quant/mycelium/quantumflex/src/wire/wire_framing.cpp",
+  "output": "quantumflex/CMakeFiles/quantumflex_wire.dir/src/wire/wire_framing.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -o CMakeFiles/test_hybrid_kem.dir/tests/test_hybrid_kem.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_hybrid_kem.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_hybrid_kem.cpp",
+  "output": "quantumflex/CMakeFiles/test_hybrid_kem.dir/tests/test_hybrid_kem.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -o CMakeFiles/test_known_answer_vectors.dir/tests/test_known_answer_vectors.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_known_answer_vectors.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_known_answer_vectors.cpp",
+  "output": "quantumflex/CMakeFiles/test_known_answer_vectors.dir/tests/test_known_answer_vectors.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -o CMakeFiles/test_wire_framing.dir/tests/test_wire_framing.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_wire_framing.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_wire_framing.cpp",
+  "output": "quantumflex/CMakeFiles/test_wire_framing.dir/tests/test_wire_framing.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -o CMakeFiles/test_wire_fuzz_negative.dir/tests/test_wire_fuzz_negative.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_wire_fuzz_negative.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_wire_fuzz_negative.cpp",
+  "output": "quantumflex/CMakeFiles/test_wire_fuzz_negative.dir/tests/test_wire_fuzz_negative.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -o CMakeFiles/test_mlkem768.dir/tests/test_mlkem768.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_mlkem768.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_mlkem768.cpp",
+  "output": "quantumflex/CMakeFiles/test_mlkem768.dir/tests/test_mlkem768.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -O3 -o CMakeFiles/test_zeroization.dir/tests/test_zeroization.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_zeroization.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_zeroization.cpp",
+  "output": "quantumflex/CMakeFiles/test_zeroization.dir/tests/test_zeroization.cpp.o"
+},
+{
+  "directory": "/home/quant/mycelium/build_clean/quantumflex",
+  "command": "/usr/bin/c++  -I/home/quant/mycelium/quantumflex/include -std=gnu++20 -UNDEBUG -O3 -o CMakeFiles/test_dudect_timing.dir/tests/test_dudect_timing.cpp.o -c /home/quant/mycelium/quantumflex/tests/test_dudect_timing.cpp",
+  "file": "/home/quant/mycelium/quantumflex/tests/test_dudect_timing.cpp",
+  "output": "quantumflex/CMakeFiles/test_dudect_timing.dir/tests/test_dudect_timing.cpp.o"
+}
+]

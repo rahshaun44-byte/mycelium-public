@@ -1,0 +1,115 @@
+diff --git a/api_node/main.py b/api_node/main.py
+index 9125752..ee57e6c 100644
+--- a/api_node/main.py
++++ b/api_node/main.py
+@@ -35,9 +35,6 @@ _mobile_dir = Path(__file__).resolve().parent.parent / "mobile"
+ if _mobile_dir.exists():
+     app.mount("/mobile", StaticFiles(directory=str(_mobile_dir)), name="mobile")
+ 
+-_s23fe_dir = Path(__file__).resolve().parent.parent / "s23fe"
+-if _s23fe_dir.exists():
+-    app.mount("/s23fe", StaticFiles(directory=str(_s23fe_dir)), name="s23fe")
+ 
+ # Correct paths for this host
+ BASE_DIR = Path(__file__).resolve().parent.parent
+diff --git a/docs/fellowship/handoffs/2026-10-14-authority-migration-handoff.md b/docs/fellowship/handoffs/2026-10-14-authority-migration-handoff.md
+index 7fd2e0b..cab0c96 100644
+--- a/docs/fellowship/handoffs/2026-10-14-authority-migration-handoff.md
++++ b/docs/fellowship/handoffs/2026-10-14-authority-migration-handoff.md
+@@ -24,7 +24,10 @@ The legacy 3-of-5 authority is **retired, not recovered**:
+ 
+ ## Built this session — written but NOT yet compiled or run
+ 
+-Auto mode began blocking shell commands, so none of this has run.
++Historical note: this session reported that auto mode was blocking shell commands,
++so the listed steps were not verified as executed at that time. This note is not
++current system state; repository, service, and filesystem state must be checked
++independently before relying on it.
+ 
+ | File | Purpose |
+ |---|---|
+diff --git a/mcp_layer/qf_bot/orchestrator.py b/mcp_layer/qf_bot/orchestrator.py
+index fc8fffa..d205e51 100644
+--- a/mcp_layer/qf_bot/orchestrator.py
++++ b/mcp_layer/qf_bot/orchestrator.py
+@@ -169,12 +169,16 @@ class QFBotOrchestrator:
+         drive_val = sentinel_data.get("drive_score", 447.1)
+         drive_str = f"{drive_val:.1f} / 1500.0 (NOMINAL)" if isinstance(drive_val, (int, float)) else "447.1 (NOMINAL)"
+ 
++        real_mesh = self.mycelia.inspect_mesh()
++        active_nodes = [k for k, v in real_mesh.items() if v.get("status") == "ONLINE"]
++        mesh_str = f"{len(active_nodes)} Active ({', '.join(active_nodes)})"
++
+         sitrep = f"""[SITREP // {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} EDT]
+ DEFCON / POSTURE    : EQUILIBRIUM (SYSTEM OPTIMAL)
+ HARDWARE ANCHOR     : TPM 2.0 NV 0x1c00010 {tpm_str}
+ HOMEOSTATIC DRIVE   : D = {drive_str}
+ INVARIANT GATE      : R >= O [ADMIT] (Digital Host RAM, Pluton TPM 2.0, Physical Water)
+-MESH STATUS         : 4 Active P2P Nodes (qfx-yoga, qf-pavilion, qfx-pixel, qfx-edge)
++MESH STATUS         : {mesh_str}
+ ACTIVE AGENTS       : 4 Sovereign Units (MYCELIA, SENTINEL, ARIA, ATHENA)
+ PENDING ACTIONS     : {len([d for d in self.draft_queue.list_drafts() if d['status'] == 'PENDING_APPROVAL'])} Authorization(s) Required"""
+         return sitrep
+@@ -223,11 +227,10 @@ STATUS             : {hs_data['posture']}"""
+         # Command: Mesh status
+         if any(w in clean_text for w in ["mesh status", "mesh", "nodes", "topology"]):
+             mesh_nodes = self.mycelia.inspect_mesh()
+-            resp_text = f"""[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]
+-● qfx-yoga    : 100.64.1.31 | Host Engine | ONLINE (0.1ms) | TPM 2.0 Matched
+-● qf-pavilion : 100.64.1.34  | Worker (Kafka Stream) | ONLINE (0.8ms) | P2P Direct
+-● qfx-pixel   : 100.64.1.11  | Mobile (Pixel 11 Pro) | ONLINE (12ms) | P2P Direct
+-● qfx-edge    : 100.64.1.32  | Operator (S23 FE) | ONLINE (14ms) | P2P Direct"""
++            lines = ["[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]"]
++            for node_name, info in mesh_nodes.items():
++                lines.append(f"● {node_name:<11} : {info['ip']} | {info['role']} | {info['status']} ({info['latency']})")
++            resp_text = "\n".join(lines)
+             bot_msg = {
+                 "id": str(uuid.uuid4()),
+                 "sender": self.mycelia.name,
+diff --git a/mcp_layer/qf_bot/teammates.py b/mcp_layer/qf_bot/teammates.py
+index 2ef85db..d4acc4c 100644
+--- a/mcp_layer/qf_bot/teammates.py
++++ b/mcp_layer/qf_bot/teammates.py
+@@ -80,7 +80,7 @@ class MyceliaTeammate(BaseTeammate):
+             avatar="🍄",
+             model="qwen2.5-coder:1.5b",
+             system_prompt="""You are MYCELIA, the sovereign network interconnect and mesh routing agent of QuantumFlex.
+-You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), mobile operators (qfx-pixel, qfx-edge), and edge workers.
++You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), Chief Architect HUD (qfx-pixel), and dedicated Kafka broker (g6pro).
+ Report network topology, node reachability, and peer latency crisply and objectively.""",
+         )
+ 
+@@ -88,9 +88,31 @@ Report network topology, node reachability, and peer latency crisply and objecti
+         """Inspects live Tailscale mesh connectivity."""
+         nodes = {
+             "qfx-yoga": {"ip": "100.64.1.31", "role": "Lenovo Yoga 7 (Primary Host Engine)", "status": "ONLINE", "latency": "0.1ms"},
+-            "qfx-pixel": {"ip": "100.64.1.22", "role": "Google Pixel 11 Pro (Mobile Sentinel)", "status": "ONLINE", "latency": "12ms"},
+-            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Auxiliary Node)", "status": "ONLINE", "latency": "193ms"},
++            "qfx-pixel": {"ip": "100.64.1.22", "role": "Google Pixel 11 Pro (Chief Architect HUD)", "status": "OFFLINE", "latency": "N/A"},
++            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Kafka Broker)", "status": "OFFLINE", "latency": "N/A"},
+         }
++        try:
++            res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=3)
++            if res.returncode == 0:
++                data = json.loads(res.stdout)
++                peers = data.get("Peer", {})
++                for _, peer in peers.items():
++                    hname = peer.get("HostName", "").lower()
++                    active = peer.get("Active", False)
++                    online = peer.get("Online", False)
++                    status_str = "ONLINE" if (active or online) else "OFFLINE"
++                    if "pixel" in hname:
++                        nodes["qfx-pixel"]["status"] = status_str
++                        ips = peer.get("TailscaleIPs", [])
++                        if ips:
++                            nodes["qfx-pixel"]["ip"] = ips[0]
++                    elif "g6pro" in hname:
++                        nodes["g6pro"]["status"] = status_str
++                        ips = peer.get("TailscaleIPs", [])
++                        if ips:
++                            nodes["g6pro"]["ip"] = ips[0]
++        except Exception:
++            pass
+         return nodes
+ 
+ 

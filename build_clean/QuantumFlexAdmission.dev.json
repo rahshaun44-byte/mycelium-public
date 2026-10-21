@@ -1,0 +1,20 @@
+{
+  "schema": "QuantumFlexAdmission/v1",
+  "package": "QuantumFlex",
+  "mode": "DEV",
+  "binding": "sha256",
+  "signed": false,
+  "note": "In-tree source hashes. Evidence, not authority. Not an attested install.",
+  "artifacts": [
+    {"path": "quantumflex/include/quantum-flex/hybrid_kem.hpp", "sha256": "8aca7b86bfec0f26f83621a55cf88c039b1be612f4c9210d76c7d67a17ace8a5", "size_bytes": 5923},
+    {"path": "quantumflex/include/quantum-flex/crypto_signer.hpp", "sha256": "bf2187d02f6fa341399ba5bb19282f4f274c5045a3c0d5a55ff1053ad0b43cc7", "size_bytes": 3242},
+    {"path": "quantumflex/include/quantum-flex/crypto_hasher.hpp", "sha256": "45d62e3e97797ff063fac85a6a41cfa056421981ed54b708bd99b63580e6d74c", "size_bytes": 597},
+    {"path": "quantumflex/include/quantum-flex/crypto_shamir.hpp", "sha256": "5c5c59231fb08b499ddf49eb53d3cacc4c3b0bffa6a0a6c22a3a8fb1d1239211", "size_bytes": 1514},
+    {"path": "quantumflex/include/quantum-flex/wire_framing.hpp", "sha256": "06d3c76720119b76c681822dbce6e9e42abedbf4e5298218579adae8613565ad", "size_bytes": 4482},
+    {"path": "quantumflex/src/crypto/crypto_hasher.cpp", "sha256": "249ab379be0600fe28ccd4fa26bfe7bf542d67c445c6089bb54c8b86dd3daed8", "size_bytes": 3338},
+    {"path": "quantumflex/src/crypto/crypto_shamir.cpp", "sha256": "dbb15dd56c081f9f89bf018910cc663b2ac0c0d55adaaaab5a7dd150ca0702cf", "size_bytes": 5303},
+    {"path": "quantumflex/src/crypto/crypto_signer.cpp", "sha256": "ced89f3910bd8d0670cb612f36790a02cd05c3d1fb1d76f8cb844be0b9b07ceb", "size_bytes": 11688},
+    {"path": "quantumflex/src/crypto/hybrid_kem.cpp", "sha256": "51c2f14b9c7765f028bf1629f5c7a3ca771ba01d8c4b855d082a612f6e38fce1", "size_bytes": 34355},
+    {"path": "quantumflex/src/wire/wire_framing.cpp", "sha256": "2f11aefd8989d40157a201da253f9c82b22e3567aee7d9fdac35e09a11598bdb", "size_bytes": 5493}
+  ]
+}
