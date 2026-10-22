@@ -11,7 +11,11 @@
       "X25519": "NONE"
     },
     "active_kems": [
+      "FrodoKEM-1344-AES",
+      "FrodoKEM-640-AES",
+      "FrodoKEM-976-AES",
       "ML-KEM-1024",
+      "ML-KEM-512",
       "ML-KEM-768"
     ],
     "all_approved": [
@@ -65,7 +69,42 @@
     },
     "findings": [
       {
+        "algorithm": "AES-256-GCM",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "ECDSA-P256",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      },
+      {
         "algorithm": "Ed25519",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "FrodoKEM-1344-AES",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "FrodoKEM-640-AES",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "FrodoKEM-976-AES",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "HQC",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      },
+      {
+        "algorithm": "ML-DSA-44",
         "reason": "Approved by algorithm policy; module validation not assessed",
         "status": "COMPLIANT"
       },
@@ -75,7 +114,17 @@
         "status": "COMPLIANT"
       },
       {
+        "algorithm": "ML-DSA-87",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
         "algorithm": "ML-KEM-1024",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "ML-KEM-512",
         "reason": "Approved by algorithm policy; module validation not assessed",
         "status": "COMPLIANT"
       },
@@ -85,7 +134,32 @@
         "status": "COMPLIANT"
       },
       {
+        "algorithm": "RSA-2048",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      },
+      {
         "algorithm": "SHA-256",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "SHA-384",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "SHA-512",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "SLH-DSA-SHA2-128f",
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
+      },
+      {
+        "algorithm": "X25519",
         "reason": "Approved by algorithm policy; module validation not assessed",
         "status": "COMPLIANT"
       }
@@ -103,9 +177,9 @@
       "ML-KEM-768": "FrodoKEM-976-AES",
       "X25519": "NONE"
     },
-    "meta_timestamp": "2026-10-22T23:05:43Z",
+    "meta_timestamp": "2026-10-22T23:46:39Z",
     "ml_kem_verified_safe": true,
-    "node_status": "COMPLIANT",
+    "node_status": "TOXIC",
     "quantum_safe_kem": [
       "ML-KEM-1024",
       "ML-KEM-512",
@@ -128,7 +202,23 @@
       "safe_mode_cipher": "FrodoKEM-976-AES",
       "timeout_window_sec": 60
     },
-    "toxic_findings": [],
+    "toxic_findings": [
+      {
+        "algorithm": "ECDSA-P256",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      },
+      {
+        "algorithm": "HQC",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      },
+      {
+        "algorithm": "RSA-2048",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      }
+    ],
     "valid_profiles": [
       "agility",
       "fips_strict",
@@ -136,10 +226,45 @@
     ],
     "verdict": {
       "deny_reasons": [],
-      "evaluated_at": "2026-10-22T23:05:43Z",
+      "evaluated_at": "2026-10-22T23:46:39Z",
       "findings": [
         {
+          "algorithm": "AES-256-GCM",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "ECDSA-P256",
+          "reason": "Unknown/deprecated algorithm",
+          "status": "TOXIC"
+        },
+        {
           "algorithm": "Ed25519",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "FrodoKEM-1344-AES",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "FrodoKEM-640-AES",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "FrodoKEM-976-AES",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "HQC",
+          "reason": "Unknown/deprecated algorithm",
+          "status": "TOXIC"
+        },
+        {
+          "algorithm": "ML-DSA-44",
           "reason": "Approved by algorithm policy; module validation not assessed",
           "status": "COMPLIANT"
         },
@@ -149,7 +274,17 @@
           "status": "COMPLIANT"
         },
         {
+          "algorithm": "ML-DSA-87",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
           "algorithm": "ML-KEM-1024",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "ML-KEM-512",
           "reason": "Approved by algorithm policy; module validation not assessed",
           "status": "COMPLIANT"
         },
@@ -159,15 +294,40 @@
           "status": "COMPLIANT"
         },
         {
+          "algorithm": "RSA-2048",
+          "reason": "Unknown/deprecated algorithm",
+          "status": "TOXIC"
+        },
+        {
           "algorithm": "SHA-256",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "SHA-384",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "SHA-512",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "SLH-DSA-SHA2-128f",
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
+        },
+        {
+          "algorithm": "X25519",
           "reason": "Approved by algorithm policy; module validation not assessed",
           "status": "COMPLIANT"
         }
       ],
-      "node_status": "COMPLIANT",
+      "node_status": "TOXIC",
       "recommended_fallback": "NONE",
-      "total_components": 5,
-      "toxic_count": 0,
+      "total_components": 19,
+      "toxic_count": 3,
       "verification_state": "VERIFIED"
     },
     "verification_state": "VERIFIED"

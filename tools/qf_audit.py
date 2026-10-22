@@ -407,7 +407,7 @@ This cryptographic assessment evaluates the software and configuration boundary 
 ---
 
 ## 3. Buffer Exhaustion Vectors (NIST Level 3/5 Inelasticity)
-The following static buffer allocations were detected within the AST/source code. These allocations are strictly bounded below the 15,792 byte requirement for FIPS 203 (FrodoKEM-976-AES) hybrid ciphertexts, guaranteeing memory truncation and process crashes during post-quantum key exchange.
+The following static buffer allocations were detected within the AST/source code. These allocations are strictly bounded below the 15,792 byte FrodoKEM-976-AES ciphertext size (ISO/IEC 18033-2 candidate; not part of NIST FIPS 203, which specifies ML-KEM only), guaranteeing memory truncation and process crashes during post-quantum key exchange.
 
 | File | Line | Static Allocation Size | Offending Code |
 | :--- | :--- | :--- | :--- |
@@ -428,7 +428,7 @@ The following static buffer allocations were detected within the AST/source code
 
 ## 4. Required Remediation Roadmap (OMB M-26-15)
 
-1. **Replace Asymmetric Key Encapsulation**: Any classical ECDH / RSA key exchange must implement NIST FIPS 203 ML-KEM-768 or FrodoKEM-976 hybrid wrapper.
+1. **Replace Asymmetric Key Encapsulation**: Any classical ECDH / RSA key exchange must implement a NIST FIPS 203 ML-KEM-768 or ISO/IEC 18033-2 FrodoKEM-976 hybrid wrapper.
 2. **Eliminate Hardcoded Ciphers**: Migrate all hardcoded cipher suites to runtime policy evaluation via Open Policy Agent (OPA).
 3. **Continuous CBOM Verification**: Ensure automated CycloneDX generation is embedded in pre-commit and CI/CD pipelines.
 
