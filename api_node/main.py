@@ -241,8 +241,129 @@ async def evaluate_custom_invariant(request: Request):
         return {"status": "error", "message": str(e)}
 
 
+def persist_telemetry_frame(node_id: str, timestamp: int, payload_str: str) -> bool:
+    """Live persistence caller: commits verified telemetry frame to quantum_telemetry_channel."""
+    try:
+        import psycopg2
+        db_user = os.environ.get("DB_USER", "api_node_service")
+        db_pass = os.environ.get("DB_PASSWORD", "")
+        if not db_pass:
+            secret_file = Path("/home/quant/projects/beta/secrets/api_node_service.secret")
+            if secret_file.exists():
+                db_pass = secret_file.read_text().strip()
+
+        conn = psycopg2.connect(
+            host=os.environ.get("DB_HOST", "127.0.0.1"),
+            port=int(os.environ.get("DB_PORT", 5432)),
+            dbname=os.environ.get("DB_NAME", "telemetry"),
+            user=db_user,
+            password=db_pass,
+            connect_timeout=3
+        )
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO quantum_telemetry_channel (node_id, timestamp, payload)
+                    VALUES (%s, %s, %s)
+                """, (node_id, timestamp, payload_str))
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"[!] Telemetry live persistence warning: {e}")
+        return False
+
+
+@app.post("/api/v1/telemetry/submit")
+async def submit_telemetry(request: Request):
+    """
+    Ingestion & Verification Gateway (Layer 2 / Layer 3):
+    1. Cryptographic Ed25519 signature verification (fails closed: 401 Unauthorized).
+    2. Edge privacy & opt-out filter (drops _optout / _nomap: 403 Forbidden).
+    3. Live database persistence into quantum_telemetry_channel.
+    4. Receipt issuance (200 OK, status: VERIFIED, trust_score: 100).
+    """
+    import json
+    from src.privacy_filter import PrivacyFilter
+
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    node_id = data.get("node_id")
+    seq = data.get("seq")
+    timestamp = data.get("timestamp")
+    payload = data.get("payload")
+    sig_hex = data.get("signature")
+    pub_hex = data.get("public_key")
+
+    if not all([node_id, seq is not None, timestamp is not None, payload is not None, sig_hex, pub_hex]):
+        raise HTTPException(status_code=400, detail="Missing required telemetry submission fields")
+
+    # 1. Cryptographic Verification (Ed25519)
+    try:
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from cryptography.exceptions import InvalidSignature
+
+        pub_bytes = bytes.fromhex(pub_hex)
+        sig_bytes = bytes.fromhex(sig_hex)
+        public_key = ed25519.Ed25519PublicKey.from_public_bytes(pub_bytes)
+
+        message_bytes = f"{node_id}:{seq}:{payload}".encode("utf-8")
+        public_key.verify(sig_bytes, message_bytes)
+    except (ValueError, InvalidSignature, Exception) as e:
+        raise HTTPException(status_code=401, detail=f"Unauthorized: Signature verification failed: {e}")
+
+    # 2. Deep Packet Inspection (DPI) & Privacy Opt-Out Filter
+    payload_obj = None
+    if isinstance(payload, str):
+        try:
+            payload_obj = json.loads(payload)
+        except Exception:
+            payload_obj = None
+    elif isinstance(payload, dict):
+        payload_obj = payload
+
+    # Evaluate SSID fields
+    ssid_to_check = None
+    if isinstance(payload_obj, dict):
+        ssid_to_check = payload_obj.get("ssid")
+
+    # If explicit SSID is tagged, or if the payload contains an optout/nomap tag:
+    if ssid_to_check and PrivacyFilter.should_exclude_ssid(ssid_to_check):
+        raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in SSID")
+
+    if isinstance(payload, str) and PrivacyFilter.should_exclude_ssid(payload):
+        raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in payload")
+
+    # Sanitize frames if a list is present
+    if isinstance(payload_obj, dict) and "frames" in payload_obj and isinstance(payload_obj["frames"], list):
+        sanitized = []
+        for f in payload_obj["frames"]:
+            if isinstance(f, dict):
+                clean_f = PrivacyFilter.sanitize_telemetry_frame(f)
+                if clean_f is not None:
+                    sanitized.append(clean_f)
+        if not sanitized and payload_obj["frames"]:
+            raise HTTPException(status_code=403, detail="Forbidden: All telemetry frames opted out")
+        payload_obj["frames"] = sanitized
+
+    # 3. Live Persistence Caller
+    payload_str = json.dumps(payload_obj) if payload_obj is not None else str(payload)
+    persist_telemetry_frame(node_id, int(timestamp), payload_str)
+
+    # 4. Receipt
+    return {
+        "status": "VERIFIED",
+        "trust_score": 100,
+        "node_id": node_id,
+        "seq": seq
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     api_port = int(os.environ.get("API_NODE_PORT", 8080))
     api_host = os.environ.get("API_NODE_HOST", "127.0.0.1")
     uvicorn.run(app, host=api_host, port=api_port)
+

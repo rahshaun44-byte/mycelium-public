@@ -144,3 +144,25 @@ def test_consume_messages_commits_only_on_success(monkeypatch):
 
     kafka_consumer.consume_messages(FakeConsumer())
     assert commits == [True]
+
+
+def test_process_pulse_drops_optout_and_nomap_pulses(monkeypatch):
+    conn = _FakeConn()
+    monkeypatch.setattr(kafka_consumer, "get_amara_connection", lambda: conn)
+    athena_calls = []
+    monkeypatch.setattr(kafka_consumer, "push_to_athena", lambda payload: athena_calls.append(payload))
+
+    for tag in ["Home_optout", "Public_nomap", "Cafe_OpToUt_5G", "Work_NOMAP"]:
+        pulse = json.dumps({
+            "hostname": "qfx-node",
+            "ssid": tag,
+            "cpu_load_1m": 0.1,
+            "ram_used_pct": 20.0,
+            "timestamp": "2026-10-22T20:00:00Z"
+        })
+        # process_pulse should return True (safe to commit/drop) without touching AMARA or Athena
+        assert kafka_consumer.process_pulse(pulse) is True
+        assert conn.committed is False
+        assert len(conn.cursor_obj.executed) == 0
+        assert len(athena_calls) == 0
+

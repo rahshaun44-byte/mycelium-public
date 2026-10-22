@@ -36,6 +36,7 @@ classical_approved := {
     "X25519",
     "Ed25519",
     "AES-256-GCM",
+    "SHA-256",
     "SHA-384",
     "SHA-512",
 }

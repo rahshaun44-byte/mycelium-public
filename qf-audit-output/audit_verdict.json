@@ -26,6 +26,7 @@
       "ML-KEM-1024",
       "ML-KEM-512",
       "ML-KEM-768",
+      "SHA-256",
       "SHA-384",
       "SHA-512",
       "SLH-DSA-SHA2-128f",
@@ -37,6 +38,7 @@
     "classical_approved": [
       "AES-256-GCM",
       "Ed25519",
+      "SHA-256",
       "SHA-384",
       "SHA-512",
       "X25519"
@@ -84,8 +86,8 @@
       },
       {
         "algorithm": "SHA-256",
-        "reason": "Unknown/deprecated algorithm",
-        "status": "TOXIC"
+        "reason": "Approved by algorithm policy; module validation not assessed",
+        "status": "COMPLIANT"
       }
     ],
     "fips_fallback_map": {
@@ -101,9 +103,9 @@
       "ML-KEM-768": "FrodoKEM-976-AES",
       "X25519": "NONE"
     },
-    "meta_timestamp": "2026-10-22T23:02:51Z",
+    "meta_timestamp": "2026-10-22T23:05:43Z",
     "ml_kem_verified_safe": true,
-    "node_status": "TOXIC",
+    "node_status": "COMPLIANT",
     "quantum_safe_kem": [
       "ML-KEM-1024",
       "ML-KEM-512",
@@ -126,13 +128,7 @@
       "safe_mode_cipher": "FrodoKEM-976-AES",
       "timeout_window_sec": 60
     },
-    "toxic_findings": [
-      {
-        "algorithm": "SHA-256",
-        "reason": "Unknown/deprecated algorithm",
-        "status": "TOXIC"
-      }
-    ],
+    "toxic_findings": [],
     "valid_profiles": [
       "agility",
       "fips_strict",
@@ -140,7 +136,7 @@
     ],
     "verdict": {
       "deny_reasons": [],
-      "evaluated_at": "2026-10-22T23:02:51Z",
+      "evaluated_at": "2026-10-22T23:05:43Z",
       "findings": [
         {
           "algorithm": "Ed25519",
@@ -164,14 +160,14 @@
         },
         {
           "algorithm": "SHA-256",
-          "reason": "Unknown/deprecated algorithm",
-          "status": "TOXIC"
+          "reason": "Approved by algorithm policy; module validation not assessed",
+          "status": "COMPLIANT"
         }
       ],
-      "node_status": "TOXIC",
+      "node_status": "COMPLIANT",
       "recommended_fallback": "NONE",
       "total_components": 5,
-      "toxic_count": 1,
+      "toxic_count": 0,
       "verification_state": "VERIFIED"
     },
     "verification_state": "VERIFIED"

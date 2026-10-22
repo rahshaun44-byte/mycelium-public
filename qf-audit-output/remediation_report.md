@@ -2,8 +2,8 @@
 **Audited Target:** `/home/quant/mycelium/src`  
 **Issuing Authority:** FinallyFungus LLC // QuantumFlex Audit Engine  
 **Standard:** NIST FIPS 203/204/205 • OMB Memorandum M-26-15 • CycloneDX v1.5 CBOM  
-**Date:** 2026-10-22 23:02:51Z  
-**Serial ID:** `urn:uuid:75584ec1-1f02-44d3-a320-20eb70ba65d2`  
+**Date:** 2026-10-22 23:05:43Z  
+**Serial ID:** `urn:uuid:cc6dbdf8-46ea-47e3-8329-d46532af9730`  
 
 ---
 

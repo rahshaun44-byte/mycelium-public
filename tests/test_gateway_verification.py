@@ -6,7 +6,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 import os
 import pytest
 
-GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://100.64.1.29:8080/api/v1/telemetry/submit")
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://127.0.0.1:8080/api/v1/telemetry/submit")
 
 def is_gateway_reachable():
     try:
@@ -56,7 +56,7 @@ def test_gateway():
     print(f"  [Test 2] Tampered Signature -> HTTP {r2.status_code}: {r2.text}")
     assert r2.status_code == 401, f"Expected 401, got {r2.status_code}"
 
-    # --- TEST 3: Privacy Opt-Out Flag (Expected: 403 Forbidden) ---
+    # --- TEST 3: Privacy Opt-Out Flag (_optout) (Expected: 403 Forbidden) ---
     optout_payload = json.dumps({"ssid": "NeighborWiFi_optout", "bssid": "11:22:33:00:00:00"})
     optout_msg = f"{node_id}:{seq+1}:{optout_payload}".encode("utf-8")
     optout_sig = priv_key.sign(optout_msg).hex()
@@ -70,10 +70,27 @@ def test_gateway():
         "public_key": pub_hex
     }
     r3 = requests.post(GATEWAY_URL, json=req_optout)
-    print(f"  [Test 3] Opt-Out Tagged Frame -> HTTP {r3.status_code}: {r3.text}")
+    print(f"  [Test 3] Opt-Out Tagged Frame (_optout) -> HTTP {r3.status_code}: {r3.text}")
     assert r3.status_code == 403, f"Expected 403, got {r3.status_code}"
 
-    print("\n[+] ALL 3 GATEWAY DPI & CRYPTOGRAPHIC TESTS PASSED WITH 100% SUCCESS!")
+    # --- TEST 4: Privacy Nomap Flag (_nomap) (Expected: 403 Forbidden) ---
+    nomap_payload = json.dumps({"ssid": "CoffeeShop_nomap", "bssid": "44:55:66:00:00:00"})
+    nomap_msg = f"{node_id}:{seq+2}:{nomap_payload}".encode("utf-8")
+    nomap_sig = priv_key.sign(nomap_msg).hex()
+
+    req_nomap = {
+        "node_id": node_id,
+        "seq": seq + 2,
+        "timestamp": timestamp,
+        "payload": nomap_payload,
+        "signature": nomap_sig,
+        "public_key": pub_hex
+    }
+    r4 = requests.post(GATEWAY_URL, json=req_nomap)
+    print(f"  [Test 4] Nomap Tagged Frame (_nomap) -> HTTP {r4.status_code}: {r4.text}")
+    assert r4.status_code == 403, f"Expected 403, got {r4.status_code}"
+
+    print("\n[+] ALL 4 GATEWAY DPI & CRYPTOGRAPHIC TESTS PASSED WITH 100% SUCCESS!")
 
 if __name__ == "__main__":
     test_gateway()

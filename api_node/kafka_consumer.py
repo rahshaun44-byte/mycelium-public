@@ -1,15 +1,18 @@
-#!/usr/bin/env python3
 import json
 import logging
 import os
+import sys
 import urllib.request
 from pathlib import Path
+
+base_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(base_dir))
+from src.privacy_filter import PrivacyFilter
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("qf-ingestion-node")
 
 # Load environment variables from .env if present
-base_dir = Path(__file__).resolve().parent.parent
 for env_path in [Path(".env"), base_dir / ".env"]:
     if env_path.exists():
         for line in env_path.read_text(encoding="utf-8").splitlines():
@@ -64,6 +67,7 @@ def process_pulse(msg_value):
 
     Returns True when the Kafka offset is safe to commit:
     - AMARA insert succeeded (Athena is best-effort and must not duplicate rows)
+    - or the payload is dropped due to opt-out privacy filter
     - or the payload is a poison pill that will never succeed
     Returns False on transient AMARA/DB failure so the message is retried.
     """
@@ -75,6 +79,18 @@ def process_pulse(msg_value):
 
     try:
         vitals = data.get("data") if isinstance(data.get("data"), dict) else data
+
+        # Edge privacy & opt-out filter: drop pulse if SSID is tagged with _optout or _nomap
+        ssid = vitals.get("ssid") or data.get("ssid")
+        if ssid and PrivacyFilter.should_exclude_ssid(ssid):
+            logger.warning(f"Dropping telemetry pulse from {data.get('hostname', 'unknown')}: opt-out SSID detected ({ssid})")
+            return True
+
+        if "frames" in vitals and isinstance(vitals["frames"], list):
+            vitals["frames"] = [
+                f for f in vitals["frames"]
+                if isinstance(f, dict) and PrivacyFilter.sanitize_telemetry_frame(f) is not None
+            ]
 
         node_id = vitals.get("hostname") or data.get("hostname") or data.get("source", "unknown-node")
         cpu_load = vitals.get("cpu_load_1m", vitals.get("load_1m", data.get("cpu_load_1m", 0.0)))

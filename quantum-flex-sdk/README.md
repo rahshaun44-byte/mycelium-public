@@ -1,26 +1,48 @@
-# Quantum Flex Node SDK privacy filter
+# Quantum Flex Node SDK privacy filter and persistence
 
-This dependency-free Rust crate provides the `_optout` SSID exclusion step for
-edge Wi-Fi telemetry. `should_exclude_ssid` matches the literal `_optout`
-substring anywhere in an SSID, ignoring ASCII case. `prepare_telemetry` drops
+This dependency-free Rust crate provides the `_optout` and `_nomap` SSID exclusion step for
+edge Wi-Fi telemetry. `should_exclude_ssid` matches the literal `_optout` or `_nomap`
+substrings anywhere in an SSID, ignoring ASCII case. `prepare_telemetry` drops
 matching scan results before constructing telemetry observations. Empty or
-hidden SSIDs pass through. This crate does not scan Wi-Fi, send packets, or
-apply the separate `_nomap` convention.
+hidden SSIDs pass through.
 
-The scanner integration should pass raw results to `prepare_telemetry` **before**
-BSSID anonymization, signing, logging, persistence, or transmission. Do not
-write excluded scan results to debug logs.
+The scanner integration should pass raw results to `prepare_telemetry` or the live persistence
+caller `persist_telemetry` **before** BSSID anonymization, signing, logging, persistence, or transmission.
+Do not write excluded scan results to debug logs.
 
 ```rust
-use quantum_flex_sdk::{prepare_telemetry, ScanResult};
+use quantum_flex_sdk::{prepare_telemetry, persist_telemetry, InMemoryStore, ScanResult};
 
-let observations = prepare_telemetry(vec![ScanResult {
-    ssid: "Home_optout".into(),
-    bssid: "aa:bb:cc:dd:ee:ff".into(),
-    rssi_dbm: -48,
-}]);
-assert!(observations.is_empty());
+// 1. In-memory preparation / filtering
+let observations = prepare_telemetry(vec![
+    ScanResult {
+        ssid: "Home_optout".into(),
+        bssid: "aa:bb:cc:dd:ee:ff".into(),
+        rssi_dbm: -48,
+    },
+    ScanResult {
+        ssid: "Public_nomap".into(),
+        bssid: "11:22:33:44:55:66".into(),
+        rssi_dbm: -60,
+    },
+    ScanResult {
+        ssid: "Starlink-Node".into(),
+        bssid: "99:88:77:66:55:44".into(),
+        rssi_dbm: -42,
+    },
+]);
+assert_eq!(observations.len(), 1);
+assert_eq!(observations[0].ssid, "Starlink-Node");
+
+// 2. Live persistence caller (TelemetryStore)
+let mut store = InMemoryStore::new();
+let persisted = persist_telemetry(vec![
+    ScanResult { ssid: "Cafe_nomap".into(), bssid: "00:11:22:33:44:55".into(), rssi_dbm: -50 },
+    ScanResult { ssid: "Valid_Network".into(), bssid: "aa:bb:cc:dd:ee:ff".into(), rssi_dbm: -45 },
+], &mut store).unwrap();
+assert_eq!(persisted, 1);
 ```
+
 
 ## Fully offline use
 
