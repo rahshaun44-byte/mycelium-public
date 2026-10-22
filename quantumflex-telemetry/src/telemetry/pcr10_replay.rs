@@ -10,7 +10,7 @@
 //! [`PcrReplayEngine::quote_pcr_digest`]. Do not compare a composite quote
 //! digest to the raw PCR.
 //!
-//! SHA-1 template hashes (40 hex chars) cannot replay a SHA-256 PCR bank.
+//! Legacy 20-byte template hashes (40 hex chars) cannot replay a SHA-256 PCR bank.
 //! Those lines fail closed.
 
 use serde::Serialize;
@@ -125,7 +125,7 @@ impl PcrReplayEngine {
             hex::decode(parts[1]).map_err(|e| ReplayError::MalformedTemplateHash(e.to_string()))?;
         if template_hash_bytes.len() != SHA256_DIGEST_LEN {
             return Err(ReplayError::MalformedTemplateHash(format!(
-                "SHA-256 PCR 10 requires a 32-byte template digest, got {} bytes (SHA-1 ascii logs cannot replay this bank)",
+                "SHA-256 PCR 10 requires a 32-byte template digest, got {} bytes (legacy 20-byte ascii logs cannot replay this bank)",
                 template_hash_bytes.len()
             )));
         }

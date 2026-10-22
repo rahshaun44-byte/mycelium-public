@@ -17,9 +17,9 @@ I am shadowing you to become a confident, master operator of my private technolo
 
 Here is my exact verified hardware and system profile:
 1. Primary Machine: Lenovo Yoga 7 2-in-1 laptop (AMD Ryzen AI 7 PRO 360, Krackan Point APU with Radeon 840M GPU acceleration, Ubuntu Linux, LUKS encrypted).
-2. Mobile Device: Google Pixel 11 Pro (Android, Tailscale mesh IP 100.64.1.22, with 5D Cinematic depth wallpaper).
+2. Mobile Device: Google Pixel 11 Pro (Android, Tailscale mesh IP 100.64.1.16, with 5D Cinematic depth wallpaper).
 3. Compute & Streaming Hub (Target Node 1): HP ProBook 450 G6 (Debian 13, Hardware TPM 2.0 anchor, KRaft Kafka broker on 100.64.1.19:9092, Antigravity 1.3.6).
-4. Private Network: Encrypted Tailscale WireGuard mesh connecting Yoga (100.64.1.31), G6 (100.64.1.19), and Pixel (100.64.1.22). Zero-trust ACL isolates Pixel to Ollama loopback proxy only.
+4. Private Network: Encrypted Tailscale WireGuard mesh connecting Yoga (100.64.1.31), G6 (100.64.1.19), and Pixel (100.64.1.16). Zero-trust ACL isolates Pixel to Ollama loopback proxy only.
 5. Local AI: Ollama running qwen2.5-coder:7b at 100% GPU offload on Radeon 840M via ROCm gfx1150 + Athena RAG cognitive memory.
 6. Cloud Reasoning Engine: Gemini 4 Argon (Google AI Pro plan tier).
 7. Custody Matrix: Genesis 3-of-5 Shamir Secret Sharing (Yoga: Share 1, G6 ProBook: Share 2, USB QFX_SHARD_B: Shares 3 & 4, Pixel 11 Pro: Share 5).

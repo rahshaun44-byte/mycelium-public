@@ -74,19 +74,19 @@ ALGORITHM_TAXONOMY = {
 }
 
 PATTERNS = {
-    "ML-KEM-512": re.compile(r"\b(ML[-_]?KEM[-_]?512|kyber[-_]?512)\b", re.IGNORECASE),
-    "ML-KEM-768": re.compile(r"\b(ML[-_]?KEM[-_]?768|kyber[-_]?768)\b", re.IGNORECASE),
-    "ML-KEM-1024": re.compile(r"\b(ML[-_]?KEM[-_]?1024|kyber[-_]?1024)\b", re.IGNORECASE),
-    "FrodoKEM-640-AES": re.compile(r"\bFrodoKEM[-_]?640[-_]?(AES|SHAKE)?\b", re.IGNORECASE),
-    "FrodoKEM-976-AES": re.compile(r"\bFrodoKEM[-_]?976[-_]?(AES|SHAKE)?\b", re.IGNORECASE),
-    "FrodoKEM-1344-AES": re.compile(r"\bFrodoKEM[-_]?1344[-_]?(AES|SHAKE)?\b", re.IGNORECASE),
-    "Classic-McEliece": re.compile(r"\b(Classic[-_]?McEliece|mceliece[0-9]+)\b", re.IGNORECASE),
-    "HQC": re.compile(r"\bHQC[-_]?(128|192|256)?\b", re.IGNORECASE),
+    "ML-KEM-512": re.compile(r"(ML[-_]?KEM[-_]?512|kyber[-_]?512)", re.IGNORECASE),
+    "ML-KEM-768": re.compile(r"(ML[-_]?KEM[-_]?768|kyber[-_]?768)", re.IGNORECASE),
+    "ML-KEM-1024": re.compile(r"(ML[-_]?KEM[-_]?1024|kyber[-_]?1024)", re.IGNORECASE),
+    "FrodoKEM-640-AES": re.compile(r"FrodoKEM[-_]?640[-_]?(AES|SHAKE)?", re.IGNORECASE),
+    "FrodoKEM-976-AES": re.compile(r"FrodoKEM[-_]?976[-_]?(AES|SHAKE)?", re.IGNORECASE),
+    "FrodoKEM-1344-AES": re.compile(r"FrodoKEM[-_]?1344[-_]?(AES|SHAKE)?", re.IGNORECASE),
+    "Classic-McEliece": re.compile(r"(Classic[-_]?McEliece|mceliece[0-9]+)", re.IGNORECASE),
+    "HQC": re.compile(r"HQC[-_]?(128|192|256)?", re.IGNORECASE),
 
-    "ML-DSA-44": re.compile(r"\b(ML[-_]?DSA[-_]?44|dilithium[-_]?2)\b", re.IGNORECASE),
-    "ML-DSA-65": re.compile(r"\b(ML[-_]?DSA[-_]?65|dilithium[-_]?3)\b", re.IGNORECASE),
-    "ML-DSA-87": re.compile(r"\b(ML[-_]?DSA[-_]?87|dilithium[-_]?5)\b", re.IGNORECASE),
-    "SLH-DSA-SHA2-128f": re.compile(r"\b(SLH[-_]?DSA|sphincs(\+|plus)?)\b", re.IGNORECASE),
+    "ML-DSA-44": re.compile(r"(ML[-_]?DSA[-_]?44|dilithium[-_]?2)", re.IGNORECASE),
+    "ML-DSA-65": re.compile(r"(ML[-_]?DSA[-_]?65|dilithium[-_]?3)", re.IGNORECASE),
+    "ML-DSA-87": re.compile(r"(ML[-_]?DSA[-_]?87|dilithium[-_]?5)", re.IGNORECASE),
+    "SLH-DSA-SHA2-128f": re.compile(r"(SLH[-_]?DSA|sphincs(\+|plus)?)", re.IGNORECASE),
 
     "RSA-2048": re.compile(r"\b(RSA[-_]?2048|rsaEncryption.*2048)\b", re.IGNORECASE),
     "RSA-4096": re.compile(r"\b(RSA[-_]?4096|rsaEncryption.*4096)\b", re.IGNORECASE),
@@ -104,8 +104,16 @@ PATTERNS = {
     "MD5": re.compile(r"\bMD5\b", re.IGNORECASE),
 }
 
-IGNORE_DIRS = {".git", "node_modules", "venv", "__pycache__", ".venv", "build", "build_check", "dist", "qf-audit-output", ".gemini", ".agents"}
-IGNORE_EXTS = {".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".o", ".so", ".a", ".tar.gz", ".zip", ".db", ".sqlite", ".sqlite3", ".log"}
+IGNORE_DIRS = {
+    ".git", "node_modules", "venv", "__pycache__", ".venv", "build", "build_check",
+    "dist", "qf-audit-output", ".gemini", ".agents", ".vscode", ".pytest_cache",
+    ".cache", ".idea", "target", "out"
+}
+IGNORE_EXTS = {
+    ".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".o", ".so", ".a",
+    ".tar.gz", ".gz", ".tgz", ".tar", ".zip", ".db", ".sqlite", ".sqlite3",
+    ".log", ".patch", ".wasm", ".crx", ".cmake"
+}
 
 
 def print_banner():
@@ -135,7 +143,7 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
     else:
         files_to_scan = []
         for root, dirs, files in os.walk(target_path):
-            dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+            dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and not d.startswith(".") and not d.startswith("build")]
             for f in files:
                 ext = Path(f).suffix.lower()
                 if ext not in IGNORE_EXTS:
@@ -250,22 +258,35 @@ def generate_cyclonedx_cbom(scan_result: Dict[str, Any], serial_uuid: str) -> Di
     return cbom
 
 
-def evaluate_with_opa(cbom_data: Dict[str, Any]) -> Dict[str, Any]:
+def evaluate_with_opa(cbom_data: Dict[str, Any], requested_profile: str = "agility") -> Dict[str, Any]:
     """Evaluates CBOM against OPA membrane_health.rego policy."""
+    repo_root = Path(__file__).resolve().parents[1]
     rego_path = Path("/home/quant/mycelium/pqc-immune-daemon/membrane_health.rego")
     if not rego_path.exists():
-        rego_path = Path(__file__).resolve().parents[1] / "pqc-immune-daemon" / "membrane_health.rego"
+        rego_path = repo_root / "pqc-immune-daemon" / "membrane_health.rego"
+
+    threat_flags_path = Path("/home/quant/mycelium/sentinel/policies/threat_flags.json")
+    if not threat_flags_path.exists():
+        threat_flags_path = repo_root / "sentinel" / "policies" / "threat_flags.json"
 
     opa_bin = "/usr/local/bin/opa"
     if not os.path.exists(opa_bin):
-        opa_bin = "opa"
+        user_opa = os.path.expanduser("~/.local/bin/opa")
+        opa_bin = user_opa if os.path.exists(user_opa) else "opa"
 
-    # Prepare input payload
-    input_payload = json.dumps({"input": cbom_data})
+    # --stdin-input binds stdin directly to `input` in Rego (do not double-wrap in {"input": ...})
+    opa_input = dict(cbom_data)
+    opa_input.setdefault("requested_profile", requested_profile)
+    input_payload = json.dumps(opa_input)
+
+    cmd = [opa_bin, "eval", "-d", str(rego_path)]
+    if threat_flags_path.exists():
+        cmd.extend(["-d", str(threat_flags_path)])
+    cmd.extend(["--stdin-input", "data.membrane.health"])
 
     try:
         proc = subprocess.run(
-            [opa_bin, "eval", "-d", str(rego_path), "--stdin-input", "data.membrane.health"],
+            cmd,
             input=input_payload,
             capture_output=True,
             text=True,

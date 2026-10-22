@@ -1,7 +1,7 @@
 // =========================================================================
 // QuantumFlex Sovereign Tailscale Access Policy (HuJSON)
 // Tailnet: rahshaun44-byte.github
-// Devices: Yoga 7 (100.64.1.31), Pixel 11 Pro (100.64.1.22), G6 (100.64.1.19)
+// Devices: Yoga 7 (100.64.1.31), Pixel 11 Pro (100.64.1.16), G6 (100.64.1.19)
 //
 // Paste this entire file into Tailscale Admin Console:
 // https://login.tailscale.com/admin/acls -> Edit as JSON
@@ -10,7 +10,7 @@
 	// Device IP definitions
 	"hosts": {
 		"yoga":  "100.64.1.31",   // Lenovo Yoga 7 (Primary Host Engine & Local AI)
-		"pixel": "100.64.1.22",   // Google Pixel 11 Pro (Mobile HUD & StrongBox Sentinel)
+		"pixel": "100.64.1.16",  // Google Pixel 11 Pro (Mobile HUD & StrongBox Sentinel)
 		"g6":    "100.64.1.19",  // HP ProBook 450 G6 (Auxiliary / Kafka)
 	},
 

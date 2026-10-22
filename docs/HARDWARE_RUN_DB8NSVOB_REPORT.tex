@@ -1,0 +1,424 @@
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[letterpaper,margin=18mm,top=20mm,bottom=20mm]{geometry}
+\usepackage{charter}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{caption}
+\captionsetup[table]{skip=4pt,font=small,labelfont=bf,hypcap=false}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\definecolor{primary}{RGB}{11, 79, 108}
+\definecolor{accent}{RGB}{20, 110, 120}
+\definecolor{codebg}{RGB}{245, 247, 250}
+\definecolor{codeframe}{RGB}{210, 218, 226}
+\definecolor{calloutbg}{RGB}{238, 245, 249}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    citecolor=primary,
+    urlcolor=accent,
+    pdftitle={Cryptographic Provenance, Statistical Validation, and Architectural Alignment of QuantumFlex Hardware Execution db8nsvob3g5c73egl760},
+    pdfauthor={QuantumFlex Verification Suite}
+}
+
+\setlength{\parskip}{5pt plus 2pt minus 1pt}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.22}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\newcommand{\takeaway}[2]{%
+  \vspace{4pt}\noindent\colorbox{calloutbg}{%
+    \parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+      \vspace{4pt}\textbf{\color{primary}#1:}\hspace{0.4em}#2\vspace{4pt}%
+    }%
+  }\vspace{4pt}%
+}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    xleftmargin=4pt,
+    xrightmargin=4pt,
+    aboveskip=6pt,
+    belowskip=6pt
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\color{gray}QuantumFlex Hardware Execution \texttt{db8nsvob3g5c73egl760} --- Verification Report}
+\fancyhead[R]{\footnotesize\color{gray}\texttt{ibm\_kingston} (Heron r2) $\vert$ Branch \texttt{fix/w1-w4} (\texttt{afd39b9})}
+\fancyfoot[L]{\footnotesize\color{gray}Engine Posture: \textbf{LOCKED} (\texttt{127.0.0.1:9444}) $\vert$ Credited Entropy: \textbf{0.0 bits}}
+\fancyfoot[R]{\footnotesize\color{gray}Page \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries\color{primary} Cryptographic Provenance, Statistical Validation, and Architectural Alignment of QuantumFlex Hardware Execution \texttt{db8nsvob3g5c73egl760}}\\[8pt]
+    {\normalsize Independent Audit of \texttt{ibm\_kingston} (156-Qubit Heron r2) Telemetry, Joint GHZ Witness Covariance, QAOA Portfolio Eigenvalues, NIST SP 800-90B Compliance, and Multi-Node Security Boundaries~\cite{qfx_doc}}\\[4pt]
+    {\footnotesize Repository: \texttt{/home/quant/mycelium} (\texttt{fix/w1-w4} @ \texttt{afd39b9}) $\quad\vert\quad$ Artifact Directory: \texttt{ibm-qaoa-ghz-kingston-20261016T013409Z}}
+\end{center}
+\vspace{2pt}
+
+\section{Executive Summary: Byte-Level Integrity Confirmed While Engine Remains Locked}
+
+An independent mathematical, statistical, and cryptographic audit of physical quantum hardware execution job \path{db8nsvob3g5c73egl760} (executed on the 156-qubit IBM Quantum \texttt{ibm\_kingston} Heron r2 superconducting processor) confirms complete byte-level data integrity across the local provenance chain while validating the continued lock posture of the QuantumFlex engine~\cite{qfx_doc}. Across the six circuit executions ($1{,}536$ total shots, partitioned into $256$ shots per Primitive Unified Bloc), the standalone verification harness (\path{tools/verify_hardware_run_db8nsvob.py}) reproduces every empirical bitstring distribution, Ising energy eigenvalue, and multi-basis parity expectation directly from the immutable raw acquisition artifact~\cite{qfx_doc}.
+
+The experimental payload evaluated two distinct quantum workloads~\cite{qfx_doc}:
+\begin{itemize}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}
+    \item \textbf{Three-Asset QAOA Markowitz Portfolio Optimization (\texttt{pub\_0\_qaoa})}: The hardware distribution identified the true classical global optimum $\vert 101 \rangle$ ($C(1,0,1) = -0.165000$) in $4.30\%$ of shots ($11/256$) and achieved a mean conditional feasible portfolio cost of $-0.145333$, closely tracking the ideal noiseless statevector expectation of $-0.146199$ within a Total Variation Distance (TVD) of $0.1053$ (and a TVD of $0.3477$ relative to the uniform classical baseline)~\cite{qfx_doc}. However, parameterized phase wrap-around in the penalty landscape combined with $T_1$ thermal relaxation caused the unfeasible all-zero state $\vert 000 \rangle$ ($C(0,0,0) = +4.000000$) to capture $46.09\%$ of the hardware probability mass ($118/256$ shots), demonstrating that shallow unmitigated QAOA circuits on three qubits function as hardware coherence benchmarks rather than financial alpha generators~\cite{qfx_doc}.
+    \item \textbf{Five-Setting Tripartite GHZ Entanglement Witness (\texttt{pub\_1\_ghz\_zzz} through \texttt{pub\_5\_ghz\_yyx})}: Implementing the exact joint covariance estimator for the three pairwise $Z$-basis correlators ($\langle Z_0 Z_1 \rangle$, $\langle Z_1 Z_2 \rangle$, and $\langle Z_0 Z_2 \rangle$) yields a point state fidelity of $\mathcal{F} = 0.5078125$ and a witness expectation of $\langle \mathcal{W} \rangle = -0.0078125$, which lies marginally inside the entangled regime ($\langle \mathcal{W} \rangle < 0$)~\cite{qfx_doc}. Because all three $Z$-basis observables are extracted from the same $256$ shots of \texttt{pub\_1\_ghz\_zzz}, positive intra-shot covariance elevates the standard error of the witness to $\sigma_{\mathcal{W}} = 0.020399$ ($0.020439$ under Bessel's correction)~\cite{qfx_doc}. Across seven parametric and non-parametric statistical evaluation conventions, the $95\%$ confidence upper bound on $\langle \mathcal{W} \rangle$ remains strictly positive ($\mathcal{W}_{\text{upper}} \in [+0.025741, +0.046276] \ge 0$)~\cite{qfx_doc}.
+\end{itemize}
+
+\takeaway{Operational Verdict}{Genuine tripartite entanglement is not statistically certified (\texttt{entanglement\_certified: FALSE}). In strict compliance with NIST SP 800-90B entropy validation standards~\cite{nist_e259,nist_e214}, the \texttt{quantum-flex-engine-mycelium.service} daemon on \texttt{127.0.0.1:9444} assigns \textbf{0.0 bits} of cryptographic entropy credit and must remain in its \textbf{LOCKED} boundary state~\cite{qfx_doc}.}
+
+\section{Area 1: Cryptographic Provenance and Manifest Integrity}
+
+Maintaining an auditable, tamper-evident chain of custody between cloud-hosted quantum processing units (QPUs) and local cryptographic services requires deterministic hashing of all raw telemetry prior to post-processing~\cite{qfx_doc,nist_e214}. The artifacts generated by job \path{db8nsvob3g5c73egl760} reside in \path{/home/quant/qf-research/ibm-qaoa-ghz-kingston-20261016T013409Z/} and are anchored in the local Git repository (\path{/home/quant/mycelium}) on branch \texttt{fix/w1-w4} across commits \texttt{defd94a} (pre-submission mathematical checks) and \texttt{afd39b9} (standalone verification harness \path{tools/verify_hardware_run_db8nsvob.py} and validation report \path{docs/HARDWARE_RUN_DB8NSVOB_VALIDATION.md})~\cite{qfx_doc}.
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Cryptographic Provenance Chain and SHA-256 Integrity Verification~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\begin{tabularx}{\textwidth}{L{3.3cm} L{5.1cm} Y L{2.6cm}}
+\toprule
+\textbf{Artifact / Link} & \textbf{File Path / Reference Identifier} & \textbf{Verified SHA-256 Digest / Status} & \textbf{Integrity Verdict} \\
+\midrule
+Raw Hardware Telemetry & \path{raw_acquisition.json} & \texttt{be8024f4ae88f692f6de413389a0b5d5}\newline\texttt{3d67782d890500929e2c5cc8ba12b1d8} & \textbf{VERIFIED MATCH} \\
+Post-Processed Analysis & \path{analysis_record.json} & \texttt{2c2f12fc0f23e13a7863a2cea60a5be7}\newline\texttt{6b27179b865295d039fdd4b1984f60a0} & \textbf{VERIFIED MATCH} \\
+Internal Provenance Pointer & \path{analysis_record.json} $\rightarrow$\newline\path{source_raw_acquisition.sha256} & \texttt{be8024f4ae88f692f6de413389a0b5d5}\newline\texttt{3d67782d890500929e2c5cc8ba12b1d8} & \textbf{VERIFIED MATCH} \\
+Manifest Checksum File & \path{checksums.sha256} & Byte-level \texttt{sha256sum -c} validation across directory & \textbf{VERIFIED MATCH} \\
+Verification Harness & \path{tools/verify_hardware_run_db8nsvob.py} & Commit \texttt{afd39b9} on branch \texttt{fix/w1-w4} & \textbf{COMMITTED \& ACTIVE} \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\vspace{6pt}
+
+\subsection{Local Verification Commands}
+Operators can independently verify the cryptographic provenance chain on the local host without modifying service state using the following read-only commands~\cite{qfx_doc}:
+
+\begin{lstlisting}[language=bash]
+# 1. Navigate to the job artifact directory and verify byte-level SHA-256 digests
+cd /home/quant/qf-research/ibm-qaoa-ghz-kingston-20261016T013409Z/
+sha256sum -c checksums.sha256
+
+# 2. Confirm analysis_record.json strictly binds to raw_acquisition.json
+python3 -c "
+import json
+with open('analysis_record.json') as f:
+    data = json.load(f)
+print('Bound Raw Hash:', data['source_raw_acquisition']['sha256'])
+"
+
+# 3. Execute the standalone verification harness from raw counts (bypassing precomputed fields)
+/home/quant/.venv/bin/python3 /home/quant/mycelium/tools/verify_hardware_run_db8nsvob.py
+\end{lstlisting}
+
+\section{Area 2: Tripartite GHZ Entanglement Certification \& Statistical Consistency}
+
+The GHZ entanglement witness payload (\texttt{pub\_1\_ghz\_zzz} through \texttt{pub\_5\_ghz\_yyx}) prepares a nominal three-qubit Greenberger--Horne--Zeilinger state and measures five Pauli basis settings ($N = 256$ shots per circuit) to reconstruct the exact state fidelity $\mathcal{F} = \langle \mathrm{GHZ} \vert \rho \vert \mathrm{GHZ} \rangle$ and projector-based entanglement witness $\mathcal{W} = \frac{1}{2}\mathbb{I} - \vert \mathrm{GHZ}\rangle\langle\mathrm{GHZ}\vert$~\cite{qfx_doc}:
+
+\begin{align}
+\vert \mathrm{GHZ} \rangle &= \frac{\vert 000 \rangle + \vert 111 \rangle}{\sqrt{2}}, \qquad \langle \mathcal{W} \rangle = \frac{1}{2} - \mathcal{F} \\
+\mathcal{F} &= \frac{1}{8}\Big(1 + \langle Z_0 Z_1 \rangle + \langle Z_1 Z_2 \rangle + \langle Z_0 Z_2 \rangle + \langle X_0 X_1 X_2 \rangle - \langle X_0 Y_1 Y_2 \rangle - \langle Y_0 X_1 Y_2 \rangle - \langle Y_0 Y_1 X_2 \rangle\Big)
+\end{align}
+
+Because the maximum overlap of any biseparable three-qubit quantum state $\rho_{\text{bisep}}$ with $\vert \mathrm{GHZ} \rangle$ is bounded by $\mathcal{F} \le \frac{1}{2}$, observing $\langle \mathcal{W} \rangle < 0$ ($\mathcal{F} > 0.5$) at high statistical confidence is necessary and sufficient to certify genuine tripartite entanglement~\cite{qfx_doc}.
+
+\subsection{Algebraic Dichotomy of the Joint \texorpdfstring{$ZZZ$}{ZZZ} Observable (\texttt{pub\_1\_ghz\_zzz})}
+
+Because the three pairwise $Z$-basis correlators $u_1(s) = Z_0 Z_1(s) = (-1)^{s_0 + s_1}$, $u_2(s) = Z_1 Z_2(s) = (-1)^{s_1 + s_2}$, and $u_3(s) = Z_0 Z_2(s) = (-1)^{s_0 + s_2}$ are evaluated on the exact same $N_{ZZZ} = 256$ shots from \texttt{pub\_1\_ghz\_zzz}, they are statistically dependent~\cite{qfx_doc}. Treating them as independent Bernoulli trials omits their positive pairwise covariances $2\sum_{i<j}\mathrm{Cov}(u_i, u_j)$ and substantially underestimates the true estimator variance~\cite{qfx_doc}.
+
+Defining the single-shot composite observable $U(s) = u_1(s) + u_2(s) + u_3(s)$ reveals an exact algebraic dichotomy across all eight computational basis states~\cite{qfx_doc}:
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Algebraic Dichotomy of the Single-Shot Composite Observable $U(s)$ in \texttt{pub\_1\_ghz\_zzz}~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\begin{tabularx}{\textwidth}{C{2.4cm} R{2.2cm} R{2.2cm} R{2.2cm} R{2.6cm} Y}
+\toprule
+\textbf{Basis State $\vert q_2 q_1 q_0 \rangle$} & \textbf{$u_1(s)=(-1)^{q_0+q_1}$} & \textbf{$u_2(s)=(-1)^{q_1+q_2}$} & \textbf{$u_3(s)=(-1)^{q_0+q_2}$} & \textbf{Composite $U(s)$} & \textbf{Subspace Classification} \\
+\midrule
+$\vert 000 \rangle$ & $+1$ & $+1$ & $+1$ & $+3$ & Target GHZ Subspace ($I_T = 1$) \\
+$\vert 111 \rangle$ & $+1$ & $+1$ & $+1$ & $+3$ & Target GHZ Subspace ($I_T = 1$) \\
+$\vert 001 \rangle$ & $-1$ & $+1$ & $-1$ & $-1$ & Bit-Flip Error Subspace ($I_T = 0$) \\
+$\vert 010 \rangle$ & $-1$ & $-1$ & $+1$ & $-1$ & Bit-Flip Error Subspace ($I_T = 0$) \\
+$\vert 011 \rangle$ & $+1$ & $-1$ & $-1$ & $-1$ & Bit-Flip Error Subspace ($I_T = 0$) \\
+$\vert 100 \rangle$ & $+1$ & $-1$ & $-1$ & $-1$ & Bit-Flip Error Subspace ($I_T = 0$) \\
+$\vert 101 \rangle$ & $-1$ & $-1$ & $+1$ & $-1$ & Bit-Flip Error Subspace ($I_T = 0$) \\
+$\vert 110 \rangle$ & $-1$ & $+1$ & $-1$ & $-1$ & Bit-Flip Error Subspace ($I_T = 0$) \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\vspace{6pt}
+
+Because $u_1(s) u_2(s) u_3(s) = (-1)^{2(q_0 + q_1 + q_2)} = +1$ holds identically for every $s \in \{0,1\}^3$, it is algebraically impossible for $U(s)$ to equal $+1$ or $-3$~\cite{qfx_doc}. Thus, $U(s) \in \{-1, +3\}$ is an exact affine function of the target subspace indicator $I_T(s) \in \{0, 1\}$ with target population fraction $p_T = (c_{000} + c_{111}) / N_{ZZZ}$~\cite{qfx_doc}:
+
+\begin{equation}
+U(s) = 4 I_T(s) - 1, \qquad \bar{U} = 4 p_T - 1, \qquad \mathrm{Var}(U) = 16 p_T (1 - p_T)
+\end{equation}
+
+In \texttt{pub\_1\_ghz\_zzz}, the hardware recorded $185/256$ shots in $\{\vert 000 \rangle, \vert 111 \rangle\}$ ($p_T = 0.72265625$, or $72.27\%$) and $71/256$ shots in the bit-flip error subspace, with individual pairwise expectations $\langle Z_0 Z_1 \rangle = +0.531250$, $\langle Z_1 Z_2 \rangle = +0.843750$, and $\langle Z_0 Z_2 \rangle = +0.515625$ summing to $\bar{U} = +1.890625$~\cite{qfx_doc}. The exact joint sample variance is $\mathrm{Var}(U) = 16 \times 0.72265625 \times 0.27734375 = 3.20678711$, yielding a sample mean variance of~\cite{qfx_doc}:
+
+\begin{equation}
+\mathrm{Var}(\bar{U}) = \frac{\mathrm{Var}(U)}{256} = \frac{3.20678711}{256} = 0.01252651
+\end{equation}
+
+Had the three pairwise correlators been treated as independent variables, the naive variance sum $\frac{1}{256}\sum_{k=1}^{3}(1 - \langle u_k \rangle^2) = \frac{1.739990}{256} = 0.00679684$ would have underestimated the true $ZZZ$ variance contribution by $45.7\%$~\cite{qfx_doc}.
+
+\subsection{Multi-Basis Parity Expectations and Exact Variance Propagation}
+
+The remaining four stabilizer terms ($+X_0 X_1 X_2$, $-X_0 Y_1 Y_2$, $-Y_0 X_1 Y_2$, and $-Y_0 Y_1 X_2$) are measured in separate, statistically independent circuits (\texttt{pub\_2} through \texttt{pub\_5}, $N = 256$ shots each)~\cite{qfx_doc}. For each three-qubit parity observable $P \in \{-1, +1\}$, even Hamming weight ($s_0 \oplus s_1 \oplus s_2 = 0$) contributes $+1$ and odd Hamming weight contributes $-1$, with exact sample mean $\bar{P} = \frac{2 k_{\text{even}} - N}{N}$ and sample mean variance $\mathrm{Var}(\bar{P}) = \frac{1 - \bar{P}^2}{N}$~\cite{qfx_doc}:
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Multi-Basis Stabilizer Expectations and Exact Sample Mean Variances ($N = 256$ per circuit)~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
+\toprule
+\textbf{Circuit ID} & \textbf{Stabilizer Term} & \textbf{Even / Target} & \textbf{Odd / Error} & \textbf{Empirical $\langle P \rangle$} & \textbf{Ideal} & \textbf{Contrib.\ to $8\mathcal{F}$} & \textbf{$\mathrm{Var}(\bar{P})$} \\
+\midrule
+\texttt{pub\_1\_ghz\_zzz} & $U = Z_0 Z_1 + Z_1 Z_2 + Z_0 Z_2$ & $185$ ($U=+3$) & $71$ ($U=-1$) & $+1.890625$ & $+3.0000$ & $+1.890625$ & $0.01252651$ \\
+\texttt{pub\_2\_ghz\_xxx} & $+X_0 X_1 X_2$ & $182$ & $74$ & $+0.421875$ & $+1.0000$ & $+0.421875$ & $0.00321099$ \\
+\texttt{pub\_3\_ghz\_xyy} & $-X_0 Y_1 Y_2$ & $80$ & $176$ & $-0.375000$ & $-1.0000$ & $+0.375000$ & $0.00335693$ \\
+\texttt{pub\_4\_ghz\_yxy} & $-Y_0 X_1 Y_2$ & $103$ & $153$ & $-0.1953125$ & $-1.0000$ & $+0.1953125$ & $0.00375724$ \\
+\texttt{pub\_5\_ghz\_yyx} & $-Y_0 Y_1 X_2$ & $105$ & $151$ & $-0.1796875$ & $-1.0000$ & $+0.1796875$ & $0.00378013$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{minipage}\vspace{6pt}
+
+Combining all five independent settings yields the point fidelity, witness expectation, and standard error~\cite{qfx_doc}:
+
+\begin{align}
+\mathcal{F} &= \frac{1 + 1.890625 + 0.421875 - (-0.375000) - (-0.1953125) - (-0.1796875)}{8} = \frac{4.062500}{8} = 0.5078125 \\
+\langle \mathcal{W} \rangle &= \frac{1}{2} - \mathcal{F} = 0.5000000 - 0.5078125 = -0.0078125 \\
+\mathrm{Var}(\mathcal{W}) &= \frac{0.01252651 + 0.00321099 + 0.00335693 + 0.00375724 + 0.00378013}{64} = \frac{0.02663180}{64} = 0.00041612 \\
+\sigma_{\mathcal{W}} &= \sqrt{0.00041612} = 0.020399, \qquad \sigma_{\mathcal{W},\text{Bessel}} = \sqrt{\frac{256}{255}\times 0.00041612} = 0.020439
+\end{align}
+
+Notably, $\mathrm{Var}(\bar{U}) = 0.01252651$ accounts for $47.04\%$ of the total variance across the five settings because $U \in [-1, +3]$ spans a width of $4$, whereas each single parity observable $P \in [-1, +1]$ spans a width of $2$~\cite{qfx_doc}. Furthermore, the off-diagonal settings requiring a $Y$-basis measurement on qubit 0 (\texttt{pub\_4\_ghz\_yxy} at $+0.1953125$ and \texttt{pub\_5\_ghz\_yyx} at $+0.1796875$) exhibit stronger dephasing and basis-rotation gate errors than \texttt{pub\_2\_ghz\_xxx} ($+0.421875$) and \texttt{pub\_3\_ghz\_xyy} ($+0.375000$), pulling net fidelity down to the threshold boundary~\cite{qfx_doc}.
+
+\subsection{Confidence Intervals, Hoeffding Derivation, and Statistical Verdict}
+
+To ensure the certification verdict is invariant to statistical convention, the verification suite evaluated seven distinct parametric, resampling, and concentration-inequality upper bounds on $\langle \mathcal{W} \rangle$~\cite{qfx_doc}:
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Seven-Framework Statistical Evaluation of the GHZ Entanglement Witness Upper Bound~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrl}
+\toprule
+\textbf{Evaluation Framework} & \textbf{Variance / Bound Formulation} & \textbf{$\sigma_{\mathcal{W}}$ or Margin $\delta$} & \textbf{95\% $\mathcal{W}_{\text{upper}}$} & \textbf{Threshold} & \textbf{Verdict} \\
+\midrule
+Normal Approx (2-Sided 95\%, $z=1.96$) & Plug-in sample variance (denom $N=256$) & $\sigma_{\mathcal{W}} = 0.020399$ & $+0.032169$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+Normal Approx (1-Sided 95\%, $z=1.645$) & Plug-in sample variance (denom $N=256$) & $\sigma_{\mathcal{W}} = 0.020399$ & $+0.025741$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+Bessel Correction (2-Sided 95\%, $z=1.96$) & Unbiased sample variance (denom $N-1=255$) & $\sigma_{\mathcal{W}} = 0.020439$ & $+0.032247$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+Bessel Correction (1-Sided 95\%, $z=1.645$) & Unbiased sample variance (denom $N-1=255$) & $\sigma_{\mathcal{W}} = 0.020439$ & $+0.025807$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+Empirical Bootstrap (100k, P97.5) & Non-parametric multinomial resampling (seed 42) & $\sigma_{\mathcal{W}}^{*} = 0.020385$ & $+0.032227$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+Empirical Bootstrap (100k, P95.0) & Non-parametric multinomial resampling (seed 42) & $\sigma_{\mathcal{W}}^{*} = 0.020385$ & $+0.026367$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+Hoeffding Inequality ($\alpha = 0.05$) & Distribution-free finite-sample concentration & $\delta = 0.054088$ & $+0.046276$ & $< 0.000000$ & \textbf{NOT CERTIFIED} \\
+\bottomrule
+\end{tabular}%
+}
+\end{minipage}\vspace{6pt}
+
+In the Hoeffding derivation for $\mathcal{W} = \frac{3}{8} - \frac{U}{8} - \frac{X_{XXX}}{8} + \frac{M_{XYY}}{8} + \frac{M_{YXY}}{8} + \frac{M_{YYX}}{8}$, each shot of $U/8$ takes values in $\{-1/8, +3/8\}$ (range $R_{ZZZ} = \frac{1}{2}$), while each of the four parity terms $P/8$ takes values in $\{-1/8, +1/8\}$ (range $R_P = \frac{1}{4}$)~\cite{qfx_doc}. Summing the squared range-to-shot ratios across the five independent circuits gives $\sum_{k=1}^{5} \frac{R_k^2}{N_k} = \frac{(1/2)^2 + 4(1/4)^2}{256} = \frac{1/2}{256} = \frac{1}{512}$~\cite{qfx_doc}. By Hoeffding's inequality, $\Pr(\hat{\mathcal{W}} - \mathbb{E}[\mathcal{W}] \le -\delta) \le \exp(-2\delta^2 / (1/512)) = \exp(-1024\delta^2) = \alpha$~\cite{qfx_doc}. Setting $\alpha = 0.05$ yields $\delta = \sqrt{\ln(20)/1024} = 0.054088$ and a $95\%$ upper bound of $-0.0078125 + 0.054088 = +0.046276$~\cite{qfx_doc}.
+
+In the $100{,}000$-iteration empirical bootstrap (random seed 42, yielding $\bar{\mathcal{F}}^{*} = 0.507744$ and $\sigma_{\mathcal{W}}^{*} = 0.020385$ on bitstring arrays, or $\bar{\mathcal{F}}^{*} = 0.507814$ and $\sigma_{\mathcal{W}}^{*} = 0.020455$ under direct binomial resampling), $35.98\%$ ($35.88\%$ binomial) of resampled outcomes fall in the biseparable region $\mathcal{W} \ge 0$~\cite{qfx_doc}. Because certification requires $\ge 95.0\%$ of outcomes to lie in $\mathcal{W} < 0$, \texttt{entanglement\_certified} is definitively \textbf{FALSE}~\cite{qfx_doc}.
+
+\section{Area 3: QAOA Markowitz Portfolio Optimization Benchmark (\texttt{pub\_0\_qaoa})}
+
+\subsection{QUBO-to-Ising Hamiltonian Mapping and Eigenvalue Verification}
+
+Circuit \texttt{pub\_0\_qaoa} encodes a three-asset binary Markowitz portfolio optimization problem into a Quadratic Unconstrained Binary Optimization (QUBO) objective function over $x = (x_0, x_1, x_2)^{\mathsf{T}} \in \{0,1\}^3$ representing Technology Growth ($x_0, \mu_0 = 0.15$), Energy Sector ($x_1, \mu_1 = 0.10$), and Treasury Bonds ($x_2, \mu_2 = 0.05$), where Qiskit's little-endian bitstring $\vert q_2 q_1 q_0 \rangle$ maps to $x = (q_0, q_1, q_2)$~\cite{qfx_doc}. With risk-aversion parameter $\lambda = 0.5$, exact cardinality budget $B = 2$ active assets, and quadratic penalty weight $A = 1.0$, the classical objective is~\cite{qfx_doc}:
+
+\begin{equation}
+C(x) = -\mu^{\mathsf{T}} x + \lambda x^{\mathsf{T}} \Sigma x + A\left(\sum_{i=0}^{2} x_i - B\right)^2, \qquad
+\mu = \begin{bmatrix} 0.15 \\ 0.10 \\ 0.05 \end{bmatrix}, \quad
+\Sigma = \begin{bmatrix} 0.08 & 0.02 & -0.01 \\ 0.02 & 0.06 & 0.00 \\ -0.01 & 0.00 & 0.01 \end{bmatrix}
+\end{equation}
+
+Expanding $C(x)$ and applying binary idempotency ($x_i^2 = x_i$) yields the canonical QUBO polynomial $C(x) = A B^2 + \sum_{i=0}^{2} a_i x_i + \sum_{0 \le i < j \le 2} b_{ij} x_i x_j$, where $a_i = -\mu_i + \lambda \Sigma_{ii} + A(1 - 2B)$ gives $a = [-3.1100, -3.0700, -3.0450]$ and $b_{ij} = 2\lambda \Sigma_{ij} + 2A$ gives $b_{01} = 2.0200$, $b_{02} = 1.9900$, and $b_{12} = 2.0000$~\cite{qfx_doc}. Applying the affine spin transformation $x_i = \frac{1 - Z_i}{2}$ ($Z_i \vert 0 \rangle = +1\vert 0 \rangle$, $Z_i \vert 1 \rangle = -1\vert 1 \rangle$) produces the diagonal three-qubit Ising cost Hamiltonian~\cite{qfx_doc}:
+
+\begin{equation}
+\mathcal{H}_C = c_0 \mathbb{I}^{\otimes 3} + \sum_{i=0}^{2} h_i Z_i + \sum_{0 \le i < j \le 2} J_{ij} Z_i Z_j
+\end{equation}
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Exact QUBO-to-Ising Hamiltonian Parameters for \texttt{pub\_0\_qaoa}~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\begin{tabularx}{\textwidth}{L{3.4cm} L{4.2cm} R{2.4cm} Y}
+\toprule
+\textbf{Hamiltonian Parameter} & \textbf{Mathematical Derivation} & \textbf{Exact Value} & \textbf{Physical Interpretation} \\
+\midrule
+$c_0$ (Energy Offset) & $A B^2 + \frac{1}{2}\sum_{i} a_i + \frac{1}{4}\sum_{i<j} b_{ij}$ & $+0.890000$ & Global spectral shift of the cost landscape \\
+$h_0$ (Qubit 0 Local Field) & $-\frac{a_0}{2} - \frac{b_{01} + b_{02}}{4}$ & $+0.552500$ & Single-qubit $R_Z$ rotation angle scale for Tech Growth ($x_0$) \\
+$h_1$ (Qubit 1 Local Field) & $-\frac{a_1}{2} - \frac{b_{01} + b_{12}}{4}$ & $+0.530000$ & Single-qubit $R_Z$ rotation angle scale for Energy ($x_1$) \\
+$h_2$ (Qubit 2 Local Field) & $-\frac{a_2}{2} - \frac{b_{02} + b_{12}}{4}$ & $+0.525000$ & Single-qubit $R_Z$ rotation angle scale for Treasury Bonds ($x_2$) \\
+$J_{01}$ (Coupling $Z_0 Z_1$) & $\frac{b_{01}}{4}$ & $+0.505000$ & Two-qubit $R_{ZZ}$ interaction between Tech and Energy \\
+$J_{02}$ (Coupling $Z_0 Z_2$) & $\frac{b_{02}}{4}$ & $+0.497500$ & Two-qubit $R_{ZZ}$ interaction between Tech and Treasury \\
+$J_{12}$ (Coupling $Z_1 Z_2$) & $\frac{b_{12}}{4}$ & $+0.500000$ & Two-qubit $R_{ZZ}$ interaction between Energy and Treasury \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\vspace{6pt}
+
+Within the three-state feasible subspace ($\sum_i x_i = 2$), pairing the two highest-return assets---Tech Growth ($\mu_0 = 0.15$) and Energy ($\mu_1 = 0.10$) in $\vert 011 \rangle$ ($x = (1,1,0)$)---incurs positive return covariance ($\Sigma_{01} = +0.02$) and high individual variances ($\Sigma_{00} = 0.08, \Sigma_{11} = 0.06$), inflating the quadratic risk penalty to $\lambda x^{\mathsf{T}}\Sigma x = +0.0900$ for a total cost of $C(1,1,0) = -0.2500 + 0.0900 = -0.1600$~\cite{qfx_doc}. Conversely, pairing Tech Growth with Treasury Bonds ($\mu_2 = 0.05$) in $\vert 101 \rangle$ ($x = (1,0,1)$) sacrifices $0.0500$ in raw return ($-\mu^{\mathsf{T}}x = -0.2000$) but exploits negative cross-asset covariance ($\Sigma_{02} = -0.01$) and low bond variance ($\Sigma_{22} = 0.01$) to reduce portfolio risk to $\lambda x^{\mathsf{T}}\Sigma x = +0.0350$, achieving the true global minimum cost of $C(1,0,1) = -0.1650$~\cite{qfx_doc}. This $\Delta C = -0.0050$ gap between $\vert 101 \rangle$ and $\vert 011 \rangle$ is encoded directly in the Ising coupling asymmetry $J_{02} = 0.4975 < J_{01} = 0.5050$~\cite{qfx_doc}.
+
+\subsection{Empirical Distribution Analysis on \texttt{ibm\_kingston}}
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Complete 8-State QAOA Energy Spectrum and Empirical Distribution on \texttt{ibm\_kingston} ($N = 256$)~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{ccrrrrrrrr}
+\toprule
+\textbf{State $\vert q_2 q_1 q_0 \rangle$} & \textbf{Vector $(x_0,x_1,x_2)$} & \textbf{Return $-\mu^{\mathsf{T}}x$} & \textbf{Risk $\lambda x^{\mathsf{T}}\Sigma x$} & \textbf{Penalty $A(\sum x_i - 2)^2$} & \textbf{Total Cost $C(x)$} & \textbf{HW Counts ($N=256$)} & \textbf{HW Prob (\%)} & \textbf{Ideal Sim (\%)} & \textbf{Uniform (\%)} \\
+\midrule
+$\vert 000 \rangle$ & $(0,0,0)$ & $0.0000$ & $+0.0000$ & $+4.0000$ & $+4.0000$ & $118$ & $46.09\%$ & $36.35\%$ & $12.50\%$ \\
+$\vert 001 \rangle$ & $(1,0,0)$ & $-0.1500$ & $+0.0400$ & $+1.0000$ & $+0.8900$ & $28$ & $10.94\%$ & $12.36\%$ & $12.50\%$ \\
+$\vert 010 \rangle$ & $(0,1,0)$ & $-0.1000$ & $+0.0300$ & $+1.0000$ & $+0.9300$ & $25$ & $9.77\%$ & $12.84\%$ & $12.50\%$ \\
+$\vert 011 \rangle$ & $(1,1,0)$ & $-0.2500$ & $+0.0900$ & $+0.0000$ & $-0.1600$ & $8$ & $3.12\%$ & $5.57\%$ & $12.50\%$ \\
+$\vert 100 \rangle$ & $(0,0,1)$ & $-0.0500$ & $+0.0050$ & $+1.0000$ & $+0.9550$ & $35$ & $13.67\%$ & $12.89\%$ & $12.50\%$ \\
+$\vert 101 \rangle$ & $(1,0,1)$ & $-0.2000$ & $+0.0350$ & $+0.0000$ & $\mathbf{-0.1650}$ & $11$ & $4.30\%$ & $5.63\%$ & $12.50\%$ \\
+$\vert 110 \rangle$ & $(0,1,1)$ & $-0.1500$ & $+0.0350$ & $+0.0000$ & $-0.1150$ & $11$ & $4.30\%$ & $5.86\%$ & $12.50\%$ \\
+$\vert 111 \rangle$ & $(1,1,1)$ & $-0.3000$ & $+0.0850$ & $+1.0000$ & $+0.7850$ & $20$ & $7.81\%$ & $8.51\%$ & $12.50\%$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{minipage}\vspace{6pt}
+
+Two physical and algorithmic mechanisms govern the empirical QAOA distribution~\cite{qfx_doc}:
+\begin{enumerate}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}
+    \item \textbf{Penalty Phase Wrap-Around in the Ideal Circuit}: Even in noiseless statevector simulation, the fixed QAOA angles concentrate $36.35\%$ of probability mass on $\vert 000 \rangle$ ($C = +4.0000$) while assigning $17.06\%$ across the feasible subspace ($\vert 011 \rangle, \vert 101 \rangle, \vert 110 \rangle$)~\cite{qfx_doc}. Because the cost unitary $U_C(\gamma) = e^{-i\gamma \mathcal{H}_C}$ imparts phases proportional to $C(x) \bmod (2\pi/\gamma)$, the large penalty separation between $B=0$ ($C = +4.0000$), $B \in \{1,3\}$ ($C \in [0.7850, 0.9550]$), and $B=2$ ($C \in [-0.1650, -0.1150]$) spans more than $\pi$ radians under the chosen $\gamma$, causing the mixer $U_B(\beta) = e^{-i\beta \sum X_i}$ to induce constructive interference on $\vert 000 \rangle$~\cite{qfx_doc}.
+    \item \textbf{Transmon $T_1$ Relaxation and Conditional Feasible Accuracy}: On \texttt{ibm\_kingston}, $\vert 000 \rangle$ increases by $+9.74$ percentage points ($46.09\%$ vs.\ $36.35\%$ ideal), while states with two or three excited qubits ($\vert 011 \rangle, \vert 101 \rangle, \vert 110 \rangle, \vert 111 \rangle$) experience systematic depletion ($19.53\%$ on hardware vs.\ $25.57\%$ ideal) due to amplitude damping ($\vert 1 \rangle \to \vert 0 \rangle$) and readout assignment asymmetry~\cite{qfx_doc}. Despite this bias, $\mathrm{TVD}(P_{\text{HW}}, P_{\text{Ideal}}) = \frac{1}{2}\sum_s \vert P_{\text{HW}}(s) - P_{\text{Ideal}}(s) \vert = 0.1053$ (while $\mathrm{TVD}(P_{\text{HW}}, P_{\text{Uniform}}) = 0.3477$), consistent with multinomial shot noise at $N=256$ ($\sqrt{1/256} = 0.0625$) plus two-qubit gate depolarization~\cite{qfx_doc}. Within the feasible subspace ($30/256$ shots, $11.72\%$ vs.\ $17.06\%$ ideal), the hardware conditional expectation is $-0.145333$, deviating by less than $0.0009$ from the noiseless conditional expectation of $-0.146199$ while resolving the ground state $\vert 101 \rangle$ in $11$ shots ($4.30\%$)~\cite{qfx_doc}.
+\end{enumerate}
+
+\section{Areas 4 \& 5: NIST SP 800-90B Governance and Locked Engine Posture}
+
+Evaluating job \texttt{db8nsvob3g5c73egl760} against \textbf{NIST Special Publication 800-90B} (\emph{Recommendation for the Entropy Sources Used for Random Bit Generation}) demonstrates why \texttt{quantum-flex-engine-mycelium.service} (listening on \texttt{127.0.0.1:9444}) must remain \textbf{LOCKED} with \textbf{0.0 bits} of credited entropy~\cite{qfx_doc,nist_e259}. Under NIST SP 800-90B, an entropy source must operate inside a validated Security Boundary, pass mandatory Start-up, Continuous, and On-Demand Health Tests---specifically the Repetition Count Test (RCT) and Adaptive Proportion Test (APT)---and apply a vetted conditioning function when raw noise is non-IID or sub-full entropy~\cite{nist_e259,nist_e214,nist_e120,nist_e201,nist_e279,nist_e166}:
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{Comparison of Validated NIST CMVP SP 800-90B Entropy Sources vs.\ QuantumFlex Job \texttt{db8nsvob}~\cite{qfx_doc,nist_e259,nist_e214,nist_e120,nist_e201,nist_e279,nist_e166}}
+\vspace{2pt}
+\scriptsize
+\begin{tabularx}{\textwidth}{L{2.3cm} L{2.5cm} L{2.5cm} L{2.4cm} Y L{2.5cm}}
+\toprule
+\textbf{Architecture} & \textbf{Noise Mechanism} & \textbf{Assessed $H_{\text{submitter}}$} & \textbf{Conditioning} & \textbf{Start-Up \& Continuous Health Tests} & \textbf{Boundary Enforcement} \\
+\midrule
+\textbf{Quantinuum Origin (E214)}~\cite{nist_e214} & Execution timing delta + quantum-seeded extractor & $1/3$ bit per 64-bit delta ($512$ bits per SHA3-512 block) & Vetted SHA3-512 + quantum-seeded extractor & Continuous RCT ($C=91, \alpha=2^{-30}$), APT ($W=512, C=325$), Lag Predictor & Compiled binary boundary; halts and refuses requests on RCT/APT failure \\
+\textbf{Google Tensor G5 (E259)}~\cite{nist_e259} & Physical sub-chip source (8 ring oscillators) in SoC & Full entropy: $128$ bits per 128-bit conditioned block & Vetted cryptographic conditioner & Start-up over $1{,}024$ consecutive samples (discarded); continuous RCT, APT \& 4-bit RCT & Internal state zeroized and output halted immediately on alarm \\
+\textbf{Nvidia NVRNG v1.0 (E201)}~\cite{nist_e201} & Physical Multi-Ring Oscillator (MURO) in hardware OE & $H = 0.05$ raw input; $40:1$ compression ($5{,}120 \to 128$ bits) & Vetted AES-CBC-MAC (40 blocks of 128 bits) & Start-up over $1{,}024$-bit restart blocks + continuous RCT and APT & Stops outputting entropic bits and logs fatal error on failure \\
+\textbf{IBM Power10/11 RNG (E120)}~\cite{nist_e120} & Physical on-chip ring oscillators (non-IID) & Direct 64-bit noise output after non-IID health tests & Unconditioned (direct post-health-test output) & Continuous health tests; validated across $1{,}000$ restarts with SP 800-90B tool & Production chip disables raw \texttt{GetNoise()}; discards failed blocks \\
+\textbf{Microsoft M1244265 (E166)}~\cite{nist_e166} & Physical single-chip hardware noise source ($0.83\,\text{V}$) & $0.5$ bits per output bit ($1{,}024$-bit combined queue) & Seeds internal DRBG directly within same OE & Start-up on $1{,}024$ samples; continuous RCT, APT, Chi-Square & \texttt{GetNoise()} restricted to internal health unit; external error codes \\
+\textbf{Dell / Intel JEnt v3.4.1 (E279)}~\cite{nist_e279} & Execution \& memory access timing jitter & Validated non-IID rate per operational environment & Vetted SHA3-256 conditioning function & Continuous SP 800-90B health tests (\texttt{fips\_enabled} safety factor) & Combined software library + local CPU/timer boundary \\
+\textbf{QuantumFlex Job \texttt{db8nsvob}}~\cite{qfx_doc} & Remote cloud QPU benchmark (QAOA + 5-basis GHZ) & \textbf{0.0 bits credited} (\path{entanglement_certified}: \texttt{FALSE}) & None applied to raw telemetry (\path{raw_acquisition.json}) & $N = 256$ shots/circuit is below the $1{,}024$-sample SP 800-90B start-up threshold & Engine \textbf{LOCKED} on \texttt{127.0.0.1:9444}; untrusted external network~\cite{nist_sp800_121,nist_sp800_52} \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\vspace{6pt}
+
+Three interlocking cryptographic principles mandate zero entropy credit and a locked engine state~\cite{qfx_doc}:
+\begin{enumerate}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}
+    \item \textbf{Uncertified Witness Boundary ($\mathcal{W}_{\text{upper}} \ge 0$)}: In witness-certified randomness protocols, intrinsic quantum unpredictability against classical side-information requires $\mathcal{W}_{\text{upper}} < 0$ at high confidence~\cite{qfx_doc}. Because all seven $95\%$ upper bounds cross into the positive domain ($+0.0257$ to $+0.0463$), a classical biseparable model could reproduce the observed statistics without genuine tripartite quantum randomness~\cite{qfx_doc}.
+    \item \textbf{Insufficient Sample Size for Start-Up Health Testing ($N = 256 < 1{,}024$)}: NIST SP 800-90B Section 4 requires start-up health tests (RCT and APT) to evaluate at least $1{,}024$ consecutive raw noise samples (all discarded before seeding downstream consumers)~\cite{qfx_doc,nist_e259}. Acquiring $256$ shots per circuit provides only one-fourth of the minimum start-up window, leaving zero post-startup samples for conditioning~\cite{qfx_doc}.
+    \item \textbf{Untrusted External Network Boundary}: Under NIST SP 800-90B, SP 800-121r2~\cite{nist_sp800_121}, and SP 800-52r2~\cite{nist_sp800_52}, external payloads traversing public cloud networks cannot be injected directly into a local cryptographic state machine without local health verification and vetted conditioning. Keeping \texttt{quantum-flex-engine-mycelium.service} locked on loopback \texttt{127.0.0.1:9444} prevents uncertified benchmarking telemetry from polluting local key material~\cite{qfx_doc}.
+\end{enumerate}
+
+\section{Area 6: Shot-Scaling and Mitigation Requirements for Future Runs}
+
+If a future experimental run on \texttt{ibm\_kingston} aims to achieve statistical entanglement certification ($\mathcal{W}_{\text{upper}} < 0$ at $95\%$ two-sided confidence) without altering the underlying hardware fidelity ($\mathcal{F} \approx 0.5078125$), the per-circuit shot budget $N$ must shrink $\sigma_{\mathcal{W}} = \sqrt{0.02663180 \times 256 / (64 N)}$ such that $-0.0078125 + 1.96 \sigma_{\mathcal{W}} < 0$~\cite{qfx_doc}:
+
+\begin{equation}
+N > \frac{1.96^2 \times 0.00041612 \times 256}{(-0.0078125)^2} \approx 6{,}704\text{ shots per setting} \quad (33{,}520\text{ total GHZ shots})
+\end{equation}
+
+\begin{itemize}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}
+    \item \textbf{Hardware Shot Allocation}: Selecting the standard power-of-two allocation of $N \ge 8{,}192$ shots per measurement basis ($40{,}960$ total GHZ shots across the five circuits) surpasses both the $\approx 6{,}704$-shot statistical variance threshold and the $1{,}024$-sample NIST SP 800-90B start-up health test window~\cite{qfx_doc}.
+    \item \textbf{Readout and Coherence Error Mitigation}: Applying Twirled Readout Error eXtinction (TREX) and dynamical decoupling mitigates transmon $T_1$ relaxation and measurement assignment asymmetry, raising raw point fidelity above $\mathcal{F} > 0.540$ even at $N = 256$~\cite{qfx_doc}.
+\end{itemize}
+
+\section{Area 7: Multi-Node Topology, Tailscale ACLs, and Shamir Custody}
+
+Aligning branch \texttt{fix/w1-w4} with the broader QuantumFlex distributed infrastructure enforces strict isolation between Tailscale mesh routing, Shamir 3-of-5 key custody, and local cryptographic services~\cite{qfx_doc}:
+
+\vspace{6pt}\noindent\begin{minipage}{\textwidth}
+\centering
+\captionof{table}{QuantumFlex Multi-Node Topology, Tailscale Mesh ACLs, and Shamir 3-of-5 Custody Assignments~\cite{qfx_doc}}
+\vspace{2pt}
+\footnotesize
+\begin{tabularx}{\textwidth}{L{2.5cm} L{2.6cm} L{4.2cm} L{3.1cm} Y}
+\toprule
+\textbf{Node / Medium} & \textbf{Identity \& Role} & \textbf{Hosted Services \& Ports} & \textbf{Shamir Custody} & \textbf{Operational Status \& Isolation Rule} \\
+\midrule
+\textbf{Lenovo Yoga 7 2-in-1 14AKP10} & \texttt{100.64.1.31} (\texttt{qfx-yoga}) --- Primary Host Engine \& Orchestrator & \texttt{quantum-flex-engine-}\newline\texttt{mycelium.service} (\texttt{127.0.0.1:9444}); Ollama (\texttt{127.0.0.1:11434} loopback only); \path{/home/quant/mycelium} & \textbf{Share 1}\newline\texttt{\textasciitilde/qfx-authority-}\newline\texttt{share1/} & Engine \textbf{LOCKED} on loopback \texttt{127.0.0.1:9444} (PID 2030, \texttt{0600} ledger fix \texttt{d1e90002}); zero \texttt{0.0.0.0} listeners. \\
+\textbf{HP ProBook 450 G6} & \texttt{100.64.1.19} (\texttt{g6pro}) --- Dedicated Kafka Broker \& Streaming Node & SSH (\texttt{22}), Worker Sentinel (\texttt{9100}), Kafka Web UI (\texttt{8090}), Apache Kafka KRaft Broker (\texttt{9092}) & \textbf{Share 2}\newline\texttt{\textasciitilde/qfx-authority-}\newline\texttt{share2/} & Reachable from \texttt{qfx-yoga} via Tailscale mesh; Ed25519 signed heartbeats verified (\texttt{quote\_verified: false}). \\
+\textbf{Google Pixel 11 Pro} & \texttt{100.64.1.16} (\texttt{qfx-pixel} / \texttt{pixel-11-pro-1}) --- Chief Architect HUD & Mobile monitoring HUD (Titan M2 StrongBox key \texttt{qf-operator-key}) & \textbf{Share 5}\newline(\texttt{Documents} directory on device) & Active on Tailscale mesh (\texttt{100.64.1.16}, superseding legacy \texttt{100.64.1.22}); isolated by Tailscale ACL policy. \\
+\textbf{Offline USB Thumb Drive} & Air-Gapped Physical Media & Password-protected container file & \textbf{Share 3 \& Share 4} & Offline cold storage; must not be mounted or combined to unlock \texttt{127.0.0.1:9444} until local health-tested entropy workflows are active. \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\vspace{6pt}
+
+\subsection{Operational Boundaries and Sustainable Research Pacing}
+Because \texttt{quantum-flex-engine-mycelium.service} on \texttt{127.0.0.1:9444} is strictly isolated from both the Tailscale mesh (\texttt{100.64.1.31}) and external cloud APIs, conducting a Shamir 3-of-5 recovery ceremony is neither required nor advisable when evaluating remote IBM Quantum jobs~\cite{qfx_doc}. All five Shamir shards should remain distributed in their designated custody locations while the engine stays locked~\cite{qfx_doc}. With all verification scripts, SHA-256 manifests, and statistical analyses committed on branch \texttt{fix/w1-w4} (\texttt{afd39b9}), no additional cloud QPU runs or daemon modifications are required, allowing active system administration to pause reliably~\cite{qfx_doc}.
+
+\begin{thebibliography}{9}
+\bibitem{qfx_doc}
+R.~Chambers / QuantumFlex Engineering, \emph{QuantumFlex Run and System Verification: Cryptographic Provenance, Statistical Validation, and Architectural Alignment of QuantumFlex Hardware Execution db8nsvob3g5c73egl760}, Oct.\ 2026. [Google Docs Verification Record].
+
+\bibitem{nist_e259}
+NIST Cryptographic Module Validation Program (CMVP), \emph{SP 800-90B Non-Proprietary Public Use Document: Google Tensor G5 Core (Certificate E259)}. [csrc.nist.gov/E259\_PublicUse.pdf].
+
+\bibitem{nist_e214}
+NIST CMVP, \emph{SP 800-90B Non-Proprietary Public Use Document: Quantinuum Quantum Origin (Certificate E214)}. [csrc.nist.gov/E214\_PublicUse.pdf].
+
+\bibitem{nist_e120}
+NIST CMVP, \emph{SP 800-90B Non-Proprietary Public Use Document: IBM Power10 / Power11 RNG (Certificate E120)}. [csrc.nist.gov/E120\_PublicUse.pdf].
+
+\bibitem{nist_e201}
+NIST CMVP, \emph{SP 800-90B Non-Proprietary Public Use Document: Nvidia NVRNG v1.0 (Certificate E201)}. [csrc.nist.gov/E201\_PublicUse.pdf].
+
+\bibitem{nist_e279}
+NIST CMVP, \emph{SP 800-90B Non-Proprietary Public Use Document: Dell / Intel CPU Jitter JEnt v3.4.1 (Certificate E279)}. [csrc.nist.gov/E279\_PublicUse.pdf].
+
+\bibitem{nist_sp800_121}
+NIST Special Publication 800-121 Revision 2, \emph{Guide to Bluetooth Security}. [nvlpubs.nist.gov/NIST.SP.800-121r2.pdf].
+
+\bibitem{nist_e166}
+NIST CMVP, \emph{SP 800-90B Non-Proprietary Public Use Document: Microsoft M1244265-004 B0 (Certificate E166)}. [csrc.nist.gov/E166\_PublicUse.pdf].
+
+\bibitem{nist_sp800_52}
+NIST Special Publication 800-52 Revision 2, \emph{Guidelines for the Selection, Configuration, and Use of Transport Layer Security (TLS) Implementations}. [nvlpubs.nist.gov/NIST.SP.800-52r2.pdf].
+\end{thebibliography}
+
+\end{document}

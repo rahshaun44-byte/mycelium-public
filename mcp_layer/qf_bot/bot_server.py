@@ -197,25 +197,30 @@ async def get_mesh_nodes():
                 active = peer.get("Active", False)
 
                 if "pixel" in hostname.lower() or "pixel" in dnsname.lower():
+                    # If duplicate registrations exist on tailnet, prioritize online peer
+                    existing_pixel_idx = next((i for i, n in enumerate(nodes) if n["id"] == "qfx-pixel"), None)
+                    if existing_pixel_idx is not None:
+                        if not (is_online or active):
+                            continue
+                        nodes.pop(existing_pixel_idx)
+
                     pixel_latency = "12ms"
-                    for target in ["192.168.100.14", primary_ip]:
-                        try:
-                            pr = subprocess.run(["ping", "-c", "1", "-W", "1", target], capture_output=True, text=True, timeout=0.8)
-                            if pr.returncode == 0:
-                                for line in pr.stdout.splitlines():
-                                    if "time=" in line:
-                                        pixel_latency = f"{float(line.split('time=')[-1].split()[0]):.1f}ms"
-                                        break
-                                break
-                        except Exception:
-                            pass
+                    try:
+                        pr = subprocess.run(["ping", "-c", "1", "-W", "1", primary_ip], capture_output=True, text=True, timeout=0.8)
+                        if pr.returncode == 0:
+                            for line in pr.stdout.splitlines():
+                                if "time=" in line:
+                                    pixel_latency = f"{float(line.split('time=')[-1].split()[0]):.1f}ms"
+                                    break
+                    except Exception:
+                        pass
                     nodes.append({
                         "id": "qfx-pixel",
                         "name": "Pixel 11 Pro",
-                        "ip": f"{primary_ip} (LAN: 192.168.100.14)",
-                        "serial": "PIXEL-SERIAL-REDACTED",
+                        "ip": primary_ip,
+                        "serial": "[REDACTED]",
                         "role": "Tactical HUD & Mobile Sentinel (Current Device)",
-                        "status": "ONLINE",
+                        "status": "ONLINE" if (is_online or active) else "OFFLINE",
                         "latency": pixel_latency,
                         "hardware_trust": "Titan M2 HSM / WireGuard P2P Direct",
                         "solvency": "AUTHENTICATED (Chief Architect)",
@@ -262,8 +267,8 @@ async def get_mesh_nodes():
             {
                 "id": "qfx-pixel",
                 "name": "Pixel 11 Pro",
-                "ip": "100.64.1.22 (LAN: 192.168.100.14)",
-                "serial": "PIXEL-SERIAL-REDACTED",
+                "ip": "100.64.1.16",
+                "serial": "[REDACTED]",
                 "role": "Tactical HUD & Mobile Sentinel (Current Device)",
                 "status": "ONLINE",
                 "latency": "15ms",

@@ -88,7 +88,7 @@ Report network topology, node reachability, and peer latency crisply and objecti
         """Inspects live Tailscale mesh connectivity."""
         nodes = {
             "qfx-yoga": {"ip": "100.64.1.31", "role": "Lenovo Yoga 7 (Primary Host Engine)", "status": "ONLINE", "latency": "0.1ms"},
-            "qfx-pixel": {"ip": "100.64.1.22", "role": "Google Pixel 11 Pro (Chief Architect HUD)", "status": "OFFLINE", "latency": "N/A"},
+            "qfx-pixel": {"ip": "100.64.1.16", "role": "Google Pixel 11 Pro (Chief Architect HUD)", "status": "OFFLINE", "latency": "N/A"},
             "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Kafka Broker)", "status": "OFFLINE", "latency": "N/A"},
         }
         try:
@@ -102,10 +102,12 @@ Report network topology, node reachability, and peer latency crisply and objecti
                     online = peer.get("Online", False)
                     status_str = "ONLINE" if (active or online) else "OFFLINE"
                     if "pixel" in hname:
-                        nodes["qfx-pixel"]["status"] = status_str
-                        ips = peer.get("TailscaleIPs", [])
-                        if ips:
-                            nodes["qfx-pixel"]["ip"] = ips[0]
+                        # Prioritize active/online peer registration
+                        if (active or online) or nodes["qfx-pixel"]["status"] != "ONLINE":
+                            nodes["qfx-pixel"]["status"] = status_str
+                            ips = peer.get("TailscaleIPs", [])
+                            if ips:
+                                nodes["qfx-pixel"]["ip"] = ips[0]
                     elif "g6pro" in hname:
                         nodes["g6pro"]["status"] = status_str
                         ips = peer.get("TailscaleIPs", [])

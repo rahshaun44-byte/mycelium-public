@@ -706,7 +706,7 @@ Append-only authoritative directive from Chief Architect Rocky. Formally rectifi
 #### 19.11.2 Hardware Topology & Zero-Fabrication Ground Truth
 The QuantumFlex substrate topology consists strictly of the **three verified real nodes** below. Live Tailscale data is the single source of truth:
 1. **`qfx-yoga` (`quant-Yoga-7-2-in-1-14AKP10`)**: `100.64.1.31` (Ubuntu 26.04.1 LTS, Pluton TPM 2.0) — Primary Host Engine & Orchestrator.
-2. **`qfx-pixel` (`pixel-11-pro`)**: `100.64.1.22` (Android, Titan M2 StrongBox hardware key `qf-operator-key`) — Chief Architect HUD.
+2. **`qfx-pixel` (`pixel-11-pro-1` / `pixel-11-pro`)**: `100.64.1.16` (Android, Titan M2 StrongBox hardware key `qf-operator-key`) — Chief Architect HUD (rotated from legacy `100.64.1.22`).
 3. **`g6pro`**: `100.64.1.19` (HP ProBook 450 G6) — Dedicated Apache Kafka Broker & Event Streaming Node (ports 9092, 8090).
 
 #### 19.11.3 Formal Retractions & Exclusions
@@ -744,3 +744,9 @@ Append-only directive from Chief Architect Rocky.
   1. Circle USDC smart contract settlement (`QuantumFlexUSDCSettler.sol`, 6-decimal precision invariant: `1 USDC = 1_000_000n`, `evm_version = "paris"`).
   2. Concrete post-quantum cryptographic primitives (NIST FIPS 203 ML-KEM, FrodoKEM-976, RFC 7748 Curve25519, F* formally verified core).
   3. Real local hardware topology (`qfx-yoga`, `qfx-pixel`, `g6pro`) under zero cloud spend ($0.00).
+
+### 19.13 Mobile Mesh Ground Truth: Pixel 11 Pro IP Rotation (2026-10-22, Chief Architect Rocky / Antigravity)
+
+Authoritative update from Chief Architect Rocky:
+- **Tailscale Active Peer Address:** The active Tailscale mesh address for `qfx-pixel` (`pixel-11-pro-1`) is updated to **`100.64.1.16`** (superseding legacy registration `100.64.1.22`).
+- **Telemetry & MCP Propagation:** Updated `bot_server.py`, `teammates.py`, `docs/tailscale_acl_policy.hujson`, `docs/tailscale_acl_policy.json`, and `docs/PROBOOK_G6_NODE1_HANDOFF.md` to reflect `100.64.1.16`. Added deduplication to ensure live peer entries (`pixel-11-pro-1` online) supersede stale inactive records.
