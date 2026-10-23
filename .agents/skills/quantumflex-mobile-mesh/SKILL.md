@@ -67,7 +67,7 @@ Enables encrypted HTTPS access on port 443 to the QuantumFlex Mobile Cockpit UI 
 ```bash
 ./scripts/enable_mobile_hud.sh
 ```
-*Access URL:* `https://fedora.example-tailnet.ts.net/` on any authorized device in the Tailnet.
+*Access URL:* `https://quant-yoga-7-2-in-1-14akp10.example-tailnet.ts.net/` on any authorized device in the Tailnet.
 
 ---
 

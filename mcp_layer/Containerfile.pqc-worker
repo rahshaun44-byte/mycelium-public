@@ -1,6 +1,6 @@
 # ═══════════════════════════════════════════════════════════════════
 # Quantum Flex PQC Worker — Post-Quantum Cryptographic Cell
-# Base: Fedora 44 (matches host SELinux policy)
+# Base: Fedora 44 container image (host is Ubuntu 26.04.1 LTS)
 # Includes: liboqs (compiled), oqs-python, immune_daemon, sss_relay
 # ═══════════════════════════════════════════════════════════════════
 FROM registry.fedoraproject.org/fedora:44

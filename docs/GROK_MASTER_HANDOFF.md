@@ -19,7 +19,7 @@ ABOUT THE OPERATOR (HOW TO ENGAGE):
 ---
 
 ### 1. THE EXACT SYSTEM ENVIRONMENT (GROUND TRUTH)
-- Primary Hardware: Lenovo Yoga 7i laptop (AMD Ryzen 7 8840HS, 14GB RAM, Fedora Linux Workstation, LUKS-encrypted NVMe).
+- Primary Hardware: Lenovo Yoga 7 2-in-1 laptop (AMD Ryzen AI 5 340, 14GB RAM, Fedora Linux Workstation, LUKS-encrypted NVMe).
 - Local Neural Engine: Local Ollama running Gemma 2 (2B) and Athena RAG SQLite vector memory on local AMD silicon (100% offline, $0 cloud cost).
 - Storage & State: PostgreSQL 15 container (amara-matrix on loopback 127.0.0.1:5432).
 - Web HUD: FastAPI / Uvicorn servers on 127.0.0.1:8000 (telemetry) and 127.0.0.1:9000 (teammates/chat).
@@ -54,7 +54,7 @@ The app you build must guide the operator through every phase of their shift:
   * Enforce the Universal Invariant R >= O (Reserves strictly cover Obligations).
   * Ingest notes and research into `~/mycelium/knowledge_vault/` and run `python3 ~/mycelium/scripts/ingest_vault.py`.
   * Interrogate local knowledge with `python3 ~/mycelium/scripts/ask_athena.py "question"`.
-  * Monitor the swarm via HUD at `http://127.0.0.1:9000/ui/` or mobile Tailscale `https://fedora.example-tailnet.ts.net`.
+  * Monitor the swarm via HUD at `http://127.0.0.1:9000/ui/` or mobile Tailscale `https://quant-yoga-7-2-in-1-14akp10.example-tailnet.ts.net`.
   * Review all agent actions in the Drafts tab before approving.
 - **DON'T:**
   * NEVER bind any port to `0.0.0.0` or open physical Wi-Fi ports.

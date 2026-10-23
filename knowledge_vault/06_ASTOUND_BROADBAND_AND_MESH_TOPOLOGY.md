@@ -3,7 +3,7 @@
 **Document ID:** KV-06  
 **Security Classification:** Sovereign Internal — Cryptographically Pinned  
 **Effective Date:** 2026-09-20  
-**Target Platform:** Lenovo Yoga 7i (AMD Ryzen 7 8840HS) & Tailscale Mesh  
+**Target Platform:** Lenovo Yoga 7 2-in-1 (AMD Ryzen AI 5 340) & Tailscale Mesh  
 
 ---
 
@@ -26,7 +26,7 @@ All application databases, vector stores, neural models, and consensus engines r
 | **Local Gateway** | `10.0.0.254/24` | DHCP Dynamic Allocation (`10.0.0.15`) |
 | **NAT Mapping Type** | Full-Cone / Endpoint-Independent | `tailscale netcheck` (`MappingVariesByDestIP: false`) |
 | **Nearest DERP Region** | NYC Relay (`25.8 ms`) | `tailscale netcheck` |
-| **WireGuard Direct Peer** | Verified (`20 ms` direct to Pixel 11 Pro) | `tailscale ping 100.64.1.11` |
+| **WireGuard Direct Peer** | Verified (`20 ms` direct to Pixel 11 Pro) | `tailscale ping 100.64.1.16` |
 
 ---
 
@@ -62,8 +62,8 @@ net.ipv4.tcp_slow_start_after_idle = 0
 
 | Node Identifier | Hardware Role | Interface IP | Tailnet IP | MagicDNS FQDN | Authority Scope |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`fedora`** | Master Control & PQC Core | `10.0.0.15` | `100.64.1.17` | `fedora.example-tailnet.ts.net` | TPM 2.0 / PCR-7, Shards 1 & 2, Admission Authority |
-| **`pixel-11-pro-1`** | Mobile Shard Custody Anchor | Dynamic / USB | `100.64.1.11` | `pixel-11-pro-1.example-tailnet.ts.net` | Titan M2 Hardware Security Module, Shamir Shard Custody |
+| **`fedora`** | Master Control & PQC Core | `10.0.0.15` | `100.64.1.31` | `quant-yoga-7-2-in-1-14akp10.example-tailnet.ts.net` | TPM 2.0 / PCR-7, Shards 1 & 2, Admission Authority |
+| **`pixel-11-pro-1`** | Mobile Shard Custody Anchor | Dynamic / USB | `100.64.1.16` | `pixel-11-pro-1.example-tailnet.ts.net` | Titan M2 Hardware Security Module, Shamir Shard Custody |
 
 ---
 

@@ -16,7 +16,7 @@ You are my personal Sovereign Systems Mentor, Flight Instructor, and Coach for m
 I am shadowing you to become a confident, master operator of my private technology and wealth-building infrastructure.
 
 Here is my exact verified hardware and system profile:
-1. Primary Machine: Lenovo Yoga 7 2-in-1 laptop (AMD Ryzen AI 7 PRO 360, Krackan Point APU with Radeon 840M GPU acceleration, Ubuntu Linux, LUKS encrypted).
+1. Primary Machine: Lenovo Yoga 7 2-in-1 laptop (AMD Ryzen AI 5 340, Krackan Point APU with Radeon 840M GPU acceleration, Ubuntu Linux, LUKS encrypted).
 2. Mobile Device: Google Pixel 11 Pro (Android, Tailscale mesh IP 100.64.1.16, with 5D Cinematic depth wallpaper).
 3. Compute & Streaming Hub (Target Node 1): HP ProBook 450 G6 (Debian 13, Hardware TPM 2.0 anchor, KRaft Kafka broker on 100.64.1.19:9092, Antigravity 1.3.6).
 4. Private Network: Encrypted Tailscale WireGuard mesh connecting Yoga (100.64.1.31), G6 (100.64.1.19), and Pixel (100.64.1.16). Zero-trust ACL isolates Pixel to Ollama loopback proxy only.

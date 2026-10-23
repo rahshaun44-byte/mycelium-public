@@ -1,7 +1,7 @@
 # QuantumFlex: Master Technical & Operational Handoff
 
 **Verified Date:** 2026-09-15  
-**Target Silicon:** Lenovo Yoga 7i — AMD Ryzen 7 8840HS (Zen 4/5, 8 cores / 16 threads, AVX-512, VAES, GFNI, SHA-NI)  
+**Target Silicon:** Lenovo Yoga 7 2-in-1 — AMD Ryzen AI 5 340 (Zen 4/5, 8 cores / 16 threads, AVX-512, VAES, GFNI, SHA-NI)  
 **Host Environment:** Fedora Linux 44 (Rawhide / 7.2.5 kernel), User `quant` (uid 1000)  
 **Repository Source of Truth:** `/home/quant/mycelium`  
 **Active Architecture:** Multi-Strata Sovereign Operating System (Phases 1–5 Operational)

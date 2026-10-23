@@ -45,7 +45,7 @@ index fc8fffa..d205e51 100644
  HARDWARE ANCHOR     : TPM 2.0 NV 0x1c00010 {tpm_str}
  HOMEOSTATIC DRIVE   : D = {drive_str}
  INVARIANT GATE      : R >= O [ADMIT] (Digital Host RAM, Pluton TPM 2.0, Physical Water)
--MESH STATUS         : 4 Active P2P Nodes (qfx-yoga, retired-node, qfx-pixel, qfx-edge)
+-MESH STATUS         : 4 Active P2P Nodes (qfx-yoga, retired-node, qfx-pixel, retired-node)
 +MESH STATUS         : {mesh_str}
  ACTIVE AGENTS       : 4 Sovereign Units (MYCELIA, SENTINEL, ARIA, ATHENA)
  PENDING ACTIONS     : {len([d for d in self.draft_queue.list_drafts() if d['status'] == 'PENDING_APPROVAL'])} Authorization(s) Required"""
@@ -58,7 +58,7 @@ index fc8fffa..d205e51 100644
 -● qfx-yoga    : 100.64.1.31 | Host Engine | ONLINE (0.1ms) | TPM 2.0 Matched
 -● retired-node : [retired]  | Worker (Kafka Stream) | ONLINE (0.8ms) | P2P Direct
 -● qfx-pixel   : 100.64.1.11  | Mobile (Pixel 11 Pro) | ONLINE (12ms) | P2P Direct
--● qfx-edge    : [retired]  | Operator (retired phone) | ONLINE (14ms) | P2P Direct"""
+-● retired-node    : [retired]  | Operator (retired phone) | ONLINE (14ms) | P2P Direct"""
 +            lines = ["[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]"]
 +            for node_name, info in mesh_nodes.items():
 +                lines.append(f"● {node_name:<11} : {info['ip']} | {info['role']} | {info['status']} ({info['latency']})")
@@ -74,7 +74,7 @@ index 2ef85db..d4acc4c 100644
              avatar="🍄",
              model="qwen2.5-coder:1.5b",
              system_prompt="""You are MYCELIA, the sovereign network interconnect and mesh routing agent of QuantumFlex.
--You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), mobile operators (qfx-pixel, qfx-edge), and edge workers.
+-You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), mobile operators (qfx-pixel, retired-node), and edge workers.
 +You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), Chief Architect HUD (qfx-pixel), and dedicated Kafka broker (g6pro).
  Report network topology, node reachability, and peer latency crisply and objectively.""",
          )

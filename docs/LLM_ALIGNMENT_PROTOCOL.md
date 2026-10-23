@@ -15,7 +15,7 @@
 
 ## 2. SYSTEM TOPOLOGY & POSTURE
 1. **Master Host (Yoga Alpha Node)**:
-   - APU: AMD Ryzen AI 7 PRO 360 (Krackan Point, RDNA 3.5, `gfx1152`).
+   - APU: AMD Ryzen AI 5 340 (Krackan Point, RDNA 3.5, `gfx1152`).
    - Local AI Offload: Ollama ROCm hardware acceleration enabled via driver override `HSA_OVERRIDE_GFX_VERSION=11.5.0` to AMD Radeon 840M (7.1 GiB VRAM allocation).
    - Root of Trust: AMD Pluton TPM 2.0 NVRAM index `0x1c00010`.
    - Continuous Compute: Running `qf-lid-guard.service` (`systemd-inhibit --what=handle-lid-switch:sleep sleep infinity`) so background daemons, Kafka, and QPU monitors run uninterrupted with the laptop lid closed.

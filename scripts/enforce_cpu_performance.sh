@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # QuantumFlex: Permanent CPU Performance Governor Enforcer
-# Hardware: AMD Ryzen 7 8840HS (Zen 5/4, 8C/16T) on Fedora Linux
+# Hardware: AMD Ryzen AI 5 340 (6C/12T) on Ubuntu 26.04.1 LTS
 set -euo pipefail
 
 echo "============================================================"

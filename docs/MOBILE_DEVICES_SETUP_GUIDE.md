@@ -1,6 +1,6 @@
 # QuantumFlex: Mobile Operator Plane Architecture & Setup Guide (QF-M1)
 
-Consolidated operational guide for the QuantumFlex mobile command plane across sovereign mobile nodes (Hardware Custody & OOB Signer, and Field Workstation & DeX Terminal) over Tailscale WireGuard mesh.
+Consolidated operational guide for the QuantumFlex mobile command plane on the single mobile node (Google Pixel 11 Pro: Hardware Custody & OOB Signer) over the Tailscale WireGuard mesh.
 
 ---
 
@@ -11,24 +11,21 @@ $$\text{ONE interface} \neq \text{ONE authority}$$
 QuantumFlex unifies the mobile protocol and operator interface into a single, zero-dependency command line (`qf`) and sovereign mobile HUD, while strictly enforcing hardware and cryptographic division of authority:
 
 ```text
-                    QuantumFlex Mobile Command Plane
+          QuantumFlex Mobile Command Plane
 
-                         Unified qf CLI
-                              │
-               ┌──────────────┴──────────────┐
-               │                             │
-               ▼                             ▼
-        Mobile Node 1                  Mobile Node 2
-        custody-anchor                 field-terminal
-        100.64.1.18                  100.64.1.32
+                 Unified qf CLI
+                       │
+                       ▼
+         qfx-pixel (Google Pixel 11 Pro)
+         custody-anchor · 100.64.1.16
 
-        CUSTODY ROLE                   OPERATIONS ROLE
-        ────────────                   ───────────────
-        Hardware Enclave HSM           Hardware Vault
-        OOB signer                     Workstation / Console
-        shard custody (#2)             cockpit / triage
-        quorum state                   drafts / approvals
-        emergency freeze               telemetry lens
+         CUSTODY ROLE
+         ────────────
+         Titan M2 StrongBox
+         OOB signer
+         share custody (#5)
+         quorum state
+         emergency freeze
 ```
 
 ---
@@ -37,9 +34,9 @@ QuantumFlex unifies the mobile protocol and operator interface into a single, ze
 
 | Node / Device | Hardware Role | Interface IP | Tailscale Mesh IP | MagicDNS Hostname | Authority Domain |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Master Node (Yoga 7)** | Control Plane & PQC Core | `192.168.100.11` | `100.64.1.17` | `fedora` | TPM 2.0 / PCR-7, Shards 1 & 2, Admission Authority |
-| **Mobile Node 1** | Hardware Shard Anchor / OOB Signer | DHCP / USB | `100.64.1.18` | `mobile-node-1` | Hardware HSM / Enclave, Shamir Shard #2, Quorum Signer |
-| **Mobile Node 2** | Mobile Ops Console & Terminal | DHCP | `100.64.1.32` | `mobile-node-2` | Hardware Vault, Desktop Workstation, Triage Lens |
+| **qfx-yoga** (Lenovo Yoga 7 2-in-1 14AKP10, Ubuntu 26.04.1 LTS) | Control Plane & PQC Core | `192.168.100.15` (Wi-Fi) | `100.64.1.31` | `quant-yoga-7-2-in-1-14akp10` | Pluton TPM 2.0, Share 1, Admission Authority |
+| **qfx-pixel** (Google Pixel 11 Pro) | Hardware Share Anchor / OOB Signer | DHCP / USB | `100.64.1.16` | `pixel-11-pro-1` | Titan M2 StrongBox, Share 5, Quorum Signer |
+| **g6pro** (HP ProBook 450 G6, Debian 13) | Kafka Broker (`:9092`, UI `:8090`) | `192.168.100.13` | `100.64.1.19` | `g6pro` | Share 2, event streaming |
 
 
 ---
@@ -64,8 +61,8 @@ install / execute
 ### Setup Command on Android (Termux):
 ```bash
 # 1. Fetch bootstrap installer and pinned trust anchor
-curl -fsS http://100.64.1.17:9000/mobile/download/trust-anchor -o ~/.quantumflex/release_signing_key.pub
-curl -fsS http://100.64.1.17:9000/mobile/download/setup -o ~/setup-mobile.sh
+curl -fsS http://100.64.1.31:9000/mobile/download/trust-anchor -o ~/.quantumflex/release_signing_key.pub
+curl -fsS http://100.64.1.31:9000/mobile/download/setup -o ~/setup-mobile.sh
 chmod +x ~/setup-mobile.sh
 
 # 2. Run verified installation
@@ -122,7 +119,7 @@ python3 scripts/sync_mobile_nodes.py --push --apk --device <SERIAL>
 
 ## 6. Over-The-Air (OTA) Distribution Endpoints
 
-All OTA endpoints are served strictly on the authenticated loopback / Tailscale boundary (`100.64.1.17:9000`):
+All OTA endpoints are served strictly on the authenticated loopback / Tailscale boundary (`100.64.1.31:9000`):
 
 | Endpoint | Artifact | Description |
 | :--- | :--- | :--- |

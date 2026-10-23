@@ -4,7 +4,7 @@
 ```text
 ═════════════════════════════════════════════════════════════════════════════════
   CLASSIFICATION: UNCLASSIFIED // PROPRIETARY // AIRGAPPED LOCAL SILICON
-  HOST ENVIRONMENT: Lenovo Yoga 7 (AMD Ryzen 7 8840HS, 14GB RAM, Fedora Linux)
+  HOST ENVIRONMENT: Lenovo Yoga 7 (AMD Ryzen AI 5 340, 14GB RAM, Fedora Linux)
   LOCAL AI RUNTIME: Ollama Engine (:11434)  •  QF-Bot Multi-Agent Server (:9000)
   SECURITY INVARIANT: Zero Cloud Dependency  •  Strict Loopback (127.0.0.1) Only
 ═════════════════════════════════════════════════════════════════════════════════
@@ -51,7 +51,7 @@ $$\text{Inference}(\text{Prompt}) \rightarrow \text{Local RAM} \rightarrow \text
 │                                      │                                      │
 │                                      ▼                                      │
 │  [ HARDWARE LAYER ]                                                         │
-│  AMD Ryzen 7 8840HS (8C/16T, Zen 4) + Radeon 780M GPU (14GB LPDDR5X)        │
+│  AMD Ryzen AI 5 340 (8C/16T, Zen 4) + Radeon 780M GPU (14GB LPDDR5X)        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -208,7 +208,7 @@ tcp   LISTEN 0      4096       127.0.0.1:11434      0.0.0.0:*
 
 ### 3. Tailscale Serve Mesh Forwarding
 When remote mobile operators (e.g. Google Pixel 11 Pro) need to chat with the local AI swarm, they connect through **Tailscale Serve** over encrypted WireGuard:
-* Phone queries: `https://fedora.example-tailnet.ts.net/api/chat`
+* Phone queries: `https://quant-yoga-7-2-in-1-14akp10.example-tailnet.ts.net/api/chat`
 * Tailscale Serve terminates mutual TLS and proxies internally to `http://127.0.0.1:9000`.
 * The Ollama port (`11434`) remains strictly inaccessible to the network.
 
@@ -216,7 +216,7 @@ When remote mobile operators (e.g. Google Pixel 11 Pro) need to chat with the lo
 
 ## 7. Performance Optimization & Resource Bounds (Yoga 7 / Ryzen 7)
 
-The Lenovo Yoga 7 workstation has an **AMD Ryzen 7 8840HS** processor with **14GB of usable RAM**. Because system memory is shared with the Radeon 780M iGPU, model execution must be managed to prevent swap thrashing:
+The Lenovo Yoga 7 workstation has an **AMD Ryzen AI 5 340** processor with **14GB of usable RAM**. Because system memory is shared with the Radeon 780M iGPU, model execution must be managed to prevent swap thrashing:
 
 ### Recommended Operational Profiles:
 

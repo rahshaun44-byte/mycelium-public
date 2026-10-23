@@ -14,7 +14,7 @@ The Quantum Flex DePIN platform has completed the **Windows-Native Operational P
 | Component | Status | Target / Port | Ground Truth Proof |
 |---|---|---|---|
 | **Windows Sentinel** | 🟢 **ACTIVE** | `wevtapi.dll` $\rightarrow$ PG | `sentinel_push.exe` (309 KB, MSVC C++20) |
-| **Ingestion Gateway** | 🟢 **ACTIVE** | `100.64.1.29:8080` | Bound strictly to Tailscale mesh; Ed25519 DPI active |
+| **Ingestion Gateway** | 🟢 **ACTIVE** | `100.64.1.31:8080` | Bound strictly to Tailscale mesh; Ed25519 DPI active |
 | **PostgreSQL 15** | 🟢 **ACTIVE** | `127.0.0.1:5432` | Append-only enforced for `quantum_sentinel` (27 rows committed) |
 | **PQC Agility Engine** | 🟢 **ACTIVE** | `ML-KEM-768` / `ML-DSA-65` | All 15 unit tests green; Auto-restoration engine online |
 | **Athena RAG Memory** | 🟢 **ACTIVE** | `127.0.0.1:8001` | **382 Active Neural Embeddings** across 41 documents |
@@ -36,17 +36,17 @@ The infrastructure enforces a zero-trust single-NAT boundary over Starlink and T
    ┌──────────┴────────────────────────────────────────┐
    │                                                   │
 [ Wi-Fi LAN: 192.168.100.15 ]                [ Tailscale Zero-Trust Overlay ]
-(Gateway Socket: INVISIBLE / CLOSED)         (Yoga Master Node: 100.64.1.29)
+(Gateway Socket: INVISIBLE / CLOSED)         (Yoga Master Node: 100.64.1.31)
                                                        │
                            ┌───────────────────────────┴───────────────────────────┐
                            ▼                                                       ▼
                  [ Ingestion Gateway ]                                   [ Pixel 11 Pro Node ]
-                 (100.64.1.29:8080)                                       (100.64.1.30)
+                 (100.64.1.31:8080)                                       (100.64.1.16)
 ```
 
-* **Tailscale Mesh IP:** `100.64.1.29` (Master Node)
+* **Tailscale Mesh IP:** `100.64.1.31` (Master Node)
 * **Local LAN IP:** `192.168.100.15` (TP-Link DHCP)
-* **Socket Lockdown:** Gateway port `8080` binds **exclusively to `100.64.1.29:8080`**, preventing any lateral scanning from local Wi-Fi devices.
+* **Socket Lockdown:** Gateway port `8080` binds **exclusively to `100.64.1.31:8080`**, preventing any lateral scanning from local Wi-Fi devices.
 
 ---
 
@@ -120,7 +120,7 @@ Athena's neural intelligence is fully indexed and operational:
   2. 29 native PostgreSQL runtime DLLs (`libpq.dll`, OpenSSL, etc.).
   3. `pki/` mTLS certificates.
   4. `NODE_OPERATOR_AGREEMENT.txt` (Legal charter: independent contractor terms, non-payload snooping, $QFX utility disclosures).
-  5. `Install-Node.ps1` (One-click installer with interactive license consent and automatic Windows Scheduled Task registration pointing to `http://100.64.1.29:8080/api/v1/telemetry/submit`).
+  5. `Install-Node.ps1` (One-click installer with interactive license consent and automatic Windows Scheduled Task registration pointing to `http://100.64.1.31:8080/api/v1/telemetry/submit`).
 
 ---
 

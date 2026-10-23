@@ -99,6 +99,6 @@ That is how a day can feel completely full while leaving real-world leverage at 
 
 ## 8. Durable Host Facts on Record
 
-* **Primary Host:** Lenovo Yoga 7i (AMD Ryzen 7 8840HS, Fedora Workstation 44, user `quant`, loopback `127.0.0.1`). Do NOT create a user named `operator` (UID 11 is a system user).
+* **Primary Host:** Lenovo Yoga 7 2-in-1 (AMD Ryzen AI 5 340, Fedora Workstation 44, user `quant`, loopback `127.0.0.1`). Do NOT create a user named `operator` (UID 11 is a system user).
 * **Custody Matrix:** 3-of-5 Shamir. Yoga holds $\le 2$ shards (`~/qfx-shards/`). Engine defaults to `LOCKED`.
 * **Zero Trust:** No `0.0.0.0` binds. Firewalld active. Tailscale Serve on loopback only.

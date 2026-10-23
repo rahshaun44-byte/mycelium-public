@@ -19,6 +19,17 @@ be read as separate systems that happen to share a Postgres instance:
   `quantum-flex-engine-mycelium` (`build_check/quantum_flex_engine`, mTLS on `127.0.0.1:9444`),
   boots LOCKED, and is unsealed only by an operator via `scripts/unlock_engine.sh`.
 
+## Nodes (verified live 2026-10-23)
+
+| Node | Hardware / OS | Tailscale | LAN | Role |
+|---|---|---|---|---|
+| `qfx-yoga` (`quant-Yoga-7-2-in-1-14AKP10`) | Yoga 7 2-in-1 14AKP10, Ryzen AI 5 340, 14 GiB, Ubuntu 26.04.1 LTS, kernel 7.0.0-38, Pluton TPM 2.0, no LUKS | `100.64.1.31` | `192.168.100.15` | Host engine, share 1 |
+| `qfx-pixel` (`pixel-11-pro-1`) | Google Pixel 11 Pro, Titan M2 | `100.64.1.16` | DHCP | HUD / OOB signer, share 5 |
+| `g6pro` | HP ProBook 450 G6, i5-8265U, 7.4 GiB, Debian 13, kernel 6.12 | `100.64.1.19` | `192.168.100.13` | Kafka `cp-kafka:7.6.0` on `:9092`, UI `:8090`; share 2 |
+
+Tailnet `example-tailnet.ts.net`. A stale `pixel-11-pro` node (`100.64.1.22`) is still registered, offline.
+The S23 FE (stolen) and the HP Pavilion are not QuantumFlex nodes.
+
 ## Build & run
 
 **C++ engine:**

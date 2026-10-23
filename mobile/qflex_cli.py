@@ -27,6 +27,12 @@ from typing import Dict, Any, Tuple, Optional, List
 
 CLI_VERSION = "2.6.0-qf-m1"
 
+# Live tailnet facts (verified 2026-10-23 via `tailscale status`)
+YOGA_HOSTNAME = "quant-Yoga-7-2-in-1-14AKP10"
+YOGA_TAILSCALE_IP = "100.64.1.31"
+YOGA_MAGICDNS = "quant-yoga-7-2-in-1-14akp10.example-tailnet.ts.net"
+PIXEL_TAILSCALE_IPS = ("100.64.1.16",)
+
 # Candidate host sequence: dynamically prioritized by local execution context
 TIMEOUT_FAST = 1.2
 TIMEOUT_STANDARD = 6.0
@@ -34,18 +40,16 @@ TIMEOUT_CHAT = 60.0
 
 def get_candidate_hosts() -> List[Tuple[str, int]]:
     # If running directly on the master host, loopback is immediate
-    if socket.gethostname() == "fedora" or os.environ.get("USER") == "quant":
+    if socket.gethostname() == YOGA_HOSTNAME or os.environ.get("USER") == "quant":
         return [
             ("127.0.0.1", 9000),
-            ("100.64.1.17", 9000),
-            ("fedora", 9000),
-            ("192.168.100.11", 9000),
+            (YOGA_TAILSCALE_IP, 9000),
+            (YOGA_MAGICDNS, 9000),
         ]
-    # On mobile devices, Tailscale mesh IP is primary, then MagicDNS, then Wi-Fi
+    # On mobile devices, Tailscale mesh IP is primary, then MagicDNS
     return [
-        ("100.64.1.17", 9000),
-        ("fedora", 9000),
-        ("192.168.100.11", 9000),
+        (YOGA_TAILSCALE_IP, 9000),
+        (YOGA_MAGICDNS, 9000),
         ("127.0.0.1", 9000),
     ]
 
@@ -131,11 +135,11 @@ def resolve_node_identity() -> NodeIdentity:
 
     # 1. Google Pixel 11 Pro Check
     is_pixel_model = any("Pixel 11" in str(m) for m in [model, product_name]) or any("grizzly" in str(m) for m in [product_name, device_name])
-    has_pixel_ip = any(ip in local_ips for ip in ["100.64.1.11", "100.64.1.18"]) or "pixel" in hostname.lower()
+    has_pixel_ip = any(ip in local_ips for ip in PIXEL_TAILSCALE_IPS) or "pixel" in hostname.lower()
 
     if is_pixel_model or has_pixel_ip:
-        tail_ip = "100.64.1.11" if "100.64.1.11" in local_ips else ("100.64.1.18" if "100.64.1.18" in local_ips else "100.64.1.11")
-        transport = "usb+tailscale" if any(ip in local_ips for ip in ["100.64.1.11", "100.64.1.18"]) else "tailscale"
+        tail_ip = next((ip for ip in PIXEL_TAILSCALE_IPS if ip in local_ips), PIXEL_TAILSCALE_IPS[0])
+        transport = "usb+tailscale" if any(ip in local_ips for ip in PIXEL_TAILSCALE_IPS) else "tailscale"
         return NodeIdentity(
             node_id="pixel-11-pro",
             role="shard-custodian",
@@ -143,16 +147,16 @@ def resolve_node_identity() -> NodeIdentity:
             tailscale_ip=tail_ip,
             transport=transport,
             privileged=True,
-            details="Hardware Titan M2 Enclave | Shamir Shard Custodian #2 | OOB Signer"
+            details="Hardware Titan M2 Enclave | Shamir Share Custodian #5 | OOB Signer"
         )
 
     # 2. Host Node Check (qfx-yoga)
-    if hostname in ("fedora", "qfx-yoga") or "100.64.1.31" in local_ips or "100.64.1.17" in local_ips or os.environ.get("USER") == "quant":
+    if hostname in (YOGA_HOSTNAME, "qfx-yoga") or YOGA_TAILSCALE_IP in local_ips or os.environ.get("USER") == "quant":
         return NodeIdentity(
             node_id="qfx-yoga",
             role="master-engine",
             model="Lenovo Yoga 7 2-in-1 14AKP10 (Ubuntu 26.04.1 LTS)",
-            tailscale_ip="100.64.1.31",
+            tailscale_ip=YOGA_TAILSCALE_IP,
             transport="loopback+mesh",
             privileged=True,
             details="Primary PQC Engine | Cryptographic Admission Anchor"
@@ -408,25 +412,25 @@ def cmd_custody(identity: NodeIdentity, base_url: str):
         print(_c(CLR_BOLD + CLR_GREEN, "  [+] NODE AUTHORIZED AS CUSTODIAL HARDWARE ANCHOR"))
         print(f"  Target Device     : {identity.model}")
         print(f"  Enclave Mechanism : Titan M2 Hardware Security Module")
-        print(f"  Custody Shard     : Shard #2 (2-of-3 threshold quorum participant)")
+        print(f"  Custody Shard     : Share #5 (3-of-5 threshold quorum participant)")
         print(f"  Out-of-Band State : ARMED (Ready for zero-trust authorization)")
         print(f"  Circuit Breaker   : ACCESSIBLE (Emergency freeze authorization available)")
     elif identity.role == "master-engine":
         print(_c(CLR_BOLD + CLR_GREEN, "  [+] MASTER ENGINE: PRIMARY CRYPTOGRAPHIC ROOT"))
         print(f"  Host Architecture : {identity.model}")
-        print(f"  Hardware Security : TPM 2.0 + AMD SEV + LUKS Immutability")
-        print(f"  Local Custody     : Holds Shards 1 & 2")
-        print(f"  Required Quorum   : Requires 1 remote shard (Pixel 11 Pro or USB Vault)")
+        print(f"  Hardware Security : Microsoft Pluton TPM 2.0")
+        print(f"  Local Custody     : Holds Share 1")
+        print(f"  Required Quorum   : Requires 2 remote shares (g6pro, Pixel 11 Pro, or USB vault)")
     else:
         print(_c(CLR_RED, "  [!] NODE IS IN READ-ONLY OBSERVER ROLE"))
         print(f"  Custody Access    : STRICTLY DENIED")
 
     print()
     print(_c(CLR_BOLD, "  Master Shamir 3-of-5 Custody Distribution:"))
-    print("    • Shards 1 & 2 : Lenovo Yoga 7i Host (LUKS encrypted / TPM 2.0)")
-    print("    • Shard 2      : Google Pixel 11 Pro (Titan M2 Hardware Keystore)")
-    print("    • Shards 3 & 4 : Unmounted Physical Hardware USB Vault")
-    print("    • Shard 5      : Air-gapped Physical Cold Vault")
+    print("    • Share 1      : Lenovo Yoga 7 2-in-1 14AKP10 (qfx-yoga)")
+    print("    • Share 2      : HP ProBook 450 G6 (g6pro)")
+    print("    • Shares 3 & 4 : Unmounted Physical USB Vault")
+    print("    • Share 5      : Google Pixel 11 Pro (qfx-pixel)")
     print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
     print()
 
