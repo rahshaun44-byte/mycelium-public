@@ -58,7 +58,8 @@
      - Normal 95% single-tailed Upper Confidence Bound (UCB): $\mathcal{W}_{\text{UCB}} = -0.0078125 + 1.645 \times 0.020399 = \mathbf{+0.0257} \ge 0$.
      - **The QuantumFlex Ruling**: Because $\mathcal{W}_{\text{UCB}} \ge 0$, genuine tripartite entanglement **cannot** be certified at 95% confidence due to finite shot noise. Stamped in permanent record: `entanglement_certified: false`.
 
-### D. NIST SP 800-90B Zero Secret Entropy Standard
+### D. Zero Secret Entropy Policy (project rule; not an SP 800-90B assessment)
+- No NIST SP 800-90B entropy-source validation has been performed, and none is claimed. A failed GHZ witness does not by itself establish zero entropy; this is a fail-closed project rule.
 - QuantumFlex enforces that data from remote, uncharacterized third-party cloud QPUs can **never** be credited as secret entropy.
 - External quantum measurements are categorized as **empirical physics research only**.
 - Secret entropy credit granted to the engine core: **`0.0 bits`**.

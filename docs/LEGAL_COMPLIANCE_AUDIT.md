@@ -7,6 +7,16 @@
 
 > **DISCLAIMER:** This is a structured legal risk analysis, not legal advice. Quantum Flex must retain a crypto-specialized attorney before token launch, data marketplace launch, or onboarding paying customers. This document is a roadmap to get there safely. **As of 2026-09-11, $QFX distribution and the data marketplace are not live** — they remain planned; do not read this audit as evidence they are currently operating.
 
+> **CORRECTIONS 2026-10-23.** An evidence review found several verdicts here
+> were stated with more certainty than the sources support. Changes:
+> the ✅ CLEAR verdicts are downgraded to "low risk, counsel to confirm"; an
+> unverified Street View precedent claim is removed; the "avoid MSB status by
+> routing through DEXes" advice is withdrawn; Pennsylvania Act 7 of 2025 is
+> added; §7 is relabeled as a self-assessment. Nothing in this file is a legal
+> opinion or an exemption. The settlement and prepaid-credit service tiers in
+> `qf-public` are suspended in code (`billing/orders.py` `SUSPENDED_TIERS`)
+> until counsel reviews them.
+
 ---
 
 ## 1. WiFi Data Collection
@@ -16,12 +26,12 @@
 SSID (network name), anonymized BSSID (last 3 octets zeroed), signal strength (dBm), channel, frequency band. No payload data. No traffic content. Broadcast radio signals only.
 
 ### ECPA Analysis
-The Electronic Communications Privacy Act (ECPA) explicitly exempts publicly broadcast radio signals. WiFi SSIDs are broadcast beacons — the network announces itself to any device in range. Collecting broadcast SSID/RSSI data is not wiretapping or unauthorized interception under ECPA. Google successfully defended this position (Street View WiFi collection, 2010–2013).  
-**Status:** CLEAR ✅
+The Electronic Communications Privacy Act (ECPA) explicitly exempts publicly broadcast radio signals. WiFi SSIDs are broadcast beacons — the network announces itself to any device in range. Collecting broadcast SSID/RSSI beacon metadata, without payload, is generally treated as lower risk under ECPA. Payload capture is a different matter: do not cite the Street View WiFi litigation as support, because that case concerned payload data and its outcome has not been verified here.  
+**Status:** 🟡 LOW RISK for beacon metadata only. Counsel to confirm. Never capture payloads.
 
 ### CFAA Analysis
 The Computer Fraud and Abuse Act prohibits accessing computers without authorization. The Quantum Flex node SDK does NOT access any computer — it reads broadcast radio signals in the air. No credentials, no authentication bypass, no network intrusion.  
-**Status:** CLEAR ✅
+**Status:** 🟡 LOW RISK as described. This holds only while the SDK never associates with, probes, or sends to networks it does not own.
 
 ### GDPR (EU) Risk
 BSSIDs are MAC addresses. Under GDPR, MAC addresses are considered personal data because they can identify a specific device and, by extension, a person's home or workplace. Even with last-3-octet anonymization, EU regulators (particularly German DPAs) have ruled that WiFi network identifiers tied to location constitute personal data.  
@@ -63,7 +73,7 @@ The SEC issued a no-action letter to **DoubleZero (Sept 29, 2025)** for DePIN to
 *Key quote from SEC guidance:* *"Token distribution is not designed to raise capital or profit from managerial efforts — it rewards labor or services."*
 
 ### The Helium Warning
-The SEC also sued Nova Labs (Helium's developer) over HNT tokens, claiming they were unregistered securities. Helium hailed the DoubleZero letter as progress, but the underlying lawsuit demonstrates the risk is real.
+The SEC also sued Nova Labs (Helium's developer) over HNT tokens, claiming they were unregistered securities. The case's current status is not re-verified here; check it before relying on either precedent. A no-action letter covers only the requester's specific facts.
 
 ### How to Stay on the Right Side
 1. **NEVER market $QFX as an investment.** Not in emails, social media, Discord, nowhere. Token = payment for work, not return on investment.
@@ -72,7 +82,11 @@ The SEC also sued Nova Labs (Helium's developer) over HNT tokens, claiming they 
 4. **Consult a crypto attorney** — specifically one familiar with SEC no-action letters and Reg D/Reg A+ exemptions (Firms: Cooley LLP, Wilson Sonsini, or specialized crypto boutiques).
 
 ### FinCEN / MSB Compliance
-If Quantum Flex operates a token exchange or allows users to convert $QFX to USD directly on-platform, it may qualify as a Money Services Business (MSB), requiring FinCEN registration and state money transmission licenses. **Avoid by:** routing all conversions through third-party DEXes (Raydium, Jupiter) — Quantum Flex never touches fiat.  
+If Quantum Flex operates a token exchange or allows users to convert $QFX to USD directly on-platform, it may qualify as a Money Services Business (MSB), requiring FinCEN registration and state money transmission licenses. Routing conversions through third-party DEXes does **not** by itself avoid MSB or money-transmitter status. Under FinCEN FIN-2019-G001, status turns on the operator's actual activities and control, not on whether fiat is touched. Accepting and transmitting convertible virtual currency counts as transmission.
+
+**Pennsylvania:** Act 7 of 2025 (signed 2025-06-27) brought virtual-currency transmission under the Money Transmitter Act. Transmitting virtual currency for a fee on behalf of others requires a DoBS license, with no grace period after the effective date ([DoBS](https://www.pa.gov/agencies/dobs/newsroom/dobs-regulating-virtual-currency-transmitters-thanks-to-new-bipa.html)). This applies directly to any paid settlement, escrow, or prepaid-credit service run from PA.
+
+**Safe today:** paying from project-owned funds for project-internal purposes, and publishing software. **Not without counsel:** holding or releasing customer funds, operating escrow or payouts for clients, or prepaid credits drawn down by USDC release.  
 **Status:** 🔴 ATTORNEY REQUIRED before token launch
 
 ---
@@ -107,10 +121,10 @@ If selling data derived from EU residents' networks, data buyers become joint co
 **Verdict:** 🟡 **CONTRACTOR MODEL is correct**
 
 ### IRS Classification & Notice 2024-57
-The IRS explicitly ruled that node operators maintaining a blockchain network are NOT brokers under the digital asset broker reporting regulations (Notice 2024-57). However, token rewards ARE taxable income at fair market value on the date received.
+IRS Notice 2024-57 deferred broker reporting for certain transaction types, including some validation activity. It is interim relief, not a ruling that node operators are never brokers. Confirm the current position with a tax professional. However, token rewards ARE taxable income at fair market value on the date received.
 
 **Quantum Flex obligations:**
-- Issue **Form 1099-DA** (new digital asset form, effective 2025) to node operators earning over $600/year in $QFX rewards.
+- Confirm with a tax professional which information return, if any, applies to $QFX rewards paid to operators. Form 1099-DA is a broker form and may not be the right one; 1099-MISC/NEC thresholds also apply.
 - Do NOT classify node operators as employees — they are independent contractors.
 - No payroll taxes, no benefits, no W-2.
 - Node operators are responsible for their own tax reporting on rewards received.
@@ -162,12 +176,12 @@ A Wyoming DAO LLC remains an **optional** later structure for token governance (
 
 ---
 
-## 7. Verified Clean Baseline
-- ✅ WiFi broadcast scanning: ECPA / CFAA compliant.
+## 7. Self-Assessed Baseline (not legal clearance)
+- 🟡 WiFi broadcast scanning: low ECPA/CFAA risk as described; not attorney-reviewed.
 - ✅ BSSID anonymization already implemented.
 - ✅ `127.0.0.1` gateway binding (Zero-trust unexposed).
 - ✅ No payload / content interception.
-- ✅ Node operator contractor model verified.
+- 🟡 Node operator contractor model proposed (no operators exist; no agreement signed).
 - ✅ Token rewards for labor (Proof-of-Telemetry), not passive investment.
 - ✅ Zero presale / zero ICO structure.
 

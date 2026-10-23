@@ -210,7 +210,7 @@ Earlier recovery MATCH proves compatibility with the saved ledger, not secret cu
 - **Primary QPU**: `ibm_marrakesh` (Heron Revision 2, 156 Physical Transmon Qubits, heavy-hex topology).
 - **Execution Log & Artifact Boundaries**:
   - Research outputs stored strictly outside Git checkouts under `/home/quant/qf-research/` (mode `0700` dir, mode `0600` files).
-  - Entropy Credit: Zero secret entropy claimed per NIST SP 800-90B. Provider-visible research data is never used for key creation.
+  - Entropy Credit: QuantumFlex policy credits zero secret entropy to provider-visible research data, and never uses it for key creation. This is a project fail-closed rule; it is not a NIST SP 800-90B assessment, and no 800-90B compliance is claimed.
 - **Run Records**:
   1. `ibm-pilot-20261014-run3-marrakesh` (Job `db7t27qraffc73fb856g`): 8,192 shots single-qubit Hadamard pilot on Q0 (4.0s metered). Zeros: 3,990 ($48.71\%$), Ones: 4,202 ($51.29\%$). Demonstrates superior gate symmetry over older revisions (e.g. `ibm_kingston` $41.04\% / 58.96\%$).
   2. `ibm-pilot-20261014-run4-bell` (Job `db7t5muil99s73for1m0`): 8,192 shots 2-qubit Bell pair on transmons `[0, 1]` (4.0s metered). $\Pi_{\text{pop}} = 94.53\%$, Parity contrast $\langle Z_0 Z_1 \rangle = +0.8906$.
@@ -296,7 +296,7 @@ Earlier recovery MATCH proves compatibility with the saved ledger, not secret cu
   - **Parameters**: 2 physical qubits (`[0, 1]`), $H(0) \to CX(0, 1) \to M$, 1024 shots. Execution duration: 6.9 seconds on quantum hardware.
   - **Entanglement Correlation ($\Pi_{00+11}$)**: **`68.95%`** (706/1024 counts).
   - **Thermal / Readout Noise**: `31.05%` (318/1024 counts in orthogonal states $|01\rangle$ and $|10\rangle$), consistent with unmitigated transmon SPAM error.
-- **Epistemic & Security Boundary**: Under NIST SP 800-90B and QuantumFlex ground truth rules, third-party cloud quantum data is strictly categorized as external empirical physics research. Zero secret entropy credit is granted to the QuantumFlex engine seed pool.
+- **Epistemic & Security Boundary**: Under QuantumFlex ground truth rules, third-party cloud quantum data is categorized as external empirical physics research, and zero secret entropy credit is granted to the engine seed pool. That is project policy. It is not derived from the GHZ witness result, and it is not a NIST SP 800-90B entropy-source validation (none has been performed).
 
 ### D. Mycelium Spore Packaging & Standalone Portability (`tools/qf_spore.py`)
 - **Portability Tool**: Developed and verified `tools/qf_spore.py` for packaging self-contained spore bundles with dependency manifests, cryptographic checksums, and clean extraction verification.
@@ -733,7 +733,7 @@ Authoritative update from Chief Architect Rocky:
 
 4. **Web3 Grant & Network Ground Truth (`reports/Builder funding status October 2026.md`)**:
    - Grounded all grant claims: 0 of 11 programs pay for local tests; active routes require live on-chain deployments moving real value.
-   - Refuted claims: Circle award range ($5k-$100k), 1-5 ETH Base grants, ongoing Base rewards for deployed contracts, and retroactive Optimism paybacks are outdated or unsubstantiated. "14 of 881" cohort figure has no source.
+   - Unsubstantiated claims: the Circle award range ($5k-$100k), ongoing Base rewards for deployed contracts, and retroactive Optimism paybacks (Retro Funding was paused). The Base Builder Grants program (about 1-5 ETH, retroactive) is documented by Base, but its current availability and this project's eligibility are unverified (correction 2026-10-23). "14 of 881" cohort figure has no source.
    - Recipient obligations: Form W-9, KYC, ordinary income tax + 15.3% self-employment tax, PA flat 3.07% income tax.
    - Arc Network Ground Truth: EVM Osaka baseline; `PUSH0` verified working; `evm_version = "paris"` retained in `foundry.toml` for universal portability; USDC duality (18-decimal native gas / 6-decimal ERC-20); 20 gwei gas floor enforced; CCTP domain 26.
    - Keystore Invariant: Deployer key encrypted in `~/.foundry/keystores/deployer`, eliminating raw `--private-key` flags in terminal commands.
