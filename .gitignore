@@ -109,3 +109,6 @@ s23fe/
 /scripts/posthog_smoke.js
 /.claude/skills/replay-vision-*/
 .android/
+
+# Browser CSP violation reports (sentinel.browser_guard)
+logs/csp_violations.jsonl
