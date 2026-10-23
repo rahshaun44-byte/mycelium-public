@@ -72,6 +72,49 @@ jobs:
             fi
             echo "Evidence determinism verified (E_A == E_B)."
 
+  test-opa-mutation-engine:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install Open Policy Agent (OPA) & Pytest
+          command: |
+            curl -L -o /tmp/opa https://openpolicyagent.org/downloads/v1.2.0/opa_linux_amd64_static
+            chmod 755 /tmp/opa
+            sudo mv /tmp/opa /usr/local/bin/opa
+            opa version
+            python -m pip install --upgrade pip pytest
+      - run:
+          name: Run AST-Aware Rego Mutation Suite & Bootgate Policy Verification
+          command: |
+            if [ -f tests/test_ast_mutation_engine.py ]; then
+              pytest -v tests/test_ast_mutation_engine.py
+            fi
+            if [ -f sentinel/policies/bootgate.rego ]; then
+              python3 scripts/ast_mutation_engine.py sentinel/policies/bootgate.rego --json-out /tmp/bootgate_mutation_report.json
+            fi
+
+  test-solidity-settler:
+    docker:
+      - image: cimg/base:current
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Initialize Git Submodules & Install Foundry
+          command: |
+            git submodule update --init --recursive
+            curl -L https://foundry.paradigm.xyz | bash
+            ~/.foundry/bin/foundryup
+      - run:
+          name: Run Foundry Contract Tests (EVM Target Paris, Base & Arc USDC Settler)
+          command: |
+            if [ -f foundry.toml ]; then
+              ~/.foundry/bin/forge test -vvv
+            fi
+
   test-usdc-settlement-mock:
     docker:
       - image: cimg/python:3.12
@@ -95,6 +138,10 @@ workflows:
       - test-pqc-daemon
       - audit-credential-hygiene
       - verify-ledger-determinism
+      - test-opa-mutation-engine
+      - test-solidity-settler
       - test-usdc-settlement-mock:
           requires:
             - verify-ledger-determinism
+            - test-opa-mutation-engine
+            - test-solidity-settler

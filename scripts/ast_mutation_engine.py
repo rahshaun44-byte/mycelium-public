@@ -178,8 +178,9 @@ def run_mutation_engine(policy_path: str, test_target: Optional[str] = None, jso
             or len(baseline_results) == 0
         )
         if baseline_failed:
-            report["fault_reason"] = f"Baseline tests failed or errored on {policy_dir}"
-            print(f"EXECUTION_FAULT: Baseline tests failed on {policy_dir}.", file=sys.stderr)
+            detail = (baseline_proc.stderr or baseline_proc.stdout).strip()
+            report["fault_reason"] = f"Baseline tests failed or errored on {policy_dir}: {detail}"
+            print(f"EXECUTION_FAULT: Baseline tests failed on {policy_dir}: {detail}", file=sys.stderr)
             write_json_report(json_out, report)
             return 2
 
