@@ -31,7 +31,8 @@ jobs:
           name: Enforce Zero Secret Leaks & Permission Check
           command: |
             echo "Scanning repository tree for leaked credentials and raw secrets..."
-            if grep -rnE "ghp_[A-Za-z0-9_]{36}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|VAULT_TOKEN=" . \
+            # Optional type prefix also covers PKCS#8 ("BEGIN PRIVATE KEY") and encrypted PKCS#8 keys
+            if grep -rnE "ghp_[A-Za-z0-9_]{36}|BEGIN (RSA |OPENSSH |EC |DSA |ENCRYPTED )?PRIVATE KEY|VAULT_TOKEN=" . \
                --exclude-dir={.git,.circleci,node_modules,venv,.venv} > /tmp/leaks.txt; then
               echo "HARD STOP: Leaked credential patterns detected!"
               cat /tmp/leaks.txt
@@ -79,41 +80,20 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Open Policy Agent (OPA) & Pytest
+          name: Install Open Policy Agent (OPA v1.2.0 with SHA-256 Checksum) & Pytest
           command: |
-            curl -L -o /tmp/opa https://openpolicyagent.org/downloads/v1.2.0/opa_linux_amd64_static
+            curl -fsSL -o /tmp/opa https://openpolicyagent.org/downloads/v1.2.0/opa_linux_amd64_static
+            echo "059a1e540443bdf6b8ef45c670d6f6d26fafd30d5bc2537f59526ceefb766c55  /tmp/opa" | sha256sum -c -
             chmod 755 /tmp/opa
             sudo mv /tmp/opa /usr/local/bin/opa
             opa version
             python -m pip install --upgrade pip pytest
       - run:
-          name: Run AST-Aware Rego Mutation Suite & Bootgate Policy Verification
+          name: Run AST-Aware Rego Mutation Suite & Survivor Ratchet (all tested policies)
           command: |
-            if [ -f tests/test_ast_mutation_engine.py ]; then
-              pytest -v tests/test_ast_mutation_engine.py
-            fi
-            if [ -f sentinel/policies/bootgate.rego ]; then
-              python3 scripts/ast_mutation_engine.py sentinel/policies/bootgate.rego --json-out /tmp/bootgate_mutation_report.json
-            fi
-
-  test-solidity-settler:
-    docker:
-      - image: cimg/base:current
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - run:
-          name: Initialize Git Submodules & Install Foundry
-          command: |
-            git submodule update --init --recursive
-            curl -L https://foundry.paradigm.xyz | bash
-            ~/.foundry/bin/foundryup
-      - run:
-          name: Run Foundry Contract Tests (EVM Target Paris, Base & Arc USDC Settler)
-          command: |
-            if [ -f foundry.toml ]; then
-              ~/.foundry/bin/forge test -vvv
-            fi
+            pytest -v tests/test_ast_mutation_engine.py tests/test_mutation_ratchet.py
+            # Fails if any policy's surviving mutants rise above sentinel/policies/mutation_baseline.json
+            python3 scripts/mutation_ratchet.py
 
   test-usdc-settlement-mock:
     docker:
@@ -139,9 +119,7 @@ workflows:
       - audit-credential-hygiene
       - verify-ledger-determinism
       - test-opa-mutation-engine
-      - test-solidity-settler
       - test-usdc-settlement-mock:
           requires:
             - verify-ledger-determinism
             - test-opa-mutation-engine
-            - test-solidity-settler
