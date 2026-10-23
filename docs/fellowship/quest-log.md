@@ -1,6 +1,6 @@
 # Quest Log
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-23
 
 ## Open
 
@@ -29,3 +29,9 @@ Decisions and commitments that survive across sessions. One line per entry, date
 - 2026-10-20 — DECIDED (Rock): Hard Real-Node & Zero-Fedora Invariant locked (truth log §19.11). Host is Ubuntu 26.04.1 LTS on qfx-yoga (Pluton TPM 2.0). There is NO Fedora, NO HP Pavilion, and NO Galaxy S23 FE. Active real nodes are qfx-yoga, qfx-pixel, and g6pro only.
 - 2026-10-20 — DECIDED (Rock): Formal disavowal of qresear.ch, QAnon, and QFS ("Quantum Financial System") conspiracy mythology (truth log §19.12). QuantumFlex operates strictly on verified post-quantum mathematics (FIPS 203/204), Circle USDC (6 decimals), and bare-metal real nodes.
 - 2026-10-22 — DONE: Pixel 11 Pro Tailscale IP updated to true active IP 100.64.1.16 (`pixel-11-pro-1`, DERP/mesh verified). Updated bot_server.py, teammates.py, ACL policies (JSON/HuJSON), handoff specs, and truth log §19.13.
+- 2026-10-23 — DONE: realignment pass. pytest 432 passed / 9 skipped. CLAUDE.md corrected: qf-bot binds 127.0.0.1:9001; immune-daemon, swarm-worker, active-defense disabled since 10-21 10:45; root gatekeeper-daemon disabled since 10-20 21:14; leftover root quantum_flex_engine.service gone. Browser guard live on :8000 and :9001 (report-only CSP).
+- 2026-10-23 — CLOSED (binding only): qf-bot no longer on 0.0.0.0:9001. Pixel HTTPS path not re-verified; both Pixel peers offline at check.
+- 2026-10-23 — CONFIRMED (Rock): Rock created and pushed the private GitHub repo `rahshaun44-byte/mycelium` created 10-22 20:31 EDT and pushed six times through 23:58, This supersedes the 10-08 Option A no-push rule for mycelium in practice. Credential rotation, the stated precondition, is still open.
+- 2026-10-23 — CONFIRMED (Rock): Rock replaced `~/.local/libexec/quantumflex/verify-provenance` 10-22 23:39 to match `37a2805`. release/ manifest last signed 09-25, so it was installed by hand, outside the installer gate.
+- 2026-10-23 — FIXED (uncommitted): `build_clean/` binaries from `48a27ff` untracked and ignored. Hardcoded amara-matrix password in `scripts/restore_quantumflex_node.sh` replaced with required `POSTGRES_PASSWORD`; the literal is stale (matches no live or .env value) but stays in pushed history.
+- 2026-10-23 — OPEN: phantom-device code still present (S23 FE detection in `mobile/qflex_cli.py`, Pavilion backup fetch in `scripts/restore_quantumflex_node.sh`, `scripts/fedora_yoga7i_setup.sh`, `scripts/qf_kafka_telemetry_forwarder.py`). Display strings and docstrings fixed; behavior left for Rock.

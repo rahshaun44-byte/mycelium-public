@@ -55,17 +55,18 @@ listener's cert paths are resolved under it, and neither directory-creates for y
 `sentinel/requirements.txt`, `mcp_layer/requirements-worker.txt`, `api_node/requirements.txt`. The
 working venv used on this host is `~/mycelium/venv` (a symlink to `~/.venv/qflex`, Python 3.14);
 `immune-daemon` instead runs from the repo-local `.venv`. The repo includes
-a `pytest.ini` and integration/unit test suite under `tests/` (37 files, 427 tests collected as of 2026-10-20). Run tests with:
+a `pytest.ini` and integration/unit test suite under `tests/` (441 tests collected as of 2026-10-23: 432 passed, 9 skipped). Run tests with:
 `pytest` or `/home/quant/mycelium/venv/bin/python3 -m pytest -q`. (No `.clang-tidy` or `.clang-format`
 config currently exists).
 
 **How this actually runs**: not via a single entrypoint — each Python component is its own
-systemd **user** service. Since 2026-10-20 (afternoon) every user unit is enabled and running:
+systemd **user** service. Running as of 2026-10-23:
 `amara-dashboard` (:8000), `api-node` (:8080), `athena-node` (:8001), `qf-monitor`, `qf-bot`
-(**0.0.0.0:9001**, the only non-loopback listener, for the Pixel app), `quantum-flex-engine-mycelium`,
-`opa-immune`, `amara-matrix`, `qf-lid-guard`, `immune-daemon`, `swarm-worker`, `active-defense`
-(alert-only), `qflex-mcp` (:9000), plus `sentinel-drive.timer` (30s), `amara-predict.timer` (5m),
-`neurogenesis.timer` (03:00). amara-dashboard, api-node, athena-node and qf-monitor each have
+(`127.0.0.1:9001`; no non-loopback app listener remains), `quantum-flex-engine-mycelium`,
+`opa-immune`, `amara-matrix`, `qf-lid-guard`, `qflex-mcp` (:9000), plus `sentinel-drive.timer`
+(30s), `amara-predict.timer` (5m), `neurogenesis.timer` (03:00). `immune-daemon`, `swarm-worker`
+and `active-defense` are **disabled** (last active 2026-10-21 10:45). amara-dashboard and qf-bot
+send hardening headers and a report-only CSP (`sentinel/browser_guard.py`). amara-dashboard, api-node, athena-node and qf-monitor each have
 a dedicated least-privilege login (`amara_dashboard_service`, `api_node_service`, `athena_reader`,
 `qf_monitor_writer`) from a `90-dedicated-database.conf` drop-in pointing at
 `~/projects/beta/secrets/*.env`, which overrides `.env`. sentinel and neurogenesis read `.env`
@@ -74,7 +75,8 @@ superuser is `rocky`. Inside the container, `pg_hba` trusts local and 127.0.0.1 
 `integrity_registry` baseline is the `postgres:15-alpine` binary. If the image changes, rebaseline
 first: on a mismatch, sentinel's hardstop runs `podman pause amara-matrix`. OPA threat flags can be changed at runtime with
 `PUT /v1/data/threat_flags`; what `threat_flags.json` says may not be live. A root system unit,
-`gatekeeper-daemon.service`, runs `/opt/quantumflex/gatekeeper_daemon.py` (outside this repo).
+`gatekeeper-daemon.service` (`/opt/quantumflex/gatekeeper_daemon.py`, outside this repo), is
+disabled and inactive since 2026-10-20 21:14.
 `opa-immune` also loads `~/Documents/qf/policies/quantum_admission.rego`. Ollama runs as the
 **system** `ollama.service`. `systemd-backup/` in this repo is exactly
 what it sounds like — backed-up unit files, not the live ones; the live units are under
@@ -159,9 +161,8 @@ workers never double-pick a task, executes, and logs outcome to `memory_logs`. B
 **Repo-state gotchas:**
 - The former second, root-level Quantum Flex deployment (`/usr/local/libexec/quantum-flex/`,
   `/etc/quantum-flex/`, `/opt/quantum-flex-ingest/`) and its `quantum-flex-harvester.service` are
-  gone as of 2026-09-26. One leftover: `/etc/systemd/system/quantum_flex_engine.service` (root unit,
-  disabled, inactive) pointing at a stale `/home/quant/pqc-immune-daemon/mycelium/build/` path — do
-  not enable it. Check `systemctl list-units --all | grep -i quantum` before assuming a service
+  gone as of 2026-09-26; the leftover root `quantum_flex_engine.service` is gone too (2026-10-23).
+  Check `systemctl list-units --all | grep -i quantum` before assuming a service
   exists. Current runtime record: `docs/CURRENT_SYSTEM_SNAPSHOT_2026-09-26.md`.
 - **Multiple AI coding sessions have edited this repo concurrently** at least once already,
   producing a duplicate/incompatible reimplementation of `BaeNode` and an accidental commit of the

@@ -90,7 +90,7 @@ if [[ -f "$RESTORE_TMP/qfx-postgres-dump-20260927.sql" ]]; then
     podman run -d --name amara-matrix \
         -p 127.0.0.1:5432:5432 \
         -e POSTGRES_USER=amara_admin \
-        -e POSTGRES_PASSWORD=jgTGOEaXvi4rUfcClvLhsA7TRhkj7xAb \
+        -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD before restoring}" \
         -e POSTGRES_DB=telemetry \
         docker.io/library/postgres:15-alpine || true
 

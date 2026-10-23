@@ -5,7 +5,7 @@ Quantum Flex Swarm Orchestrator (The Four Agents)
 Multi-agent tactical router & thread orchestrator:
 - Agents: MYCELIA, SENTINEL, ARIA, ATHENA
 - Zero-backpressure /hardstop execution (inspects variables, queues 0 tasks)
-- Live mesh topology reporting (qfx-yoga, qfx-pixel, qfx-edge, lyceum-peer)
+- Live mesh topology reporting (qfx-yoga, qfx-pixel, g6pro)
 - Read-only observation ledger for Lyceum consultations
 - Grounded in verified live telemetry & Athena vector memory
 """

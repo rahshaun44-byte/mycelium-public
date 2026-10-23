@@ -845,7 +845,7 @@ async def index():
     <div class="header-right">
       <div class="last-sync"><span class="live-dot"></span>LIVE</div>
       <div class="last-sync" style="margin-top:4px">Last sync: {ts[:19]}</div>
-      <div class="last-sync" style="margin-top:4px">Substrate: Fedora 44 · AMD Ryzen AI 5 340</div>
+      <div class="last-sync" style="margin-top:4px">Substrate: Ubuntu 26.04 LTS · AMD Ryzen AI 5 340</div>
     </div>
   </div>
 
@@ -1164,7 +1164,7 @@ async def index():
   </div>
 
   <div class="footer">
-    A.M.A.R.A. Agentic Framework v2.0 · Quantum Flex Infrastructure · Zero-Trust · Rootless Podman · Fedora 44 SELinux
+    A.M.A.R.A. Agentic Framework v2.0 · Quantum Flex Infrastructure · Zero-Trust · Rootless Podman · Ubuntu 26.04 LTS
   </div>
 </div>
 

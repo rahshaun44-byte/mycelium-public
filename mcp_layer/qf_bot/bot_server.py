@@ -5,7 +5,7 @@ Quantum Flex AI Teammates: REST & Web API Server (QF-Bot)
 Exposes the multi-agent teammate swarm over loopback and Tailscale mesh:
 - REST API for conversational dispatch, teammate handoffs, and drafts
 - Four Agents: MYCELIA, SENTINEL, ARIA, ATHENA
-- Live Mesh Topology Telemetry (qfx-yoga, qfx-pixel, qfx-edge, lyceum-peer)
+- Live Mesh Topology Telemetry (qfx-yoga, qfx-pixel, g6pro)
 - Read-Only Lyceum Consultation & Observation Handoff Engine
 - Authenticated Mobile Node Plane (QF-M1) & OTA Distribution Hub
 """

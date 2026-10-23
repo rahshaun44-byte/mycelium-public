@@ -9,6 +9,7 @@ dist/
 build/
 build_check/
 build_recovery_check/
+build_clean/
 
 # Keys and Certificates
 *.key

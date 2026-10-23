@@ -6,9 +6,9 @@ Exposes the running Quantum Flex node stack (ATHENA RAG, AMARA Dashboard,
 API Gateway, Sentinel/Tripwire, Immune Daemon) as standard Model Context Protocol
 (MCP) tools over Tailscale.
 
-Reachable from the Samsung Galaxy S23 FE and local MCP clients via:
-- SSE Endpoint:             http://100.64.1.29:9000/sse
-- Streamable HTTP Endpoint: http://100.64.1.29:9000/mcp (or /)
+Bound to 127.0.0.1:9000 for local MCP clients:
+- SSE Endpoint:             http://127.0.0.1:9000/sse
+- Streamable HTTP Endpoint: http://127.0.0.1:9000/mcp (or /)
 """
 
 import asyncio
@@ -175,7 +175,7 @@ async def api_node_status() -> dict:
 
 @server.tool()
 def tailnet_mesh_status() -> dict:
-    """Check Tailscale mesh status, local IP, and verify direct connection to Samsung Galaxy S23 FE."""
+    """Check Tailscale mesh status, local IP, and report peer connectivity."""
     try:
         res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=5)
         if res.returncode == 0:
