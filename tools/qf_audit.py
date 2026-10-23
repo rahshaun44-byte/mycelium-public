@@ -3,7 +3,7 @@
 ═════════════════════════════════════════════════════════════════════
   QUANTUM FLEX // AUTOMATED PQC & CBOM COMPLIANCE AUDITOR (qf-audit)
 ═════════════════════════════════════════════════════════════════════
-Commercial Audit Tool developed by FinallyFungus LLC.
+Commercial Audit Tool developed by Rahshaun Chambers.
 Performs automated Cryptographic Bill of Materials (CBOM) discovery,
 CycloneDX v1.5 generation, and OPA policy evaluation against
 NIST FIPS 203/204/205 and White House OMB M-26-15 compliance mandates.
@@ -242,7 +242,7 @@ def generate_cyclonedx_cbom(scan_result: Dict[str, Any], serial_uuid: str) -> Di
             "timestamp": iso_timestamp,
             "tools": [
                 {
-                    "vendor": "FinallyFungus LLC",
+                    "vendor": "Rahshaun Chambers",
                     "name": "qf-audit",
                     "version": "1.0.0",
                 }
