@@ -58,8 +58,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from sentinel import browser_guard
+browser_guard.install(app, app_name="qf-bot")
+
 orchestrator = QFBotOrchestrator()
-UI_DIR = Path(__file__).resolve().parent / "ui"
+UI_DIR =Path(__file__).resolve().parent / "ui"
 
 # ── Pydantic Request Models ───────────────────────────────────────────────────
 class ChatRequest(BaseModel):

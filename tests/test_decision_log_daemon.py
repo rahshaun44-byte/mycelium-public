@@ -58,12 +58,15 @@ def make_request(url, data=None, headers=None, method="GET"):
             body = resp.read()
             return resp.status, json.loads(body.decode("utf-8"))
     except urllib.error.HTTPError as e:
-        body = e.read()
         try:
-            parsed = json.loads(body.decode("utf-8"))
-        except Exception:
-            parsed = {"raw": body.decode("utf-8", errors="replace")}
-        return e.code, parsed
+            body = e.read()
+            try:
+                parsed = json.loads(body.decode("utf-8"))
+            except Exception:
+                parsed = {"raw": body.decode("utf-8", errors="replace")}
+            return e.code, parsed
+        finally:
+            e.close()
 
 
 def test_healthz_and_stats(test_server):

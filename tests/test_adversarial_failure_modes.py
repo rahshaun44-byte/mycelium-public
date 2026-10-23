@@ -325,6 +325,11 @@ def isolated_engine(tmp_path):
         proc.wait(timeout=2)
     except subprocess.TimeoutExpired:
         proc.kill()
+        proc.wait(timeout=2)
+    if proc.stdout:
+        proc.stdout.close()
+    if proc.stderr:
+        proc.stderr.close()
 
 
 def test_ipc_unauthorized_mutation_rejected(isolated_engine):
@@ -456,3 +461,8 @@ def test_engine_cold_restart_boots_locked(isolated_engine):
             new_proc.wait(timeout=2)
         except subprocess.TimeoutExpired:
             new_proc.kill()
+            new_proc.wait(timeout=2)
+        if new_proc.stdout:
+            new_proc.stdout.close()
+        if new_proc.stderr:
+            new_proc.stderr.close()

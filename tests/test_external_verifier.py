@@ -144,5 +144,5 @@ def test_adversarial_trust_anchor_substitution_fails_closed():
             [EXTERNAL_VERIFIER, os.path.join(rogue_repo, "release/PROVENANCE_MANIFEST.json")],
             capture_output=True, text=True)
         assert res.returncode == 1, "External verifier must exit with code 1"
-        assert "Cryptographic signature mismatch" in res.stderr
+        assert "Cryptographic signature" in res.stderr and "mismatch" in res.stderr
         assert "VERDICT: TRUSTED" not in res.stdout

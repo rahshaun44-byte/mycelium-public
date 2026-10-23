@@ -73,6 +73,9 @@ def check_dashboard_api_key(x_api_key: Optional[str]):
 
 app = FastAPI(title="A.M.A.R.A. Dashboard", version="2.0.0")
 
+from sentinel import browser_guard
+browser_guard.install(app, app_name="amara-dashboard")
+
 ATHENA_URL   = os.environ.get("ATHENA_URL", "http://127.0.0.1:8001")
 OLLAMA_URL   = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 API_NODE_URL = os.environ.get("API_NODE_URL", "http://127.0.0.1:8080")
