@@ -1,9 +1,9 @@
 # Post-Quantum Cryptographic Readiness & CBOM Audit Report
 **Audited Target:** `/home/quant/mycelium`  
-**Issuing Authority:** FinallyFungus LLC // QuantumFlex Audit Engine  
+**Issuing Authority:** Rahshaun Chambers // QuantumFlex Audit Engine  
 **Standard:** NIST FIPS 203/204/205 • OMB Memorandum M-26-15 • CycloneDX v1.5 CBOM  
-**Date:** 2026-10-22 23:46:39Z  
-**Serial ID:** `urn:uuid:145e5b9b-102a-48cd-a7b6-ff1377114592`  
+**Date:** 2026-10-23 01:16:52Z  
+**Serial ID:** `urn:uuid:e4f7e9ed-4642-430e-9205-420cc53bb36c`  
 
 ---
 
@@ -58,4 +58,4 @@ The following static buffer allocations were detected within the AST/source code
 3. **Continuous CBOM Verification**: Ensure automated CycloneDX generation is embedded in pre-commit and CI/CD pipelines.
 
 ---
-*Report certified by FinallyFungus LLC.*
+*Report certified by Rahshaun Chambers.*

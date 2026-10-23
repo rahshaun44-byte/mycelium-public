@@ -126,7 +126,7 @@ def print_banner():
 ║    ╚██████╔╝██║           ██║  ██║╚██████╔╝██████╔╝██║   ██║        ║
 ║     ╚══▀▀═╝ ╚═╝           ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝   ╚═╝        ║
 ║          {MAGENTA}POST-QUANTUM CRYPTOGRAPHIC BILL OF MATERIALS (CBOM){CYAN}         ║
-║          {MAGENTA}COMMERCIAL COMPLIANCE AUDITOR // FINALLYFUNGUS LLC{CYAN}          ║
+║          {MAGENTA}COMMERCIAL COMPLIANCE AUDITOR // RAHSHAUN CHAMBERS{CYAN}          ║
 ╚═════════════════════════════════════════════════════════════════════╝{RESET}
 """
     print(banner)
@@ -378,7 +378,7 @@ def write_artifacts(scan_result: Dict[str, Any], cbom_data: Dict[str, Any], opa_
 
     md_content = f"""# Post-Quantum Cryptographic Readiness & CBOM Audit Report
 **Audited Target:** `{scan_result['target']}`  
-**Issuing Authority:** FinallyFungus LLC // QuantumFlex Audit Engine  
+**Issuing Authority:** Rahshaun Chambers // QuantumFlex Audit Engine  
 **Standard:** NIST FIPS 203/204/205 • OMB Memorandum M-26-15 • CycloneDX v1.5 CBOM  
 **Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')}  
 **Serial ID:** `{cbom_data['serialNumber']}`  
@@ -433,7 +433,7 @@ The following static buffer allocations were detected within the AST/source code
 3. **Continuous CBOM Verification**: Ensure automated CycloneDX generation is embedded in pre-commit and CI/CD pipelines.
 
 ---
-*Report certified by FinallyFungus LLC.*
+*Report certified by Rahshaun Chambers.*
 """
     with open(report_file, "w") as f:
         f.write(md_content)
@@ -442,7 +442,7 @@ The following static buffer allocations were detected within the AST/source code
 def main():
     print_banner()
     parser = argparse.ArgumentParser(
-        description="QuantumFlex Automated PQC & CBOM Compliance Auditor (FinallyFungus LLC)",
+        description="QuantumFlex Automated PQC & CBOM Compliance Auditor (Rahshaun Chambers)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("target", nargs="?", default=".", help="Path to directory, repo, or file to audit (default: current directory)")

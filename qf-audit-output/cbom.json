@@ -2,13 +2,13 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:145e5b9b-102a-48cd-a7b6-ff1377114592",
+  "serialNumber": "urn:uuid:e4f7e9ed-4642-430e-9205-420cc53bb36c",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-22T23:46:39Z",
+    "timestamp": "2026-10-23T01:16:52Z",
     "tools": [
       {
-        "vendor": "FinallyFungus LLC",
+        "vendor": "Rahshaun Chambers",
         "name": "qf-audit",
         "version": "1.0.0"
       }
@@ -271,7 +271,7 @@
       "evidence": {
         "occurrences": [
           {
-            "location": "docs/fellowship/specs/aragorn-pqc-differential-tester.md",
+            "location": "docs/fellowship/specs/pqc-differential-tester.md",
             "line": 1
           }
         ]
@@ -372,7 +372,7 @@
             "line": 1
           },
           {
-            "location": "docs/fellowship/specs/aragorn-pqc-differential-tester.md",
+            "location": "docs/fellowship/specs/pqc-differential-tester.md",
             "line": 1
           },
           {

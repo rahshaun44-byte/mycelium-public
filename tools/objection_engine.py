@@ -28,7 +28,7 @@ BOLD = "\033[1m"
 DIM = "\033[2m"
 RESET = "\033[0m"
 
-SYSTEM_PROMPT = """You are A.T.H.E.N.A., acting as the Senior Cryptographic Architect assisting Rahshaun Chambers (FinallyFungus LLC).
+SYSTEM_PROMPT = """You are A.T.H.E.N.A., acting as the Senior Cryptographic Architect assisting Rahshaun Chambers.
 The user is a CISO, Lead Security Architect, or Director at a federal defense subcontractor who has raised an objection to our PQC-Agility Supervisor advisory outreach.
 
 Formulate an authoritative, engineering-grounded, and concise email reply (under 150 words) that:
