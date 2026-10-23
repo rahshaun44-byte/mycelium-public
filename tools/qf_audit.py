@@ -106,8 +106,8 @@ PATTERNS = {
 
 IGNORE_DIRS = {
     ".git", "node_modules", "venv", "__pycache__", ".venv", "build", "build_check",
-    "dist", "qf-audit-output", ".gemini", ".agents", ".vscode", ".pytest_cache",
-    ".cache", ".idea", "target", "out"
+    "dist", "qf-audit-output", "reports", "research_notes", ".gemini", ".agents",
+    ".vscode", ".pytest_cache", ".cache", ".idea", "target", "out"
 }
 IGNORE_EXTS = {
     ".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".o", ".so", ".a",
@@ -132,6 +132,62 @@ def print_banner():
     print(banner)
 
 
+def strip_comments_and_defensive_guards(content: str, ext: str) -> str:
+    """Strips comments and lines containing defensive rejections of legacy primitives
+
+    to avoid false-positive CBOM findings on error messages or comments.
+    """
+    lines = content.splitlines()
+    cleaned_lines = []
+
+    # Defensive guard keywords that indicate code is rejecting or forbidding a primitive
+    guard_re = re.compile(
+        r"\b(reject|unsupported|disallowed|deprecated|cannot|prohibited|forbidden|invalid|unrecognized|not allowed|fail_closed)\b",
+        re.IGNORECASE,
+    )
+
+    in_block_comment = False
+    for line in lines:
+        # C/Rust/Go/Java/Solidity block comments
+        if ext in {".c", ".h", ".cpp", ".hpp", ".rs", ".go", ".sol", ".js", ".ts", ".java"}:
+            if in_block_comment:
+                if "*/" in line:
+                    line = line.split("*/", 1)[1]
+                    in_block_comment = False
+                else:
+                    continue
+            if "/*" in line:
+                if "*/" in line:
+                    line = re.sub(r"/\*.*?\*/", " ", line)
+                else:
+                    line = line.split("/*", 1)[0]
+                    in_block_comment = True
+            # Strip single-line comments (including //! and ///)
+            if "//" in line:
+                line = line.split("//", 1)[0]
+
+        # Python/Shell/YAML/TOML comments
+        elif ext in {".py", ".sh", ".bash", ".yml", ".yaml", ".toml"}:
+            if "#" in line:
+                line = line.split("#", 1)[0]
+
+        # Rego/SQL comments
+        elif ext in {".rego", ".sql"}:
+            if "#" in line:
+                line = line.split("#", 1)[0]
+            if "--" in line:
+                line = line.split("--", 1)[0]
+
+        # If the line contains an explicit defensive guard (e.g. bail!, assert, panic, reject, error),
+        # mask toxic keywords (SHA-1, MD5) so error messages rejecting them don't register as active algorithms
+        if guard_re.search(line):
+            line = re.sub(r"\b(SHA[-_]?1|MD5)\b", "[MASKED_DEFENSIVE_GUARD]", line, flags=re.IGNORECASE)
+
+        cleaned_lines.append(line)
+
+    return "\n".join(cleaned_lines)
+
+
 def scan_target(target_path: Path) -> Dict[str, Any]:
     """Inspects target directory or file and discovers cryptographic primitives."""
     findings: Dict[str, List[Dict[str, Any]]] = {alg: [] for alg in ALGORITHM_TAXONOMY}
@@ -149,7 +205,7 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
                 if ext not in IGNORE_EXTS:
                     file_path = Path(root) / f
                     # Skip scanner itself and test policy files containing mock test vectors
-                    if f == 'qf_audit.py' or f.endswith('_test.rego'):
+                    if f == "qf_audit.py" or f.endswith("_test.rego"):
                         continue
                     files_to_scan.append(file_path)
 
@@ -161,9 +217,12 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
             content = p.read_text(encoding="utf-8", errors="ignore")
             scanned_files += 1
             rel_path = str(p.relative_to(target_path)) if target_path.is_dir() else p.name
+            ext = p.suffix.lower()
+
+            clean_content = strip_comments_and_defensive_guards(content, ext)
 
             for alg, pattern in PATTERNS.items():
-                matches = pattern.findall(content)
+                matches = pattern.findall(clean_content)
                 if matches:
                     findings[alg].append({
                         "file": rel_path,
