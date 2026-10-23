@@ -148,13 +148,21 @@ def run_mutation_engine(policy_path: str, test_target: Optional[str] = None, jso
         lines = source_bytes.splitlines(keepends=True)
 
         # 4. Check unmutated baseline test
-        # Determine test target directory or file
-        test_dir_to_run = policy_dir
-        if test_target and os.path.exists(test_target):
-            test_dir_to_run = os.path.abspath(test_target)
+        # The policy directory is always loaded; an external test target is
+        # loaded alongside it, for the baseline and for every mutant alike.
+        extra_test_paths: List[str] = []
+        if test_target:
+            abs_target = os.path.abspath(test_target)
+            if not os.path.exists(abs_target):
+                report["fault_reason"] = f"Test path not found: {test_target}"
+                print(f"EXECUTION_FAULT: Test path not found: {test_target}", file=sys.stderr)
+                write_json_report(json_out, report)
+                return 2
+            if os.path.commonpath([abs_target, policy_dir]) != policy_dir:
+                extra_test_paths.append(abs_target)
 
         baseline_proc = subprocess.run(
-            [opa_bin, "test", "--format=json", test_dir_to_run],
+            [opa_bin, "test", "--format=json", policy_dir, *extra_test_paths],
             capture_output=True,
             text=True,
         )
@@ -268,7 +276,7 @@ def run_mutation_engine(policy_path: str, test_target: Optional[str] = None, jso
 
                 # Step B: Run test suite with opa test --format=json
                 test_proc = subprocess.run(
-                    [opa_bin, "test", "--format=json", sandbox_dir],
+                    [opa_bin, "test", "--format=json", sandbox_dir, *extra_test_paths],
                     capture_output=True,
                     text=True,
                 )
