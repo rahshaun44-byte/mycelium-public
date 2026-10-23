@@ -53,7 +53,6 @@ Active Primary (FIPS Modern)        Fallback 1 (Conservative LWE)       Fallback
 | :--- | :--- | :--- | :--- | :--- |
 | **mTLS IPC Wire** | `9443` | TLS 1.3 + `QFXK` Binary Chunk Framing | Tailscale Mesh (`100.64.1.29`) & Loopback | Client cert required; 1200ms reassembly deadline; 64-session memory cap. |
 | **OPA Policy Sidecar** | `8181` | HTTP/REST (`/v1/data/membrane/health/verdict`) | **Strict Loopback (`127.0.0.1`) Only** | Zero external exposure; unreachable triggers fail-secure quarantine. |
-| **AMARA Intelligence Console** | `8000` | HTTP/WebSockets | Tailscale WireGuard Mesh Only | Accessible only by authenticated Galaxy Ultra / S23 FE clients. |
 | **API Gateway** | `8080` | HTTP/REST | Tailscale WireGuard Mesh Only | Rate-limited telemetry ingress. |
 
 ---

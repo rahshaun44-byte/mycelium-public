@@ -40,7 +40,6 @@ Neither identifier was found in the checked operator blueprint or scoped documen
 
 Read-only checks performed:
 - Yoga: RPM package names/versions filtered for Cisco, AnyConnect, ScreenConnect, ConnectWise, and Secure Client; process command names checked for those plus acise/vpnagent; /opt searched to depth 2 for relevant vendor directory names. No matches returned; /opt/daemons was inaccessible.
-- Pavilion: authenticated SSH as rocky to 100.64.1.34, Debian dpkg-query (not RPM), corresponding package/process filters, and /opt vendor-directory search. No matches returned; /opt/containerd was inaccessible.
 
 These are bounded negative observations, not proof of absence. Command names may truncate; unpackaged or renamed agents, other directories, service files, extensions, and inaccessible paths are outside this check. The paste's generic `ise` pattern would also match unrelated names. Clearing governance gates requires the actual acceptance criteria and adequate evidence coverage, not an automatically generated NONE DETECTED string.
 

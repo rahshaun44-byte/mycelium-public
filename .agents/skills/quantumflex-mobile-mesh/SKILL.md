@@ -7,7 +7,7 @@ description: >-
 
 # QuantumFlex Mobile Mesh & Edge Provisioning Playbook
 
-This skill provides procedures for deploying, synchronizing, and operating QuantumFlex mobile nodes (Google Pixel 11 Pro and Samsung Galaxy S23 FE) across ADB and the encrypted Tailscale mesh.
+This skill provides procedures for deploying, synchronizing, and operating QuantumFlex mobile nodes (Google Pixel 11 Pro) across ADB and the encrypted Tailscale mesh.
 
 ---
 
@@ -16,7 +16,6 @@ This skill provides procedures for deploying, synchronizing, and operating Quant
 | Device Identifier | Hardware Model | Connection Modes | Primary Role |
 |---|---|---|---|
 | `pixel11pro` | Google Pixel 11 Pro | ADB USB / Wi-Fi, Tailnet | Primary Operator Tactical HUD & Mobile Sentinel |
-| `s23fe` | Samsung Galaxy S23 FE | ADB USB / Wi-Fi, Tailnet | Secondary Redundant Witness & Telemetry Observer |
 
 ---
 

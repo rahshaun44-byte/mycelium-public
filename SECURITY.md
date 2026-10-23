@@ -38,8 +38,8 @@ QuantumFlex assumes an active, computationally bounded classical adversary with 
 * **Classical Baseline**: Ed25519 (RFC 8032 / Edwards-curve Digital Signature Algorithm).
 
 ### C. Master Entropy Partitioning
-* **Shamir's Secret Sharing**: $GF(256)$ polynomials with 2-of-3 threshold ($k=2, n=3$).
-* **Shard Distribution**: Shard #1 on Pixel GrapheneOS Titan M2 enclave; Shard #2 on Samsung Galaxy Ultra Knox Vault; Shard #3 on Yoga 7 physical host vault.
+* **Shamir's Secret Sharing**: $GF(256)$ polynomials with a 3-of-5 threshold ($k=3, n=5$).
+* **Shard Distribution**: Shares are held on physically separate operator devices; the custody map is kept off-repo.
 
 ---
 

@@ -38,7 +38,6 @@ QuantumFlex unifies the mobile protocol and operator interface into a single, ze
 | Node / Device | Hardware Role | Interface IP | Tailscale Mesh IP | MagicDNS Hostname | Authority Domain |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Master Node (Yoga 7)** | Control Plane & PQC Core | `192.168.100.11` | `100.64.1.17` | `fedora` | TPM 2.0 / PCR-7, Shards 1 & 2, Admission Authority |
-| **Worker Node 2 (Pavilion)** | Stream Compute / KRaft Kafka | `192.168.100.17` | `100.64.1.34` | `qf-pavilion-worker` | Kafka Broker, Stream Compute |
 | **Mobile Node 1** | Hardware Shard Anchor / OOB Signer | DHCP / USB | `100.64.1.18` | `mobile-node-1` | Hardware HSM / Enclave, Shamir Shard #2, Quorum Signer |
 | **Mobile Node 2** | Mobile Ops Console & Terminal | DHCP | `100.64.1.32` | `mobile-node-2` | Hardware Vault, Desktop Workstation, Triage Lens |
 
@@ -94,8 +93,8 @@ The unified mobile CLI operates with **observational-by-default** semantics. Rea
 ### Privileged Transitions:
 | Command | Required Role | Description |
 | :--- | :--- | :--- |
-| `qf approve <draft_id>` | `shard-custodian` or `field-workstation` | Authorizes staged draft action with a fresh, timestamped node authorization receipt. |
-| `qf discard <draft_id>` | `shard-custodian` or `field-workstation` | Discards staged draft. |
+| `qf approve <draft_id>` | `shard-custodian` | Authorizes staged draft action with a fresh, timestamped node authorization receipt. |
+| `qf discard <draft_id>` | `shard-custodian` | Discards staged draft. |
 
 > [!CAUTION]
 > If a node is identified as `unknown` / `observer`, all privileged actions are fail-closed with `PRIVILEGED_ACTIONS=DENY`.

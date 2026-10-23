@@ -38,7 +38,6 @@ Shallow work produces cheap neurological rewards:
 * Re-checking Tailscale status every 5 minutes
 
 Your brain gets a dopamine checkmark. But the cold reality did not move:
-* The Pavilion is back online and streaming telemetry (Kafka KRaft broker :9092).
 * `ledger.dat` does not exist.
 * The school assignment is still unsubmitted.
 * The bank balance has not changed.
@@ -81,7 +80,6 @@ That is how a day can feel completely full while leaving real-world leverage at 
 
 ## 6. The Sovereign Equation
 
-* $x$ = The Actual Hard Problem (e.g., offline Pavilion, unprinted ledger, coursework)
 * $h$ = The Narrative Story (identity physics, theoretical empires, what happens after)
 * $k$ = The Real Slice You Actually Execute
 
@@ -91,7 +89,6 @@ That is how a day can feel completely full while leaving real-world leverage at 
 
 ## 7. The Three Comic Truths (Host Realities)
 
-1. **The Celeron Paperweight (HP Pavilion p7-1010t):**
    * Single-core Intel Celeron 450 from 2009. Offline in Pennsylvania. Still listed on Tailscale as `debian`. Fine as furniture, pays no rent, and has zero opinions about FrodoKEM.
 2. **The Quantum Shark:**
    * Metaphor taken as a lab result. Being in "superposition" until you text someone and collapse into an unemployed human.

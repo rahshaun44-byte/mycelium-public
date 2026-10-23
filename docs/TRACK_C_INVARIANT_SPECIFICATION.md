@@ -68,7 +68,6 @@ ORDER BY id DESC;
 - `cli_all` / `cli_single`: Host administrator manual verification.
 - `qflex_status` / `qflex_hud`: Unified QuantumFlex HUD console.
 - `api_node_rest`: REST queries via `:8080/api/invariant`.
-- `pixel_11_pro` / `s23_fe_operator`: Authenticated mobile mesh operators over Tailscale.
 - `amara_dashboard_hud` / `amara_dashboard_api`: Live Matrix Dashboard HUD.
 - `qf_monitor_daemon`: Autonomic 30s biological monitoring reflex.
 

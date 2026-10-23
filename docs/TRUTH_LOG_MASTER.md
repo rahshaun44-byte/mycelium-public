@@ -63,30 +63,7 @@ Verified 2026-09-11. Historical 9443 / `~/quantum-flex/data` entries below remai
   - Security flags enforced: `no-new-privileges: true`, resource limits clamped (2 GB RAM / 1.5 CPU).
   - Cleaned up failed service states (`sentinel-drive.service` reset).
 - `[2026-09-07 05:23]`: Clean restart of `quantum_flex_engine` bound to `/home/quant/quantum-flex/data` on `127.0.0.1:9443`. Verified sealed state `LOCKED`.
-- `[2026-09-09 01:34]`: Automated headless bootstrap of Worker Node 2 (`qf-pavilion-worker`) over local Wi-Fi. Authorized passwordless Ed25519 root SSH key.
-- `[2026-09-09 01:38]`: Worker Node 2 joined to Tailscale zero-trust mesh (`100.64.1.34`).
 - `[2026-09-09 01:43]`: Deployed native Docker CE 29.8.0 and Layer 4 KRaft Kafka cluster on Worker Node 2. Ports isolated strictly to Tailscale interface.
-
----
-
-## 5. Distributed Worker Node Registry (Worker Node 2 — HP Pavilion Desktop Tower)
-
-- **Device Identifier**: `qf-pavilion-worker`
-- **Hardware Architecture**: HP Pavilion Desktop Tower (Intel Celeron 450 @ 2.20 GHz, 1.9 GB DDR RAM, 456 GB SATA HDD)
-- **Operating System**: Debian GNU/Linux 13 (Trixie) minimal netinst (Kernel 6.12.94+deb13-amd64)
-- **Network Boundaries**:
-  - Local LAN IP: `192.168.100.17` (ens33)
-  - Tailscale Mesh IP: `100.64.1.34` (tailscale0)
-- **Authentication**: Ed25519 passwordless SSH key authorized exclusively for Yoga 7 master node.
-- **Active Workloads**:
-  - `qf-kafka-broker`: Confluent Kafka 7.6.0 running in KRaft mode (Listener: `100.64.1.34:9092`, heap: 512M, limit: 900M).
-  - `qf-kafka-ui`: Provectus Kafka UI (Listener: `100.64.1.34:8090`, heap: 256M, limit: 400M).
-- **Power & Auto-Recovery Posture**:
-  - `HandleLidSwitch=ignore` configured in `systemd-logind`.
-  - Systemd service persistence: `tailscaled.service`, `docker.service`, `ssh.service` enabled.
-  - Container auto-restart: `restart: unless-stopped` active on both containers.
-  - Routing persistence: `iptables-persistent` installed and rules saved.
-  - Hardware AC Recovery: Set to `Power On` in HP BIOS Setup for unattended cold-boot recovery.
 
 ---
 
@@ -133,13 +110,9 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 - **Date of Verification**: 2026-09-09
 - **Network Topology & Verified Devices**:
   1. **Master Node (`fedora` / Lenovo Yoga 7)**: `192.168.100.11` / `100.64.1.17` — AMD Ryzen AI 5 340, 15 GB RAM, Fedora Linux 44. Runs control plane, PQC engine, OPA policy engine, and `qf-kafka-telemetry.service`.
-  2. **Worker Node 2 (`qf-pavilion-worker` / HP Pavilion Desktop)**: `192.168.100.17` / `100.64.1.34` — Intel Celeron 450, 1.9 GB RAM, 456 GB HDD, Debian 13 (Trixie). Runs native Docker CE KRaft Kafka broker (`:9092`), Kafka UI (`:8090`), `qf-kafka-compose.service`, and `qf-worker-sentinel.service`.
   3. **Mobile Node 1 (Pixel 11 Pro)**: `100.64.1.18` — Titan M2 hardware root of trust, Shamir shard custodian, OOB signer.
-  4. **Mobile Node 2 (Galaxy S23 FE)**: `100.64.1.32` — Samsung Knox Vault, field ops terminal, mobile PWA client.
 
 - **Verified Invariants & Streaming Telemetry**:
-  - **Live Kafka Ingestion**: Topic `qf-telemetry` on Pavilion broker verified actively ingesting pulses every 15s (`offset 64+`, partition 0).
-  - **Worker Sentinel Health**: `qf-worker-sentinel.service` on Pavilion verified active (RAM: 51.4%, Disk: 0.7% used, Kafka broker UP, Kafka UI UP).
   - **Cryptographic Test Suites**: 4/4 suites (Known Answer Tests, Memory Zeroization, Wire Fuzzing, Wycheproof Negative) 100% passed.
   - **OPA Policy Compliance**: 16/16 policy unit tests passed; CBOM scanner verdict `[COMPLIANT // QUANTUM-AGILE]`.
   - **Universal Reserve Invariant ($R \ge O$):** `[ADMIT]` for Digital Memory, Pluton TPM 2.0 anchor, and Physical Water.
@@ -191,27 +164,6 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 
 ---
 
-## 11. Worker Node 2 (`qf-pavilion-worker`) Recovery & Live Ingestion Verification (2026-09-25)
-
-- **Audit Date**: 2026-09-25
-- **Node Identifier**: `qf-pavilion-worker` (HP Pavilion Desktop Tower)
-- **Mesh Topology Status**:
-  - Direct connection active over LAN (`192.168.100.17:41641`) via encrypted Tailscale WireGuard mesh (`100.64.1.34`).
-  - Uptime: 1 day, 18+ hours.
-  - OS & Kernel: Debian 13 (Trixie) Linux 6.12, unprivileged user `rocky` (UID 1000). Root login denied by Tailscale ACL tag `tag:worker`.
-- **Container Infrastructure (Docker CE)**:
-  - `qf-kafka-broker` (confluentinc/cp-kafka:7.6.0): Up 42+ hours. Bound to `127.0.0.1:9092` with Tailscale Serve exposing `100.64.1.34:9092` to Tailnet.
-  - `qf-kafka-ui` (provectuslabs/kafka-ui:latest): Up 42+ hours. Bound to `127.0.0.1:8090` with Tailscale Serve exposing HTTPS and HTTP :8090 to Tailnet.
-- **Worker Sentinel Health**:
-  - `qf-worker-sentinel.service` running active.
-  - Vitals: RAM used ~63% (1.2 GB / 1.9 GB, 0 B swap), Disk used 0.8% (428 GB free).
-- **Master Node Pipeline Alignment (Lenovo Yoga 7)**:
-  - `qf-kafka-telemetry.service`: Actively forward-streaming telemetry pulses (PQC KEM ML-KEM-768, host temps, memory vitals) at 15s cadence to `100.64.1.34:9092` (topic `qf-telemetry`, partition 0, offset > 2000).
-  - `qf-kafka-consumer.service`: Actively pulling stream from Pavilion broker, persisting structured vitals to AMARA PostgreSQL (`telemetry` DB), and streaming embeddings to Athena neural cognitive node (`athena-node.service` port 8001).
-- **Operational Verdict**: Worker Node 2 fully admitted from degraded/offline posture to **ACTIVE Layer 4 Stream Compute**.
-
----
-
 ## 12. Recovery & Cryptographic Threshold Ground Truth (2026-10-14)
 
 - **Audit Date**: 2026-10-14
@@ -240,7 +192,6 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
   - Quorum Verdict: $k=3$ threshold enforced. No single device has $\ge 3$ shards. Host loss recoverable via USB 1 (2) + USB 2 or 3 (1) = 3.
 - **Node Rollout Strategy**:
   - Target Node 1: HP ProBook G6 receives USB 3 (Shard 2) as its local custody root upon Debian deployment.
-  - Target Node 2: HP Pavilion Desktop (`qf-pavilion-worker`) enrolled into verified Layer 4 Stream Compute mesh.
 - **Engine Operational Posture**:
   - Engine Process: `quantum-flex-engine-mycelium.service` (PID `34046`).
   - Runtime Guard Check: `SC_CLK_TCK` process boot timestamp vs `ledger.dat` mtime verified intact.
@@ -289,7 +240,7 @@ Earlier recovery MATCH proves compatibility with the saved ledger, not secret cu
 - **Sentinel Daemon**: `qf-worker-sentinel.service` active and enabled. Emits cryptographically signed telemetry heartbeats to `/opt/quantumflex/logs/sentinel_heartbeat.jsonl` and serves local HTTP endpoints on port 9100 (`/status`, `/health`, `/metrics`).
 - **HUD & Remote Desktop**: XRDP active on `100.64.1.19:3389` with isolated XFCE4 session (`dbus-run-session`). Pre-configured profile saved in Remmina on Yoga master (`~/.local/share/remmina/quantumflex_g6pro.remmina`).
 - **Zero-Trust Network Perimeter**: Managed over Tailscale mesh. One-way inbound management from Yoga permitted (22, 3389); G6 denied access to Yoga inbound ports.
-- **Architectural Topology Decision (2026-10-14)**: The HP ProBook 450 G6 (`g6pro`, `100.64.1.19`) is officially designated as the primary QuantumFlex Layer 4 Compute & Kafka Streaming Hub. Worker Node 2 (HP Pavilion, `100.64.1.34`) remains offline on cold standby indefinitely. Codebase consumers (including `api_node/kafka_consumer.py`) and topics (`qf-telemetry`, `qf-telemetry-heartbeat`) are aligned to the G6 broker endpoint.
+- **Architectural Topology Decision (2026-10-14)**: The HP ProBook 450 G6 (`g6pro`, `100.64.1.19`) is officially designated as the primary QuantumFlex Layer 4 Compute & Kafka Streaming Hub. Codebase consumers (including `api_node/kafka_consumer.py`) and topics (`qf-telemetry`, `qf-telemetry-heartbeat`) are aligned to the G6 broker endpoint.
 - **Google Antigravity Deployment**: Antigravity CLI (`agy` v1.3.3) deployed to `/usr/local/bin/agy`, Antigravity Desktop IDE provisioned in `/opt/antigravity/` with XFCE launcher `/usr/share/applications/antigravity.desktop`, and Python SDK `google-antigravity` (v0.1.22) installed via pip. All shared dynamic libraries verified intact.
 - **Autonomous Stream Activation**: Antigravity on G6 autonomously authored, installed, and verified `qf-kafka-publisher.service` (`/opt/quantumflex/sentinel/kafka_telemetry_publisher.py`), streaming signed 10-second hardware TPM attestation heartbeats into Kafka topic `qf-telemetry-heartbeat`. Multi-node stream verified live from Yoga master.
 

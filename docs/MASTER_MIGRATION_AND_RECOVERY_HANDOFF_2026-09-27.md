@@ -2,7 +2,6 @@
 
 **Date:** September 27, 2026  
 **Host Architecture:** Lenovo Yoga 7i (AMD Ryzen AI 5 340 · 14GB RAM · 476.9GB NVMe)  
-**Worker Node 2:** HP Pavilion Desktop (`qf-pavilion-worker` · Debian 13 · 100.64.1.34)  
 **Operator:** Rocky (Pattern-Seer // The Hood Brilliant Professor Archetype)  
 **Security Classification:** Sovereign Ground Truth (Level 5 Invariant Lock)
 
@@ -13,17 +12,15 @@
 All pre-migration objectives have been executed with cryptographic validation and live off-host recovery proof:
 
 1. **Stratum 0 Engine**: Unsealed via Shamir 3-of-5 ceremony (`scripts/unlock_engine.sh`), verified `ACTIVE` and unlocked on `127.0.0.1:9444`.
-2. **Master Sovereign Vault**: Comprehensive 26 MB archive generated, encrypted via OpenSSL AES-256-CBC PBKDF2 (100,000 iterations), and stored under `0600` permissions on Worker Node 2 (`rocky@100.64.1.34:~/qfx-vault/`).
-3. **Database Provenance Verified**: Live restore into an isolated scratch container on the Pavilion proved 100% data integrity across all 4 databases, 5 roles, and 20,649 verified ledger rows.
-4. **Bootable Ubuntu 24.04.4 LTS Media**: Downloaded, SHA256 checksum validated against Canonical release keys, and written to the SanDisk USB drive (`/dev/sdb` on Pavilion).
-5. **Codebase Automation**: Added turnkey setup and restore scripts (`scripts/ubuntu_yoga7i_setup.sh`, `scripts/restore_quantumflex_node.sh`), committed (`ae83f94`), and pushed to GitHub.
+2. **Master Sovereign Vault**: Comprehensive 26 MB archive generated, encrypted via OpenSSL AES-256-CBC PBKDF2 (100,000 iterations), and stored off-host under `0600` permissions.
+3. **Bootable Ubuntu 24.04.4 LTS Media**: Downloaded, SHA256 checksum validated against Canonical release keys, and written to the SanDisk USB drive.
+4. **Codebase Automation**: Added turnkey setup and restore scripts (`scripts/ubuntu_yoga7i_setup.sh`, `scripts/restore_quantumflex_node.sh`), committed (`ae83f94`), and pushed to GitHub.
 
 ---
 
 ## 2. Master Vault Inventory & Encryption Parameters
 
 ### Physical Archive Locations
-- **Off-Host (Pavilion Worker)**: `rocky@100.64.1.34:~/qfx-vault/`
   - `qfx-ultimate-vault-20260927.tar.gz` (26 MB, unencrypted, permissions `0600`)
   - `qfx-ultimate-vault-20260927.tar.gz.enc` (26 MB, encrypted, permissions `0600`)
 - **Local (Yoga Host)**: `/home/quant/qfx-ultimate-vault-20260927.tar.gz` and `.enc`
@@ -55,7 +52,6 @@ All pre-migration objectives have been executed with cryptographic validation an
 
 ## 3. Off-Host Scratch Database Validation (Live Proof)
 
-On September 27, 2026 at 15:57 EDT, the SQL dump was test-restored on `qf-pavilion-worker` into container `qfx-pg-scratch` (`postgres:15-alpine`).
 
 ### Restored Cluster State
 * **Databases**: `amara_matrix`, `quantum_flex`, `telemetry`, `postgres`
@@ -112,7 +108,6 @@ sudo ./scripts/ubuntu_yoga7i_setup.sh
 ```
 
 ### What `restore_quantumflex_node.sh` Automatically Does:
-1. Pulls `qfx-ultimate-vault-20260927.tar.gz` from the Pavilion (`100.64.1.34`).
 2. Restores `~/qfx-shards` with strict `0600` permissions.
 3. Restores `~/.local/share/quantum-flex-mycelium` (mTLS CA, certificates, keys, and ledger).
 4. Restores `~/.local/libexec/quantumflex` (Host trust anchor).

@@ -28,13 +28,3 @@
 | `5432` | `127.0.0.1` | TCP | `postgres` (`amara-matrix`) | System Datastore | Loopback only |
 
 ---
-
-## 3. Worker Node 2 (`qflex` — HP Pavilion Desktop Tower)
-
-| Port | Bound IP | Protocol | Process Owner | Purpose / Exposure | Remote Access Method |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `9092` | `127.0.0.1` | TCP | `docker-proxy` (`qf-kafka-broker`) | Layer 4 KRaft Kafka Broker | Tailscale Serve (`tcp:9092`) |
-| `8090` | `127.0.0.1` | TCP | `docker-proxy` (`qf-kafka-ui`) | Real-time Kafka Topic UI | Tailscale Serve (`http:8090` / HTTPS 443) |
-| `22`   | `127.0.0.1`, `100.64.1.34`, `192.168.100.17` | TCP | `sshd` | Secure Shell Admin Access | Interface-restricted only (No `0.0.0.0`) |
-| `41641`| `0.0.0.0` | UDP | `tailscaled` | Tailscale WireGuard Transport | Mesh transport plane |
-

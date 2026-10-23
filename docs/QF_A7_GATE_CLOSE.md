@@ -8,7 +8,6 @@ restart→LOCKED: PASS
 re-unseal 3/5: PASS (USB unmounted)
 A5 host judge: PASS
 ghost-sink seq1: PASS
-Pavilion: DEGRADED / not required for local path
 decision: FREEZE_A7
 ```
 
@@ -28,7 +27,6 @@ decision: FREEZE_A7
 | **Host Judge (QF-A5)** | **PASS** | 13/13 artifacts byte-accurate against signed manifest; `verify-provenance` verdict `TRUSTED -> ALLOW` |
 | **Local Anomaly Sink** | **PASS** | `quantumflex-ghost-sink` running on `127.0.0.1:19443`; synthetic event `synth-ev-20260920-001` absorbed |
 | **Hash-Chain Continuity** | **PASS** | Ledger sequence `1`, `previous_hash = 0000...`, `record_hash = ffb9e9d6...` recorded on disk |
-| **Remote Pavilion Worker** | **DEGRADED** | `100.64.1.34` offline 1d; local forwarder in backoff retry loop; local operational path unblocked |
 
 ---
 

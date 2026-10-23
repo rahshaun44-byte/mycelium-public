@@ -112,7 +112,6 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 ### Vector 2: Ghost Node Shock Absorber & Ingestion Cadence
 
-* **Target Scope:** Wire mTLS transport interface (`127.0.0.1:9444`) and Pavilion Kafka broker (`100.64.1.34:9092`).
 * **Audit Mechanism:** `scripts/test_ghost_node_shock_absorber.py`.
 * **Attack Simulation:** Concurrent injection of fraudulent Ed25519 telemetry frames and poisoned QFXK binary headers.
 * **Operational Invariant:** Hostile frames must be intercepted and diverted to the entropy sink without causing process termination, resource spikes, or degrading the 15-second Kafka streaming cadence.
@@ -121,7 +120,6 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ==================================================================
      QUANTUM FLEX // GHOST NODE SHOCK ABSORBER VERIFICATION       
 ==================================================================
-[*] Connecting to HP Pavilion Kafka Broker (100.64.1.34:9092)...
 [+] Connected to topic 'qf-telemetry'. Listening for baseline pulse...
 [+] Baseline pulse received at offset 60: RAM=63.35%, Temp=49.0C
 
@@ -168,7 +166,6 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 * **Network Topology:** Services bound to `127.0.0.1`. `tailscale0` is in firewalld `qf-tailscale`. Physical LAN has no application listeners.
 * **Mobile Endpoints Admitted:**
   - **Pixel 11 Pro (`100.64.1.18`):** Ping round-trip latency: **124 ms**
-  - **Galaxy S23 FE (`100.64.1.32`):** Ping round-trip latency: **264 ms**
 * **Policy Invariant Check (Cross-Mesh Validation):**
 
 ```bash
@@ -305,7 +302,6 @@ QuantumFlex Runtime Admission Gate (QF-A6: 10-Case Matrix)
   2. **Sub-10ms Receipt & Lease Fencing:** Immediate HTTP 202 acknowledgment returns in **3.9–8.5 ms** locally, completely decoupled from local inference latency. Pre-inference SQLite WAL durability with `synchronous=FULL`. Database updates require active `claim_token` matching; expired leases and webhook retries fail-closed with `StorageValidationError` / `StaleClaimError` (409 conflict), mathematically preventing stale workers from clobbering completed `CRITICAL` triage outcomes.
   3. **Hardware-Demarcated Mobile Command Plane:** Unified zero-dependency operator CLI (`mobile/qflex_cli.py`) enforces strict role segregation:
      - `shard-custodian`: Hardware Google Titan M2 enclave, Shamir shard custody, out-of-band quorum authorization.
-     - `field-workstation`: Samsung Knox Vault hardware, DeX workstation telemetry lens, cockpit diagnostics.
      - `observer`: Default unauthenticated role; privileged mutations (`approve`, `discard`) fail-closed (`PRIVILEGED_ACTIONS=DENY`).
   4. **Zero-Trust Network Mesh:** Services strictly bind to loopback `127.0.0.1:9000`. Tailnet reachability is mediated via **Tailscale Serve** MagicDNS HTTPS (`https://fedora.example-tailnet.ts.net/`) and tailnet TCP forwarders (`100.64.1.17:9000`), terminating TLS and proxying internally with zero open sockets exposed to local Wi-Fi LANs (`192.168.0.x`).
 

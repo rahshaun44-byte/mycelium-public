@@ -274,7 +274,7 @@ def cmd_node(identity: NodeIdentity):
     print(_c(CLR_BOLD + CLR_WHITE, "  QUANTUMFLEX MOBILE IDENTITY DETERMINATION"))
     print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
     print(f"  NODE               : {_c(CLR_BOLD, identity.node_id)}")
-    print(f"  ROLE               : {_c(CLR_BOLD + (CLR_GREEN if identity.role == 'shard-custodian' else (CLR_BLUE if identity.role == 'field-workstation' else CLR_RED)), identity.role)}")
+    print(f"  ROLE               : {_c(CLR_BOLD + (CLR_GREEN if identity.role == 'shard-custodian' else CLR_RED), identity.role)}")
     print(f"  MODEL              : {identity.model}")
     print(f"  TAILSCALE          : {identity.tailscale_ip}")
     print(f"  TRANSPORT          : {identity.transport}")
@@ -417,12 +417,6 @@ def cmd_custody(identity: NodeIdentity, base_url: str):
         print(f"  Hardware Security : TPM 2.0 + AMD SEV + LUKS Immutability")
         print(f"  Local Custody     : Holds Shards 1 & 2")
         print(f"  Required Quorum   : Requires 1 remote shard (Pixel 11 Pro or USB Vault)")
-    elif identity.role == "field-workstation":
-        print(_c(CLR_BLUE, "  [*] NODE REGISTERED AS FIELD WORKSTATION (OPERATIONAL)"))
-        print(f"  Target Device     : {identity.model}")
-        print(f"  Hardware Security : Samsung Knox Vault")
-        print(f"  Custody Shard     : None (Node is operational terminal, not shard custodian)")
-        print(f"  Privilege Scope   : Triage observations, draft review, cockpit telemetry")
     else:
         print(_c(CLR_RED, "  [!] NODE IS IN READ-ONLY OBSERVER ROLE"))
         print(f"  Custody Access    : STRICTLY DENIED")

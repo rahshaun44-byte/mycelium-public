@@ -64,8 +64,6 @@ net.ipv4.tcp_slow_start_after_idle = 0
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`fedora`** | Master Control & PQC Core | `10.0.0.15` | `100.64.1.17` | `fedora.example-tailnet.ts.net` | TPM 2.0 / PCR-7, Shards 1 & 2, Admission Authority |
 | **`pixel-11-pro-1`** | Mobile Shard Custody Anchor | Dynamic / USB | `100.64.1.11` | `pixel-11-pro-1.example-tailnet.ts.net` | Titan M2 Hardware Security Module, Shamir Shard Custody |
-| **`qf-pavilion-worker`** | Stream Compute & Kafka | `192.168.100.17` | `100.64.1.34` | `qf-pavilion-worker.example-tailnet.ts.net` | KRaft Kafka Broker, High-Throughput Stream Compute |
-| **`rahshauns-s23-fe`** | Mobile Operator Console | Dynamic | `100.64.1.32` | `rahshauns-s23-fe.example-tailnet.ts.net` | Samsung DeX Workstation, Tactical Telemetry Cockpit |
 
 ---
 

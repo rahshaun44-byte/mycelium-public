@@ -38,10 +38,10 @@ The infrastructure enforces a zero-trust single-NAT boundary over Starlink and T
 [ Wi-Fi LAN: 192.168.100.15 ]                [ Tailscale Zero-Trust Overlay ]
 (Gateway Socket: INVISIBLE / CLOSED)         (Yoga Master Node: 100.64.1.29)
                                                        │
-                           ┌───────────────────────────┼───────────────────────────┐
-                           ▼                           ▼                           ▼
-                 [ Ingestion Gateway ]       [ Pixel 11 Pro Node ]       [ S23 FE Node ]
-                 (100.64.1.29:8080)           (100.64.1.30)             (100.64.1.32)
+                           ┌───────────────────────────┴───────────────────────────┐
+                           ▼                                                       ▼
+                 [ Ingestion Gateway ]                                   [ Pixel 11 Pro Node ]
+                 (100.64.1.29:8080)                                       (100.64.1.30)
 ```
 
 * **Tailscale Mesh IP:** `100.64.1.29` (Master Node)

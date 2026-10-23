@@ -3,9 +3,9 @@
 Quantum Flex Kafka Telemetry Forwarder
 ======================================
 Streams live operational metrics, PQC invariant states, and biological vitals
-from the Yoga 7 master host to the HP Pavilion worker node (KRaft Kafka broker).
+from the Yoga 7 master host to the g6pro Kafka broker (HP ProBook 450 G6, KRaft).
 
-Target Broker: 192.168.100.17:9092 (ens33 LAN) / 100.64.1.34:9092 (Tailscale mesh)
+Target Broker: 100.64.1.19:9092 (g6pro, Tailscale mesh)
 Target Topic:  qf-telemetry
 """
 
@@ -30,7 +30,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("qf_kafka_forwarder")
 
-BROKER_HOST = os.getenv("QF_KAFKA_BROKER", "192.168.100.17:9092")
+BROKER_HOST = os.getenv("QF_KAFKA_BROKER", "100.64.1.19:9092")
 TOPIC_NAME = os.getenv("QF_KAFKA_TOPIC", "qf-telemetry")
 POLL_INTERVAL = int(os.getenv("QF_TELEMETRY_INTERVAL", "15"))
 

@@ -14,7 +14,6 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Master Node (Yoga 7)** | Control Plane & PQC Core | `192.168.100.15` | `100.64.1.31` | Ubuntu Linux x86_64 | Local Console |
 | **Target Node 1 (ProBook G6)** | Primary Kafka Cluster (KRaft), Layer 4 Compute, Attestation, XRDP HUD | `192.168.100.13` | `100.64.1.19` | Debian 13 (Trixie) Linux 6.12 | Ed25519 SSH (`qf-g6`), Kafka (9092, 8090), XRDP (3389) |
-| **Worker Node 2 (Pavilion)** | Cold Standby / Offline Witness (Standby Mode) | `192.168.100.17` | `100.64.1.34` | Debian 13 (Trixie) Linux 6.12 | Standby / Offline (Decided 2026-10-14) |
 | **Mobile Node 1 (Pixel)** | Mobile Shard Anchor | DHCP | `100.64.1.16` | Android / Hardware Shard | Tailscale Mesh |
 
 ---

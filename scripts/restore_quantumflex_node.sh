@@ -20,8 +20,8 @@ log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
 BACKUP_SRC="${1:-}"
-PAVILION_HOST="${PAVILION_HOST:-100.64.1.34}"
-PAVILION_USER="${PAVILION_USER:-rocky}"
+BACKUP_HOST="${BACKUP_HOST:-}"
+BACKUP_USER="${BACKUP_USER:-qfx}"
 REMOTE_BACKUP="~/qfx-vault/qfx-pre-ubuntu-backup-20260927.tar.gz"
 
 RESTORE_TMP="/tmp/qfx-restore-$$-$(date +%s)"
@@ -41,8 +41,12 @@ elif [[ -f "$HOME/qfx-pre-ubuntu-backup-20260927.tar.gz" ]]; then
     log_info "Found local backup in home directory..."
     cp "$HOME/qfx-pre-ubuntu-backup-20260927.tar.gz" "$RESTORE_TMP/backup.tar.gz"
 else
-    log_info "Fetching backup archive from Pavilion worker (${PAVILION_USER}@${PAVILION_HOST})..."
-    scp -o BatchMode=yes "${PAVILION_USER}@${PAVILION_HOST}:${REMOTE_BACKUP}" "$RESTORE_TMP/backup.tar.gz"
+    if [[ -z "$BACKUP_HOST" ]]; then
+        log_error "No local backup found and BACKUP_HOST is unset; refusing to guess a remote."
+        exit 1
+    fi
+    log_info "Fetching backup archive from ${BACKUP_USER}@${BACKUP_HOST}..."
+    scp -o BatchMode=yes "${BACKUP_USER}@${BACKUP_HOST}:${REMOTE_BACKUP}" "$RESTORE_TMP/backup.tar.gz"
 fi
 
 # 2. Extract Archive

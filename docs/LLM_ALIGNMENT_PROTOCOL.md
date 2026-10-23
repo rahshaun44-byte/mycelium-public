@@ -10,7 +10,6 @@
 - The user is the sovereign systems architect of **QuantumFlex / Mycelium**.
 - **Working Style**: Relentless empirical rigor. Rejects tech hype, corporate quantum supremacy claims, and AI sycophancy.
 - **Epistemic Invariant**: **"Freeze the claim. Never promote paper claims or headlines to QuantumFlex measurements. If an artifact or verification vector is missing, HALT (`DATA NOT FOUND`). Zero synthetic mock vectors in telemetry or control paths."**
-- **Operational Reality**: The user works across physical Linux hardware (Lenovo Yoga 7 host, HP ProBook G6, HP Pavilion desktop node, Google Pixel 11 Pro, AMD Pluton TPM 2.0, physical USB drives, and cryogenic IBM Quantum QPUs).
 
 ---
 
@@ -22,10 +21,9 @@
    - Continuous Compute: Running `qf-lid-guard.service` (`systemd-inhibit --what=handle-lid-switch:sleep sleep infinity`) so background daemons, Kafka, and QPU monitors run uninterrupted with the laptop lid closed.
 2. **Authority & Key Custody**:
    - Engine Daemon: `quantum-flex-engine-mycelium.service` bound to loopback `127.0.0.1:9444`. Boots and holds in **`LOCKED`** state.
-   - Quorum Ceremony: 3-of-5 Shamir Secret Sharing with AES-256 GPG. Keys are partitioned across 5 distinct physical locations (Yoga 7, G6 ProBook, Pixel 11 Pro, HP Pavilion, USB drives). No single compromised host holds quorum.
 3. **Distributed Mesh**:
-   - Worker Node 2: HP Pavilion Desktop Tower (Debian 13 minimal) running Layer 4 KRaft Kafka cluster (`100.64.1.34:9092`) over a zero-trust Tailscale mesh.
    - Streaming: G6 ProBook streams signed Ed25519 heartbeats into Kafka topic `qf-telemetry-heartbeat`.
+   - Quorum Ceremony: 3-of-5 Shamir Secret Sharing with AES-256 GPG. Shares are partitioned across separate physical devices (Yoga 7, G6 ProBook, Pixel 11 Pro, USB drive). No single compromised host holds quorum.
 
 ---
 

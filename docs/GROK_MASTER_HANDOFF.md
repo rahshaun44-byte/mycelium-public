@@ -20,8 +20,6 @@ ABOUT THE OPERATOR (HOW TO ENGAGE):
 
 ### 1. THE EXACT SYSTEM ENVIRONMENT (GROUND TRUTH)
 - Primary Hardware: Lenovo Yoga 7i laptop (AMD Ryzen 7 8840HS, 14GB RAM, Fedora Linux Workstation, LUKS-encrypted NVMe).
-- Mobile Fleet: Google Pixel 11 Pro and Samsung Galaxy S23 FE.
-- Mesh Topology: Encrypted Tailscale WireGuard mesh (nodes: Yoga host, Pixel, S23 FE, Pavilion worker desktop).
 - Local Neural Engine: Local Ollama running Gemma 2 (2B) and Athena RAG SQLite vector memory on local AMD silicon (100% offline, $0 cloud cost).
 - Storage & State: PostgreSQL 15 container (amara-matrix on loopback 127.0.0.1:5432).
 - Web HUD: FastAPI / Uvicorn servers on 127.0.0.1:8000 (telemetry) and 127.0.0.1:9000 (teammates/chat).

@@ -79,11 +79,6 @@ def audit_environmental_profile():
             lid_policy = "IGNORE (Fail-Safe Headless)"
     print(f"    [*] Yoga 7 Master Lid Operational Policy: {GREEN}{lid_policy}{RESET}")
 
-    print(f"    [*] HP Pavilion Worker Node 2: Physical Desktop Tower")
-    print(f"        - Tailscale IP: 100.64.1.34 (qf-pavilion-worker)")
-    print(f"        - Container Restart Policy: restart: unless-stopped (Docker CE)")
-    print(f"        - Power Outage Recovery: Auto-resumes Kafka broker upon AC power restoration")
-    print(f"        - Network Resilience: iptables-persistent rules active")
 
 def main():
     print(f"{BOLD}=================================================================={RESET}")

@@ -99,8 +99,6 @@ quantumflex-ghost-sink/target/
 !sentinel/xdp/Makefile
 
 
-# Device-specific private directories and nodes
-s23fe/
 
 # PostHog self-driving wizard output (deferred integration, not wired into any runtime)
 /package.json

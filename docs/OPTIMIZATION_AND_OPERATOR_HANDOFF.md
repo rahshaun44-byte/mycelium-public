@@ -27,7 +27,6 @@ $$Y = f(x - h) + k$$
 * **Engine Locked Posture:** The C++ evidence engine (`quantum-flex-engine-mycelium.service`) runs on `127.0.0.1:9444` (mTLS, TLS 1.3). Status queries return `ERR|NODE_LOCKED`.
 * **Shamir 3-of-5 Custody Matrix:**
   * **Shard 1 & 2:** Stored on host NVMe at `~/qfx-shards/` (`chmod 600`, encrypted LUKS).
-  * **Shard 3 & 4:** Airgapped on unmounted physical USB ext4 drive (`QFX_VAULT`) hosted on HP Pavilion worker.
   * **Shard 5:** Handwritten physical transcription in paper safe.
   * *Holding 2 shards on disk leaks mathematically zero bits of the master root key.*
 * **Loopback Boundary:** All services (`5432`, `8000`, `8001`, `8080`, `8181`, `9000`, `9444`, `11434`) strictly bound to `127.0.0.1`. Interface `tailscale0` restricted to firewalld zone `qf-tailscale`. No unauthenticated listeners exist on `0.0.0.0`.
@@ -75,7 +74,7 @@ Purged 1,377 lines of dead code and obsolete prototypes:
 
 ### 2.8 Phase 5: Sovereign Mobile Cockpit & Deep Work Ingestion
 * **Service Worker Syntax Correction:** Resolved syntax placement bug in [operator_cockpit.html](file:///home/quant/mycelium/mcp_layer/qf_bot/ui/operator_cockpit.html) and [mobile_apk/www/index.html](file:///home/quant/mycelium/mcp_layer/qf_bot/mobile_apk/www/index.html). Registration script moved inside `<script>` block, eliminating raw code leakage on client displays.
-* **Mobile-First Responsive Layout:** Implemented `@media (max-width: 768px)` horizontal scrollable navigation bar and full-width card structures for the **Google Pixel 11 Pro** and **Samsung Galaxy S23 FE**.
+* **Mobile-First Responsive Layout:** Implemented `@media (max-width: 768px)` horizontal scrollable navigation bar and full-width card structures for the **Google Pixel 11 Pro**.
 * **Direct Hardware Deployment:** Recompiled Capacitor mobile package (`app-debug.apk`) using JDK 21 and streamed live over ADB directly to the connected Pixel 11 Pro. Verified via live screenshot captures.
 * **Knowledge Vault & Cal Newport Codex:** Added [knowledge_vault/05_DEEP_WORK_DISCIPLINE.md](file:///home/quant/mycelium/knowledge_vault/05_DEEP_WORK_DISCIPLINE.md), detailing deep work blocks, shallow motion avoidance, scheduling topologies, and comic host truths. Ingested into Athena Vector DB (**3,366 total vectors**).
 
@@ -145,7 +144,6 @@ cd mcp_layer/qf_bot/mobile_apk
 npx cap copy
 cd android && JAVA_HOME=/home/quant/jdk-21.0.4+7 ANDROID_HOME=/home/quant/android-sdk ./gradlew assembleDebug
 
-# Stream install to connected Pixel 11 Pro / S23 FE
 /home/quant/android-sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
@@ -160,7 +158,6 @@ cd android && JAVA_HOME=/home/quant/jdk-21.0.4+7 ANDROID_HOME=/home/quant/androi
 | **Phase 3** | **$x$** | Hardware Momentum | **COMPLETE:** AVX-512 & VAES native silicon mapping in `liboqs` |
 | **Phase 4** | **$h$** | Pre-Ingress Shunt | **COMPLETE:** eBPF/XDP ring-buffer filter with port-guarded magic validation |
 | **Phase 5** | **UI / UX** | Sovereign Mobile Flight Deck | **COMPLETE:** Mobile-first cockpit PWA/APK + Deep Work Codex in Athena |
-| **Phase 6** | **Network** | Multi-Node Mesh Sync | Connect HP Pavilion worker node (`100.64.1.34`) for distributed task queuing and Shamir consensus drills |
 
 ---
 

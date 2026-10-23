@@ -231,14 +231,6 @@ Binary: `build/test_wire_fuzz_negative` & `scripts/test_wycheproof_x25519.py`
 - **Audit Findings:** On the master host (AMD Ryzen AI 5 340), CPU scaling governor is `powersave` with operating temperatures at 40.0 °C.
 - **Operational Hardening:** `scripts/set_yoga_power_policy.sh` configures systemd power policies and allows operator locking to `performance` to eliminate frequency scaling jitter during intensive cryptographic operations.
 
-### 2. Power Loss & Node Failure Recovery (HP Pavilion Worker Node 2)
-
-- **Node Profile:** HP Pavilion Desktop Tower (Debian GNU/Linux 13 *Trixie*, Intel Celeron 450 @ 2.20 GHz, 1.9 GB RAM).
-- **Tailscale Mesh IP:** `100.64.1.34` (`qf-pavilion-worker`).
-- **Container Resilience:** Docker CE running Kafka broker (`qf-kafka-broker`) and UI (`qf-kafka-ui`) configured with `restart: unless-stopped`.
-- **Network Resilience:** `iptables-persistent` rules preserved in `/etc/iptables/rules.v4`.
-- **Fault Recovery:** Uncontrolled power disconnect verified to trigger automatic BIOS AC recovery and headless systemd service restoration within 45 seconds.
-
 ### Workstation network posture (Yoga)
 
 On the Fedora workstation, name-discovery responders (LLMNR, mDNS/Avahi,

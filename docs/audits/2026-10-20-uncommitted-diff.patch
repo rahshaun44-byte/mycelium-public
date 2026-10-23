@@ -6,9 +6,9 @@ index 9125752..ee57e6c 100644
  if _mobile_dir.exists():
      app.mount("/mobile", StaticFiles(directory=str(_mobile_dir)), name="mobile")
  
--_s23fe_dir = Path(__file__).resolve().parent.parent / "s23fe"
--if _s23fe_dir.exists():
--    app.mount("/s23fe", StaticFiles(directory=str(_s23fe_dir)), name="s23fe")
+-_retired_dir = Path(__file__).resolve().parent.parent / "retired"
+-if _retired_dir.exists():
+-    app.mount("/retired", StaticFiles(directory=str(_retired_dir)), name="retired")
  
  # Correct paths for this host
  BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +45,7 @@ index fc8fffa..d205e51 100644
  HARDWARE ANCHOR     : TPM 2.0 NV 0x1c00010 {tpm_str}
  HOMEOSTATIC DRIVE   : D = {drive_str}
  INVARIANT GATE      : R >= O [ADMIT] (Digital Host RAM, Pluton TPM 2.0, Physical Water)
--MESH STATUS         : 4 Active P2P Nodes (qfx-yoga, qf-pavilion, qfx-pixel, qfx-edge)
+-MESH STATUS         : 4 Active P2P Nodes (qfx-yoga, retired-node, qfx-pixel, qfx-edge)
 +MESH STATUS         : {mesh_str}
  ACTIVE AGENTS       : 4 Sovereign Units (MYCELIA, SENTINEL, ARIA, ATHENA)
  PENDING ACTIONS     : {len([d for d in self.draft_queue.list_drafts() if d['status'] == 'PENDING_APPROVAL'])} Authorization(s) Required"""
@@ -56,9 +56,9 @@ index fc8fffa..d205e51 100644
              mesh_nodes = self.mycelia.inspect_mesh()
 -            resp_text = f"""[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]
 -● qfx-yoga    : 100.64.1.31 | Host Engine | ONLINE (0.1ms) | TPM 2.0 Matched
--● qf-pavilion : 100.64.1.34  | Worker (Kafka Stream) | ONLINE (0.8ms) | P2P Direct
+-● retired-node : [retired]  | Worker (Kafka Stream) | ONLINE (0.8ms) | P2P Direct
 -● qfx-pixel   : 100.64.1.11  | Mobile (Pixel 11 Pro) | ONLINE (12ms) | P2P Direct
--● qfx-edge    : 100.64.1.32  | Operator (S23 FE) | ONLINE (14ms) | P2P Direct"""
+-● qfx-edge    : [retired]  | Operator (retired phone) | ONLINE (14ms) | P2P Direct"""
 +            lines = ["[SOVEREIGN MESH MATRIX // TAILSCALE WIREGUARD]"]
 +            for node_name, info in mesh_nodes.items():
 +                lines.append(f"● {node_name:<11} : {info['ip']} | {info['role']} | {info['status']} ({info['latency']})")

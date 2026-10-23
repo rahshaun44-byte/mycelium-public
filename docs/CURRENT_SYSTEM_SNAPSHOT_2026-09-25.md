@@ -21,9 +21,7 @@ QuantumFlex/Mycelium is an implemented, running personal security, evidence, pol
 - Latest engine file-log startup reports signature verification, 13/13 artifact hash matches, then `LOCKED`, and PostgreSQL integration disabled because `QF_POSTGRES_CONNINFO` is unset. These are startup/log observations, not a fresh authenticated engine-state query or independent manifest verification. Earlier entries show a binary hash mismatch and systemd restart count reaching 706 before successful startup; do not erase that history or infer its repair cause.
 - Other local TCP listeners include 8181, 5432, 8000, 8001, 8080, 9000, 11434, and 19443. No 5433 or 5678 listener appeared in the TCP snapshot. This does not prove absence of stopped databases or n8n installations.
 - A Python process (PID 3668) listens on `0.0.0.0:3000`. Its application identity and firewall reachability were not established. Therefore the blanket assertion that every host service is loopback-only is false. Tailnet-address listeners also exist.
-- Tailscale reports local `100.64.1.17`; Pavilion `100.64.1.34` active/direct via LAN; `pixel-11-pro-1` at `100.64.1.11` offline, last seen about one hour earlier. Other historical mobile addresses were not listed in this snapshot. No direct remote SSH audit performed.
 - Kafka forwarder logs show pulses at roughly 15-second intervals with partition 0 offsets 2421–2437, ending at 23:01:46 EDT in the captured slice. Consumer logs report each pulse persisted in AMARA and embedded in Athena. Source confirms that success message follows a committed DB insert and successful Athena response. No independent DB/vector query was performed.
-- Consumer source uses broker `100.64.1.34:9092`, topic `qf-telemetry`, group `qf-amara-athena-group`; AMARA writes to `telemetry_log` in local `telemetry` database. Athena ingestion is best-effort; Kafka offset commit depends on AMARA persistence (or poison-pill handling).
 - Ollama `/api/tags` lists `amara:latest`, `athena:latest`, `qwen2.5-coder:1.5b`, `qwen2.5-coder:7b`, `gemma2:2b`, and `nomic-embed-text:latest`. Amara/Athena model metadata names the 1.5B coder parent. Inventory is not an inference-quality test.
 
 ## Critical source/deployment distinction
@@ -53,7 +51,6 @@ Use direct runtime observations for this snapshot, then exact deployed files, th
 
 - CLAUDE.md's statement that the C++ engine is not wired into a running service is stale.
 - The September 15 optimization handoff's CPU model and boost-disabled/all-loopback claims conflict with this host snapshot.
-- QF-A7 close record is historical evidence (including a restart/unseal exercise); it is not proof of today's unsealed state. Its Pavilion-degraded status is superseded by current mesh/pipeline observations.
 - Older dual-Postgres descriptions do not establish an active 5433 backend, and the engine startup explicitly disables its PostgreSQL integration.
 - Historical test counts, benchmark timings, cryptographic guarantees, sponsor/funding assertions, and regulatory claims were not revalidated. No test suite, failure injection, unseal ceremony, credential/shard inspection, or live mutation was performed.
 

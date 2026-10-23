@@ -4,7 +4,7 @@ Ghost Node Shock Absorber Test
 ==============================
 1. Streams synthetic malformed wire pulses over mTLS to the Quantum Flex engine (127.0.0.1:9444).
 2. Verifies that anomalies are intercepted by the EWMA LIF Sentinel and routed to the isolated sink.
-3. Concurrently monitors the live Kafka pipeline on qf-telemetry (100.64.1.34:9092)
+3. Concurrently monitors the live Kafka pipeline on qf-telemetry (g6pro, 100.64.1.19:9092)
    to ensure zero cadence degradation of the 15-second telemetry pulse stream.
 """
 
@@ -18,7 +18,7 @@ from kafka import KafkaConsumer
 CA_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/ca.crt"
 CERT_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/client.crt"
 KEY_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/client.key"
-KAFKA_BROKER = "100.64.1.34:9092"
+KAFKA_BROKER = "100.64.1.19:9092"
 TOPIC = "qf-telemetry"
 
 def get_ssl_context():
@@ -48,7 +48,7 @@ def main():
     print("==================================================================")
 
     # 1. Connect to Kafka and note initial offset
-    print("[*] Connecting to HP Pavilion Kafka Broker (100.64.1.34:9092)...")
+    print("[*] Connecting to g6pro Kafka Broker (100.64.1.19:9092)...")
     consumer = KafkaConsumer(
         TOPIC,
         bootstrap_servers=[KAFKA_BROKER],
