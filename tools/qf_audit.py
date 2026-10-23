@@ -100,9 +100,47 @@ PATTERNS = {
     "SHA-256": re.compile(r"\bSHA[-_]?256\b", re.IGNORECASE),
     "SHA-384": re.compile(r"\bSHA[-_]?384\b", re.IGNORECASE),
     "SHA-512": re.compile(r"\bSHA[-_]?512\b", re.IGNORECASE),
-    "SHA-1": re.compile(r"\bSHA[-_]?1\b", re.IGNORECASE),
-    "MD5": re.compile(r"\bMD5\b", re.IGNORECASE),
 }
+
+
+def _toxic_call_sites(name: str) -> re.Pattern:
+    """Call-site and API patterns for a disallowed hash: real usage, not prose naming it.
+
+    Matched against raw source lines (never comment-stripped), so no comment or
+    keyword heuristic can hide a live call.
+    """
+    quoted = rf"""['"]{name[:-1]}-?{name[-1]}['"]"""  # 'sha1' / "SHA-1" / 'md5'
+    return re.compile(
+        "|".join(
+            [
+                rf"\b{name}\s*\(",                            # sha1(...), hashes.SHA1(), MD5(...)
+                rf"\bhashlib\.{name}\b",
+                rf"\bhashlib\.new\s*\(\s*{quoted}",
+                rf"\bCrypto\.Hash\.{name}\b",
+                rf"\b{name}::",                               # Rust sha1::Sha1, Md5::new
+                rf"\b{name}_smol\b",
+                rf"\bEVP_{name}\b",
+                rf"\b{name}_(?:Init|Update|Final)\b",
+                rf"\b{name}_FOR_LEGACY_USE_ONLY\b",
+                rf"\b{name}\.(?:New|Sum)\b",                  # Go
+                rf"""['"]crypto/{name}['"]""",               # Go import
+                rf"\b{name}sum\b",
+                rf"\bcreateHash\s*\(\s*{quoted}",             # Node
+                rf"\bgetInstance\s*\(\s*{quoted}",            # Java MessageDigest
+                rf"\bdigestmod\s*=\s*{quoted}",               # Python hmac
+                rf"(?<![\w-])-{name}\b",                      # openssl dgst -sha1 / -md5
+            ]
+        ),
+        re.IGNORECASE,
+    )
+
+
+TOXIC_PATTERNS = {"SHA-1": _toxic_call_sites("sha1"), "MD5": _toxic_call_sites("md5")}
+
+# Reviewed exemptions for toxic call sites. Each entry exempts exactly one source line:
+# (path relative to the scan root, algorithm, stripped line text) -> written justification.
+# Editing the line, moving the file, or a second call in the same file is flagged again.
+AUDITED_ALLOWLIST: Dict[Tuple[str, str, str], str] = {}
 
 IGNORE_DIRS = {
     ".git", "node_modules", "venv", "__pycache__", ".venv", "build", "build_check",
@@ -112,7 +150,8 @@ IGNORE_DIRS = {
 IGNORE_EXTS = {
     ".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".o", ".so", ".a",
     ".tar.gz", ".gz", ".tgz", ".tar", ".zip", ".db", ".sqlite", ".sqlite3",
-    ".log", ".patch", ".wasm", ".crx", ".cmake"
+    ".log", ".patch", ".wasm", ".crx", ".cmake",
+    ".md", ".txt", ".rst", ".adoc"
 }
 
 
@@ -132,24 +171,17 @@ def print_banner():
     print(banner)
 
 
-def strip_comments_and_defensive_guards(content: str, ext: str) -> str:
-    """Strips comments and lines containing defensive rejections of legacy primitives
-
-    to avoid false-positive CBOM findings on error messages or comments.
+def strip_comments(content: str, ext: str) -> str:
+    """Strips standard single- and multi-line comments across supported languages
+    to prevent commented-out code or documentation comments from triggering
+    false positives. Does NOT mask active code.
     """
     lines = content.splitlines()
     cleaned_lines = []
 
-    # Specific error/panic/exception macros where mentioning a toxic primitive in the error message
-    # is an explicit defensive rejection (e.g., bail!("... SHA-1 not supported ..."))
-    guard_re = re.compile(
-        r"""(?:bail!|panic!|raise\s+\w*Error|throw\s+new\s+\w*Error|compile_error!|reject_)\s*\(.*?\b(SHA[-_]?1|MD5)\b""",
-        re.IGNORECASE,
-    )
-
     in_block_comment = False
     for line in lines:
-        # C/Rust/Go/Java/Solidity block comments
+        # C/Rust/Go/Java/Solidity/JS/TS block comments
         if ext in {".c", ".h", ".cpp", ".hpp", ".rs", ".go", ".sol", ".js", ".ts", ".java"}:
             if in_block_comment:
                 if "*/" in line:
@@ -179,11 +211,6 @@ def strip_comments_and_defensive_guards(content: str, ext: str) -> str:
             if "--" in line:
                 line = line.split("--", 1)[0]
 
-        # If the line is an explicit rejection error or panic macro, mask the toxic keyword
-        # so defensive error messages explaining why a primitive is forbidden don't register as active algorithms
-        if guard_re.search(line):
-            line = re.sub(r"\b(SHA[-_]?1|MD5)\b", "[MASKED_DEFENSIVE_GUARD]", line, flags=re.IGNORECASE)
-
         cleaned_lines.append(line)
 
     return "\n".join(cleaned_lines)
@@ -192,6 +219,7 @@ def strip_comments_and_defensive_guards(content: str, ext: str) -> str:
 def scan_target(target_path: Path) -> Dict[str, Any]:
     """Inspects target directory or file and discovers cryptographic primitives."""
     findings: Dict[str, List[Dict[str, Any]]] = {alg: [] for alg in ALGORITHM_TAXONOMY}
+    allowlisted_findings: List[Dict[str, Any]] = []
     total_files = 0
     scanned_files = 0
 
@@ -205,8 +233,8 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
                 ext = Path(f).suffix.lower()
                 if ext not in IGNORE_EXTS:
                     file_path = Path(root) / f
-                    # Skip scanner itself and test policy files containing mock test vectors
-                    if f == "qf_audit.py" or f.endswith("_test.rego"):
+                    # Skip scanner itself, its toxic-pattern test vectors, and test policy files containing mock test vectors
+                    if f in {"qf_audit.py", "test_qf_audit_toxic.py"} or f.endswith("_test.rego"):
                         continue
                     files_to_scan.append(file_path)
 
@@ -220,7 +248,7 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
             rel_path = str(p.relative_to(target_path)) if target_path.is_dir() else p.name
             ext = p.suffix.lower()
 
-            clean_content = strip_comments_and_defensive_guards(content, ext)
+            clean_content = strip_comments(content, ext)
 
             for alg, pattern in PATTERNS.items():
                 matches = pattern.findall(clean_content)
@@ -229,6 +257,29 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
                         "file": rel_path,
                         "occurrences": len(matches),
                     })
+
+            # Toxic hashes: one finding per raw source line, exempted only by an exact allowlist entry
+            for line_no, line in enumerate(content.splitlines(), 1):
+                for alg, pattern in TOXIC_PATTERNS.items():
+                    if not pattern.search(line):
+                        continue
+                    code = line.strip()
+                    reason = AUDITED_ALLOWLIST.get((rel_path, alg, code))
+                    if reason:
+                        allowlisted_findings.append({
+                            "file": rel_path,
+                            "line": line_no,
+                            "algorithm": alg,
+                            "code": code,
+                            "rationale": reason,
+                        })
+                    else:
+                        findings[alg].append({
+                            "file": rel_path,
+                            "line": line_no,
+                            "code": code,
+                            "occurrences": 1,
+                        })
         
             # Buffer Exhaustion Heuristic (AST-lite)
             # Looks for static buffers: char buf[4096]; or uint8_t buffer[1024];
@@ -259,6 +310,7 @@ def scan_target(target_path: Path) -> Dict[str, Any]:
         "scanned_files": scanned_files,
         "buffer_vulnerabilities": buffer_vulnerabilities,
         "findings": active_findings,
+        "allowlisted_findings": allowlisted_findings,
     }
 
 
@@ -287,7 +339,7 @@ def generate_cyclonedx_cbom(scan_result: Dict[str, Any], serial_uuid: str) -> Di
                 },
             },
             "evidence": {
-                "occurrences": [{"location": occ["file"], "line": occ["occurrences"]} for occ in occurrences[:5]],
+                "occurrences": [{"location": occ["file"], "line": occ.get("line", occ["occurrences"])} for occ in occurrences[:5]],
             }
         }
         components.append(comp)
@@ -394,6 +446,12 @@ def print_audit_report(scan_result: Dict[str, Any], cbom_data: Dict[str, Any], o
 
     if toxic_algs:
         print(f"  {RED}🚨 Toxic / Disallowed Hash Primitives:{RESET} {', '.join(toxic_algs)}")
+
+    allowlisted = scan_result.get("allowlisted_findings", [])
+    if allowlisted:
+        print(f"  {CYAN}ℹ Audited Allowlist Exemptions:{RESET}     {len(allowlisted)} verified defensive check(s)")
+        for item in allowlisted:
+            print(f"    • {item['file']}:{item['line']}: {item['algorithm']} — {item['rationale']}")
 
     print("─" * 70)
     print(f"{BOLD}OPEN POLICY AGENT (OPA) COMPLIANCE VERDICT:{RESET}")
