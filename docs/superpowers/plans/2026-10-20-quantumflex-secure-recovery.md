@@ -8,7 +8,7 @@
 
 **Tech Stack:** Ubuntu/Linux, systemd user services, firewalld/nftables, Tailscale Serve, C++20/CMake, Python/uvicorn, OPA/Rego, PostgreSQL/Podman, Ed25519 provenance, gitleaks.
 
-**Spec:** `docs/fellowship/specs/aragorn-pqc-differential-tester.md` and `docs/fellowship/codebase-map.md` operational constraints; QuantumFlex operations and telemetry playbooks.
+**Spec:** `docs/fellowship/specs/pqc-differential-tester.md` and `docs/fellowship/codebase-map.md` operational constraints; QuantumFlex operations and telemetry playbooks.
 
 ## Global Constraints
 

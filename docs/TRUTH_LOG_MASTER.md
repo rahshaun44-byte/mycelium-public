@@ -652,7 +652,7 @@ Append-only. This corrects the Antigravity "Substrate Audit & Operational Verifi
 #### 19.7.3 Scope lock
 - **D-01 (Rock):** the home system and earning are separate products. Home-system v1 is the re-alignment only (this section, the engine ledger 0600 deploy, credential rotation). Earning v1 is a PQC differential tester for outside ML-KEM/ML-DSA implementations, built from the existing KAT, negative-fuzz and dudect harnesses.
 - **D-02 (Rock):** the tester is a new, clean public repo with no mycelium/qf-public history. The no-push rule for mycelium is unchanged.
-- Spec: `docs/fellowship/specs/aragorn-pqc-differential-tester.md`. Status: CLAIMED (requirements only; nothing built).
+- Spec: `docs/fellowship/specs/pqc-differential-tester.md`. Status: CLAIMED (requirements only; nothing built).
 
 ### 19.8 PQC Differential Tester: RustCrypto Adapter v0 (2026-10-20, Claude)
 

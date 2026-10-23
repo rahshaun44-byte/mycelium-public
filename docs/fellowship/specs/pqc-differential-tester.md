@@ -1,6 +1,6 @@
 ---
 status: active
-author: aragorn
+author: rocky
 ---
 
 # Requirements: PQC Differential Tester
