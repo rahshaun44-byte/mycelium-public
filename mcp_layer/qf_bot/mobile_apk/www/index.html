@@ -1363,7 +1363,7 @@ function applyDevicePermissions(roleData) {
       btnRunCmd.style.opacity = '1';
     }
   } else {
-    // Non-pixel mobile device (e.g. Galaxy S23 FE or untrusted mobile phone)
+    // Non-pixel mobile device (untrusted mobile phone)
     isChiefArchitectPixel = false;
     const modelName = roleData.model ? roleData.model : 'OBSERVER NODE';
     if (brandTag) brandTag.textContent = modelName.toUpperCase();

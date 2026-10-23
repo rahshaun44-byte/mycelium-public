@@ -182,23 +182,34 @@ def tailnet_mesh_status() -> dict:
             data = json.loads(res.stdout)
             self_node = data.get("Self", {})
             peers = data.get("Peer", {})
-            s23_status = "UNKNOWN"
+            pixel_status = "UNKNOWN"
+            g6_status = "UNKNOWN"
             for k, p in peers.items():
-                if "s23" in p.get("HostName", "").lower() or "s23" in p.get("DNSName", "").lower():
-                    s23_status = {
+                hname = p.get("HostName", "").lower()
+                dname = p.get("DNSName", "").lower()
+                if "pixel" in hname or "pixel" in dname:
+                    pixel_status = {
                         "host_name": p.get("HostName"),
                         "tailscale_ip": p.get("TailscaleIPs", [""])[0],
                         "active": p.get("Active", False),
                         "direct": p.get("CurAddr", ""),
                         "last_seen": p.get("LastSeen", ""),
                     }
-                    break
+                elif "g6" in hname or "g6" in dname:
+                    g6_status = {
+                        "host_name": p.get("HostName"),
+                        "tailscale_ip": p.get("TailscaleIPs", [""])[0],
+                        "active": p.get("Active", False),
+                        "direct": p.get("CurAddr", ""),
+                        "last_seen": p.get("LastSeen", ""),
+                    }
 
             return {
                 "local_hostname": self_node.get("HostName"),
                 "local_tailscale_ip": self_node.get("TailscaleIPs", [""])[0],
                 "magic_dns_suffix": data.get("MagicDNSSuffix"),
-                "s23_fe_peer": s23_status,
+                "pixel_peer": pixel_status,
+                "g6pro_peer": g6_status,
                 "total_peers": len(peers),
             }
         else:

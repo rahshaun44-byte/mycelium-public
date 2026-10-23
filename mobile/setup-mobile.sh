@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# QuantumFlex: Hardened Mobile Node Bootstrap (Pixel 11 Pro / Samsung S23 FE)
+# QuantumFlex: Hardened Mobile Node Bootstrap (Pixel 11 Pro)
 # ==============================================================================
 # Invariant: Verify before execute. Zero unverified code enters the mobile plane.
-# Target Host: 100.64.1.17:9000 (quantumflex)
+# Target Host: 100.64.1.31:9000 (quantumflex)
 # ==============================================================================
 
 set -euo pipefail
@@ -11,13 +11,13 @@ set -euo pipefail
 # 1. HARD STOP: Refuse execution on the host engine
 CURRENT_HOST="$(hostname 2>/dev/null || echo "")"
 CURRENT_USER="${USER:-$(whoami 2>/dev/null || echo "")}"
-if [ "$CURRENT_HOST" = "fedora" ] || [ "$CURRENT_USER" = "quant" ]; then
+if [ "$CURRENT_HOST" = "qfx-yoga" ] || [ "$CURRENT_HOST" = "fedora" ] || [ "$CURRENT_USER" = "quant" ]; then
     echo "[!] HARD STOP: Refusing to execute on master host ($CURRENT_USER@$CURRENT_HOST)." >&2
-    echo "[!] This script is strictly for mobile clients (Pixel 11 Pro / S23 FE)." >&2
+    echo "[!] This script is strictly for mobile clients (Pixel 11 Pro)." >&2
     exit 1
 fi
 
-HOST_IP="100.64.1.17"
+HOST_IP="100.64.1.31"
 PORT="9000"
 TRUST_ANCHOR_DIR="$HOME/.quantumflex"
 TRUST_ANCHOR="$TRUST_ANCHOR_DIR/release_signing_key.pub"

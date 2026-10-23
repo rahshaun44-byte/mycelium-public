@@ -5,7 +5,7 @@ QuantumFlex Unified Mobile Operator CLI (qf)
 Unified, zero-dependency mobile command plane for QuantumFlex:
 - Role-aware execution:
     * Google Pixel 11 Pro  (grizzly)       -> CUSTODY ROLE (Titan M2, Shamir shard, OOB signer)
-    * Samsung Galaxy S23 FE (field-work)    -> OPERATIONS ROLE (Knox Vault, DeX, Cockpit)
+    * HP ProBook 450 G6 (g6pro)             -> EVENT STREAMING & KAFKA BROKER ROLE
     * Unknown Device                        -> OBSERVER ROLE (Read-only, Privileged Actions DENIED)
 - Authenticated host handshake over Tailscale / LAN
 - Observational lens for QF-A5 provenance & QF-A6 runtime admission evidence
@@ -146,28 +146,13 @@ def resolve_node_identity() -> NodeIdentity:
             details="Hardware Titan M2 Enclave | Shamir Shard Custodian #2 | OOB Signer"
         )
 
-    # 2. Samsung Galaxy S23 FE Check (Strictly Restricted to Security Observer)
-    is_s23_model = any("S23 FE" in m or "SM-S711" in m for m in [model, product_name])
-    has_s23_ip = "100.64.1.32" in local_ips or "s23" in hostname.lower()
-
-    if is_s23_model or has_s23_ip:
-        return NodeIdentity(
-            node_id="s23-fe",
-            role="field-observer",
-            model="Samsung Galaxy S23 FE",
-            tailscale_ip="100.64.1.32",
-            transport="tailscale+wifi",
-            privileged=False,
-            details="Knox Vault Hardware | Security Telemetry & Read-Only Invariant Auditor | Substrate Mutation DENIED"
-        )
-
-    # 3. Host Node Check (Fedora Master)
-    if hostname == "fedora" or "100.64.1.17" in local_ips or os.environ.get("USER") == "quant":
+    # 2. Host Node Check (qfx-yoga)
+    if hostname in ("fedora", "qfx-yoga") or "100.64.1.31" in local_ips or "100.64.1.17" in local_ips or os.environ.get("USER") == "quant":
         return NodeIdentity(
             node_id="qfx-yoga",
             role="master-engine",
-            model="Lenovo Yoga 7i (Fedora 44)",
-            tailscale_ip="100.64.1.17",
+            model="Lenovo Yoga 7 2-in-1 14AKP10 (Ubuntu 26.04.1 LTS)",
+            tailscale_ip="100.64.1.31",
             transport="loopback+mesh",
             privileged=True,
             details="Primary PQC Engine | Cryptographic Admission Anchor"
