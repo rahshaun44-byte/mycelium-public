@@ -55,9 +55,12 @@ const_val := 42
 
 allow if {
     x := 10
-    input.val == 100
-    input.multi ==
-        200
+    input.val == x * 10
+    object.get(
+        input,
+        "multi",
+        0,
+    ) == 200
     not input.flag
     input.score > 50
     input.limit < 1000
