@@ -63,6 +63,8 @@ def contained_in(path: Path, root: Path) -> bool:
 
 def load_signature_fields(sig_path: Path) -> tuple[bytes, dict[str, str]]:
     raw = sig_path.read_bytes()
+    if len(raw) == 64:
+        return raw, {}
     text = raw.decode("utf-8", errors="replace")
     fields: dict[str, str] = {}
     for line in text.splitlines():
@@ -71,16 +73,19 @@ def load_signature_fields(sig_path: Path) -> tuple[bytes, dict[str, str]]:
         key, value = line.split("=", 1)
         fields[key.strip()] = value.strip()
     if "SIGNATURE_B64" in fields:
-        return base64.b64decode(fields["SIGNATURE_B64"]), fields
+        try:
+            return base64.b64decode(fields["SIGNATURE_B64"]), fields
+        except Exception:
+            sys.exit(f"[!] ADMISSION DENIED: Cryptographic signature invalid over manifest bytes.")
     stripped = raw.strip()
     if len(stripped) == 64:
         return stripped, fields
     try:
         decoded = base64.b64decode(stripped, validate=True)
     except Exception as exc:
-        sys.exit(f"[!] ADMISSION DENIED: Detached signature unreadable at {sig_path}: {exc}")
+        sys.exit(f"[!] ADMISSION DENIED: Cryptographic signature invalid / unreadable at {sig_path}: {exc}")
     if len(decoded) != 64:
-        sys.exit(f"[!] ADMISSION DENIED: Detached signature is not 64-byte Ed25519 ({sig_path})")
+        sys.exit(f"[!] ADMISSION DENIED: Cryptographic signature invalid (not 64-byte Ed25519: {sig_path})")
     return decoded, fields
 
 
@@ -163,7 +168,7 @@ def find_signature(manifest_path: Path) -> Path:
 
 def verify_ed25519(manifest_path: Path, sig_bytes: bytes, key_path: Path) -> None:
     if not key_path.is_file():
-        sys.exit(f"[!] TRUST ANCHOR FAULT: Public key missing at {key_path}")
+        sys.exit(f"[!] TRUST ANCHOR FAULT: Missing pinned trust anchor at {key_path}")
 
     key_data = key_path.read_bytes()
     manifest_bytes = manifest_path.read_bytes()
@@ -186,7 +191,7 @@ def verify_ed25519(manifest_path: Path, sig_bytes: bytes, key_path: Path) -> Non
             public_key = Ed25519PublicKey.from_public_bytes(base64.b64decode(key_data.strip()))
         public_key.verify(sig_bytes, manifest_bytes)
     except InvalidSignature:
-        sys.exit("[!] ADMISSION DENIED: Cryptographic signature mismatch over manifest bytes.")
+        sys.exit("[!] ADMISSION DENIED: Cryptographic signature invalid / mismatch over manifest bytes.")
     except SystemExit:
         raise
     except Exception as exc:
@@ -222,7 +227,7 @@ def _verify_ed25519_openssl(manifest_path: Path, sig_bytes: bytes, key_path: Pat
         except OSError:
             pass
     if result.returncode != 0:
-        sys.exit("[!] ADMISSION DENIED: Cryptographic signature mismatch over manifest bytes.")
+        sys.exit("[!] ADMISSION DENIED: Cryptographic signature invalid / mismatch over manifest bytes.")
 
 
 def verify_manifest(
@@ -286,11 +291,62 @@ def verify_manifest(
     return 0
 
 
+def verify_package_admission(
+    receipt_path: Path,
+    manifest_path: Path,
+    sig_path: Path,
+    prefix: Path | None,
+    key_path: Path,
+) -> int:
+    manifest_path = manifest_path.resolve()
+    if not manifest_path.is_file():
+        sys.exit(f"[!] ADMISSION DENIED: Manifest not found: {manifest_path}")
+
+    receipt_path = receipt_path.resolve()
+    if not receipt_path.is_file():
+        sys.exit(f"[!] ADMISSION DENIED: Receipt not found: {receipt_path}")
+
+    sig_path = sig_path.resolve()
+    if not sig_path.is_file():
+        sys.exit(f"[!] ADMISSION DENIED: Detached signature missing for {manifest_path}")
+
+    sig_bytes, _sidecar = load_signature_fields(sig_path)
+    verify_ed25519(manifest_path, sig_bytes, key_path)
+    print(f"[+] PROVENANCE: Ed25519 digital signature VALID (Key: {key_path})")
+
+    try:
+        manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        sys.exit(f"[!] ADMISSION DENIED: Manifest JSON malformed: {exc}")
+
+    actual_receipt_sha256 = compute_sha256(receipt_path)
+    expected_receipt_sha256 = None
+    if isinstance(manifest_data, dict):
+        rec_info = manifest_data.get("receipt")
+        if isinstance(rec_info, dict):
+            expected_receipt_sha256 = rec_info.get("sha256")
+
+    if actual_receipt_sha256 != expected_receipt_sha256:
+        sys.exit(
+            f"[!] ADMISSION DENIED: Receipt SHA-256 mismatch\n"
+            f"    Expected: {expected_receipt_sha256}\n"
+            f"    Actual:   {actual_receipt_sha256}"
+        )
+
+    print("[+] PROVENANCE: Receipt SHA-256 verified against signed provenance manifest.")
+    print("[+] VERDICT: TRUSTED -> ALLOW EXECUTION")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="External QuantumFlex provenance verifier (host trust anchor)."
     )
-    parser.add_argument("manifest", type=Path, help="Path to PROVENANCE_MANIFEST.json")
+    parser.add_argument("manifest_pos", nargs="?", default=None, type=Path, help="Path to PROVENANCE_MANIFEST.json")
+    parser.add_argument("--manifest", type=Path, default=None, help="Path to provenance manifest")
+    parser.add_argument("--receipt", type=Path, default=None, help="Path to QuantumFlexAdmission.json receipt")
+    parser.add_argument("--signature", type=Path, default=None, help="Path to detached signature")
+    parser.add_argument("--prefix", type=Path, default=None, help="Path to package installation prefix")
     parser.add_argument(
         "--repo-root",
         type=Path,
@@ -314,8 +370,21 @@ def main() -> int:
         help="Single allowed signing.plane (default host-release-a5).",
     )
     args = parser.parse_args()
+
+    manifest_path = args.manifest or args.manifest_pos
+    if args.receipt is not None:
+        if manifest_path is None:
+            sys.exit("[!] ADMISSION DENIED: --manifest required when --receipt is specified")
+        sig_path = args.signature or find_signature(manifest_path)
+        return verify_package_admission(
+            args.receipt, manifest_path, sig_path, args.prefix, args.key.resolve()
+        )
+
+    if manifest_path is None:
+        parser.error("the following arguments are required: manifest")
+
     return verify_manifest(
-        args.manifest, args.repo_root, args.key.resolve(), args.key_id, args.plane
+        manifest_path, args.repo_root, args.key.resolve(), args.key_id, args.plane
     )
 
 
