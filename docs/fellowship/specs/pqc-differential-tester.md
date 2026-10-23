@@ -3,10 +3,11 @@ status: active
 author: rocky
 ---
 
-# Requirements: PQC Differential Tester
+# Requirements: Flint PQC (Differential Tester)
 
-**Defined:** 2026-10-20
-**Locked decisions:** D-01 to D-06
+**Codename:** Flint PQC (`flint-pqc`)  
+**Defined:** 2026-10-20  
+**Locked decisions:** D-01 to D-06  
 
 ## Locked Decisions
 
