@@ -701,3 +701,40 @@ Append-only directive from Chief Architect Rocky.
 Authoritative update from Chief Architect Rocky:
 - **Tailscale Active Peer Address:** The active Tailscale mesh address for `qfx-pixel` (`pixel-11-pro-1`) is updated to **`100.64.1.16`** (superseding legacy registration `100.64.1.22`).
 - **Telemetry & MCP Propagation:** Updated `bot_server.py`, `teammates.py`, `docs/tailscale_acl_policy.hujson`, `docs/tailscale_acl_policy.json`, and `docs/PROBOOK_G6_NODE1_HANDOFF.md` to reflect `100.64.1.16`. Added deduplication to ensure live peer entries (`pixel-11-pro-1` online) supersede stale inactive records.
+
+### 19.14 OPA Mutation Engine Overhaul, CBOM Auditor Hardening, and Real-Grant Ground Truth (2026-10-23, Chief Architect Rocky / Antigravity)
+
+Authoritative update from Chief Architect Rocky:
+
+1. **AST-Aware Source Span Mutation Engine Overhaul (`scripts/ast_mutation_engine.py`)**:
+   - **Root Cause & Fix:** Replaced faulty node inspection (`"type": "expr"`) with exact OPA AST location parsing (`opa parse --format=json --json-include locations`). The AST walker extracts real body expressions via `index`, `terms`, and `location`.
+   - **Exclusions:** Skips `default` rules and synthetic boolean bodies (`terms.type == "boolean" and terms.value == true`) attached to constants and `else` branches.
+   - **Byte-Exact Spans & Sandboxing:** Decodes and checks base64 source byte spans against source text (`offset = line_start_offset + (col - 1)`). All mutations execute in isolated temporary directory sandboxes (`tempfile.TemporaryDirectory()`), ensuring source policy files remain 100% untouched.
+   - **Result-Driven Classification:** Parses `opa test --format=json` outputs to classify `KILLED` (failed assertion), `EXECUTION_ERROR` (error without failed assertion; hard fault exit 2), `INVALID` (compilation failure; excluded from kill score denominator), and `SURVIVED`.
+   - **Live Policy Verification:**
+     - `sentinel/policies/bootgate.rego`: 24/24 killed (100%, exit 0)
+     - `sentinel/policies/gatekeeper_attestation.rego`: 12/12 killed, 8 invalid (100%, exit 0)
+     - `sentinel/policies/membrane_health.rego`: 46 killed, 20 survived, 16 invalid (exit 1, halts release gate until tests added)
+     - `sentinel/policies/reserve_invariant.rego`: 32 killed, 39 survived, 8 invalid (exit 1, halts release gate until tests added)
+   - **Unit Tests:** Added 9 tests in [`tests/test_ast_mutation_engine.py`](file:///home/quant/mycelium/tests/test_ast_mutation_engine.py) (9/9 passing). Full suite: **441 passed, 9 skipped, 0 failed**.
+
+2. **CircleCI Pipeline Upgrades (`.circleci/config.yml`)**:
+   - Added `test-opa-mutation-engine` job: Installs OPA `v1.2.0`, runs all mutation engine tests, and executes mutation checks against `sentinel/policies/bootgate.rego`.
+   - Added `test-solidity-settler` job: Installs Foundry, initializes submodules, and executes `forge test -vvv` under `evm_version = "paris"`.
+
+3. **CBOM Compliance Auditor Refinement (`tools/qf_audit.py`)**:
+   - Implemented `strip_comments_and_defensive_guards()` to strip single- and multi-line comments across Rust, C/C++, Solidity, Python, and SQL.
+   - Masks toxic algorithm terms (`SHA-1`, `MD5`) on lines containing defensive rejection keywords (`reject`, `cannot`, `disallowed`, `unsupported`, `forbidden`, `fail_closed`).
+   - Eliminated false-positive detection in `quantumflex-telemetry/src/telemetry/pcr10_replay.rs` (which defensively rejects legacy SHA-1 event logs).
+   - Added `reports/` and `research_notes/` to `IGNORE_DIRS`.
+   - Both repositories certified:
+     - `mycelium`: 585 files scanned $\rightarrow$ **`[COMPLIANT // QUANTUM-AGILE]`**
+     - `qf-public`: 438 files scanned $\rightarrow$ **`[COMPLIANT // QUANTUM-AGILE]`**
+
+4. **Web3 Grant & Network Ground Truth (`reports/Builder funding status October 2026.md`)**:
+   - Grounded all grant claims: 0 of 11 programs pay for local tests; active routes require live on-chain deployments moving real value.
+   - Refuted claims: Circle award range ($5k-$100k), 1-5 ETH Base grants, ongoing Base rewards for deployed contracts, and retroactive Optimism paybacks are outdated or unsubstantiated. "14 of 881" cohort figure has no source.
+   - Recipient obligations: Form W-9, KYC, ordinary income tax + 15.3% self-employment tax, PA flat 3.07% income tax.
+   - Arc Network Ground Truth: EVM Osaka baseline; `PUSH0` verified working; `evm_version = "paris"` retained in `foundry.toml` for universal portability; USDC duality (18-decimal native gas / 6-decimal ERC-20); 20 gwei gas floor enforced; CCTP domain 26.
+   - Keystore Invariant: Deployer key encrypted in `~/.foundry/keystores/deployer`, eliminating raw `--private-key` flags in terminal commands.
+
