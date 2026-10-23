@@ -140,9 +140,10 @@ def strip_comments_and_defensive_guards(content: str, ext: str) -> str:
     lines = content.splitlines()
     cleaned_lines = []
 
-    # Defensive guard keywords that indicate code is rejecting or forbidding a primitive
+    # Specific error/panic/exception macros where mentioning a toxic primitive in the error message
+    # is an explicit defensive rejection (e.g., bail!("... SHA-1 not supported ..."))
     guard_re = re.compile(
-        r"\b(reject|unsupported|disallowed|deprecated|cannot|prohibited|forbidden|invalid|unrecognized|not allowed|fail_closed)\b",
+        r"""(?:bail!|panic!|raise\s+\w*Error|throw\s+new\s+\w*Error|compile_error!|reject_)\s*\(.*?\b(SHA[-_]?1|MD5)\b""",
         re.IGNORECASE,
     )
 
@@ -178,8 +179,8 @@ def strip_comments_and_defensive_guards(content: str, ext: str) -> str:
             if "--" in line:
                 line = line.split("--", 1)[0]
 
-        # If the line contains an explicit defensive guard (e.g. bail!, assert, panic, reject, error),
-        # mask toxic keywords (SHA-1, MD5) so error messages rejecting them don't register as active algorithms
+        # If the line is an explicit rejection error or panic macro, mask the toxic keyword
+        # so defensive error messages explaining why a primitive is forbidden don't register as active algorithms
         if guard_re.search(line):
             line = re.sub(r"\b(SHA[-_]?1|MD5)\b", "[MASKED_DEFENSIVE_GUARD]", line, flags=re.IGNORECASE)
 
@@ -499,7 +500,6 @@ The following static buffer allocations were detected within the AST/source code
 
 
 def main():
-    print_banner()
     parser = argparse.ArgumentParser(
         description="QuantumFlex Automated PQC & CBOM Compliance Auditor (Rahshaun Chambers)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -509,6 +509,9 @@ def main():
     parser.add_argument("--json", action="store_true", help="Print pure JSON output to stdout")
 
     args = parser.parse_args()
+    if not args.json:
+        print_banner()
+
     target_path = Path(args.target).resolve()
 
     if not target_path.exists():
