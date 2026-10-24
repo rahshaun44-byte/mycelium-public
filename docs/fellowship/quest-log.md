@@ -1,6 +1,6 @@
 # Quest Log
 
-**Last updated:** 2026-10-23
+**Last updated:** 2026-10-24
 
 ## Open
 
@@ -35,3 +35,4 @@ Decisions and commitments that survive across sessions. One line per entry, date
 - 2026-10-23 — CONFIRMED (Rock): Rock replaced `~/.local/libexec/quantumflex/verify-provenance` 10-22 23:39 to match `37a2805`. release/ manifest last signed 09-25, so it was installed by hand, outside the installer gate.
 - 2026-10-23 — FIXED (uncommitted): `build_clean/` binaries from `48a27ff` untracked and ignored. Hardcoded amara-matrix password in `scripts/restore_quantumflex_node.sh` replaced with required `POSTGRES_PASSWORD`; the literal is stale (matches no live or .env value) but stays in pushed history.
 - 2026-10-23 — DONE: S23 FE (stolen) and HP Pavilion purged from mycelium code, UI, docs and skills; Kafka defaults retargeted to g6pro `100.64.1.19:9092`; restore script needs explicit `BACKUP_HOST`. Git history not rewritten. The S23 holds no tailnet node, pinned key or SSH entry. Guard lines ("there is NO S23 / Pavilion") kept on purpose.
+- 2026-10-24 — DECIDED (Rock): D-07. Home-system freeze. In-flight work is committed or set aside, and the only home-system work allowed is credential rotation, GitHub PAT first, every step Rock-run. Flint resumes only after rotation is closed and CS 320 is current, scoped to one target (RustCrypto `ml-dsa` KAT suite) through its first published result. Deferred to v2+: funding research, settlement changes, further CBOM/CI hardening, codebase-map refresh. Settlement stays under the 10-23 legal hold regardless.
