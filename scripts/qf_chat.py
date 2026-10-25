@@ -34,20 +34,20 @@ MAGENTA = "\033[0;35m"
 WHITE = "\033[1;37m"
 RESET = "\033[0m"
 
-QF_BOT_URL = os.environ.get("QF_BOT_URL", "http://127.0.0.1:9000")
+QF_BOT_URL = os.environ.get("QF_BOT_URL", "http://127.0.0.1:9001")
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
 AGENTS = {
-    "athena": {"name": "ATHENA", "avatar": "🧠", "color": CYAN, "desc": "Cognitive Vector Memory & RAG Oracle"},
+    "athena": {"name": "ATHENA", "avatar": "🧠", "color": CYAN, "desc": "Cognitive Vector Memory & Blueprint RAG Oracle"},
+    "amara": {"name": "AMARA", "avatar": "⚡", "color": MAGENTA, "desc": "Biological System Monitor & Autonomous Engine"},
     "sentinel": {"name": "SENTINEL", "avatar": "▲", "color": RED, "desc": "Perimeter Defense & Invariant Gate"},
-    "mycelia": {"name": "MYCELIA", "avatar": "🍄", "color": GREEN, "desc": "WireGuard P2P Mesh & Interconnect"},
-    "aria": {"name": "ARIA", "avatar": "◈", "color": MAGENTA, "desc": "Executive Assistant & Orchestrator"},
+    "cs320": {"name": "CS320", "avatar": "🎓", "color": GREEN, "desc": "SNHU Coursework, Java QA & Test Automation Coach"},
     "all": {"name": "ALL UNITS", "avatar": "⬡", "color": YELLOW, "desc": "Swarm Broadcaster & Auto-Router"},
 }
 
 
 def query_qf_bot(message: str, target_bot: Optional[str] = None) -> Dict[str, Any]:
-    """Dispatches query to local QF-Bot server on loopback port 9000."""
+    """Dispatches query to local QF-Bot server on loopback port 9001."""
     url = f"{QF_BOT_URL}/api/chat"
     payload = json.dumps({"message": message, "target_bot": target_bot or ""}).encode("utf-8")
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
@@ -61,7 +61,14 @@ def query_qf_bot(message: str, target_bot: Optional[str] = None) -> Dict[str, An
 
 def query_ollama_fallback(message: str, target_bot: Optional[str] = None) -> Dict[str, Any]:
     """Direct query to local Ollama if QF-Bot service is offline."""
-    model = "athena:latest" if target_bot == "athena" else ("amara:latest" if target_bot in ["aria", "amara"] else "qwen2.5-coder:1.5b")
+    if target_bot == "athena":
+        model = "athena:latest"
+    elif target_bot in ["amara", "aria"]:
+        model = "amara:latest"
+    elif target_bot in ["cs320", "tutor"]:
+        model = "cs320-tutor:latest"
+    else:
+        model = "qwen2.5-coder:7b"
     url = f"{OLLAMA_URL}/api/generate"
     payload = json.dumps({"model": model, "prompt": message, "stream": False}).encode("utf-8")
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
@@ -175,13 +182,17 @@ def main():
         else:
             prompt = " ".join(sys.argv[2:])
 
+        print(f"{DIM}[*] Dispatching to [{target.upper()}] on local silicon...{RESET}", end="\r", flush=True)
         res = query_qf_bot(prompt, target_bot=target)
         bot = res.get("bot", {})
-        print(f"\n{BOLD}{CYAN}[{bot.get('avatar', '🤖')} {bot.get('name', target.upper())}]:{RESET} {res.get('response', '')}\n")
+        print(" " * 60, end="\r", flush=True)
+        print(f"\n{BOLD}{CYAN}[{bot.get('avatar', '🤖')} {bot.get('name', target.upper())}]:{RESET}\n{res.get('response', '')}\n")
     elif len(sys.argv) == 2 and sys.argv[1] not in ["-h", "--help"]:
         prompt = sys.argv[1]
+        print(f"{DIM}[*] Dispatching to [ATHENA] on local silicon...{RESET}", end="\r", flush=True)
         res = query_qf_bot(prompt, target_bot="athena")
-        print(f"\n{BOLD}{CYAN}[🧠 ATHENA]:{RESET} {res.get('response', '')}\n")
+        print(" " * 60, end="\r", flush=True)
+        print(f"\n{BOLD}{CYAN}[🧠 ATHENA]:{RESET}\n{res.get('response', '')}\n")
     else:
         interactive_loop()
 

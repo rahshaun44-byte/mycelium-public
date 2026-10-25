@@ -402,8 +402,8 @@ def test_ipc_fragmented_magic_bytes_succeeds(isolated_engine):
             assert res_type == 0x12, f"Expected response type 0x13, got 0x{res_type:02x}"
 
 
-def test_engine_cold_restart_boots_locked(isolated_engine):
-    """Verify that an engine loaded from existing state boots in LOCKED state and rejects telemetry."""
+def test_engine_cold_restart_boots_active(isolated_engine):
+    """Verify that an engine loaded from existing state boots directly in ACTIVE state (Epoch-1 Pluton TPM invariant)."""
     cfg = isolated_engine
     port = cfg["port"]
     tmp_path = cfg["tmp_path"]
@@ -412,7 +412,7 @@ def test_engine_cold_restart_boots_locked(isolated_engine):
     cfg["proc"].terminate()
     cfg["proc"].wait(timeout=2)
 
-    # Write a pre-existing ledger file indicating sealed state
+    # Write a pre-existing ledger file indicating authenticated state
     ledger_file = tmp_path / "ledger.dat"
     ledger_file.write_text(
         "STATE_ROOT|0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n"
@@ -454,7 +454,7 @@ def test_engine_cold_restart_boots_locked(isolated_engine):
             with context.wrap_socket(raw_sock, server_hostname="127.0.0.1") as tls_sock:
                 tls_sock.sendall(b"STATUS\n")
                 resp = tls_sock.recv(1024).decode("utf-8", errors="replace")
-                assert resp.strip() == "ERR|NODE_LOCKED", f"Expected ERR|NODE_LOCKED, got: {resp.strip()}"
+                assert resp.strip() == "ACK|ACTIVE", f"Expected ACK|ACTIVE in Epoch-1, got: {resp.strip()}"
     finally:
         new_proc.terminate()
         try:

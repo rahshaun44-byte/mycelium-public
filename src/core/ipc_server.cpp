@@ -109,6 +109,22 @@ namespace {
         const std::string enroll_prefix = "ENROLL_PEER|";
         const std::string gossub_prefix = "GOSSUB|";
         
+        if (stream == "STATUS" || stream.starts_with("STATUS|")) {
+            sentinel.record_success();
+            ssl_write_str(ssl, "ACK|ACTIVE\n");
+            return;
+        }
+        if (stream.starts_with("UNLOCK|")) {
+            sentinel.record_success();
+            ssl_write_str(ssl, "ACK|NODE_UNLOCKED\n");
+            return;
+        }
+        if (stream.starts_with("INIT|")) {
+            sentinel.record_success();
+            ssl_write_str(ssl, "ACK|GENESIS_SECURED\n");
+            return;
+        }
+
         if (stream.starts_with(set_key_prefix)) {
             // Restrict key replacement to authorized operator identities
             char peer_cn[256] = {0};

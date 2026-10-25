@@ -5,7 +5,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
 from sentinel.intelligence.athena_vector_db import AthenaVectorStore
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
-MODEL = os.environ.get("ATHENA_MODEL", "gemma2:2b")
+MODEL = os.environ.get("ATHENA_MODEL", "athena:latest")
 
 def query_athena(question: str):
     store = AthenaVectorStore()
@@ -29,7 +29,7 @@ def query_athena(question: str):
     payload = {"model": MODEL, "prompt": prompt, "stream": False}
     req = urllib.request.Request(f"{OLLAMA_URL}/api/generate", data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=45) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             return json.loads(resp.read().decode("utf-8")).get("response", "").strip()
     except Exception as e:
         return f"[-] Error querying local Ollama: {e}"

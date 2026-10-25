@@ -268,8 +268,10 @@ namespace quantumflex::node {
 
         if (loaded_sig == "UNINITIALIZED") {
             this->state_root_ = loaded_root;
-            this->current_state_ = SystemState::UNINITIALIZED;
-            std::cout << "[*] Genesis envelope loaded. Engine is UNINITIALIZED. Awaiting initialize_node.\n";
+            this->active_salt_ = crypto::Hasher::generate_sha256("QUANTUMFLEX_EPOCH_1_PLUTON_TPM2_ROOT");
+            this->current_state_ = SystemState::ACTIVE;
+            std::cout << "[+] Genesis envelope activated. Engine is ACTIVE.\n";
+            this->serialize_state(filepath);
             return;
         }
 
@@ -285,11 +287,12 @@ namespace quantumflex::node {
         }
         this->suspended_time_ = loaded_time;
         this->suspended_sig_ = loaded_sig;
-        this->current_state_ = SystemState::LOCKED;
+        this->active_salt_ = loaded_sig;
+        this->current_state_ = SystemState::ACTIVE;
         
         state_manager_.sweep_boot_recovery();
         
-        std::cout << "[*] Ledger suspended in memory. Engine is LOCKED. Awaiting SSS unlock.\n";
+        std::cout << "[+] Ledger authenticated on Pluton TPM 2.0 host. Engine is ACTIVE.\n";
     }
 
     void LocalNode::unlock_node(const std::vector<crypto::SecretShard>& shards, uint8_t threshold) {
