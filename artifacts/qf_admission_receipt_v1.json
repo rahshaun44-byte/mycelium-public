@@ -1,0 +1,42 @@
+{
+  "cryptographic_seal": {
+    "algorithm": "Ed25519",
+    "payload_sha256": "0254253c1e653eaa265ae912418eb37cc5cbcfd9fac037c6d1708a66c651e7b1",
+    "public_key_fingerprint_sha256": "de10dfb0b9aca07d71dc1572bde051761bbe5d087ea4bee484e72f81711b5c25",
+    "public_key_raw_b64": "MhRxknn31uTl6l9FdaiT9y4lvcA7fvpQIX+jv1/Oy98=",
+    "signature_b64": "uF9Dqdy+s+3dC8MWG8pV/FQaO1QcfbeBBkdX1uy67rsYQvM5ajmyCuT0qX5IXTYzRJlI2LWOGSBMqIwBotzMAA=="
+  },
+  "payload": {
+    "artifact_sha256": {
+      "docs/fellowship/quest-log.md": "e2357035f2d9fe3dcab30e145cfdc4440e60ff3266cefd37b08fb64d19280580",
+      "mcp_layer/circuit_breaker.py": "c79433210e8e11762dadbc459a01f5c9f52cae54b368316f4b3c39857e085293",
+      "mcp_layer/dispatcher.py": "2987fbc9fa57006c3c799746540e771294c59702ebeb58b1a335e9b9e519050f",
+      "quantum-flex-sdk/src/lib.rs": "d277bf2d8ee0507d894981384d839e4ba8bd50ccbb952be5f3d62bb817bafc66",
+      "src/db_credentials.py": "451ec4f3a324aa1c08a75c1224856b3f6108887572460a63e82e876bf3e4b459",
+      "src/jsonl_resilience.py": "852fa37ca780365a6e6724b21612fc6aac0bae3304b6aba4e74d6e81d5c0998f",
+      "src/privacy_filter.py": "25047ff326b35c37b060c4eb7e910770b49ffa47815eefac8bac4e3b548d621c"
+    },
+    "epoch": "Epoch-1-Direct-to-Active",
+    "gates_closed": [
+      "P0:HS-PX-CVE-2026-58704",
+      "P0:Account-Security-Confirmations",
+      "P0/P1:FINALLYFUNGUS-LLC-Canonical",
+      "P0/P1:Telemetry-PrivacyFilter-Wiring-Proof",
+      "P1:MCP-Agent-Circuit-Breaker",
+      "P1:PostgreSQL-Writer-Verifier-ACL-Separation",
+      "P1:JSONL-Fsync-Metrics-Validation",
+      "P1:Storage-TornWrite-EIO-ENOSPC-Resilience"
+    ],
+    "git_branch": "fix/w1-w4",
+    "git_commit": "4c991073af0f8c531abf1fda79092774c1a354af",
+    "hardware_attestation": {
+      "anchor": "Microsoft Pluton TPM 2.0 (:9444)",
+      "pcr15_sha256": "d03b20ee22f0fb4634b06aecad248dc68b5cd61c115926bf07d4b9e772f6e6eb",
+      "pixel_strongbox_gate": "HS-PX-CLOSED-2026-10-05"
+    },
+    "issued_at_unix": 1793057700,
+    "manifest_root_sha256": "28a28ea5b9cce29f0557e0047a1876611259ff46a283234c80249736bad3b0d8",
+    "node_id": "qfx-yoga",
+    "schema": "qf.admission_receipt.v1"
+  }
+}

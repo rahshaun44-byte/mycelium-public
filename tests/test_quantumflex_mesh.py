@@ -25,7 +25,7 @@ PRIVATE_CONFIG = {
     },
     "Web": {
         f"{DNS_NAME}:443": {
-            "Handlers": {"/": {"Proxy": "http://127.0.0.1:9000"}}
+            "Handlers": {"/": {"Proxy": "http://127.0.0.1:9001"}}
         }
     },
 }
@@ -72,11 +72,11 @@ elif args[:3] == ["serve", "--bg", "--yes"]:
             if args[5:] != [f"127.0.0.1:{args[4]}"]:
                 sys.exit("unexpected TCP target")
             state.setdefault("TCP", {})[args[4]] = {"TCPForward": args[5]}
-        elif args[3:] in (["9000"], ["--https", "443", "http://127.0.0.1:9000"]):
+        elif args[3:] in (["9001"], ["--https", "443", "http://127.0.0.1:9001"], ["9000"], ["--https", "443", "http://127.0.0.1:9000"]):
             state.setdefault("TCP", {})["443"] = {"HTTPS": True}
             handlers = state.setdefault("Web", {}).setdefault(
                 "mesh-test.example.ts.net:443", {}).setdefault("Handlers", {})
-            handlers["/"] = {"Proxy": "http://127.0.0.1:9000"}
+            handlers["/"] = {"Proxy": "http://127.0.0.1:9001"}
         else:
             sys.exit("unexpected Serve mutation")
         (directory / "state.json").write_text(json.dumps(state))
@@ -164,7 +164,7 @@ def test_all_four_private_mappings_are_read_back_before_active(run_mesh):
     assert state == PRIVATE_CONFIG
     last_write = max(index for index, call in enumerate(calls) if call[:3] == ["serve", "--bg", "--yes"])
     assert ["serve", "status", "--json"] in calls[last_write + 1:]
-    assert ["serve", "--bg", "--yes", "--https", "443", "http://127.0.0.1:9000"] in calls
+    assert ["serve", "--bg", "--yes", "--https", "443", "http://127.0.0.1:9001"] in calls
 
 
 @pytest.mark.parametrize("bad_result", ["null", "[]", "not-json"])

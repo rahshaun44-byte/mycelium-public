@@ -8,7 +8,9 @@
 //! global edge privacy standards by excluding any network whose SSID contains
 //! `_optout` or `_nomap` (case-insensitive).
 
-use std::io::Write;
+use std::fs::OpenOptions;
+use std::io::{self, BufRead, BufReader, Write};
+use std::path::Path;
 
 /// A Wi-Fi observation before privacy processing.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -192,6 +194,84 @@ pub fn persist_to_jsonl_file<P: AsRef<std::path::Path>>(
     persist_telemetry(scans, &mut store)
 }
 
+/// Scans an existing JSONL file, validates each line as well-formed JSON,
+/// and truncates any incomplete/torn tail line caused by power loss or mid-write EIO/ENOSPC.
+/// Returns (valid_lines_retained, bytes_truncated).
+pub fn recover_jsonl_ledger<P: AsRef<Path>>(path: P) -> io::Result<(usize, u64)> {
+    let file_path = path.as_ref();
+    if !file_path.exists() {
+        return Ok((0, 0));
+    }
+
+    let mut file = OpenOptions::new().read(true).write(true).open(file_path)?;
+    let total_len = file.metadata()?.len();
+    let mut reader = BufReader::new(&mut file);
+
+    let mut valid_offset: u64 = 0;
+    let mut valid_lines: usize = 0;
+    let mut line_buf = Vec::new();
+
+    loop {
+        line_buf.clear();
+        let bytes_read = reader.read_until(b'\n', &mut line_buf)?;
+        if bytes_read == 0 {
+            break; // Clean EOF
+        }
+
+        let ends_with_newline = line_buf.last() == Some(&b'\n');
+        let trimmed = String::from_utf8_lossy(&line_buf);
+        let trimmed_str = trimmed.trim();
+
+        if trimmed_str.is_empty() && ends_with_newline {
+            valid_offset += bytes_read as u64;
+            continue;
+        }
+
+        let is_valid_record = ends_with_newline
+            && trimmed_str.starts_with('{')
+            && trimmed_str.ends_with('}')
+            && trimmed_str.contains("\"ssid\":")
+            && trimmed_str.contains("\"bssid\":")
+            && trimmed_str.contains("\"rssi_dbm\":")
+            && !should_exclude_ssid(trimmed_str);
+
+        if is_valid_record {
+            valid_offset += bytes_read as u64;
+            valid_lines += 1;
+        } else {
+            // Torn write or corrupted tail detected -> stop scanning and truncate at last valid offset
+            break;
+        }
+    }
+
+    let bytes_truncated = total_len.saturating_sub(valid_offset);
+    if bytes_truncated > 0 {
+        let f_trunc = OpenOptions::new().write(true).open(file_path)?;
+        f_trunc.set_len(valid_offset)?;
+        f_trunc.sync_all()?;
+    }
+
+    Ok((valid_lines, bytes_truncated))
+}
+
+/// Persists compliant telemetry observations to a file and executes an explicit OS fdatasync (sync_data).
+/// Pre-recovers any torn tail before appending so new records never concatenate onto a partial line.
+pub fn persist_to_jsonl_file_durable<P: AsRef<Path>>(
+    scans: impl IntoIterator<Item = ScanResult>,
+    file_path: P,
+) -> io::Result<usize> {
+    let path = file_path.as_ref();
+    if path.exists() {
+        let _ = recover_jsonl_ledger(path)?;
+    }
+
+    let file = OpenOptions::new().create(true).append(true).open(path)?;
+    let mut store = JsonLinesStore::new(file);
+    let written = persist_telemetry(scans, &mut store)?;
+    store.into_inner().sync_data()?;
+    Ok(written)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -329,6 +409,129 @@ mod tests {
         let res_jl = jl.persist(&[unvetted]);
         assert!(res_jl.is_err(), "JsonLinesStore must reject opted-out observation");
         assert!(buf.is_empty(), "JsonLinesStore must not write opted-out observation");
+    }
+
+    struct FaultInjectingWriter {
+        buffer: Vec<u8>,
+        max_bytes_before_fault: usize,
+        raw_os_errno: i32,
+        simulate_partial_torn_write: bool,
+    }
+
+    impl FaultInjectingWriter {
+        fn new(
+            max_bytes_before_fault: usize,
+            raw_os_errno: i32,
+            simulate_partial_torn_write: bool,
+        ) -> Self {
+            Self {
+                buffer: Vec::new(),
+                max_bytes_before_fault,
+                raw_os_errno,
+                simulate_partial_torn_write,
+            }
+        }
+    }
+
+    impl Write for FaultInjectingWriter {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            if self.buffer.len() + buf.len() > self.max_bytes_before_fault {
+                if self.simulate_partial_torn_write && self.buffer.len() < self.max_bytes_before_fault {
+                    let allowed = self.max_bytes_before_fault - self.buffer.len();
+                    self.buffer.extend_from_slice(&buf[..allowed]);
+                }
+                return Err(io::Error::from_raw_os_error(self.raw_os_errno));
+            }
+            self.buffer.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn simulated_enospc_propagates_exact_os_error_28() {
+        let writer = FaultInjectingWriter::new(65, 28, false);
+        let mut store = JsonLinesStore::new(writer);
+
+        let batch = vec![
+            ScanResult {
+                ssid: "QF-Mesh-Node-1".into(),
+                bssid: "aa:bb:cc:dd:ee:01".into(),
+                rssi_dbm: -48,
+            },
+            ScanResult {
+                ssid: "QF-Mesh-Node-2".into(),
+                bssid: "aa:bb:cc:dd:ee:02".into(),
+                rssi_dbm: -52,
+            },
+        ];
+
+        let err = persist_telemetry(batch, &mut store).expect_err("Expected ENOSPC failure");
+        assert_eq!(err.raw_os_error(), Some(28));
+    }
+
+    #[test]
+    fn simulated_eio_propagates_exact_os_error_5() {
+        let writer = FaultInjectingWriter::new(0, 5, false);
+        let mut store = JsonLinesStore::new(writer);
+
+        let batch = vec![ScanResult {
+            ssid: "QF-Mesh-Node-1".into(),
+            bssid: "aa:bb:cc:dd:ee:01".into(),
+            rssi_dbm: -45,
+        }];
+
+        let err = persist_telemetry(batch, &mut store).expect_err("Expected EIO failure");
+        assert_eq!(err.raw_os_error(), Some(5));
+    }
+
+    #[test]
+    fn torn_write_recovery_truncates_partial_tail_and_preserves_valid_commits() {
+        let tmp_dir = std::env::temp_dir();
+        let file_path = tmp_dir.join(format!("qf_torn_recovery_{}.jsonl", std::process::id()));
+        let _ = std::fs::remove_file(&file_path);
+
+        let initial_scans = vec![
+            ScanResult {
+                ssid: "QF-Valid-1".into(),
+                bssid: "00:11:22:33:44:01".into(),
+                rssi_dbm: -40,
+            },
+            ScanResult {
+                ssid: "QF-Valid-2".into(),
+                bssid: "00:11:22:33:44:02".into(),
+                rssi_dbm: -42,
+            },
+        ];
+        let written = persist_to_jsonl_file_durable(initial_scans, &file_path).unwrap();
+        assert_eq!(written, 2);
+
+        // Simulate sudden power loss mid-write
+        {
+            let mut f = OpenOptions::new().append(true).open(&file_path).unwrap();
+            f.write_all(b"{\"ssid\":\"QF-Torn-PowerLoss\",\"bssid\":\"99:88").unwrap();
+            f.sync_all().unwrap();
+        }
+
+        let (retained_lines, truncated_bytes) = recover_jsonl_ledger(&file_path).unwrap();
+        assert_eq!(retained_lines, 2);
+        assert_eq!(truncated_bytes, 42);
+
+        let next_scan = vec![ScanResult {
+            ssid: "QF-Valid-3".into(),
+            bssid: "00:11:22:33:44:03".into(),
+            rssi_dbm: -44,
+        }];
+        persist_to_jsonl_file_durable(next_scan, &file_path).unwrap();
+
+        let (final_lines, final_truncated) = recover_jsonl_ledger(&file_path).unwrap();
+        assert_eq!(final_lines, 3);
+        assert_eq!(final_truncated, 0);
+
+        let _ = std::fs::remove_file(&file_path);
     }
 }
 

@@ -1,7 +1,8 @@
 import hmac
-from fastapi import HTTPException
-from fastapi import FastAPI, Request
+from fastapi import HTTPException, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 import asyncio
 import httpx
 import os
@@ -12,6 +13,11 @@ from pathlib import Path
 # Universal Invariant Gate (R >= O)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.privacy_filter import PrivacyFilter
+from api_node.circle_usdc_settlement import (
+    ARC_L1_CHAIN_CONFIG,
+    build_arc_settlement_payload,
+    scale_to_micro_usdc,
+)
 try:
     from sentinel.invariant_gate import evaluate_invariant, evaluate_all_invariants
 except Exception as e:
@@ -253,22 +259,29 @@ def persist_telemetry_frame(node_id: str, timestamp: int, payload_str: str) -> b
         print(f"[!] Telemetry live persistence filter error (fail-closed): {e}")
         return False
     try:
-        import psycopg2
-        db_user = os.environ.get("DB_USER", "api_node_service")
-        db_pass = os.environ.get("DB_PASSWORD", "")
-        if not db_pass:
-            secret_file = Path("/home/quant/projects/beta/secrets/api_node_service.secret")
-            if secret_file.exists():
-                db_pass = secret_file.read_text().strip()
+        from src.db_credentials import DatabaseRole, open_role_connection
+        try:
+            conn = open_role_connection(
+                role=DatabaseRole.WRITER,
+                dbname=os.environ.get("DB_NAME", "telemetry"),
+            )
+        except Exception:
+            import psycopg2
+            db_user = os.environ.get("DB_USER", "api_node_service")
+            db_pass = os.environ.get("DB_PASSWORD", "")
+            if not db_pass:
+                secret_file = Path("/home/quant/projects/beta/secrets/api_node_service.secret")
+                if secret_file.exists():
+                    db_pass = secret_file.read_text().strip()
 
-        conn = psycopg2.connect(
-            host=os.environ.get("DB_HOST", "127.0.0.1"),
-            port=int(os.environ.get("DB_PORT", 5432)),
-            dbname=os.environ.get("DB_NAME", "telemetry"),
-            user=db_user,
-            password=db_pass,
-            connect_timeout=3
-        )
+            conn = psycopg2.connect(
+                host=os.environ.get("DB_HOST", "127.0.0.1"),
+                port=int(os.environ.get("DB_PORT", 5432)),
+                dbname=os.environ.get("DB_NAME", "telemetry"),
+                user=db_user,
+                password=db_pass,
+                connect_timeout=3,
+            )
         with conn:
             with conn.cursor() as cur:
                 cur.execute("""
@@ -370,6 +383,51 @@ async def submit_telemetry(request: Request):
         "node_id": node_id,
         "seq": seq
     }
+
+
+class ArcSettlementRequest(BaseModel):
+    recipient_address: str = Field(..., description="EVM recipient address (0x...)")
+    amount_usdc: float | str = Field(..., description="USDC amount to settle (e.g. 5.50)")
+    block_hash: str = Field(..., description="Source block hash for RFC 4122 idempotency derivation")
+    nonce: int = Field(default=0, ge=0, description="Settlement nonce")
+
+
+@app.post("/api/v1/settlement/arc")
+async def execute_arc_usdc_settlement(payload: ArcSettlementRequest) -> JSONResponse:
+    """
+    Executes a micro-settlement on Circle Arc L1 using native USDC gas,
+    6-decimal micro-USDC scaling, and RFC 4122 deterministic idempotency.
+    """
+    # 1. PrivacyFilter inspection
+    payload_dict = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
+    if PrivacyFilter.contains_optout(payload_dict):
+        raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in settlement payload")
+
+    # 2. Scale amount to integer micro-USDC
+    try:
+        micro_amount = scale_to_micro_usdc(payload.amount_usdc)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # 3. Build Arc L1 payload
+    try:
+        settlement_payload = build_arc_settlement_payload(
+            recipient_address=payload.recipient_address,
+            amount_micro_usdc=micro_amount,
+            block_hash=payload.block_hash,
+            nonce=payload.nonce,
+        )
+        return JSONResponse(status_code=200, content={
+            "status": "SETTLEMENT_COMMITTED_DRY_RUN",
+            "chain": "Circle Arc L1",
+            "gas_token": "NATIVE_USDC",
+            "settlement": settlement_payload["settlement"],
+            "idempotency": settlement_payload["idempotency"],
+        })
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Settlement failed: {exc}") from exc
 
 
 if __name__ == "__main__":

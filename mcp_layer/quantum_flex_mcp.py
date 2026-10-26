@@ -27,6 +27,11 @@ import httpx
 from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
+try:
+    from mcp_layer.circuit_breaker import circuit_registry
+except ImportError:
+    from circuit_breaker import circuit_registry
+
 # ── Logging Configuration ───────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -94,6 +99,7 @@ def _get_active_processes() -> List[Dict[str, Any]]:
 
 
 @server.tool()
+@circuit_registry.protect("list_services")
 def list_services() -> dict:
     """List status, process IDs, and port states for all Quantum Flex services."""
     procs = _get_active_processes()
@@ -138,6 +144,7 @@ def list_services() -> dict:
 
 
 @server.tool()
+@circuit_registry.protect("ask_athena")
 async def ask_athena(question: str) -> dict:
     """Query ATHENA (RAG cognitive node) with a security or telemetry question.
     Proxied securely over loopback — ATHENA itself is never exposed externally."""
@@ -152,6 +159,7 @@ async def ask_athena(question: str) -> dict:
 
 
 @server.tool()
+@circuit_registry.protect("dashboard_snapshot")
 async def dashboard_snapshot() -> dict:
     """Fetch live telemetry, Euclidean Drive score (D), RAM/CPU load, and integrity state from AMARA Dashboard."""
     try:
@@ -163,6 +171,7 @@ async def dashboard_snapshot() -> dict:
 
 
 @server.tool()
+@circuit_registry.protect("api_node_status")
 async def api_node_status() -> dict:
     """Fetch health check and status from the API Gateway node."""
     try:
@@ -174,6 +183,7 @@ async def api_node_status() -> dict:
 
 
 @server.tool()
+@circuit_registry.protect("tailnet_mesh_status")
 def tailnet_mesh_status() -> dict:
     """Check Tailscale mesh status, local IP, and report peer connectivity."""
     try:
@@ -221,6 +231,7 @@ def tailnet_mesh_status() -> dict:
 
 
 @server.tool()
+@circuit_registry.protect("service_status")
 def service_status(service_name: str) -> dict:
     """Inspect status and read the last 40 lines of logs for a specific Quantum Flex service."""
     if service_name not in KNOWN_SERVICES:
@@ -256,6 +267,7 @@ def service_status(service_name: str) -> dict:
 
 
 @server.tool()
+@circuit_registry.protect("service_action")
 def service_action(service_name: str, action: str) -> dict:
     """Start, stop, or restart a specific Quantum Flex service.
     service_name must be one of: Athena-Node, Amara-Dashboard, Api-Node, Quantum-Flex-MCP, Sentinel-Tripwire, Immune-Daemon.
@@ -308,6 +320,19 @@ def service_action(service_name: str, action: str) -> dict:
         "status": "STARTED",
         "log_path": str(log_out),
     }
+
+
+@server.tool()
+def circuit_breaker_status() -> dict:
+    """Inspect current state (CLOSED, OPEN, HALF_OPEN), failure counters, and absorbed anomalies for all MCP tools."""
+    return circuit_registry.get_all_statuses()
+
+
+@server.tool()
+def reset_circuit_breaker(tool_name: Optional[str] = None) -> dict:
+    """Reset one or all circuit breakers back to nominal CLOSED state."""
+    return circuit_registry.reset_all(tool_name)
+
 
 
 # ── Transport Security ──────────────────────────────────────────────────────

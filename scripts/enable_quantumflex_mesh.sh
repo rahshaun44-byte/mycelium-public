@@ -89,9 +89,9 @@ web = object_field(config, "Web").get(sys.argv[2] + ":443")
 if not isinstance(web, dict):
     fail("Serve HTTPS :443 has no handler for this nodes MagicDNS name.")
 handler = object_field(web, "Handlers").get("/")
-if (not isinstance(handler, dict) or handler.get("Proxy") != "http://127.0.0.1:9000"
+if (not isinstance(handler, dict) or handler.get("Proxy") != "http://127.0.0.1:9001"
     or any(handler.get(key) for key in ("Path", "Text", "Redirect"))):
-    fail("Serve HTTPS :443 / does not proxy to http://127.0.0.1:9000.")
+    fail("Serve HTTPS :443 / does not proxy to http://127.0.0.1:9001.")
 for foreground in object_field(config, "Foreground").values():
     if ports.intersection(object_field(foreground, "TCP")):
         fail("Foreground Serve configuration overrides a QuantumFlex port; stop that foreground session first.")
