@@ -11,6 +11,7 @@ from pathlib import Path
 
 # Universal Invariant Gate (R >= O)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+from src.privacy_filter import PrivacyFilter
 try:
     from sentinel.invariant_gate import evaluate_invariant, evaluate_all_invariants
 except Exception as e:
@@ -243,6 +244,14 @@ async def evaluate_custom_invariant(request: Request):
 
 def persist_telemetry_frame(node_id: str, timestamp: int, payload_str: str) -> bool:
     """Live persistence caller: commits verified telemetry frame to quantum_telemetry_channel."""
+    # Defense-in-depth: Never allow opted-out telemetry to reach database storage, even on direct bypass invocation
+    try:
+        if PrivacyFilter.contains_optout(payload_str):
+            print(f"[!] Telemetry live persistence rejected: Privacy opt-out tag detected in payload.")
+            return False
+    except Exception as e:
+        print(f"[!] Telemetry live persistence filter error (fail-closed): {e}")
+        return False
     try:
         import psycopg2
         db_user = os.environ.get("DB_USER", "api_node_service")
@@ -333,9 +342,6 @@ async def submit_telemetry(request: Request):
     if ssid_to_check and PrivacyFilter.should_exclude_ssid(ssid_to_check):
         raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in SSID")
 
-    if isinstance(payload, str) and PrivacyFilter.should_exclude_ssid(payload):
-        raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in payload")
-
     # Sanitize frames if a list is present
     if isinstance(payload_obj, dict) and "frames" in payload_obj and isinstance(payload_obj["frames"], list):
         sanitized = []
@@ -347,10 +353,15 @@ async def submit_telemetry(request: Request):
         if not sanitized and payload_obj["frames"]:
             raise HTTPException(status_code=403, detail="Forbidden: All telemetry frames opted out")
         payload_obj["frames"] = sanitized
+    elif isinstance(payload_obj, dict) and PrivacyFilter.contains_optout(payload_obj):
+        raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in payload")
+    elif isinstance(payload, str) and PrivacyFilter.should_exclude_ssid(payload):
+        raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in payload")
 
     # 3. Live Persistence Caller
     payload_str = json.dumps(payload_obj) if payload_obj is not None else str(payload)
-    persist_telemetry_frame(node_id, int(timestamp), payload_str)
+    if not persist_telemetry_frame(node_id, int(timestamp), payload_str):
+        raise HTTPException(status_code=403, detail="Forbidden: Persistence rejected by privacy filter")
 
     # 4. Receipt
     return {

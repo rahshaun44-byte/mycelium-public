@@ -101,9 +101,17 @@ impl InMemoryStore {
 }
 
 impl TelemetryStore for InMemoryStore {
-    type Error = std::convert::Infallible;
+    type Error = std::io::Error;
 
     fn persist(&mut self, observations: &[TelemetryObservation]) -> Result<usize, Self::Error> {
+        for obs in observations {
+            if should_exclude_ssid(&obs.ssid) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "Privacy opt-out violation: observation contains opt-out/nomap SSID",
+                ));
+            }
+        }
         let count = observations.len();
         self.records.extend_from_slice(observations);
         Ok(count)
@@ -132,7 +140,14 @@ impl<W: Write> TelemetryStore for JsonLinesStore<W> {
     type Error = std::io::Error;
 
     fn persist(&mut self, observations: &[TelemetryObservation]) -> Result<usize, Self::Error> {
+        let mut count = 0;
         for obs in observations {
+            if should_exclude_ssid(&obs.ssid) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "Privacy opt-out violation: observation contains opt-out/nomap SSID",
+                ));
+            }
             writeln!(
                 self.writer,
                 r#"{{"ssid":"{}","bssid":"{}","rssi_dbm":{}}}"#,
@@ -140,9 +155,10 @@ impl<W: Write> TelemetryStore for JsonLinesStore<W> {
                 escape_json_str(&obs.bssid),
                 obs.rssi_dbm
             )?;
+            count += 1;
         }
         self.writer.flush()?;
-        Ok(observations.len())
+        Ok(count)
     }
 }
 
@@ -293,6 +309,26 @@ mod tests {
         assert!(lines[1].contains("Network_Beta"));
 
         let _ = std::fs::remove_file(&test_file);
+    }
+
+    #[test]
+    fn direct_store_persist_rejects_unvetted_observations() {
+        let unvetted = TelemetryObservation {
+            ssid: "Secret_optout".into(),
+            bssid: "11:22:33:44:55:66".into(),
+            rssi_dbm: -50,
+        };
+
+        let mut in_mem = InMemoryStore::new();
+        let res_mem = in_mem.persist(&[unvetted.clone()]);
+        assert!(res_mem.is_err(), "InMemoryStore must reject opted-out observation");
+        assert!(in_mem.is_empty(), "InMemoryStore must not retain opted-out observation");
+
+        let mut buf = Vec::new();
+        let mut jl = JsonLinesStore::new(&mut buf);
+        let res_jl = jl.persist(&[unvetted]);
+        assert!(res_jl.is_err(), "JsonLinesStore must reject opted-out observation");
+        assert!(buf.is_empty(), "JsonLinesStore must not write opted-out observation");
     }
 }
 

@@ -12,28 +12,22 @@ This skill provides operational procedures for managing, maintaining, and inspec
 
 ---
 
-## 1. Stratum 0 Engine Unsealing (Shamir 3-of-5 Ceremony)
+## 1. Stratum 0 Engine Verification & Epoch-1 Direct-to-Active State
 
-When the C++ Evidence Engine boots, it starts in a sealed `LOCKED` posture requiring a 3-of-5 threshold of cryptographic shards.
+With the Epoch-1 Sovereign Genesis Reboot, legacy Shamir Secret Sharing (SSS) ceremony overhead has been permanently tombstoned in `evidence_ledger.jsonl`. The C++ Evidence Engine (`quantum_flex_engine`) boots directly into the `ACTIVE` posture authenticated against the local Microsoft Pluton TPM 2.0 hardware anchor and local OPA policy (`127.0.0.1:8181`).
 
-### Unlock Procedure:
-1. Ensure the 3 required shard files are present (with permissions `0600`):
-   ```bash
-   chmod 600 ~/qfx-shards/shard_1.txt ~/qfx-shards/shard_2.txt
-   ```
-2. Execute the unseal script:
-   ```bash
-   cd /home/quant/mycelium && SHARD_FILES="$HOME/qfx-shards/shard_1.txt,$HOME/qfx-shards/shard_2.txt,$HOME/qfx-shards/shard_3.txt" ./scripts/unlock_engine.sh
-   ```
-3. Verify the engine state transitioned to `ACTIVE`:
+### Verification Procedure:
+1. Verify the engine state transitioned directly to `ACTIVE`:
    ```bash
    tail -n 15 /home/quant/.local/state/quantum-flex-mycelium/engine.log
    ```
-   *Expected:* `[+] Node Unlocked. Superposition collapsed into ACTIVE state.`
-4. Securely destroy any temporary memorized shard file:
+   *Expected:* `[+] Ledger authenticated on Pluton TPM 2.0 host. Engine is ACTIVE.`
+2. Verify mTLS TCP socket listening:
    ```bash
-   shred -u ~/qfx-shards/shard_3.txt
+   ss -tulpn | grep 9444
    ```
+   *Expected:* Listening on `127.0.0.1:9444` (pid of `quantum_flex_engine`).
+3. (Historical Reference) The legacy SSS ceremony scripts and tests have been archived in `/home/quant/mycelium/archive/legacy_ceremony/`.
 
 ---
 

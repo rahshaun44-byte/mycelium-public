@@ -168,8 +168,8 @@ configure_serve "API Gateway TCP :8080" --tcp 8080 127.0.0.1:8080
 # 2.3 QF-Bot & MCP SSE Endpoint (Port 9000)
 configure_serve "QF-Bot / MCP TCP :9000" --tcp 9000 127.0.0.1:9000
 
-# 2.4 Mobile Cockpit HTTPS Gateway (Port 443 -> 9000)
-configure_serve "Mobile HTTPS HUD :443" --https 443 http://127.0.0.1:9000
+# 2.4 Mobile Cockpit HTTPS Gateway (Port 443 -> 9001)
+configure_serve "Mobile HTTPS HUD :443" --https 443 http://127.0.0.1:9001
 
 # 3. Independently read back every mapping and its private-only exposure.
 echo "[*] Verifying private Tailscale Serve ingress configuration..."

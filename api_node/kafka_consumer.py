@@ -80,17 +80,24 @@ def process_pulse(msg_value):
     try:
         vitals = data.get("data") if isinstance(data.get("data"), dict) else data
 
-        # Edge privacy & opt-out filter: drop pulse if SSID is tagged with _optout or _nomap
-        ssid = vitals.get("ssid") or data.get("ssid")
-        if ssid and PrivacyFilter.should_exclude_ssid(ssid):
-            logger.warning(f"Dropping telemetry pulse from {data.get('hostname', 'unknown')}: opt-out SSID detected ({ssid})")
+        # Edge privacy & opt-out filter: check node-level SSID
+        top_level_ssid = vitals.get("ssid") or (data.get("ssid") if isinstance(data, dict) else None)
+        if top_level_ssid and PrivacyFilter.should_exclude_ssid(top_level_ssid):
+            logger.warning(f"Dropping telemetry pulse from {data.get('hostname', 'unknown') if isinstance(data, dict) else 'unknown'}: opt-out SSID detected ({top_level_ssid})")
             return True
 
         if "frames" in vitals and isinstance(vitals["frames"], list):
-            vitals["frames"] = [
+            sanitized = [
                 f for f in vitals["frames"]
                 if isinstance(f, dict) and PrivacyFilter.sanitize_telemetry_frame(f) is not None
             ]
+            if vitals["frames"] and not sanitized:
+                logger.warning(f"Dropping telemetry pulse from {data.get('hostname', 'unknown') if isinstance(data, dict) else 'unknown'}: all telemetry frames opted out")
+                return True
+            vitals["frames"] = sanitized
+        elif PrivacyFilter.contains_optout(data):
+            logger.warning(f"Dropping telemetry pulse from {data.get('hostname', 'unknown') if isinstance(data, dict) else 'unknown'}: opt-out privacy tag detected")
+            return True
 
         node_id = vitals.get("hostname") or data.get("hostname") or data.get("source", "unknown-node")
         cpu_load = vitals.get("cpu_load_1m", vitals.get("load_1m", data.get("cpu_load_1m", 0.0)))

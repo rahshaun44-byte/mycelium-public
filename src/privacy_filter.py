@@ -22,12 +22,45 @@ class PrivacyFilter:
         return bool(OPTOUT_PATTERN.search(ssid))
 
     @classmethod
-    def sanitize_telemetry_frame(cls, frame: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def contains_optout(cls, obj: Any) -> bool:
+        """
+        Recursively scans strings, dicts, lists, and tuples for privacy opt-out tags.
+        Fails closed (returns True) on uninspectable or error-producing structures.
+        """
+        try:
+            if isinstance(obj, str):
+                return bool(OPTOUT_PATTERN.search(obj))
+            elif isinstance(obj, dict):
+                for k, v in obj.items():
+                    if isinstance(k, str) and OPTOUT_PATTERN.search(k):
+                        return True
+                    if cls.contains_optout(v):
+                        return True
+            elif isinstance(obj, (list, tuple, set)):
+                for item in obj:
+                    if cls.contains_optout(item):
+                        return True
+            return False
+        except Exception:
+            # Fail closed: treat exceptions during inspection as potential opt-out violations
+            return True
+
+    @classmethod
+    def sanitize_telemetry_frame(cls, frame: Any) -> Optional[Dict[str, Any]]:
         """
         Evaluates a raw telemetry frame.
         Returns the sanitized frame if compliant, or None if the frame is dropped.
+        Fails closed on non-dict structures, nested opt-out markers, or unexpected exceptions.
         """
-        ssid = frame.get("ssid", "")
-        if cls.should_exclude_ssid(ssid):
+        try:
+            if not isinstance(frame, dict):
+                return None
+            ssid = frame.get("ssid", "")
+            if cls.should_exclude_ssid(ssid):
+                return None
+            if cls.contains_optout(frame):
+                return None
+            return frame
+        except Exception:
+            # Fail-closed: any sanitizer exception prevents downstream processing
             return None
-        return frame

@@ -99,11 +99,6 @@
         "status": "COMPLIANT"
       },
       {
-        "algorithm": "HQC",
-        "reason": "Unknown/deprecated algorithm",
-        "status": "TOXIC"
-      },
-      {
         "algorithm": "ML-DSA-44",
         "reason": "Approved by algorithm policy; module validation not assessed",
         "status": "COMPLIANT"
@@ -132,11 +127,6 @@
         "algorithm": "ML-KEM-768",
         "reason": "Approved by algorithm policy; module validation not assessed",
         "status": "COMPLIANT"
-      },
-      {
-        "algorithm": "RSA-2048",
-        "reason": "Unknown/deprecated algorithm",
-        "status": "TOXIC"
       },
       {
         "algorithm": "SHA-256",
@@ -177,7 +167,7 @@
       "ML-KEM-768": "FrodoKEM-976-AES",
       "X25519": "NONE"
     },
-    "meta_timestamp": "2026-10-23T01:16:52Z",
+    "meta_timestamp": "2026-10-26T17:12:39Z",
     "ml_kem_verified_safe": true,
     "node_status": "TOXIC",
     "quantum_safe_kem": [
@@ -207,16 +197,6 @@
         "algorithm": "ECDSA-P256",
         "reason": "Unknown/deprecated algorithm",
         "status": "TOXIC"
-      },
-      {
-        "algorithm": "HQC",
-        "reason": "Unknown/deprecated algorithm",
-        "status": "TOXIC"
-      },
-      {
-        "algorithm": "RSA-2048",
-        "reason": "Unknown/deprecated algorithm",
-        "status": "TOXIC"
       }
     ],
     "valid_profiles": [
@@ -226,7 +206,7 @@
     ],
     "verdict": {
       "deny_reasons": [],
-      "evaluated_at": "2026-10-23T01:16:52Z",
+      "evaluated_at": "2026-10-26T17:12:39Z",
       "findings": [
         {
           "algorithm": "AES-256-GCM",
@@ -259,11 +239,6 @@
           "status": "COMPLIANT"
         },
         {
-          "algorithm": "HQC",
-          "reason": "Unknown/deprecated algorithm",
-          "status": "TOXIC"
-        },
-        {
           "algorithm": "ML-DSA-44",
           "reason": "Approved by algorithm policy; module validation not assessed",
           "status": "COMPLIANT"
@@ -294,11 +269,6 @@
           "status": "COMPLIANT"
         },
         {
-          "algorithm": "RSA-2048",
-          "reason": "Unknown/deprecated algorithm",
-          "status": "TOXIC"
-        },
-        {
           "algorithm": "SHA-256",
           "reason": "Approved by algorithm policy; module validation not assessed",
           "status": "COMPLIANT"
@@ -326,8 +296,8 @@
       ],
       "node_status": "TOXIC",
       "recommended_fallback": "NONE",
-      "total_components": 19,
-      "toxic_count": 3,
+      "total_components": 17,
+      "toxic_count": 1,
       "verification_state": "VERIFIED"
     },
     "verification_state": "VERIFIED"
