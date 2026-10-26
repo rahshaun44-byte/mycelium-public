@@ -133,6 +133,41 @@ def run_real_verification():
     assert res_marrakesh["submitted"] is False
     print("  PASS: Proof accepted in dry run; no funds transferred.")
 
+    # --------------------------------------------------------------------------
+    # Case 5: Live Physical Bell State on ibm_fez (Job dbfaqmvpc3tc739n3ccg, Entry #41)
+    # --------------------------------------------------------------------------
+    print("\n[Case 5] Evaluating Live ibm_fez Physical Bell Run (Entry #41)...")
+    entry_41 = next((e for e in entries if e.get("entry_index") == 41), None)
+    if entry_41 is not None:
+        assert entry_41["verification"]["hardware_confirmed"] is True
+        assert entry_41["backend_name"] == "ibm_fez"
+        assert entry_41["job_id"] == "dbfaqmvpc3tc739n3ccg"
+
+        canonical_payload_41 = json.dumps({
+            "backend": entry_41["backend_name"],
+            "job_id": entry_41["job_id"],
+            "shots": entry_41["shots"],
+            "counts": entry_41["counts"],
+            "correlation": entry_41["bell_correlation"]
+        }, sort_keys=True, separators=(',', ':'))
+        block_hash_41 = hashlib.sha256(canonical_payload_41.encode('utf-8')).hexdigest()
+
+        proof_fez_live = {
+            "job_id": entry_41["job_id"],
+            "canonical_payload": canonical_payload_41,
+            "block_hash": block_hash_41,
+            "correlation": entry_41["bell_correlation"],
+            "zero_entropy": 0.0
+        }
+
+        res_fez_live = settler.execute_micro_settlement(test_recipient, "25.00", proof_fez_live)
+        print(f"  ↳ Proof Digest: {block_hash_41[:16]}...")
+        print(f"  ↳ Bell Correlation: {entry_41['bell_correlation'] * 100:.2f}% (Threshold: >= 85.0%)")
+        print(f"  ↳ Settlement Status: {res_fez_live.get('status')}")
+        assert res_fez_live.get("status") == "PROOF_VERIFIED_DRY_RUN", "Case 5 failed"
+        assert res_fez_live["submitted"] is False
+        print("  PASS: Live ibm_fez Entry #41 verified for Circle USDC settlement.")
+
     print("\n" + "=" * 70)
     print("  ALL REAL QPU VERIFICATION SETTLEMENT TESTS PASSED (100% EMPIRICAL)")
     print("=" * 70)

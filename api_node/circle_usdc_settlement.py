@@ -45,6 +45,17 @@ class SettlementStatus(str, Enum):
     FAILED = "FAILED"
     INDETERMINATE = "INDETERMINATE"
 
+
+class QuantumSettlementLifecycle(str, Enum):
+    JOB_SUBMITTED = "JOB_SUBMITTED"
+    JOB_COMPLETED = "JOB_COMPLETED"
+    EVIDENCE_RECORDED = "EVIDENCE_RECORDED"
+    PROOF_VERIFIED = "PROOF_VERIFIED"
+    SETTLEMENT_AUTHORIZED = "SETTLEMENT_AUTHORIZED"
+    SETTLEMENT_SUBMITTED = "SETTLEMENT_SUBMITTED"
+    SETTLEMENT_CONFIRMED = "SETTLEMENT_CONFIRMED"
+    REJECTED = "REJECTED"
+
 class QuantumFlexUSDCSettler:
     def __init__(self, wallet_id: Optional[str] = None, live: bool = False,
                  authenticated_evidence_verifier=None, transport=None):
@@ -155,6 +166,7 @@ class QuantumFlexUSDCSettler:
         if not self.verify_quantum_proof(proof):
             return {
                 "status": "REJECTED",
+                "lifecycle_stage": QuantumSettlementLifecycle.REJECTED.value,
                 "submitted": False,
                 "error": "Proof validation failed; no transfer submitted."
             }
@@ -164,6 +176,7 @@ class QuantumFlexUSDCSettler:
 
         return {
             "status": "PROOF_VERIFIED_DRY_RUN",
+            "lifecycle_stage": QuantumSettlementLifecycle.PROOF_VERIFIED.value,
             "settlement_state": SettlementStatus.PENDING.value,
             "submitted": False,
             "proof_hash": proof["block_hash"],
