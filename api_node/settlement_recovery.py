@@ -347,18 +347,104 @@ class CrashProofSettlementRelayer:
                         "tx_hash": tx_hash
                     })
                 elif tx_status in {"DROPPED", "NOT_FOUND"}:
-                    # Critical Safety Invariant: Absence from a single RPC node's mempool does NOT prove
-                    # network-wide abandonment. It may be propagating or pending on another mining peer.
-                    # Maintain PENDING_RECONCILIATION to prevent duplicate payment submissions.
-                    intent.state = RelayerIntentState.PENDING_RECONCILIATION
-                    self.journal.save(intent)
-                    results.append({
-                        "intent_id": intent.intent_id,
-                        "status": RelayerIntentState.PENDING_RECONCILIATION.value,
-                        "reconciliation": "AWAITING_PROPAGATION_OR_CONFIRMATION",
-                        "broadcast_count": intent.broadcast_count,
-                        "tx_hash": tx_hash
-                    })
+                    # Advanced Nonce Reconciliation:
+                    # Distinguish between:
+                    #   (a) A transaction still propagating / unmined (confirmed_nonce <= intent.nonce)
+                    #   (b) A consumed nonce where another transaction was mined with this nonce without executing proof
+                    confirmed_nonce = None
+                    relayer_address = getattr(self.chain_client, "relayer_address", None)
+                    if relayer_address and hasattr(self.chain_client, "get_confirmed_nonce"):
+                        confirmed_nonce = self.chain_client.get_confirmed_nonce(relayer_address)
+
+                    if confirmed_nonce is not None and intent.nonce is not None and confirmed_nonce > intent.nonce:
+                        # Before concluding nonce was consumed by an external transaction, check if our
+                        # transaction receipt actually exists (protecting against RPC replica delay on is_proof_executed).
+                        receipt = None
+                        if tx_hash:
+                            receipt = self.chain_client.get_receipt(tx_hash)
+                        elif hasattr(self.chain_client, "find_receipt_by_proof"):
+                            receipt = self.chain_client.find_receipt_by_proof(proof_hash)
+
+                        if receipt and receipt.get("status") == 1:
+                            intent.state = RelayerIntentState.CONFIRMED
+                            self.journal.save(intent)
+                            results.append({
+                                "intent_id": intent.intent_id,
+                                "status": RelayerIntentState.CONFIRMED.value,
+                                "reconciliation": "DISCOVERED_ON_CHAIN_MINED_WITH_RECEIPT",
+                                "broadcast_count": intent.broadcast_count,
+                                "tx_hash": tx_hash,
+                                "receipt": receipt
+                            })
+                            continue
+
+                        if receipt and receipt.get("status") == 0:
+                            intent.state = RelayerIntentState.FAILED
+                            intent.failure_reason = receipt.get("error", "Transaction reverted on chain")
+                            self.journal.save(intent)
+                            results.append({
+                                "intent_id": intent.intent_id,
+                                "status": RelayerIntentState.FAILED.value,
+                                "reconciliation": "TX_REVERTED_ON_CHAIN",
+                                "broadcast_count": intent.broadcast_count,
+                                "tx_hash": tx_hash
+                            })
+                            continue
+
+                        # Terminal failure requires positive on-chain proof:
+                        # 1. Receipt showing on-chain revert (status == 0) handled above.
+                        # 2. Or explicit proof that a DIFFERENT transaction was mined at this account nonce.
+                        replaced_by_tx = None
+                        if hasattr(self.chain_client, "get_transaction_by_nonce"):
+                            replaced_by_tx = self.chain_client.get_transaction_by_nonce(relayer_address, intent.nonce)
+
+                        if replaced_by_tx and replaced_by_tx.get("tx_hash") != tx_hash:
+                            # A completely different transaction hash was mined at our nonce!
+                            # This is mathematically definitive proof that our transaction can NEVER be mined.
+                            intent.state = RelayerIntentState.FAILED
+                            intent.failure_reason = (
+                                f"Account nonce {intent.nonce} was consumed on-chain by a different transaction: "
+                                f"{replaced_by_tx.get('tx_hash')} (original intent tx: {tx_hash})"
+                            )
+                            self.journal.save(intent)
+                            results.append({
+                                "intent_id": intent.intent_id,
+                                "status": RelayerIntentState.FAILED.value,
+                                "reconciliation": "NONCE_REPLACED_BY_DIFFERENT_TX",
+                                "broadcast_count": intent.broadcast_count,
+                                "tx_hash": tx_hash,
+                                "replacing_tx_hash": replaced_by_tx.get("tx_hash"),
+                                "confirmed_nonce": confirmed_nonce,
+                                "intent_nonce": intent.nonce
+                            })
+                        else:
+                            # If receipt is merely unavailable (e.g. RPC indexer lag) and we do NOT
+                            # have definitive proof of a different transaction mining at that nonce:
+                            # DO NOT declare terminal failure! Maintain PENDING_RECONCILIATION.
+                            intent.state = RelayerIntentState.PENDING_RECONCILIATION
+                            self.journal.save(intent)
+                            results.append({
+                                "intent_id": intent.intent_id,
+                                "status": RelayerIntentState.PENDING_RECONCILIATION.value,
+                                "reconciliation": "AWAITING_RECEIPT_OR_PROVEN_REPLACEMENT",
+                                "broadcast_count": intent.broadcast_count,
+                                "tx_hash": tx_hash,
+                                "confirmed_nonce": confirmed_nonce,
+                                "intent_nonce": intent.nonce
+                            })
+                    else:
+                        # Critical Safety Invariant: Absence from a single RPC node's mempool does NOT prove
+                        # network-wide abandonment. It may be propagating or pending on another mining peer.
+                        # Maintain PENDING_RECONCILIATION to prevent duplicate payment submissions.
+                        intent.state = RelayerIntentState.PENDING_RECONCILIATION
+                        self.journal.save(intent)
+                        results.append({
+                            "intent_id": intent.intent_id,
+                            "status": RelayerIntentState.PENDING_RECONCILIATION.value,
+                            "reconciliation": "AWAITING_PROPAGATION_OR_CONFIRMATION",
+                            "broadcast_count": intent.broadcast_count,
+                            "tx_hash": tx_hash
+                        })
             else:
                 # Local tx_hash was not journaled prior to crash.
                 # Query mempool to check if a transaction was broadcast right before power loss!

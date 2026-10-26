@@ -51,6 +51,16 @@ class MockEVMParisSettlementChain:
             self.relayer_address: 100_000_000,  # 100.00 USDC
         }
         self.total_broadcasts_received = 0
+        self.confirmed_nonce = 0
+        self.mined_txs_by_nonce: Dict[tuple[str, int], Dict[str, Any]] = {}
+
+    def get_confirmed_nonce(self, address: str) -> int:
+        if address == self.relayer_address:
+            return self.confirmed_nonce
+        return 0
+
+    def get_transaction_by_nonce(self, address: str, nonce: int) -> Optional[Dict[str, Any]]:
+        return self.mined_txs_by_nonce.get((address, nonce))
 
     def prepare_transaction(self, proof_hash: str, recipient: str, amount_atomic: int) -> tuple[str, int]:
         nonce = self.nonce_counter
@@ -131,6 +141,7 @@ class MockEVMParisSettlementChain:
                     "recipient": recipient,
                     "amount_atomic": amount
                 }
+            self.confirmed_nonce = max(self.confirmed_nonce, tx_data["nonce"] + 1)
             del self.mempool[tx_hash]
 
 
@@ -579,4 +590,88 @@ def test_concurrent_relayers_recovery_with_split_rpc_mempool_visibility():
         assert final2.state == RelayerIntentState.CONFIRMED
         assert chain_rpc1.total_broadcasts_received == 1  # Exactly one broadcast in total!
         assert chain_rpc1.balances[recipient] == 1_500_000  # Exactly one credit
+
+
+def test_recovery_distinguishes_consumed_nonce_from_successful_settlement():
+    """
+    Advanced Nonce-Reconciliation Scenario:
+      1. Relayer stages an intent, prepares transaction with allocated nonce N=0, and broadcasts.
+      2. Relayer crashes before receiving receipt.
+      3. An external event on-chain (e.g. cancellation transaction or unrelated transfer)
+         executes with nonce N=0, advancing the account's confirmed on-chain nonce to N=1.
+      4. The proof was NEVER executed on-chain (is_proof_executed == False).
+      5. The original transaction was evicted/dropped from the mempool.
+      6. The relayer boots cold and runs cold_restart_reconcile().
+      7. Assertions:
+         - Relayer discovers on-chain confirmed nonce has advanced past intent's nonce (1 > 0).
+         - Relayer verifies proof was not executed.
+         - Relayer marks intent FAILED with 'NONCE_CONSUMED_WITHOUT_EXECUTION'.
+         - Relayer does NOT hang indefinitely in PENDING_RECONCILIATION.
+         - ZERO duplicate payment was executed, recipient was not credited.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        journal_dir = Path(temp_dir)
+        chain = MockEVMParisSettlementChain()
+        recipient = "0xNonceVictim"
+        amount_atomic = 2_000_000  # 2.00 USDC
+        proof = make_valid_quantum_proof("qf-consumed-nonce-proof")
+
+        journal = SettlementIntentJournal(journal_dir)
+        relayer = CrashProofSettlementRelayer(journal, chain)
+        intent = relayer.stage_settlement(recipient, amount_atomic, proof)
+
+        # Broadcast with network drop
+        with pytest.raises(NetworkDropBeforeReceiptException):
+            relayer.execute_settlement(intent.intent_id, simulate_network_drop=True)
+
+        persisted_intent = journal.load(intent.intent_id)
+        assert persisted_intent.nonce == 0
+        persisted_tx = persisted_intent.tx_hash
+
+        # Simulate: Transaction is evicted from mempool (DROPPED)
+        del chain.mempool[persisted_tx]
+
+        # Stage 1: Account advances on-chain, but receipt is missing / temporarily unavailable
+        # Critical Invariant: Missing receipt must NOT trigger terminal failure!
+        # Must hold in PENDING_RECONCILIATION rather than prematurely abandoning intent
+        chain.confirmed_nonce = 5
+        assert chain.is_proof_executed(proof["block_hash"]) is False
+
+        # Cold restart A
+        del relayer
+        del journal
+
+        journal_restarted = SettlementIntentJournal(journal_dir)
+        relayer_restarted = CrashProofSettlementRelayer(journal_restarted, chain)
+
+        results_a = relayer_restarted.cold_restart_reconcile()
+        assert len(results_a) == 1
+        assert results_a[0]["status"] == RelayerIntentState.PENDING_RECONCILIATION.value
+        assert results_a[0]["reconciliation"] == "AWAITING_RECEIPT_OR_PROVEN_REPLACEMENT"
+
+        # Stage 2: Definitive proof of replacement transaction is returned by chain
+        # A different transaction hash was mined at (relayer_address, nonce=0)
+        replacement_tx_hash = "0xReplacementHash99999999999999999999999999999999"
+        chain.mined_txs_by_nonce[(chain.relayer_address, 0)] = {
+            "tx_hash": replacement_tx_hash,
+            "nonce": 0,
+            "status": 1
+        }
+
+        results_b = relayer_restarted.cold_restart_reconcile()
+
+        assert len(results_b) == 1
+        rec = results_b[0]
+        assert rec["status"] == RelayerIntentState.FAILED.value
+        assert rec["reconciliation"] == "NONCE_REPLACED_BY_DIFFERENT_TX"
+        assert rec["replacing_tx_hash"] == replacement_tx_hash
+        assert rec["confirmed_nonce"] == 5
+        assert rec["intent_nonce"] == 0
+
+        # Verify journal state
+        final_intent = journal_restarted.load(intent.intent_id)
+        assert final_intent.state == RelayerIntentState.FAILED
+        assert "different transaction" in final_intent.failure_reason.lower()
+        assert chain.balances.get(recipient, 0) == 0  # Zero funds transferred
+
 

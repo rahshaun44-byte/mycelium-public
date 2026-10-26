@@ -128,11 +128,12 @@ class QuantumFlexUSDCSettler:
                 return False
             if not proof["job_id"] or decoded.get("job_id") != proof["job_id"]:
                 return False
-            if proof["correlation"] >= 0.85:
+            if "witness_ucb" in proof:
+                if decoded.get("witness_ucb", decoded.get("ucb")) != proof.get("witness_ucb"):
+                    return False
+            elif proof["correlation"] >= 0.85:
                 if decoded.get("correlation") != proof["correlation"]:
                     return False
-            elif decoded.get("witness_ucb", decoded.get("ucb")) != proof.get("witness_ucb"):
-                return False
         except (TypeError, ValueError):
             return False
 
@@ -145,9 +146,13 @@ class QuantumFlexUSDCSettler:
         if computed_hash != proof["block_hash"]:
             return False
 
-        # Verify physics threshold (e.g. 92.58% Bell correlation)
+        # Verify physics threshold and entanglement witness
+        if "witness_ucb" in proof:
+            if proof["witness_ucb"] >= 0.0:
+                return False
+
         if proof.get("correlation", 0.0) < 0.85:
-            # If witness bound exists, verify strict negative upper confidence bound
+            # If correlation < 0.85, proof MUST have a certified negative witness UCB
             if proof.get("witness_ucb", 1.0) >= 0.0:
                 return False
 
