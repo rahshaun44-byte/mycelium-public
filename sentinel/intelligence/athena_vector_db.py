@@ -58,19 +58,22 @@ class AthenaVectorStore:
         self._init_db()
 
     def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS neural_chunks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    source TEXT,
-                    content TEXT,
-                    metadata JSON,
-                    embedding JSON,
-                    created_at TEXT
-                );
-            """)
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_chunks_source ON neural_chunks(source);")
-            conn.commit()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS neural_chunks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        source TEXT,
+                        content TEXT,
+                        metadata JSON,
+                        embedding JSON,
+                        created_at TEXT
+                    );
+                """)
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_chunks_source ON neural_chunks(source);")
+        finally:
+            conn.close()
 
     def add_document(self, content: str, source: str = "manual", metadata: dict = None):
         if not metadata:
@@ -78,23 +81,29 @@ class AthenaVectorStore:
         embedding = get_embedding(content)
         if not embedding:
             return False
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                "INSERT INTO neural_chunks (source, content, metadata, embedding, created_at) VALUES (?, ?, ?, ?, ?)",
-                (source, content, json.dumps(metadata), json.dumps(embedding), datetime.now().isoformat())
-            )
-            conn.commit()
-        return True
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    "INSERT INTO neural_chunks (source, content, metadata, embedding, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (source, content, json.dumps(metadata), json.dumps(embedding), datetime.now().isoformat())
+                )
+            return True
+        finally:
+            conn.close()
 
     def similarity_search(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
         query_emb = get_embedding(query)
         if not query_emb:
             return []
 
-        with sqlite3.connect(self.db_path) as conn:
+        conn = sqlite3.connect(self.db_path)
+        try:
             cur = conn.cursor()
             cur.execute("SELECT id, source, content, metadata, embedding FROM neural_chunks")
             rows = cur.fetchall()
+        finally:
+            conn.close()
 
         scored = []
         for r_id, source, content, meta_raw, emb_raw in rows:
@@ -116,15 +125,21 @@ class AthenaVectorStore:
         return scored[:top_k]
 
     def count(self) -> int:
-        with sqlite3.connect(self.db_path) as conn:
+        conn = sqlite3.connect(self.db_path)
+        try:
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM neural_chunks")
             return cur.fetchone()[0]
+        finally:
+            conn.close()
 
     def clear(self):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("DELETE FROM neural_chunks")
-            conn.commit()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute("DELETE FROM neural_chunks")
+        finally:
+            conn.close()
 
 if __name__ == "__main__":
     store = AthenaVectorStore()
