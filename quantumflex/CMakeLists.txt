@@ -24,6 +24,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(QUANTUMFLEX_BUILD_TESTS "Build QuantumFlex crypto and wire tests" ON)
 option(QUANTUMFLEX_INSTALL "Install QuantumFlex CMake package" ${QUANTUMFLEX_STANDALONE})
+option(QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH "Build un-audited hand-written FrodoKEM-976 research code" OFF)
 
 # Keep test binaries next to the engine in a mycelium build; in a standalone
 # build CMAKE_BINARY_DIR is quantumflex/build.
@@ -61,6 +62,10 @@ target_link_libraries(quantumflex_crypto
         OpenSSL::Crypto
         OpenSSL::SSL
 )
+
+if(QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH)
+    target_compile_definitions(quantumflex_crypto PUBLIC QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH=1)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     target_compile_options(quantumflex_crypto PRIVATE -O2)
@@ -103,7 +108,12 @@ if(QUANTUMFLEX_BUILD_TESTS)
         target_compile_options(${name} PRIVATE -UNDEBUG)
     endfunction()
 
-    quantumflex_add_test(test_hybrid_kem tests/test_hybrid_kem.cpp)
+    if(QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH)
+        quantumflex_add_test(test_hybrid_kem tests/test_hybrid_kem.cpp)
+        quantumflex_add_test(test_dudect_timing tests/test_dudect_timing.cpp)
+        target_compile_options(test_dudect_timing PRIVATE -O3)
+    endif()
+
     quantumflex_add_test(test_known_answer_vectors tests/test_known_answer_vectors.cpp)
     quantumflex_add_test(test_wire_framing tests/test_wire_framing.cpp)
     quantumflex_add_test(test_wire_fuzz_negative tests/test_wire_fuzz_negative.cpp)
@@ -111,9 +121,6 @@ if(QUANTUMFLEX_BUILD_TESTS)
 
     quantumflex_add_test(test_zeroization tests/test_zeroization.cpp)
     target_compile_options(test_zeroization PRIVATE -O3)
-
-    quantumflex_add_test(test_dudect_timing tests/test_dudect_timing.cpp)
-    target_compile_options(test_dudect_timing PRIVATE -O3)
 endif()
 
 # ── install / find_package ─────────────────────────────────────────────────

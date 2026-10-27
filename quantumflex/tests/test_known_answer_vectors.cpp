@@ -144,6 +144,7 @@ void test_rfc5869_hkdf_kat() {
     std::cout << "    [+] RFC 5869 Test Case 1 (L=42): MATCH (bit-exact)\n";
 }
 
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
 // ── Test 3: FrodoKEM-976 Mathematical Invariant KAT ────────────────────────
 void test_frodokem_math_kat() {
     std::cout << "[*] [KAT 3/4] Running FrodoKEM-976 Matrix & FO-Transform Invariant KATs...\n";
@@ -180,6 +181,7 @@ void test_frodokem_math_kat() {
     assert(CRYPTO_memcmp(client_ss.data(), order2_ss.data(), 32) != 0);
     std::cout << "    [+] Wycheproof Degenerate Point 1 (Order 2): REJECTED fail-closed\n";
 }
+#endif
 
 // ── Test 4: Shamir GF(256) Secret Sharing Mathematical KAT ─────────────────
 void test_shamir_gf256_kat() {
@@ -187,7 +189,7 @@ void test_shamir_gf256_kat() {
 
     using namespace quantumflex::crypto;
 
-    std::string secret = "QuantumFlex-Invariant-Secret-2026-FIPS-CAVP";
+    std::string secret = "QuantumFlex-Invariant-Secret-32B";
     uint8_t threshold = 3;
     uint8_t total_shares = 5;
 
@@ -290,7 +292,9 @@ int main() {
 
     test_rfc7748_kat();
     test_rfc5869_hkdf_kat();
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
     test_frodokem_math_kat();
+#endif
     test_shamir_gf256_kat();
     test_fips203_mlkem_kat();
 

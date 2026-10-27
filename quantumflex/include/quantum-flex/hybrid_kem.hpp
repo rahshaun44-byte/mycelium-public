@@ -36,6 +36,7 @@ namespace quantumflex::crypto {
         std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key_{nullptr, EVP_PKEY_free};
     };
 
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
     // Legacy research implementation below is not selected by the IPC server.
     // ── Parameter Specification ─────────────────────────────────────────────
     // FrodoKEM-976-AES / FrodoKEM-976-SHAKE: n=976, q=65536 (2^16), n_bar=8
@@ -117,6 +118,19 @@ namespace quantumflex::crypto {
         // Constant-time memory comparison
         [[nodiscard]] static auto constant_time_memcmp(const void* a, const void* b, std::size_t len) -> int;
     };
+#else
+    // =========================================================================
+    // QUARANTINE NOTICE:
+    // Hand-written FrodoKEM-976 matrix arithmetic and the legacy X25519 +
+    // FrodoKEM hybrid engine are un-audited research prototypes and are
+    // quarantined by default.
+    //
+    // The live production IPC gateway uses MLKem768Engine (native OpenSSL 3.5).
+    //
+    // To enable quarantined Frodo research structures for offline study only,
+    // build with: -DQUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH=ON
+    // =========================================================================
+#endif // QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
 
 } // namespace quantumflex::crypto
 

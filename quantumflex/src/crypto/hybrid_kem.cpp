@@ -15,6 +15,7 @@
 
 namespace quantumflex::crypto {
 
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
     // ── Hybrid Wire Serialization ───────────────────────────────────────────
 
     auto HybridPublicKey::serialize() const -> std::vector<uint8_t> {
@@ -580,6 +581,7 @@ namespace quantumflex::crypto {
         OPENSSL_cleanse(ikm.data(), ikm.size());
         return out_secret;
     }
+#endif // QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
 
 } // namespace quantumflex::crypto
 

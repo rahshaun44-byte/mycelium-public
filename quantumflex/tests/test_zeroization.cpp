@@ -49,6 +49,7 @@ void test_direct_buffer_zeroization() {
     std::cout << "    [+] Heap buffer (31,296 bytes): OPENSSL_cleanse verified 100% 0x00 under -O3\n";
 }
 
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
 void test_hybrid_private_key_zeroization() {
     std::cout << "[*] [ZEROIZATION 2/3] Testing HybridPrivateKey Explicit Zeroization...\n";
 
@@ -68,11 +69,12 @@ void test_hybrid_private_key_zeroization() {
     assert(is_memory_all_zero(kp.private_key.frodo_sk.data(), kp.private_key.frodo_sk.size()));
     std::cout << "    [+] HybridPrivateKey x25519_sk & frodo_sk: Verified 100% zeroized in memory\n";
 }
+#endif
 
 void test_secret_shard_zeroization() {
     std::cout << "[*] [ZEROIZATION 3/3] Testing Shamir Secret Shard Zeroization...\n";
 
-    std::string secret = "TopSecret-Zeroization-Audit-Vector-2026";
+    std::string secret = "TopSecret-Zeroization-Audit-2026"; // 32 bytes, as split_secret requires
     auto shards = quantumflex::crypto::ShamirSecretSharing::split_secret(secret, 5, 3);
 
     for (auto& s : shards) {
@@ -98,7 +100,9 @@ int main() {
     std::cout << "==================================================================\n";
 
     test_direct_buffer_zeroization();
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
     test_hybrid_private_key_zeroization();
+#endif
     test_secret_shard_zeroization();
 
     std::cout << "\n[ALL MEMORY ZEROIZATION AUDIT INVARIANTS 100% VERIFIED]\n";

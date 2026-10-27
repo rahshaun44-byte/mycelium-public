@@ -113,6 +113,7 @@ void test_reassembly_pool_dos_saturation() {
     std::cout << "    [+] Anti-DoS LRU eviction and memory bounds verified stable\n";
 }
 
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
 void test_corrupted_lattice_ciphertext_injection() {
     std::cout << "[*] [FUZZ 5/6] Injecting Hostile Bit-Flips into FrodoKEM Lattice Matrix...\n";
 
@@ -156,6 +157,7 @@ void test_malformed_wire_deserialization() {
     assert(caught_ct == true);
     std::cout << "    [+] Malformed wire deserialization strictly fails with exceptions\n";
 }
+#endif
 
 int main() {
     std::cout << "==================================================================\n";
@@ -166,9 +168,12 @@ int main() {
     test_payload_boundary_overflow_attack();
     test_trickle_fragmentation_attack();
     test_reassembly_pool_dos_saturation();
+#ifdef QUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH
     test_corrupted_lattice_ciphertext_injection();
     test_malformed_wire_deserialization();
-
     std::cout << "\n[ALL 6 NEGATIVE WIRE FUZZ & STATE MACHINE INVARIANTS 100% PASSED]\n";
+#else
+    std::cout << "\n[ALL 4 PRODUCTION WIRE FUZZ & STATE MACHINE INVARIANTS 100% PASSED (Frodo quarantined)]\n";
+#endif
     return 0;
 }
