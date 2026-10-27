@@ -1,332 +1,171 @@
-> **Cryptographic posture update (2026-09-15):** `fips_strict` is an algorithm policy, not a FIPS 140-3 validation claim. Migrated C++ IPC uses native ML-KEM-768; legacy Frodo message types are rejected. Runtime deployment and module validation must be verified separately. See [migration and verification notes](docs/MLKEM_STRICT_MIGRATION.md). Older walkthroughs and benchmark claims are historical, not current attestations.
+# Mycelium — QuantumFlex Engine & Coordination Architecture
 
-# Quantum Flex — PQC Hybrid KEM Gateway & Cryptographic Agility Framework
+> **Status:** Research prototype, published for study and review, not for production use. Local tests and source reviews do not establish independent cryptographic validation or whole-system assurance; `fips_strict` is an algorithm policy, not a FIPS 140-3 validation claim. Canonical cryptographic runtime definitions and wire specifications reside in [`quantumflex`](https://github.com/rahshaun44-byte/quantumflex). See [`quantumflex/README.md`](quantumflex/README.md) and [`docs/MLKEM_STRICT_MIGRATION.md`](docs/MLKEM_STRICT_MIGRATION.md).
+
+---
 
 ## Overview
 
-Quantum Flex is a post-quantum cryptography (PQC) transition framework focused on hybrid key establishment, secure wire transport, cryptographic inventory, and fail-closed validation workflows.
+**Mycelium** is the coordination, admission, policy enforcement, and telemetry engine for the QuantumFlex architecture. It governs and consumes the standalone [`QuantumFlex::runtime`](quantumflex/README.md) library across mutual TLS (mTLS) boundaries.
 
-The project implements a hybrid KEM architecture combining:
-- **FrodoKEM-976** — post-quantum lattice-based key encapsulation
-- **X25519** — classical elliptic-curve key exchange
-- **HKDF-based hybrid secret derivation**
-- **QFXK binary wire framing protocol**
-- **Gatekeeper session management**
-- **Cryptographic artifact provenance validation**
-- **CycloneDX CBOM generation**
+The system enforces fail-closed cryptographic state transitions, verifiable audit logging, and automated admission policies:
 
-The design goal is to provide a controlled migration path from classical cryptography toward post-quantum cryptographic deployments while maintaining interoperability, bounded resource usage, and explicit validation states.
+- **Host Engine & IPC Server** (`src/core/ipc_server.cpp`): Exposes native post-quantum key establishment over mTLS.
+- **QuantumFlex Runtime Integration**: Admits and links the `QuantumFlex::runtime` package (`quantumflex/`) containing cryptographic primitives and the QFXK wire codec via SHA-256 receipt verification (`cmake/AdmitQuantumFlex.cmake`).
+- **Live Key Exchange Path**: ML-KEM-768 key encapsulation via OpenSSL 3.5 native provider (`MLKem768Engine`) with server HMAC-SHA256 key confirmation.
+- **Fail-Closed Admission Gates**: OPA/Rego-based policy enforcement across runtime and execution boundaries.
+- **Cryptographic Evidence & Provenance**: SHA-256 hash-chained ledger and CycloneDX v1.5 Cryptographic Bill of Materials (CBOM).
+
+**What this is not:**
+- It is **not** a production-ready cryptographic appliance.
+- It does **not** employ a hybrid KEM on the live wire path; legacy FrodoKEM-976 is deprecated research code not selected by the engine.
+- It does **not** encrypt application stream payloads with the ML-KEM shared secret, nor does it override the TLS handshake's negotiated cipher group.
+- It carries **no** FIPS 140-3 certifications or independent audit seals.
 
 ---
 
 ## Architecture
 
 ```text
-                 Applications
-                      |
-                      |
-              Quantum Flex Gateway
-                      |
-        +-------------+-------------+
-        |                           |
- Legacy Command Path          QFXK Protocol Path
-        |                           |
-        |                    Wire Reassembly
-        |                           |
-        |                 Hybrid KEM Processing
-        |                           |
-        |              FrodoKEM-976 + X25519
-        |                           |
-        +-------------+-------------+
-                      |
-                 HKDF Combiner
-                      |
-              Derived Session Secret
+                     Client / Consumer
+                             │
+                    mutual TLS (OpenSSL)
+                             │
+                   QFXK Frame Reassembly
+              (quantumflex/src/wire/wire_framing.cpp)
+                             │
+                 IpcServer::handle_framed_message
+                    (src/core/ipc_server.cpp)
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+         0x12 / 0x13                   Anything Else
+              │                             │
+        MLKem768Engine                 0x7F REJECT
+      (OpenSSL ML-KEM-768)        (Fail-Closed Drop)
+              │
+         0x14 CONFIRM
+  HMAC-SHA256(ss, label || ct)
 ```
 
-### Supporting Systems:
-- **CEDRUS Artifact Gate**
-- **Cryptographic Inventory / CBOM Generator**
-- **Security Policy Controls**
-- **Fuzz and Negative Testing Framework**
+### Live Key Exchange Protocol
+
+| Type | Direction | Payload | Description |
+| :--- | :--- | :--- | :--- |
+| `0x12` | Request | Empty | Client requests server ML-KEM-768 encapsulation key |
+| `0x12` | Response | 1,184 bytes | Server ML-KEM-768 encapsulation key |
+| `0x13` | Request | 1,088 bytes | Client sends ML-KEM-768 ciphertext |
+| `0x14` | Response | 32 bytes | Server key confirmation tag |
+| `0x7F` | Response | Empty | Rejection: malformed frame, unsupported type, or provider error |
+
+Confirmation tag derivation:
+$$\text{Tag} = \text{HMAC-SHA256}(\text{shared\_secret}, \text{"QuantumFlex-ML-KEM-768-server-confirm-v1"} \parallel \text{ciphertext})$$
+
+The server zeroizes its copy of the ephemeral shared secret immediately following confirmation tag calculation. Legacy message types (`0x02` / `0x03`) are unconditionally rejected without fallback.
+
+### QFXK Wire Framing (Implemented vs Legacy Claims)
+
+The binary header is 16 bytes in network byte order: `magic` (`0x5146584B` / `"QFXK"`), `version` (`1`), `type`, `sequence_id`, `payload_len`, and `flags` (must be `0`).
+
+- **Implemented (C++ `QuantumFlexReassemblyPool`):** Buffers incoming partial reads from a TLS stream until a complete frame is assembled. Rejects invalid magic, bad version, non-zero flags, or payloads exceeding 16 KiB. Tracks up to 100 concurrent sessions, evicting oldest on saturation.
+- **Not Implemented on Live Path:** The C++ engine does **not** support multi-chunk fragmentation, frame reordering, duplicate detection, or CRC32 verification on the live wire path. Mutual TLS already provides stream ordering and message integrity; ML-KEM messages fit within a single frame. Historical multi-chunk and CRC handling belonged exclusively to prototype client test scripts (`scripts/qf_hybrid_gatekeeper.py`).
 
 ---
 
-## Features
+## Legacy Research Code: X25519 + FrodoKEM-976
 
-### Hybrid KEM Engine
+`HybridKemEngine` (`quantumflex/src/crypto/hybrid_kem.cpp`) combines X25519 with FrodoKEM-976 via HKDF.
 
-Implemented hybrid key establishment using:
+> [!WARNING]
+> **FrodoKEM-976 Hand-Written Implementation Notice:**
+> The FrodoKEM-976 matrix arithmetic in `quantumflex/src/crypto/frodo976.cpp` is a hand-written research prototype that has **never been independently audited**. It is not sourced from a verified or reference distribution (such as liboqs). The live server does **not** select or accept this path. It exists solely for historical research analysis. Do not use this implementation in any production or security-sensitive context.
 
-```text
-FrodoKEM-976
-      +
-X25519
-      |
-      v
-HKDF Hybrid Combiner
-      |
-      v
-Session Secret
-```
-
-**Security Properties:**
-- Dual cryptographic contribution
-- Transcript-bound key derivation
-- Constant-time error accumulation
-- Fail-closed decapsulation handling
-- Low-order X25519 input rejection
-
-### QFXK Wire Framing Protocol
-
-Large PQC messages exceed normal network MTU sizes. Quantum Flex provides a bounded fragmentation and reassembly layer.
-
-#### Frame Structure
-```text
-+--------+----------+
-| Header | Payload  |
-+--------+----------+
-```
-
-**Header Fields (16-Byte Big-Endian):**
-- Magic identifier (`0x5146584B` / `"QFXK"`)
-- Message type
-- Flags
-- Sequence identifier
-- Chunk count
-- Chunk length
-- CRC32 checksum
-
-**Capabilities:**
-- MTU-aware fragmentation
-- Out-of-order reassembly
-- CRC corruption detection
-- Duplicate protection
-- Session timeout cleanup
-- Bounded memory usage ($\le 64$ sessions)
-
-### Gatekeeper Subsystem
-
-The Gatekeeper provides a protocol-aware security boundary.
-
-**Supported Modes:**
-
-#### QFXK Binary Mode
-Handles:
-- KEM public keys
-- KEM ciphertext transport
-- Fragment reassembly
-- Hybrid decapsulation
-- Session establishment
-
-#### Legacy Command Mode
-Maintains compatibility with existing command paths:
-- `INIT|`
-- `UNLOCK|`
-- `TELEMETRY|`
-
-### CEDRUS Artifact Validation Gate
-
-Quantum Flex includes an evidence validation workflow designed to prevent false-positive verification states.
-
-**Required Artifacts:**
-- `BUNDLE_PATH`
-- `SIG_PATH`
-- `PUBKEY_PATH`
-- `VERIFIER_BIN`
-
-**Behavior:**
-```text
-Missing artifact
-        |
-        v
-DATA NOT FOUND
-        |
-        v
-STOP
-```
-
-*The validation pipeline does not generate synthetic verification vectors.*
-
-### Cryptographic Inventory (CBOM)
-
-The project includes automated Cryptographic Bill of Materials generation.
-
-**Tracked Information Includes:**
-- Cryptographic algorithms
-- Binary hashes
-- Policy file hashes
-- Network surfaces
-- Signature schemes
-- KEM selections
-- Migration metadata
-
-**Output Format:** CycloneDX v1.5 CBOM ([`docs/cbom_alpha_node_template.json`](docs/cbom_alpha_node_template.json))
+A future hybrid exchange on the live path (X25519 + ML-KEM-768) is planned for **v2**, pending adoption of a reviewed combiner specification.
 
 ---
 
-## Verification Results
+## Supporting Systems
 
-### Hybrid KEM Tests
-**5/5 invariants passed**
-
-Validated:
-- Shared secret agreement
-- Corrupted ciphertext rejection
-- Low-order point rejection (RFC 7748 §6.1)
-- Tampered key divergence
-- Serialization round-trip accuracy
-
-### Wire Framing Tests
-**4/4 invariants passed**
-
-Validated:
-- Header parsing
-- Multi-frame reassembly
-- CRC corruption detection
-- Duplicate frame handling
-
-### Gatekeeper Client Tests
-**5/5 invariants passed**
-
-Validated:
-- Fragmentation and recovery
-- Corruption detection
-- Out-of-order resilience
-- Timeout cleanup
-- Hybrid encapsulation
-
-### Negative Testing
-
-Additional validation includes:
-- malformed frame rejection
-- table exhaustion handling
-- invalid chunk bounds
-- message type mismatch detection
-- X25519 malformed input testing
-- HKDF transcript binding verification
+- **CEDRUS Artifact Validation Gate** (`scripts/cedrus_artifact_gate.py`): Requires strict presence of `BUNDLE_PATH`, `SIG_PATH`, `PUBKEY_PATH`, and `VERIFIER_BIN`. Halts immediately with `DATA NOT FOUND` on any missing artifact; never generates synthetic verification vectors.
+- **Cryptographic Inventory (CBOM)** (`scripts/generate_cbom.py`): Emits CycloneDX v1.5 CBOM tracking algorithms, binary digests, policy hashes, and KEM selections.
+- **OPA Policy Enforcement** (`sentinel/policies/`): Rego policy engines enforcing algorithm boundaries (`fips_strict`, `iso_strict`, `agility`).
+- **Sentinel & Host Telemetry**: Monitored daemon pipelines for system homeostasis and invariant adherence.
 
 ---
 
-## Build
+## Build & Installation
 
-### Requirements:
-- CMake 3.16+
-- C++ compiler with C++17 support
-- OpenSSL development libraries (3.0+)
-- Python 3 environment
+### Requirements
+- CMake 3.20+
+- C++20 compliant compiler (`g++` or `clang++`)
+- OpenSSL **3.5+** (native ML-KEM support required)
+- `libpqxx`, `sqlite3`, `libsystemd` (required for full Mycelium engine)
+- Python 3.14 (used for local audit tooling and test lockfile)
 
-### Build:
+### 1. Build Standalone Runtime (`quantumflex/`)
+The cryptographic runtime library can be built independently without database dependencies:
 ```bash
-cmake -S . -B build_check -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build_check -j$(nproc)
+cmake -S quantumflex -B quantumflex/build \
+    -DOPENSSL_ROOT_DIR=/opt/openssl-3.5 \
+    -DCMAKE_BUILD_RPATH=/opt/openssl-3.5/lib64
+cmake --build quantumflex/build -j"$(nproc)"
 ```
+
+### 2. Build Mycelium Engine
+```bash
+cmake -S . -B build_check \
+    -DOPENSSL_ROOT_DIR=/opt/openssl-3.5 \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build_check -j"$(nproc)"
+```
+
+Production builds enforce attested runtime admission via `-DQUANTUMFLEX_REQUIRE_ATTESTED=ON`, verifying `QuantumFlexAdmission.json` SHA-256 receipts before linking.
 
 ---
 
-## Testing
+## Testing & Verification
 
-Run hybrid KEM tests:
+### Live Path Tests
 ```bash
-./build_check/test_hybrid_kem
+# Core runtime C++ tests
+./quantumflex/build/test_mlkem768
+./quantumflex/build/test_wire_framing
+./quantumflex/build/test_wire_fuzz_negative
+
+# Engine integration over mTLS
+QF_TEST_BUILD_DIR=build_check python3 -m pytest tests/test_mlkem_ipc.py
 ```
 
-Run wire framing tests:
+### Policy & Python Integration Tests
 ```bash
-./build_check/test_wire_framing
+python3 -m pytest tests/
 ```
 
-Run negative fuzz and table saturation tests:
-```bash
-./build_check/test_wire_fuzz_negative
-```
+### Verification Status Matrix
 
-Run Python validation:
-```bash
-./venv/bin/python ./scripts/qf_hybrid_gatekeeper.py --test-unit
-```
-
-Run Wycheproof X25519 tests:
-```bash
-./venv/bin/python ./scripts/test_wycheproof_x25519.py
-```
-
-Run artifact gate:
-```bash
-./scripts/cedrus_artifact_gate.py
-```
+| Subsystem / Vector | Status | Evidence / Notes |
+| :--- | :--- | :--- |
+| **ML-KEM-768 Exchange & Confirmation** | Implemented | Verified via `test_mlkem768` and `test_mlkem_ipc.py` over mTLS |
+| **Fail-Closed Type Rejection (`0x7F`)** | Implemented | Legacy Frodo types (`0x02`/`0x03`) and unknown types rejected |
+| **QFXK Single-Frame Reassembly** | Implemented | Verified via `test_wire_framing` and `test_wire_fuzz_negative` |
+| **QFXK Multi-Frame / CRC on Live Path** | **Not Implemented** | TLS provides stream ordering; not present in C++ engine |
+| **X25519 + FrodoKEM Hybrid** | **Legacy Research Only** | Un-audited hand-written math; server does not select |
+| **CEDRUS Gate & CBOM Generator** | Implemented | Verifies required artifacts; fails closed on missing assets |
+| **GitHub Actions CI** | In Progress | Configured for containerized OpenSSL 3.5; local passes verified |
+| **Independent Cryptographic Audit** | **Not Done** | **Hard Stop gate** before any production claims |
 
 ---
 
-## Security Model
+## Security Model & Hard Stop Invariants
 
-Quantum Flex assumes:
-- active network attackers
-- harvest-now-decrypt-later threats
-- malformed protocol inputs
-- cryptographic downgrade attempts
-- resource exhaustion attempts
-
-**Security Boundaries:**
-- KEM provides key establishment
-- Authentication is provided through configured identity mechanisms
-- Missing validation evidence results in rejection
-- Unknown states fail closed
+1. **Fail-Closed Default**: Any condition, malformed frame, provider failure, or missing evidence immediately drops session state and rejects transaction flow (`0x7F`).
+2. **Zero Cryptographic Theater**: No claims of FIPS 140-3 certification, full-wire PQ encryption, or quantum immunity.
+3. **Receipt-Bound Admission**: Runtime linking requires cryptographic hash-receipt verification (`QuantumFlexAdmission.json`).
+4. **Hard Stop Evaluation**: Missing artifacts, un-audited primitives, or unverified claims halt execution immediately.
 
 ---
 
-## Repository Structure
+## License & Security Contact
 
-```text
-.
-├── quantumflex/                  # independently buildable runtime (crypto + QFXK)
-│   ├── include/quantum-flex/     # hybrid_kem.hpp, wire_framing.hpp, signers
-│   ├── src/crypto/  src/wire/
-│   └── tests/
-│
-├── include/quantum-flex/         # mycelium coordination headers (ipc, ledger, node)
-├── src/core/                     # engine coordination (no crypto .cpp)
-│
-├── scripts/
-│   ├── qf_hybrid_gatekeeper.py   # mycelium client of the runtime
-│   ├── cedrus_artifact_gate.py
-│   ├── test_wycheproof_x25519.py
-│   └── generate_cbom.py
-│
-└── docs/
-    ├── CRYPTO_LIBRARY_CARVEOUT.md
-    ├── QFXK_WIRE_PROTOCOL_SPEC.md
-    └── SECURITY.md
-```
-
----
-
-## Development Status
-
-### Current Status:
-- Hybrid KEM implementation: Complete
-- Wire framing subsystem: Complete
-- Gatekeeper integration: Complete
-- Negative testing: Complete
-- CBOM generation: Complete
-- Security documentation: Complete
-
-### Future Work:
-- External cryptographic review
-- Additional interoperability testing
-- Extended fuzzing campaigns
-- Deployment validation
-
----
-
-## License
-
-QuantumFlex Software License. See [`LICENSE`](LICENSE) for terms.
-
----
-
-## Security Contact
-
-For vulnerability reports, please follow the disclosure process documented in:
-
-[SECURITY.md](SECURITY.md)
+- **License**: Apache-2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
+- **Security Contact**: Disclose vulnerabilities privately following instructions in [`SECURITY.md`](SECURITY.md).
