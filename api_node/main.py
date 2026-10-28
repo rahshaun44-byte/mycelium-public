@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.privacy_filter import PrivacyFilter
 from api_node.circle_usdc_settlement import (
     ARC_L1_CHAIN_CONFIG,
+    PayloadMismatchError,
     build_arc_settlement_payload,
     scale_to_micro_usdc,
 )
@@ -260,28 +261,10 @@ def persist_telemetry_frame(node_id: str, timestamp: int, payload_str: str) -> b
         return False
     try:
         from src.db_credentials import DatabaseRole, open_role_connection
-        try:
-            conn = open_role_connection(
-                role=DatabaseRole.WRITER,
-                dbname=os.environ.get("DB_NAME", "telemetry"),
-            )
-        except Exception:
-            import psycopg2
-            db_user = os.environ.get("DB_USER", "api_node_service")
-            db_pass = os.environ.get("DB_PASSWORD", "")
-            if not db_pass:
-                secret_file = Path("/home/quant/projects/beta/secrets/api_node_service.secret")
-                if secret_file.exists():
-                    db_pass = secret_file.read_text().strip()
-
-            conn = psycopg2.connect(
-                host=os.environ.get("DB_HOST", "127.0.0.1"),
-                port=int(os.environ.get("DB_PORT", 5432)),
-                dbname=os.environ.get("DB_NAME", "telemetry"),
-                user=db_user,
-                password=db_pass,
-                connect_timeout=3,
-            )
+        conn = open_role_connection(
+            role=DatabaseRole.WRITER,
+            dbname=os.environ.get("DB_NAME", "telemetry"),
+        )
         with conn:
             with conn.cursor() as cur:
                 cur.execute("""
@@ -392,11 +375,16 @@ class ArcSettlementRequest(BaseModel):
     nonce: int = Field(default=0, ge=0, description="Settlement nonce")
 
 
+# Idempotency registry tracking committed settlement payloads by idempotency_key
+COMMITTED_SETTLEMENT_IDEMPOTENCY_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+
 @app.post("/api/v1/settlement/arc")
 async def execute_arc_usdc_settlement(payload: ArcSettlementRequest) -> JSONResponse:
     """
     Executes a micro-settlement on Circle Arc L1 using native USDC gas,
-    6-decimal micro-USDC scaling, and RFC 4122 deterministic idempotency.
+    6-decimal micro-USDC scaling, and RFC 9562/4122 deterministic idempotency.
+    Enforces deduplication: identical requests return the prior committed settlement.
     """
     # 1. PrivacyFilter inspection
     payload_dict = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
@@ -417,13 +405,31 @@ async def execute_arc_usdc_settlement(payload: ArcSettlementRequest) -> JSONResp
             block_hash=payload.block_hash,
             nonce=payload.nonce,
         )
+        idempotency_key = settlement_payload["idempotency"]["idempotency_key"]
+        is_new = settlement_payload["idempotency"].get("is_new", True)
+
+        # Deduplication check: reject double execution on identical idempotency key or persisted intent
+        if not is_new or idempotency_key in COMMITTED_SETTLEMENT_IDEMPOTENCY_REGISTRY:
+            return JSONResponse(status_code=200, content={
+                "status": "SETTLEMENT_COMMITTED_DRY_RUN",
+                "action": "ALREADY_COMMITTED_IDEMPOTENT_RETRY",
+                "chain": settlement_payload["chain_config"]["chain_name"],
+                "gas_token": "NATIVE_USDC",
+                "settlement": settlement_payload["settlement"],
+                "idempotency": settlement_payload["idempotency"],
+            })
+
+        COMMITTED_SETTLEMENT_IDEMPOTENCY_REGISTRY[idempotency_key] = settlement_payload
         return JSONResponse(status_code=200, content={
             "status": "SETTLEMENT_COMMITTED_DRY_RUN",
-            "chain": "Circle Arc L1",
+            "action": "COMMITTED_NEW",
+            "chain": settlement_payload["chain_config"]["chain_name"],
             "gas_token": "NATIVE_USDC",
             "settlement": settlement_payload["settlement"],
             "idempotency": settlement_payload["idempotency"],
         })
+    except PayloadMismatchError as exc:
+        raise HTTPException(status_code=409, detail=f"Conflict: {exc}") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:

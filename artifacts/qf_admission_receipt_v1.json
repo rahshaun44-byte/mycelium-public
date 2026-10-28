@@ -1,10 +1,10 @@
 {
   "cryptographic_seal": {
     "algorithm": "Ed25519",
-    "payload_sha256": "0254253c1e653eaa265ae912418eb37cc5cbcfd9fac037c6d1708a66c651e7b1",
+    "payload_sha256": "013a1646a2eca4e2295263a5401eb2bbc3b5a1bdb5791cfab6183914132c849d",
     "public_key_fingerprint_sha256": "de10dfb0b9aca07d71dc1572bde051761bbe5d087ea4bee484e72f81711b5c25",
     "public_key_raw_b64": "MhRxknn31uTl6l9FdaiT9y4lvcA7fvpQIX+jv1/Oy98=",
-    "signature_b64": "uF9Dqdy+s+3dC8MWG8pV/FQaO1QcfbeBBkdX1uy67rsYQvM5ajmyCuT0qX5IXTYzRJlI2LWOGSBMqIwBotzMAA=="
+    "signature_b64": "i4fFU4rSvWCq/TzlGSOXgG6rTWOUsCOn/o2ELMznV9lrkG3Q7My4n31qkcovC7IdVFd57/ozj0TWtIOeBy8pDQ=="
   },
   "payload": {
     "artifact_sha256": {
@@ -14,7 +14,7 @@
       "quantum-flex-sdk/src/lib.rs": "d277bf2d8ee0507d894981384d839e4ba8bd50ccbb952be5f3d62bb817bafc66",
       "src/db_credentials.py": "451ec4f3a324aa1c08a75c1224856b3f6108887572460a63e82e876bf3e4b459",
       "src/jsonl_resilience.py": "852fa37ca780365a6e6724b21612fc6aac0bae3304b6aba4e74d6e81d5c0998f",
-      "src/privacy_filter.py": "25047ff326b35c37b060c4eb7e910770b49ffa47815eefac8bac4e3b548d621c"
+      "src/privacy_filter.py": "a3500a2dda435366f24a3b07b14f45ca7e1611a7aed981023e360de304cc6e3c"
     },
     "epoch": "Epoch-1-Direct-to-Active",
     "gates_closed": [
@@ -27,15 +27,15 @@
       "P1:JSONL-Fsync-Metrics-Validation",
       "P1:Storage-TornWrite-EIO-ENOSPC-Resilience"
     ],
-    "git_branch": "fix/w1-w4",
-    "git_commit": "4c991073af0f8c531abf1fda79092774c1a354af",
+    "git_branch": "main",
+    "git_commit": "51f10360d2704287c8a43233727e90ecaff6a690",
     "hardware_attestation": {
       "anchor": "Microsoft Pluton TPM 2.0 (:9444)",
       "pcr15_sha256": "d03b20ee22f0fb4634b06aecad248dc68b5cd61c115926bf07d4b9e772f6e6eb",
       "pixel_strongbox_gate": "HS-PX-CLOSED-2026-10-05"
     },
-    "issued_at_unix": 1793057700,
-    "manifest_root_sha256": "28a28ea5b9cce29f0557e0047a1876611259ff46a283234c80249736bad3b0d8",
+    "issued_at_unix": 1793152043,
+    "manifest_root_sha256": "c0eda87a0435e70106455d4cae48113423d5970b1cfefdbab7eb65c638d803ba",
     "node_id": "qfx-yoga",
     "schema": "qf.admission_receipt.v1"
   }

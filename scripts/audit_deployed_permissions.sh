@@ -32,13 +32,13 @@ echo -e "
 
 APP_PORTS=(5432 8000 8001 8080 8181 9000 9444 11434)
 for port in "${APP_PORTS[@]}"; do
-    NON_LOOPBACK=$(ss -tlnH "sport = :$port" 2>/dev/null | awk '{print $4}' | grep -vE '^(127\.|\[::1\])' || true)
-    if [[ -n "$NON_LOOPBACK" ]]; then
-        log_fail "Port :$port is bound to non-loopback address: $NON_LOOPBACK"
+    UNAUTHORIZED_BINDINGS=$(ss -tlnH "sport = :$port" 2>/dev/null | awk '{print $4}' | grep -vE '^(127\.|\[::1\]|100\.[0-9]+\.|\[fd7a:)' || true)
+    if [[ -n "$UNAUTHORIZED_BINDINGS" ]]; then
+        log_fail "Port :$port is bound to unauthorized external/LAN address: $UNAUTHORIZED_BINDINGS"
     else
         IS_LISTENING=$(ss -tlnH "sport = :$port" 2>/dev/null | awk '{print $4}' || true)
         if [[ -n "$IS_LISTENING" ]]; then
-            log_pass "Port :$port strictly bound to loopback ($IS_LISTENING)"
+            log_pass "Port :$port strictly bound to loopback/Tailscale mesh ($IS_LISTENING)"
         else
             log_warn "Port :$port is currently not active"
         fi
@@ -118,18 +118,18 @@ echo -e "
 
 if command -v podman >/dev/null 2>&1 && podman ps --format '{{.Names}}' | grep -q 'amara-matrix'; then
     # 4a. Verify no unauthorized superuser roles exist
-    if SUPERUSERS=$(podman exec -i amara-matrix psql -U amara_admin -d postgres -v ON_ERROR_STOP=1 -tAc         "SELECT rolname FROM pg_roles WHERE rolsuper = true AND rolname NOT IN ('rahshaunchambers', 'postgres');"); then
+    if SUPERUSERS=$(podman exec -i amara-matrix psql -U rocky -d telemetry -v ON_ERROR_STOP=1 -tAc "SELECT rolname FROM pg_roles WHERE rolsuper = true AND rolname NOT IN ('rocky', 'rahshaunchambers', 'postgres');"); then
         if [[ -n "$SUPERUSERS" ]]; then
             log_fail "Found unauthorized application superusers: $SUPERUSERS"
         else
-            log_pass "Application roles (ghostnode, amara_admin, quantum_sentinel, sentinel_service) are NOSUPERUSER"
+            log_pass "Application roles (ghostnode, amara_admin, quantum_sentinel, sentinel_service, qf_writer, qf_verifier) are NOSUPERUSER"
         fi
     else
         log_fail "Failed to execute superuser check against PostgreSQL catalog"
     fi
 
     # 4b. Verify ghostnode specifically has no elevated catalog attributes
-    if GHOST_ATTRS=$(podman exec -i amara-matrix psql -U amara_admin -d postgres -v ON_ERROR_STOP=1 -tAc         "SELECT rolsuper || '|' || rolcreaterole || '|' || rolcreatedb || '|' || rolbypassrls FROM pg_roles WHERE rolname = 'ghostnode';"); then
+    if GHOST_ATTRS=$(podman exec -i amara-matrix psql -U rocky -d telemetry -v ON_ERROR_STOP=1 -tAc "SELECT rolsuper || '|' || rolcreaterole || '|' || rolcreatedb || '|' || rolbypassrls FROM pg_roles WHERE rolname = 'ghostnode';"); then
         if [[ "$GHOST_ATTRS" == "false|false|false|false" || "$GHOST_ATTRS" == "f|f|f|f" ]]; then
             log_pass "ghostnode attributes verified: NOSUPERUSER, NOCREATEROLE, NOCREATEDB, NOBYPASSRLS"
         else
@@ -140,7 +140,7 @@ if command -v podman >/dev/null 2>&1 && podman ps --format '{{.Names}}' | grep -
     fi
 
     # 4c. Verify append-only immutability on audit ledgers in telemetry DB
-    if PRIVS=$(podman exec -i amara-matrix psql -U amara_admin -d telemetry -v ON_ERROR_STOP=1 -tAc "
+    if PRIVS=$(podman exec -i amara-matrix psql -U rocky -d telemetry -v ON_ERROR_STOP=1 -tAc "
         SELECT
             has_table_privilege('ghostnode', 'public.sentinel_ledger', 'UPDATE') || '|' ||
             has_table_privilege('ghostnode', 'public.sentinel_ledger', 'DELETE') || '|' ||

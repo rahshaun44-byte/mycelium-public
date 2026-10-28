@@ -2,15 +2,15 @@
 **Audited Target:** `/home/quant/mycelium`  
 **Issuing Authority:** Rahshaun Chambers // QuantumFlex Audit Engine  
 **Standard:** NIST FIPS 203/204/205 • OMB Memorandum M-26-15 • CycloneDX v1.5 CBOM  
-**Date:** 2026-10-26 17:12:39Z  
-**Serial ID:** `urn:uuid:10469e52-e272-4098-8a03-0fe27e604483`  
+**Date:** 2026-10-28 10:17:06Z  
+**Serial ID:** `urn:uuid:4c23b003-17a3-4203-b006-ccb3fb0fb253`  
 
 ---
 
 ## 1. Executive Summary
 This cryptographic assessment evaluates the software and configuration boundary against the post-quantum cryptographic standards mandated by OMB M-26-15 and NIST FIPS 203/204.
 
-- **Total Files Scanned:** 483
+- **Total Files Scanned:** 502
 - **Cryptographic Assets Discovered:** 17
 - **Post-Quantum KEM Coverage:** COMPLIANT (ML-KEM-512, ML-KEM-768, ML-KEM-1024, FrodoKEM-640-AES, FrodoKEM-976-AES, FrodoKEM-1344-AES)
 - **Legacy Classical Footprint:** 1 classical algorithm family references identified.
@@ -24,17 +24,17 @@ This cryptographic assessment evaluates the software and configuration boundary 
 | **ML-KEM-768** | PQC_KEM | NIST FIPS 203 | `APPROVED` | 49 file(s) |
 | **ML-KEM-1024** | PQC_KEM | NIST FIPS 203 | `APPROVED` | 15 file(s) |
 | **FrodoKEM-640-AES** | PQC_KEM | Experimental / Non-ISO (draft-longa-cfrg) | `isolated` | 6 file(s) |
-| **FrodoKEM-976-AES** | PQC_KEM | ISO/IEC 18033-2 / Candidate | `FALLBACK_APPROVED` | 23 file(s) |
-| **FrodoKEM-1344-AES** | PQC_KEM | ISO/IEC 18033-2 / Candidate | `FALLBACK_APPROVED` | 6 file(s) |
+| **FrodoKEM-976-AES** | PQC_KEM | ISO/IEC 18033-2:2006/Amd 2:2026 | `FALLBACK_APPROVED` | 23 file(s) |
+| **FrodoKEM-1344-AES** | PQC_KEM | ISO/IEC 18033-2:2006/Amd 2:2026 | `FALLBACK_APPROVED` | 6 file(s) |
 | **ML-DSA-44** | PQC_SIG | NIST FIPS 204 | `APPROVED` | 3 file(s) |
 | **ML-DSA-65** | PQC_SIG | NIST FIPS 204 | `APPROVED` | 27 file(s) |
 | **ML-DSA-87** | PQC_SIG | NIST FIPS 204 | `APPROVED` | 3 file(s) |
 | **SLH-DSA-SHA2-128f** | PQC_SIG | NIST FIPS 205 | `APPROVED` | 8 file(s) |
 | **ECDSA-P256** | CLASSICAL_ASYMMETRIC | FIPS 186-4 | `DEPRECATED_OMB_M26_15` | 4 file(s) |
 | **X25519** | CLASSICAL_ASYMMETRIC | RFC 7748 | `TRANSITIONAL_HYBRID_ONLY` | 24 file(s) |
-| **Ed25519** | CLASSICAL_ASYMMETRIC | RFC 8032 | `TRANSITIONAL_HYBRID_ONLY` | 59 file(s) |
+| **Ed25519** | CLASSICAL_ASYMMETRIC | RFC 8032 | `TRANSITIONAL_HYBRID_ONLY` | 64 file(s) |
 | **AES-256-GCM** | SYMMETRIC | NIST SP 800-38D | `APPROVED` | 3 file(s) |
-| **SHA-256** | HASH | NIST FIPS 180-4 | `APPROVED` | 91 file(s) |
+| **SHA-256** | HASH | NIST FIPS 180-4 | `APPROVED` | 95 file(s) |
 | **SHA-384** | HASH | NIST FIPS 180-4 | `APPROVED` | 2 file(s) |
 | **SHA-512** | HASH | NIST FIPS 180-4 | `APPROVED` | 4 file(s) |
 

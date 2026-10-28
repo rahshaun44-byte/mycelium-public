@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:10469e52-e272-4098-8a03-0fe27e604483",
+  "serialNumber": "urn:uuid:4c23b003-17a3-4203-b006-ccb3fb0fb253",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-26T17:12:39Z",
+    "timestamp": "2026-10-28T10:17:06Z",
     "tools": [
       {
         "vendor": "Rahshaun Chambers",
@@ -179,7 +179,7 @@
     {
       "type": "crypto-asset",
       "name": "FrodoKEM-976-AES",
-      "version": "ISO/IEC 18033-2 / Candidate",
+      "version": "ISO/IEC 18033-2:2006/Amd 2:2026",
       "description": "Discovered cryptographic primitive across 23 file(s). Status: FALLBACK_APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
@@ -218,7 +218,7 @@
     {
       "type": "crypto-asset",
       "name": "FrodoKEM-1344-AES",
-      "version": "ISO/IEC 18033-2 / Candidate",
+      "version": "ISO/IEC 18033-2:2006/Amd 2:2026",
       "description": "Discovered cryptographic primitive across 6 file(s). Status: FALLBACK_APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
@@ -472,7 +472,7 @@
       "type": "crypto-asset",
       "name": "Ed25519",
       "version": "RFC 8032",
-      "description": "Discovered cryptographic primitive across 59 file(s). Status: TRANSITIONAL_HYBRID_ONLY.",
+      "description": "Discovered cryptographic primitive across 64 file(s). Status: TRANSITIONAL_HYBRID_ONLY.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -542,7 +542,7 @@
       "type": "crypto-asset",
       "name": "SHA-256",
       "version": "NIST FIPS 180-4",
-      "description": "Discovered cryptographic primitive across 91 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 95 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {

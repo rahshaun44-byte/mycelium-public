@@ -167,7 +167,7 @@
       "ML-KEM-768": "FrodoKEM-976-AES",
       "X25519": "NONE"
     },
-    "meta_timestamp": "2026-10-26T17:12:39Z",
+    "meta_timestamp": "2026-10-28T10:17:06Z",
     "ml_kem_verified_safe": true,
     "node_status": "TOXIC",
     "quantum_safe_kem": [
@@ -206,7 +206,7 @@
     ],
     "verdict": {
       "deny_reasons": [],
-      "evaluated_at": "2026-10-26T17:12:39Z",
+      "evaluated_at": "2026-10-28T10:17:06Z",
       "findings": [
         {
           "algorithm": "AES-256-GCM",

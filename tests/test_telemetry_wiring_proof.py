@@ -182,6 +182,9 @@ class TestApiGatewayPersistenceBoundary:
             # Ensure zero opted-out SSIDs touched persistence
             assert "Private_nomap" not in recorded_persisted_payloads[0]
             assert "Neighbor_optout" not in recorded_persisted_payloads[0]
+            # Ensure co-located BSSIDs/MAC addresses were purged alongside SSIDs
+            assert "BB:22" not in recorded_persisted_payloads[0]
+            assert "DD:44" not in recorded_persisted_payloads[0]
 
     def test_api_submit_endpoint_rejects_pure_optout_payload(self, api_client):
         """If all frames in a batch are opted-out, the API must reject with 403 Forbidden."""

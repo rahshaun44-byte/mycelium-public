@@ -79,9 +79,10 @@ def _consume_nonce(nonce: str, now: float) -> bool:
     db_path = keys_dir() / "consumed_nonces.sqlite"
     try:
         keys_dir().mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(db_path), timeout=5.0)
+        conn = sqlite3.connect(str(db_path), timeout=30.0)
         try:
             with conn:
+                conn.execute("PRAGMA busy_timeout=30000")
                 conn.execute("PRAGMA journal_mode=WAL")
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS consumed_nonces (
