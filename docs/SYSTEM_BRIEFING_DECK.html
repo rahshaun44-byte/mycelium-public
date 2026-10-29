@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantumFlex — System Briefing Deck (11 Slides)</title>
+<style>
+  :root {
+    --bg-cream: #faf7f2;
+    --card-cream: #ffffff;
+    --ink-primary: #0f172a;
+    --ink-secondary: #334155;
+    --ink-muted: #64748b;
+    --orange-primary: #d97706;
+    --orange-accent: #ea580c;
+    --orange-light: #fffbeb;
+    --border-color: #e2dcd2;
+    --code-bg: #f1ede4;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: var(--ink-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  #deck-container {
+    width: 1000px;
+    height: 600px;
+    background-color: var(--bg-cream);
+    border: 2px solid var(--border-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .deck-header {
+    height: 48px;
+    border-bottom: 1.5px solid var(--border-color);
+    background-color: #f4efe6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .deck-header .brand {
+    font-weight: 700;
+    color: var(--orange-accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .deck-header .brand::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: var(--orange-primary);
+    border-radius: 50%;
+  }
+
+  .slide {
+    display: none;
+    flex: 1;
+    padding: 36px 48px;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .slide.active {
+    display: flex;
+  }
+
+  h1.slide-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ink-primary);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .slide-subtitle {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .title-divider {
+    width: 48px;
+    height: 3px;
+    background-color: var(--orange-primary);
+    margin-bottom: 24px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    flex: 1;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .card {
+    background-color: var(--card-cream);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-primary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card h3::before {
+    content: "■";
+    color: var(--orange-primary);
+    font-size: 10px;
+  }
+
+  ul.bullet-list {
+    list-style: none;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-secondary);
+  }
+
+  ul.bullet-list li {
+    position: relative;
+    padding-left: 14px;
+    margin-bottom: 6px;
+  }
+
+  ul.bullet-list li::before {
+    content: "–";
+    position: absolute;
+    left: 0;
+    color: var(--ink-muted);
+  }
+
+  .callout-box {
+    background-color: var(--orange-light);
+    border-left: 3.5px solid var(--orange-primary);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #78350f;
+    margin-top: 14px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .formula-banner {
+    background-color: #f1ede4;
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    border-radius: 6px;
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink-primary);
+    margin: 16px 0;
+  }
+
+  .table-box {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-top: 8px;
+  }
+
+  .table-box th {
+    background-color: #f4efe6;
+    color: var(--ink-primary);
+    font-weight: 700;
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+  }
+
+  .table-box td {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    color: var(--ink-secondary);
+    background-color: #ffffff;
+  }
+
+  .deck-footer {
+    height: 44px;
+    border-top: 1.5px solid var(--border-color);
+    background-color: #f4efe6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    color: var(--ink-primary);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .btn:hover {
+    background-color: var(--orange-light);
+    border-color: var(--orange-primary);
+    color: var(--orange-accent);
+  }
+
+  @media print {
+    body {
+      background: none;
+      padding: 0;
+    }
+    #deck-container {
+      width: 100%;
+      height: 100vh;
+      border: none;
+      box-shadow: none;
+    }
+    .slide {
+      page-break-after: always;
+      display: flex !important;
+      height: 100vh;
+    }
+    .deck-footer, .deck-header {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck-container">
+  <div class="deck-header">
+    <div class="brand">QuantumFlex</div>
+    <div>System Briefing — Internal Operating Deck</div>
+    <div id="slide-num">01 / 11</div>
+  </div>
+
+  <!-- Slide 01: Cover -->
+  <div class="slide active">
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--orange-accent); font-weight: 700; letter-spacing: 0.15em; margin-bottom: 12px;">SYSTEM ARCHITECTURE &amp; OPERATING SPECIFICATION</div>
+      <h1 class="slide-title" style="font-size: 42px; margin-bottom: 8px;">QUANTUMFLEX</h1>
+      <div class="title-divider"></div>
+      <div style="font-size: 16px; font-weight: 500; color: var(--ink-secondary); margin-bottom: 24px;">Local-First Systems. Verifiable Security. Controlled Execution.</div>
+
+      <div class="grid-2" style="max-height: 140px;">
+        <div class="card" style="padding: 12px 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase;">Operating Model</div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--ink-primary); margin-top: 4px;">Single Operator · Local-First</div>
+        </div>
+        <div class="card" style="padding: 12px 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase;">Security Baseline</div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--ink-primary); margin-top: 4px;">Fail-Closed · NIST FIPS 203</div>
+        </div>
+      </div>
+      <div class="callout-box" style="margin-top: 20px;">
+        <strong>Governing Invariant:</strong> No external action without authorization, no security bypass, and no public expansion before readiness criteria are met.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 02: System Definition -->
+  <div class="slide">
+    <h1 class="slide-title">System Definition</h1>
+    <div class="slide-subtitle">Three Pillars of Controlled Execution</div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>1. Edge-First</h3>
+        <ul class="bullet-list">
+          <li>Local execution and sovereign data ownership.</li>
+          <li>Explicitly bounded external dependencies.</li>
+          <li>Deterministic resource consumption.</li>
+          <li>Zero assumed dependency on cloud infrastructure.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>2. Fail-Closed</h3>
+        <ul class="bullet-list">
+          <li>Deny by default on authorization failure.</li>
+          <li>Reject malformed, untrusted, or out-of-scope inputs.</li>
+          <li>Preserve auditable forensic entropy in Ghost Node sink.</li>
+          <li>Require explicit recovery from security violations.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>3. Legally Gated</h3>
+        <ul class="bullet-list">
+          <li>Strict boundary between engineering and public ops.</li>
+          <li>Verify corporate status before external commitments.</li>
+          <li>Maintain commercial outreach behind verifiable gates.</li>
+          <li>Financial baseline ($0.00 cloud spend invariant).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Core Invariant:</strong> Every privileged operation must have an authorized path, an auditable outcome, and a defined failure state.
+    </div>
+  </div>
+
+  <!-- Slide 03: Data Classification -->
+  <div class="slide">
+    <h1 class="slide-title">Data Classification &amp; Privacy</h1>
+    <div class="slide-subtitle">Explicit Boundary Between Metadata and User Secrets</div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Collected: Operational Telemetry</h3>
+        <ul class="bullet-list">
+          <li>Deterministic event timestamps and execution outcomes.</li>
+          <li>Component health metrics and discrete error categories.</li>
+          <li>Queue latencies and journal persistence metrics.</li>
+          <li>Security policy admission decisions and audit events.</li>
+          <li>Sanitized diagnostic traces for local telemetry triage.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Not Collected by Default</h3>
+        <ul class="bullet-list">
+          <li>Zero personal identity information (PII).</li>
+          <li>Raw secrets, private keys, seeds, or auth tokens.</li>
+          <li>Unredacted payloads when metadata suffices.</li>
+          <li>Prohibited telemetry fields (enforced via PrivacyFilter).</li>
+          <li>Unverified external telemetry egress.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Verification Requirement:</strong> The privacy boundary is established via automated verification (13/13 tests passing in <code>test_telemetry_wiring_proof.py</code>), verifying fail-closed execution prior to database write.
+    </div>
+  </div>
+
+  <!-- Slide 04: System Architecture -->
+  <div class="slide">
+    <h1 class="slide-title">System Architecture</h1>
+    <div class="slide-subtitle">Six-Layer Real-Node Topology</div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Layers 1–3: Host &amp; Runtime</h3>
+        <ul class="bullet-list">
+          <li><strong>L1 Physical:</strong> <code>qfx-yoga</code> (Ubuntu 26.04.1 LTS, Pluton TPM), <code>qfx-pixel</code> (Pixel 11 Pro, Titan M2), <code>g6pro</code> (ProBook 450 G6).</li>
+          <li><strong>L2 Runtime:</strong> Local process execution with systemd supervision.</li>
+          <li><strong>L3 Persistence:</strong> Kafka broker (ports 9092, 8090) + PostgreSQL channels.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Layers 4–6: Security &amp; Governance</h3>
+        <ul class="bullet-list">
+          <li><strong>L4 Cryptography:</strong> FIPS 203 ML-KEM + X25519 hybrid + Ed25519.</li>
+          <li><strong>L5 Policy:</strong> Mandatory Stage-2 OPA Rego v1 admission barrier.</li>
+          <li><strong>L6 Observability:</strong> Sanitized telemetry and Ghost Node sink.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Zero-Fabrication Invariant:</strong> Validated against live Tailscale topology. No mock hardware, no phantom devices.
+    </div>
+  </div>
+
+  <!-- Slide 05: Security Architecture -->
+  <div class="slide">
+    <h1 class="slide-title">Security Architecture</h1>
+    <div class="slide-subtitle">Cryptographic Baseline &amp; Policy Admission Gate</div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Approved Cryptographic Elements</h3>
+        <ul class="bullet-list">
+          <li><strong>Post-Quantum KEM:</strong> ML-KEM-768 / ML-KEM-1024 (NIST FIPS 203).</li>
+          <li><strong>Classical ECDH:</strong> X25519 for standard elliptic-curve agreement.</li>
+          <li><strong>Digital Signatures:</strong> Ed25519 for provenance &amp; receipt verification.</li>
+          <li><strong>Admission Policy:</strong> OPA Rego v1 (Default-Deny / Zero Wildcards).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Legacy Cipher Drift Control</h3>
+        <ul class="bullet-list">
+          <li>FrodoKEM excluded from strict production profile (<code>fips_strict</code>).</li>
+          <li>Legacy research code strictly quarantined from production IPC.</li>
+          <li>Stage-1 Bash &amp; Stage-2 OPA reject FrodoKEM references (Exit 2).</li>
+          <li>Fail-closed routing into Ghost Node entropy ledger.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Standards Qualification:</strong> Algorithm selection is enforced at the gatekeeper layer; cryptographic implementation assurance is verified via KAT/CAVP differential test vectors.
+    </div>
+  </div>
+
+  <!-- Slide 06: Protocol & Hard-Stop -->
+  <div class="slide">
+    <h1 class="slide-title">Protocol &amp; Hard-Stop Semantics</h1>
+    <div class="slide-subtitle">Deterministic Enforcement &amp; The Equation of Truth</div>
+    <div class="formula-banner">
+      Y = f(x - h) + k
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Decision Sequence</h3>
+        <ul class="bullet-list">
+          <li><strong>1. Receive:</strong> Capture ingress payload via stdin / arguments.</li>
+          <li><strong>2. Validate:</strong> Canonicalize JSON and check exact tool inventory.</li>
+          <li><strong>3. Authorize:</strong> Evaluate OPA Rego policy fail-closed.</li>
+          <li><strong>4. Execute:</strong> Permit clean payload commit ($Y$).</li>
+          <li><strong>5. Stop:</strong> Route anomaly ($h$) to Ghost Node sink with Exit 2.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Required Failure Behavior</h3>
+        <ul class="bullet-list">
+          <li>Missing OPA binary or policy file: Hard Stop (Exit 2).</li>
+          <li>Unlisted tool or substring spoofing: Hard Stop (Exit 2).</li>
+          <li>Path traversal or out-of-workspace escape: Hard Stop (Exit 2).</li>
+          <li>Shell chaining, subshells, or egress binaries: Hard Stop (Exit 2).</li>
+          <li>Telemetry sink write failure: Panic Trap to stderr (Exit 2).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 07: Current Operating State -->
+  <div class="slide">
+    <h1 class="slide-title">Current Operating State</h1>
+    <div class="slide-subtitle">Single-Operator Discipline &amp; Zero Cloud Spend</div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>Accountability</h3>
+        <ul class="bullet-list">
+          <li>Chief Architect / Single operator (Rocky).</li>
+          <li>Explicit authorization required for all mutations.</li>
+          <li>No autonomous expansion of privileges.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Cost Invariant</h3>
+        <ul class="bullet-list">
+          <li><strong>$0.00 unapproved cloud spend.</strong></li>
+          <li>Local inference via loopback Ollama (127.0.0.1:11434).</li>
+          <li>Paid API routes permanently firewalled.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>State Hygiene</h3>
+        <ul class="bullet-list">
+          <li>Clean separation: Implemented, Tested, Deployed, Verified.</li>
+          <li>Audit bundles timestamped with SHA-256 digests.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Operating Principle:</strong> A documented architecture is not an operational claim until accompanied by verifiable local proof.
+    </div>
+  </div>
+
+  <!-- Slide 08: Legal & Commercialization Gates -->
+  <div class="slide">
+    <h1 class="slide-title">Legal &amp; Commercialization Gates</h1>
+    <div class="slide-subtitle">Strict Prerequisites Before Public-Facing Surface</div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>P0 — Mandatory Corporate Verification</h3>
+        <ul class="bullet-list">
+          <li>Entity: <strong>FINALLYFUNGUS LLC</strong>.</li>
+          <li>Jurisdiction: Pennsylvania Department of State (Entity #13706513).</li>
+          <li>EIN and commercial banking isolation confirmation.</li>
+          <li>Wyoming DAO structure maintained as optional research track.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>P1 — Controlled Preparation</h3>
+        <ul class="bullet-list">
+          <li>IP ownership documentation and clean chain-of-title.</li>
+          <li>WiFi / CCPA privacy policy drafting.</li>
+          <li>Node operator agreement template.</li>
+          <li>Retention of regulatory crypto counsel prior to token activity.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Commercialization Gate:</strong> External sales outreach and commercialization remain strictly gated behind 6–12 months of household reserve coverage.
+    </div>
+  </div>
+
+  <!-- Slide 09: Verification & Evidence -->
+  <div class="slide">
+    <h1 class="slide-title">Verification &amp; Evidence</h1>
+    <div class="slide-subtitle">Reproducible Artifacts &amp; Test Matrix Proofs</div>
+    <table class="table-box">
+      <thead>
+        <tr>
+          <th>Subsystem / Target</th>
+          <th>Verified Outcome</th>
+          <th>Evidence Source / Artifact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Telemetry Privacy</strong></td>
+          <td>13 / 13 Pytest Passed</td>
+          <td><code>tests/test_telemetry_wiring_proof.py</code></td>
+        </tr>
+        <tr>
+          <td><strong>Ingress Gatekeeper</strong></td>
+          <td>23 / 23 Barrier Scenarios Passed</td>
+          <td><code>qf-antigravity-gate.sh</code> + <code>antigravity_gate.rego</code></td>
+        </tr>
+        <tr>
+          <td><strong>OPA Unit Test Suite</strong></td>
+          <td>11 / 11 Rego Tests Passed</td>
+          <td><code>sentinel/policies/antigravity_gate_test.rego</code></td>
+        </tr>
+        <tr>
+          <td><strong>Durable Storage</strong></td>
+          <td>Reference tests passing</td>
+          <td>C++ DurableRing crash &amp; recovery tests</td>
+        </tr>
+        <tr>
+          <td><strong>FIPS 203 Vectors</strong></td>
+          <td>Differential KAT verified</td>
+          <td><code>pqc-difftest/tests/out01_audit.rs</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout-box">
+      <strong>Evidence Rule:</strong> Claims are backed by reproducible local test outputs, not design aspirations.
+    </div>
+  </div>
+
+  <!-- Slide 10: Execution Sequence -->
+  <div class="slide">
+    <h1 class="slide-title">Five Immediate Next Actions</h1>
+    <div class="slide-subtitle">Execution Sequence &amp; Deep-Work Schedule</div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>1–2. External Hard Stops</h3>
+        <ul class="bullet-list">
+          <li><strong>1. Security Bulletin HS-PX:</strong> Apply Pixel Sept 2026 update (CVE-2026-58704) on <code>qfx-pixel</code>; resolve 3 account alerts.</li>
+          <li><strong>2. Corporate Records:</strong> Confirm PA LLC 13706513 standing on state database.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>3–5. Local Engineering &amp; Hygiene</h3>
+        <ul class="bullet-list">
+          <li><strong>3. Circuit Breaker:</strong> Wire agent circuit breaker into <code>mcp_layer</code> dispatcher.</li>
+          <li><strong>4. JSONL Benchmarks:</strong> Measure fsync &amp; enqueue latency on <code>qfx-yoga</code>.</li>
+          <li><strong>5. Gated Public Surface:</strong> Maintain reserve threshold before public rollout.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout-box">
+      <strong>Execution Discipline:</strong> One named object per 60–90 minute deep-work block.
+    </div>
+  </div>
+
+  <!-- Slide 11: Closing Principle -->
+  <div class="slide">
+    <h1 class="slide-title">Closing Principle</h1>
+    <div class="slide-subtitle">Control. Evidence. Restraint.</div>
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+      <div class="formula-banner" style="font-size: 16px; padding: 20px;">
+        Local-first. Fail-closed. Evidence-driven. Legally gated.
+      </div>
+      <div class="card" style="margin-top: 10px;">
+        <h3>Final Decision Rule</h3>
+        <ul class="bullet-list" style="font-size: 13px;">
+          <li>If authorization is absent, <strong>do not proceed</strong>.</li>
+          <li>If a required security check fails, <strong>halt execution</strong>.</li>
+          <li>If evidence is missing, <strong>mark the claim unverified</strong>.</li>
+          <li>If a release gate remains open, <strong>defer external expansion</strong>.</li>
+        </ul>
+      </div>
+      <div style="text-align: center; margin-top: 20px; font-weight: 800; font-size: 15px; color: var(--orange-accent); letter-spacing: 0.05em;">
+        BUILD LOCALLY. VERIFY RIGOROUSLY. EXPAND DELIBERATELY.
+      </div>
+    </div>
+  </div>
+
+  <div class="deck-footer">
+    <div>Use ◄ / ► or Space to Navigate</div>
+    <div class="controls">
+      <button class="btn" id="prev-btn">◄ Prev</button>
+      <button class="btn" id="next-btn">Next ►</button>
+      <button class="btn" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const slideNumEl = document.getElementById('slide-num');
+  let currentSlide = 0;
+
+  function showSlide(index) {
+    slides[currentSlide].classList.remove('active');
+    currentSlide = (index + slides.length) % slides.length;
+    slides[currentSlide].classList.add('active');
+    const num = String(currentSlide + 1).padStart(2, '0');
+    slideNumEl.textContent = `${num} / 11`;
+  }
+
+  document.getElementById('prev-btn').addEventListener('click', () => showSlide(currentSlide - 1));
+  document.getElementById('next-btn').addEventListener('click', () => showSlide(currentSlide + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      showSlide(currentSlide + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      showSlide(currentSlide - 1);
+    } else if (e.key === 'Home') {
+      showSlide(0);
+    } else if (e.key === 'End') {
+      showSlide(slides.length - 1);
+    }
+  });
+</script>
+
+</body>
+</html>
+
