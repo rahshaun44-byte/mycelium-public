@@ -55,14 +55,17 @@ class TestPrivacyFilterInvariants:
             assert PrivacyFilter.sanitize_telemetry_frame({"ssid": v}) is None
 
     def test_compliant_names_allowed(self):
-        """Standard SSIDs without opt-out markers must be retained."""
+        """Standard labels without opt-out markers are not falsely flagged, while operational frames pass and direct SSIDs are dropped."""
         compliant = ["Starlink-WiFi", "QuantumFlex-Mesh-01", "Archer_BE3600_Pro", "nomaple_syrup"]
         for c in compliant:
             assert PrivacyFilter.should_exclude_ssid(c) is False
-            assert PrivacyFilter.contains_optout({"ssid": c}) is False
-            sanitized = PrivacyFilter.sanitize_telemetry_frame({"ssid": c, "rssi": -50})
-            assert sanitized is not None
-            assert sanitized["ssid"] == c
+            assert PrivacyFilter.contains_optout({"label": c}) is False
+            # Direct SSID field must be dropped under Zero Ambient Data Invariant
+            assert PrivacyFilter.sanitize_telemetry_frame({"ssid": c, "rssi": -50}) is None
+        # Valid host telemetry frame passes
+        valid_operational = PrivacyFilter.sanitize_telemetry_frame({"node_id": "qfx-yoga", "cpu_load_1m": 0.15})
+        assert valid_operational is not None
+        assert valid_operational["node_id"] == "qfx-yoga"
 
     def test_recursive_nested_detection(self):
         """Opt-out tags hidden in deeply nested structures must be detected."""
@@ -111,39 +114,39 @@ class TestApiGatewayPersistenceBoundary:
             mock_connect.assert_not_called()
 
     def test_direct_persist_telemetry_frame_admits_clean_payload(self):
-        """Direct invocation commits compliant payloads to PostgreSQL."""
+        """Direct invocation commits compliant operational payloads to PostgreSQL."""
         mock_cursor = MagicMock()
         mock_conn = MagicMock()
         mock_conn.__enter__.return_value = mock_conn
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
         with patch("psycopg2.connect", return_value=mock_conn):
-            clean_payload = json.dumps({"ssid": "Compliant_AP", "rssi": -45})
+            clean_payload = json.dumps({"node_id": "node-clean", "cpu_load_1m": 0.25, "ram_used_pct": 50.0, "status": "PULSE_OK"})
             res = persist_telemetry_frame("node-clean", 1700000000, clean_payload)
             assert res is True
             mock_cursor.execute.assert_called_once()
             args = mock_cursor.execute.call_args[0][1]
             assert args[0] == "node-clean"
-            assert "Compliant_AP" in args[2]
+            assert "node-clean" in args[2]
 
     def test_api_submit_endpoint_strips_opted_out_frames(self, api_client):
-        """The /api/v1/telemetry/submit route must strip opt-out frames before persistence."""
+        """The /api/v1/telemetry/submit route must strip opt-out frames while preserving valid host operational frames."""
         from cryptography.hazmat.primitives.asymmetric import ed25519
 
         private_key = ed25519.Ed25519PrivateKey.generate()
         public_key = private_key.public_key()
         pub_hex = public_key.public_bytes_raw().hex()
 
-        node_id = "test-sensor"
+        node_id = "test-host"
         seq = 1
         timestamp = 1700000000
 
         mixed_payload = {
             "frames": [
-                {"ssid": "Valid_AP_1", "bssid": "AA:11", "rssi": -50},
-                {"ssid": "Private_nomap", "bssid": "BB:22", "rssi": -70},
-                {"ssid": "Valid_AP_2", "bssid": "CC:33", "rssi": -55},
-                {"ssid": "Neighbor_optout", "bssid": "DD:44", "rssi": -80}
+                {"event_type": "cpu_load_pulse", "cpu_load_1m": 0.12},
+                {"event_type": "audit_nomap", "reason": "internal_optout"},
+                {"event_type": "ram_pulse", "ram_used_pct": 45.2},
+                {"event_type": "telemetry_optout", "note": "drop_me"}
             ]
         }
         payload_str = json.dumps(mixed_payload)
@@ -176,15 +179,12 @@ class TestApiGatewayPersistenceBoundary:
             persisted_obj = json.loads(recorded_persisted_payloads[0])
             retained_frames = persisted_obj["frames"]
             assert len(retained_frames) == 2
-            retained_ssids = [f["ssid"] for f in retained_frames]
-            assert "Valid_AP_1" in retained_ssids
-            assert "Valid_AP_2" in retained_ssids
-            # Ensure zero opted-out SSIDs touched persistence
-            assert "Private_nomap" not in recorded_persisted_payloads[0]
-            assert "Neighbor_optout" not in recorded_persisted_payloads[0]
-            # Ensure co-located BSSIDs/MAC addresses were purged alongside SSIDs
-            assert "BB:22" not in recorded_persisted_payloads[0]
-            assert "DD:44" not in recorded_persisted_payloads[0]
+            retained_events = [f["event_type"] for f in retained_frames]
+            assert "cpu_load_pulse" in retained_events
+            assert "ram_pulse" in retained_events
+            # Ensure zero opted-out frames touched persistence
+            assert "audit_nomap" not in recorded_persisted_payloads[0]
+            assert "telemetry_optout" not in recorded_persisted_payloads[0]
 
     def test_api_submit_endpoint_rejects_pure_optout_payload(self, api_client):
         """If all frames in a batch are opted-out, the API must reject with 403 Forbidden."""
@@ -222,6 +222,86 @@ class TestApiGatewayPersistenceBoundary:
             assert response.status_code == 403
             assert "Forbidden" in response.text
             mock_persist.assert_not_called()
+
+    def test_api_submit_endpoint_rejects_prohibited_ambient_telemetry(self, api_client):
+        """If a payload contains unauthorized ambient network or personal tracking fields, reject with 403."""
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+
+        private_key = ed25519.Ed25519PrivateKey.generate()
+        public_key = private_key.public_key()
+        pub_hex = public_key.public_bytes_raw().hex()
+
+        node_id = "test-sensor"
+        seq = 2
+        timestamp = 1700000000
+
+        prohibited_payload = {
+            "neighbor_networks": ["Neighbor_SSID_1", "Neighbor_SSID_2"],
+            "wifi_scan": {"active": True},
+        }
+        payload_str = json.dumps(prohibited_payload)
+        message_bytes = f"{node_id}:{seq}:{payload_str}".encode("utf-8")
+        sig_hex = private_key.sign(message_bytes).hex()
+
+        submission_body = {
+            "node_id": node_id,
+            "seq": seq,
+            "timestamp": timestamp,
+            "payload": payload_str,
+            "signature": sig_hex,
+            "public_key": pub_hex,
+        }
+
+        with patch("api_node.main.persist_telemetry_frame") as mock_persist:
+            response = api_client.post("/api/v1/telemetry/submit", json=submission_body)
+            assert response.status_code == 403
+            assert "Prohibited ambient network or personal tracking identifiers" in response.text
+            mock_persist.assert_not_called()
+
+    def test_api_submit_endpoint_accepts_pure_operational_vitals(self, api_client):
+        """Legitimate QuantumFlex operational vitals (CPU load, RAM, thermals, PQC state) are verified and persisted."""
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+
+        private_key = ed25519.Ed25519PrivateKey.generate()
+        public_key = private_key.public_key()
+        pub_hex = public_key.public_bytes_raw().hex()
+
+        node_id = "qfx-yoga"
+        seq = 3
+        timestamp = 1700000000
+
+        pure_vitals = {
+            "cpu_load_1m": 0.25,
+            "ram_used_pct": 52.0,
+            "temp_c": 41.5,
+            "configured_kem": "ML-KEM-768",
+            "runtime_kem": "ML-KEM-768",
+            "tpm": {"device_available": True},
+            "status": "PULSE_OK",
+        }
+        payload_str = json.dumps(pure_vitals)
+        message_bytes = f"{node_id}:{seq}:{payload_str}".encode("utf-8")
+        sig_hex = private_key.sign(message_bytes).hex()
+
+        submission_body = {
+            "node_id": node_id,
+            "seq": seq,
+            "timestamp": timestamp,
+            "payload": payload_str,
+            "signature": sig_hex,
+            "public_key": pub_hex,
+        }
+
+        persisted_records = []
+        with patch("api_node.main.persist_telemetry_frame", side_effect=lambda n, t, p: persisted_records.append(p) or True):
+            response = api_client.post("/api/v1/telemetry/submit", json=submission_body)
+            assert response.status_code == 200
+            assert response.json()["status"] == "VERIFIED"
+            assert len(persisted_records) == 1
+            record_obj = json.loads(persisted_records[0])
+            assert record_obj["cpu_load_1m"] == 0.25
+            assert record_obj["configured_kem"] == "ML-KEM-768"
+
 
 
 # ==============================================================================
@@ -268,8 +348,8 @@ class TestKafkaConsumerPersistenceBoundary:
                     "cpu_load_1m": 0.5,
                     "ram_used_pct": 58.2,
                     "frames": [
-                        {"ssid": "Allowed_Sensor_Mesh", "rssi": -48},
-                        {"ssid": "SpyCamera_nomap", "rssi": -85}
+                        {"event_type": "operational_pulse", "duration_ms": 12},
+                        {"event_type": "audit_nomap", "duration_ms": 50}
                     ]
                 }
             }).encode("utf-8")
@@ -311,3 +391,98 @@ class TestArtifactZeroLeakageProof:
             res = persist_telemetry_frame("node-1", 1700000000, '{"data": "test"}')
             assert res is False
             mock_cursor.execute.assert_not_called()
+
+
+# ==============================================================================
+# 5. Adversarial Input & Failure Behavior Matrix (Check D Compliance)
+# ==============================================================================
+
+class TestZeroAmbientAdversarialMatrix:
+    def _sign_and_submit(self, api_client, payload_dict, node_id="test-node"):
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        private_key = ed25519.Ed25519PrivateKey.generate()
+        pub_hex = private_key.public_key().public_bytes_raw().hex()
+        payload_str = json.dumps(payload_dict)
+        sig_hex = private_key.sign(f"{node_id}:1:{payload_str}".encode("utf-8")).hex()
+        return api_client.post(
+            "/api/v1/telemetry/submit",
+            json={
+                "node_id": node_id,
+                "seq": 1,
+                "timestamp": 1700000000,
+                "payload": payload_str,
+                "signature": sig_hex,
+                "public_key": pub_hex,
+            },
+        )
+
+    def test_direct_ssid_field_rejected(self, api_client):
+        """Direct 'ssid' key anywhere in payload must return 403 Forbidden."""
+        res = self._sign_and_submit(api_client, {"ssid": "RogueAP"})
+        assert res.status_code == 403
+        assert "Prohibited ambient network" in res.text
+
+    def test_nested_bssid_field_rejected(self, api_client):
+        """Nested BSSID/MAC field must return 403 Forbidden."""
+        res = self._sign_and_submit(api_client, {"metadata": {"bssid": "00:11:22:33:44:55"}})
+        assert res.status_code == 403
+        assert "Prohibited ambient network" in res.text
+
+    def test_alternate_neighbor_field_rejected(self, api_client):
+        """Alternate field names (nearby_aps, access_points, wifi_networks) must return 403 Forbidden."""
+        alternates = [
+            {"nearby_aps": [{"name": "AP1"}]},
+            {"access_points": ["AP-A"]},
+            {"wifi_networks": ["OfficeNet"]},
+            {"scan_results": [{"channel": 6}]},
+        ]
+        for alt in alternates:
+            res = self._sign_and_submit(api_client, alt)
+            assert res.status_code == 403
+            assert "Prohibited ambient network" in res.text
+
+    def test_case_variant_prohibited_key_rejected(self, api_client):
+        """Casing variations (SSID, Nearby-APs, BSSID) must be normalized and rejected with 403."""
+        cased = [
+            {"SSID": "CapsAP"},
+            {"Nearby-APs": [{"mac": "02:00:00:00:00:01"}]},
+            {"MAC_ADDRESS": "12:34:56:78:9A:BC"},
+        ]
+        for c in cased:
+            res = self._sign_and_submit(api_client, c)
+            assert res.status_code == 403
+            assert "Prohibited ambient network" in res.text
+
+    def test_oversized_deeply_nested_payload_fails_closed(self, api_client):
+        """Recursion limit / excessive nesting (> 10 depth) must fail closed with 403."""
+        deep = {"a": {"b": {"c": {"d": {"e": {"f": {"g": {"h": {"i": {"j": {"k": "overflow"}}}}}}}}}}}
+        res = self._sign_and_submit(api_client, deep)
+        assert res.status_code == 403
+
+    def test_prohibited_data_in_batch_atomic_rejection(self, api_client):
+        """If a single frame in a multi-frame batch contains prohibited ambient data, the entire batch is rejected."""
+        batch = {
+            "frames": [
+                {"cpu_load_1m": 0.10, "ram_used_pct": 35.0},
+                {"event_type": "status_pulse", "status": "OK"},
+                {"nearby_aps": ["InjectedNeighborAP"]},  # Prohibited
+                {"temp_c": 40.0},
+            ]
+        }
+        res = self._sign_and_submit(api_client, batch)
+        assert res.status_code == 403
+        assert "Prohibited ambient network or personal tracking identifiers detected" in res.text
+
+    def test_persistence_validation_failure_no_db_write(self):
+        """persist_telemetry_frame must perform zero database writes if prohibited ambient data is present."""
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.__enter__.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        with patch("psycopg2.connect", return_value=mock_conn):
+            # Attempt direct persistence bypass with prohibited ambient data
+            res = persist_telemetry_frame("node-evil", 1700000000, json.dumps({"nearby_aps": ["Target"]}))
+            assert res is False
+            mock_cursor.execute.assert_not_called()
+

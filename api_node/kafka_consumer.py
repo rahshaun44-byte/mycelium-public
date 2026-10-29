@@ -28,22 +28,17 @@ ATHENA_INGEST_URL = "http://127.0.0.1:8001/ingest"
 
 
 def get_amara_connection():
-    try:
-        from src.db_credentials import DatabaseRole, open_role_connection
-        return open_role_connection(
-            role=DatabaseRole.WRITER,
-            dbname=os.environ.get("AMARA_DB_NAME", os.environ.get("DB_NAME", "telemetry")),
-        )
-    except Exception:
-        import psycopg2
-        return psycopg2.connect(
-            host=os.environ.get("DB_HOST", "127.0.0.1"),
-            port=int(os.environ.get("DB_PORT", 5432)),
-            dbname=os.environ.get("AMARA_DB_NAME", os.environ.get("DB_NAME", "telemetry")),
-            user=os.environ.get("DB_USER", "ghostnode"),
-            password=os.environ.get("DB_PASSWORD", ""),
-            connect_timeout=3,
-        )
+    """
+    Acquires an append-only (qf_writer) PostgreSQL connection via role-credential isolation.
+    Fails closed if credentials cannot be resolved or connection cannot be established.
+    Never falls back to administrative or shared credentials.
+    """
+    from src.db_credentials import DatabaseRole, open_role_connection
+    return open_role_connection(
+        role=DatabaseRole.WRITER,
+        dbname=os.environ.get("AMARA_DB_NAME", os.environ.get("DB_NAME", "telemetry")),
+    )
+
 
 
 def athena_ingest_headers():

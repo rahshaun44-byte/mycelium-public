@@ -143,3 +143,100 @@ def test_live_postgres_writer_and_verifier_acl_invariants():
         assert ins_err.value.pgcode in {"25006", "42501"}
     finally:
         v_conn.close()
+
+
+@pytest.mark.skipif(
+    not DEFAULT_ENV_PATH.is_file() and not os.environ.get("QF_WRITER_DB_PASS"),
+    reason="Live PostgreSQL role credentials not yet provisioned via scripts/apply_db_acl_separation.sh",
+)
+def test_live_postgres_telemetry_log_acl_invariants():
+    """
+    Live database proof on 127.0.0.1:5432 for public.telemetry_log:
+    1. qf_writer CAN INSERT without RETURNING, CANNOT SELECT, UPDATE, or DELETE.
+    2. qf_verifier CAN SELECT, CANNOT INSERT, UPDATE, or DELETE.
+    """
+    dbname = os.environ.get("DB_NAME", "telemetry")
+
+    # 1. qf_writer INSERT-only
+    w_conn = open_role_connection(DatabaseRole.WRITER, dbname=dbname)
+    try:
+        with w_conn:
+            with w_conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO public.telemetry_log (node_id, cpu_load_1m, ram_used_pct, timestamp, status, note)
+                    VALUES (%s, %s, %s, %s, %s, %s);
+                    """,
+                    ("qfx-acl-probe", 0.05, 30.0, "2026-10-28T20:30:00Z", "PULSE_OK", "ACL test probe"),
+                )
+
+        # SELECT denied
+        with pytest.raises(psycopg2.Error) as sel_err:
+            with w_conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM public.telemetry_log")
+        w_conn.rollback()
+        assert sel_err.value.pgcode == "42501"
+
+        # UPDATE denied
+        with pytest.raises(psycopg2.Error) as upd_err:
+            with w_conn.cursor() as cur:
+                cur.execute("UPDATE public.telemetry_log SET status = 'MUTATED' WHERE node_id = 'qfx-acl-probe'")
+        w_conn.rollback()
+        assert upd_err.value.pgcode == "42501"
+
+        # DELETE denied
+        with pytest.raises(psycopg2.Error) as del_err:
+            with w_conn.cursor() as cur:
+                cur.execute("DELETE FROM public.telemetry_log WHERE node_id = 'qfx-acl-probe'")
+        w_conn.rollback()
+        assert del_err.value.pgcode == "42501"
+    finally:
+        w_conn.close()
+
+    # 2. qf_verifier READ-ONLY
+    v_conn = open_role_connection(DatabaseRole.VERIFIER, dbname=dbname)
+    try:
+        with v_conn.cursor() as cur:
+            cur.execute(
+                "SELECT count(*) FROM public.telemetry_log WHERE node_id = %s",
+                ("qfx-acl-probe",),
+            )
+            count = cur.fetchone()[0]
+            assert count >= 1
+
+        # INSERT denied
+        with pytest.raises(psycopg2.Error) as ins_err:
+            with v_conn.cursor() as cur:
+                cur.execute("INSERT INTO public.telemetry_log (node_id, status) VALUES ('x', 'y')")
+        v_conn.rollback()
+        assert ins_err.value.pgcode in {"25006", "42501"}
+
+        # UPDATE denied
+        with pytest.raises(psycopg2.Error) as upd_err:
+            with v_conn.cursor() as cur:
+                cur.execute("UPDATE public.telemetry_log SET status = 'MUTATED'")
+        v_conn.rollback()
+        assert upd_err.value.pgcode in {"25006", "42501"}
+
+        # DELETE denied
+        with pytest.raises(psycopg2.Error) as del_err:
+            with v_conn.cursor() as cur:
+                cur.execute("DELETE FROM public.telemetry_log WHERE node_id = 'qfx-acl-probe'")
+        v_conn.rollback()
+        assert del_err.value.pgcode in {"25006", "42501"}
+    finally:
+        v_conn.close()
+
+
+def test_missing_credentials_fails_closed(tmp_path, monkeypatch):
+    """Missing or empty passwords must immediately raise PermissionError and never connect."""
+    for key in ("QF_WRITER_DB_USER", "QF_WRITER_DB_PASS", "QF_VERIFIER_DB_USER", "QF_VERIFIER_DB_PASS"):
+        monkeypatch.delenv(key, raising=False)
+
+    empty_env = tmp_path / "empty.env"
+    empty_env.write_text("QF_WRITER_DB_USER=qf_writer\n", encoding="utf-8")
+    empty_env.chmod(0o600)
+
+    with pytest.raises(PermissionError, match="Missing password"):
+        resolve_role_credentials(DatabaseRole.WRITER, env_path=empty_env)
+

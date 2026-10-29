@@ -119,5 +119,4 @@ def test_arc_settlement_route_payload_mismatch_returns_409_conflict():
     res2 = client.post("/api/v1/settlement/arc", json=payload_conflicting)
     assert res2.status_code == 409
     assert "Conflict" in res2.json()["detail"]
-    assert "Conflict" in res2.json()["detail"]
     assert "previously bound" in res2.json()["detail"]

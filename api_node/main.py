@@ -251,10 +251,10 @@ async def evaluate_custom_invariant(request: Request):
 
 def persist_telemetry_frame(node_id: str, timestamp: int, payload_str: str) -> bool:
     """Live persistence caller: commits verified telemetry frame to quantum_telemetry_channel."""
-    # Defense-in-depth: Never allow opted-out telemetry to reach database storage, even on direct bypass invocation
+    # Defense-in-depth: Never allow opted-out or prohibited ambient data to reach database storage
     try:
-        if PrivacyFilter.contains_optout(payload_str):
-            print(f"[!] Telemetry live persistence rejected: Privacy opt-out tag detected in payload.")
+        if PrivacyFilter.contains_optout(payload_str) or PrivacyFilter.contains_prohibited_ambient_data(payload_str):
+            print(f"[!] Telemetry live persistence rejected: Prohibited ambient or opt-out data detected in payload.")
             return False
     except Exception as e:
         print(f"[!] Telemetry live persistence filter error (fail-closed): {e}")
@@ -329,6 +329,14 @@ async def submit_telemetry(request: Request):
     elif isinstance(payload, dict):
         payload_obj = payload
 
+    # 2. Deep Packet Inspection (DPI) & Zero-Ambient Boundary
+    if (payload_obj is not None and PrivacyFilter.contains_prohibited_ambient_data(payload_obj)) or \
+       (isinstance(payload, str) and PrivacyFilter.contains_prohibited_ambient_data(payload)):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: Prohibited ambient network or personal tracking identifiers detected",
+        )
+
     # Evaluate SSID fields
     ssid_to_check = None
     if isinstance(payload_obj, dict):
@@ -338,8 +346,14 @@ async def submit_telemetry(request: Request):
     if ssid_to_check and PrivacyFilter.should_exclude_ssid(ssid_to_check):
         raise HTTPException(status_code=403, detail="Forbidden: Privacy opt-out tag detected in SSID")
 
-    # Sanitize frames if a list is present
+    # Sanitize frames if a list is present (Atomic rejection if any prohibited ambient data is present)
     if isinstance(payload_obj, dict) and "frames" in payload_obj and isinstance(payload_obj["frames"], list):
+        for f in payload_obj["frames"]:
+            if isinstance(f, dict) and PrivacyFilter.contains_prohibited_ambient_data(f):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Forbidden: Prohibited ambient network or personal tracking identifiers detected in frame batch",
+                )
         sanitized = []
         for f in payload_obj["frames"]:
             if isinstance(f, dict):
