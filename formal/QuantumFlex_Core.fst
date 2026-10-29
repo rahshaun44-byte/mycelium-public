@@ -1,6 +1,5 @@
 module QuantumFlex_Core
 
-open FStar.Mul
 open FStar.UInt32
 open FStar.UInt16
 
@@ -14,10 +13,13 @@ open FStar.UInt16
      4. Single-Session Wire Frame Bounding & Rollover Protection
    ========================================================================= *)
 
+type krml_attribute =
+  | CIntEnum : string -> krml_attribute
+  | CExport  : string -> krml_attribute
+
 (* --- Strata 1: Finite State Machine Invariant Types --- *)
 
-[@ CIntEnum "qf_engine_state_t" ]
-
+[@ (CIntEnum "qf_engine_state_t") ]
 type engine_state =
   | StateUninitialized : engine_state
   | StateLocked        : engine_state
@@ -25,22 +27,20 @@ type engine_state =
   | StateQuarantine    : engine_state
   | StateRecovery      : engine_state
 
-[@ CIntEnum "qf_auth_cred_t" ]
-
+[@ (CIntEnum "qf_auth_cred_t") ]
 type auth_credential =
   | CredNone                : auth_credential
   | CredMtlsCertVerified    : auth_credential
   | CredShamirThresholdMet  : auth_credential
   | CredTwoManAttestation   : auth_credential
 
-[@ CIntEnum "qf_verdict_t" ]
-
+[@ (CIntEnum "qf_verdict_t") ]
 type transition_verdict =
   | VerdictAllow : next:engine_state -> transition_verdict
   | VerdictDeny  : transition_verdict
 
 (* Transition legality logic *)
-[@ CExport "qf_core_eval_transition" ]
+[@ (CExport "qf_core_eval_transition") ]
 val eval_transition : current:engine_state -> target:engine_state -> cred:auth_credential -> transition_verdict
 let eval_transition current target cred =
   match current, target, cred with
@@ -81,15 +81,13 @@ let lemma_missing_auth_denies_active current = ()
 
 (* --- Strata 2: Strict PQC Algorithm Negotiation Invariant --- *)
 
-[@ CIntEnum "qf_pqc_profile_t" ]
-
+[@ (CIntEnum "qf_pqc_profile_t") ]
 type pqc_profile =
   | ProfileStrictFips203    : pqc_profile
   | ProfileAgileTransition  : pqc_profile
   | ProfileLegacyClassical  : pqc_profile
 
-[@ CIntEnum "qf_pqc_alg_t" ]
-
+[@ (CIntEnum "qf_pqc_alg_t") ]
 type pqc_algorithm =
   | AlgMLKEM768   : pqc_algorithm
   | AlgMLKEM1024  : pqc_algorithm
@@ -101,9 +99,7 @@ type policy_verdict =
   | PolicyAllow : pqc_algorithm -> policy_verdict
   | PolicyDeny  : policy_verdict
 
-  | PolicyDeny  : policy_verdict
-
-[@ CExport "qf_core_eval_pqc_proposal" ]
+[@ (CExport "qf_core_eval_pqc_proposal") ]
 val eval_pqc_proposal : profile:pqc_profile -> proposal:pqc_algorithm -> policy_verdict
 let eval_pqc_proposal profile proposal =
   match profile with
@@ -141,34 +137,38 @@ type wire_frame_meta = {
   seq_id       : nat;
 }
 
-[@ CIntEnum "qf_wire_error_t" ]
-
+[@ (CIntEnum "qf_wire_error_t") ]
 type frame_verdict =
   | FrameValid   : frame_verdict
-  | FrameInvalid : reason:UInt32.t -> frame_verdict
+  | FrameInvalid : reason:nat -> frame_verdict
 
-[@ CExport "qf_core_eval_wire_bounds" ]
+[@ (CExport "qf_core_eval_wire_bounds") ]
 val eval_wire_bounds : frame:wire_frame_meta -> frame_verdict
 let eval_wire_bounds frame =
-  if frame.chunk_len = 0ul || frame.chunk_len > max_chunk_len then
-    FrameInvalid 3ul (* ERR_CHUNK_BOUNDS *)
-  else if frame.total_chunks = 0ul || frame.total_chunks > max_total_chunks then
-    FrameInvalid 3ul (* ERR_CHUNK_BOUNDS *)
+  if frame.chunk_len = 0 || frame.chunk_len > max_chunk_len then
+    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
+  else if frame.total_chunks = 0 || frame.total_chunks > max_total_chunks then
+    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
   else if frame.chunk_idx >= frame.total_chunks then
-    FrameInvalid 3ul (* ERR_CHUNK_BOUNDS *)
+    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
   else if frame.seq_id >= max_sequence_id then
-    FrameInvalid 7ul (* ERR_SEQ_EXHAUSTED - silent wraparound forbidden *)
+    FrameInvalid 7 (* ERR_SEQ_EXHAUSTED - silent wraparound forbidden *)
   else
     FrameValid
 
-(* Formal Invariant Theorem 4: Frames exceeding 1450 bytes or 64 chunks are strictly rejected *)
+(* Formal Invariant Theorem 4: Frames exceeding 1450 bytes, zero-length, or out-of-range chunks are strictly rejected *)
 val lemma_wire_bounds_enforced : frame:wire_frame_meta ->
-  Lemma (requires (frame.chunk_len > max_chunk_len \/ frame.total_chunks > max_total_chunks \/ frame.chunk_idx >= frame.total_chunks))
+  Lemma (requires (frame.chunk_len = 0 \/ frame.chunk_len > max_chunk_len \/
+                   frame.total_chunks = 0 \/ frame.total_chunks > max_total_chunks \/
+                   frame.chunk_idx >= frame.total_chunks))
         (ensures (eval_wire_bounds frame == FrameInvalid 3))
 let lemma_wire_bounds_enforced frame = ()
 
-(* Formal Invariant Theorem 5: Sequence rollover past 0xFFFFFFFE is strictly rejected *)
+(* Formal Invariant Theorem 5: Sequence rollover past 0xFFFFFFFE is strictly rejected on structurally valid frames *)
 val lemma_seq_rollover_rejected : frame:wire_frame_meta ->
-  Lemma (requires (frame.seq_id >= max_sequence_id))
+  Lemma (requires (frame.chunk_len > 0 /\ frame.chunk_len <= max_chunk_len /\
+                   frame.total_chunks > 0 /\ frame.total_chunks <= max_total_chunks /\
+                   frame.chunk_idx < frame.total_chunks /\
+                   frame.seq_id >= max_sequence_id))
         (ensures (eval_wire_bounds frame == FrameInvalid 7))
 let lemma_seq_rollover_rejected frame = ()
