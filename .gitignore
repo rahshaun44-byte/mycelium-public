@@ -58,6 +58,9 @@ quantum_flex_engine
 qf_genesis_tool
 
 # Test and Ceremony Artifacts
+*.checked
+*.krml
+src/core/generated/*.o
 sentinel/ceremony
 
 # Excluded intentionally — do not re-add.

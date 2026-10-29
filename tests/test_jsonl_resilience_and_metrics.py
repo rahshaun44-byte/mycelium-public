@@ -51,16 +51,16 @@ def test_power_loss_torn_write_recovery_preserves_committed_prefix(tmp_path):
     # Commit 3 valid durable frames
     written = queue.enqueue_batch(
         [
-            {"ssid": "QF-Node-1", "rssi_dbm": -41, "seq": 1},
-            {"ssid": "QF-Node-2", "rssi_dbm": -43, "seq": 2},
-            {"ssid": "QF-Node-3", "rssi_dbm": -47, "seq": 3},
+            {"node_id": "qfx-yoga", "cpu_load_1m": 0.41, "seq": 1},
+            {"node_id": "qfx-yoga", "cpu_load_1m": 0.43, "seq": 2},
+            {"node_id": "qfx-yoga", "cpu_load_1m": 0.47, "seq": 3},
         ]
     )
     assert written == 3
     clean_size = ledger_path.stat().st_size
 
     # Inject a 37-byte torn tail (simulating kernel panic / power loss before '\n')
-    torn_fragment = b'{"ssid":"QF-Node-4","rssi_dbm":-50,"s'
+    torn_fragment = b'{"node_id":"qfx-yoga","cpu_load_1m":0.50,"s'
     with open(ledger_path, "ab") as fh:
         fh.write(torn_fragment)
         fh.flush()
@@ -74,10 +74,10 @@ def test_power_loss_torn_write_recovery_preserves_committed_prefix(tmp_path):
     assert ledger_path.stat().st_size == clean_size
 
     # Verify next durable write appends cleanly as line 4
-    queue.enqueue_batch([{"ssid": "QF-Node-4-Recovered", "rssi_dbm": -50, "seq": 4}])
+    queue.enqueue_batch([{"node_id": "qfx-yoga", "cpu_load_1m": 0.50, "seq": 4}])
     lines = ledger_path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 4
-    assert json.loads(lines[3])["ssid"] == "QF-Node-4-Recovered"
+    assert json.loads(lines[3])["node_id"] == "qfx-yoga"
 
 
 def test_simulated_enospc_mid_batch_rolls_back_partial_write(tmp_path):
@@ -87,7 +87,7 @@ def test_simulated_enospc_mid_batch_rolls_back_partial_write(tmp_path):
     """
     ledger_path = tmp_path / "enospc_rollback.jsonl"
     baseline_queue = DurableJsonlQueue(ledger_path)
-    baseline_queue.enqueue_batch([{"ssid": "QF-Baseline-1", "rssi_dbm": -39, "seq": 1}])
+    baseline_queue.enqueue_batch([{"node_id": "qfx-yoga", "cpu_load_1m": 0.39, "seq": 1}])
     baseline_size = ledger_path.stat().st_size
 
     def faulty_enospc_write(fd: int, data: bytes) -> int:
@@ -99,8 +99,8 @@ def test_simulated_enospc_mid_batch_rolls_back_partial_write(tmp_path):
     with pytest.raises(OSError) as exc_info:
         fault_queue.enqueue_batch(
             [
-                {"ssid": "QF-Batch-2A", "rssi_dbm": -51, "seq": 2},
-                {"ssid": "QF-Batch-2B", "rssi_dbm": -53, "seq": 3},
+                {"node_id": "qfx-yoga", "cpu_load_1m": 0.51, "seq": 2},
+                {"node_id": "qfx-yoga", "cpu_load_1m": 0.53, "seq": 3},
             ]
         )
 
@@ -119,7 +119,7 @@ def test_simulated_eio_on_fsync_rolls_back_and_propagates_errno_5(tmp_path):
     """
     ledger_path = tmp_path / "eio_fsync.jsonl"
     baseline_queue = DurableJsonlQueue(ledger_path)
-    baseline_queue.enqueue_batch([{"ssid": "QF-Anchor", "rssi_dbm": -40, "seq": 1}])
+    baseline_queue.enqueue_batch([{"node_id": "qfx-yoga", "cpu_load_1m": 0.40, "seq": 1}])
     baseline_size = ledger_path.stat().st_size
 
     def faulty_eio_fsync(_fd: int) -> None:
@@ -127,7 +127,7 @@ def test_simulated_eio_on_fsync_rolls_back_and_propagates_errno_5(tmp_path):
 
     fault_queue = DurableJsonlQueue(ledger_path, fsync_fn=faulty_eio_fsync)
     with pytest.raises(OSError) as exc_info:
-        fault_queue.enqueue_batch([{"ssid": "QF-Unflushed", "rssi_dbm": -60, "seq": 2}])
+        fault_queue.enqueue_batch([{"node_id": "qfx-yoga", "cpu_load_1m": 0.60, "seq": 2}])
 
     assert exc_info.value.errno == errno.EIO
     assert ledger_path.stat().st_size == baseline_size
@@ -144,8 +144,8 @@ def test_optout_frame_in_batch_aborts_before_touching_disk(tmp_path):
     with pytest.raises(PermissionError, match="opt-out"):
         queue.enqueue_batch(
             [
-                {"ssid": "QF-Clean", "rssi_dbm": -42},
-                {"ssid": "Neighbor_AP_optout", "rssi_dbm": -65},
+                {"node_id": "qfx-yoga", "cpu_load_1m": 0.42},
+                {"node_id": "qfx-yoga_nomap", "cpu_load_1m": 0.65},
             ]
         )
 

@@ -66,3 +66,36 @@ target_include_directories(test_verified_core PRIVATE
     ${OPENSSL_INCLUDE_DIR}
 )
 target_link_libraries(test_verified_core PRIVATE OpenSSL::Crypto)
+
+# KaRaMeL Differential Verification Test (QF-A4)
+find_program(KRML_EXE NAMES krml HINTS /home/quant/.local/bin)
+if(KRML_EXE)
+    execute_process(
+        COMMAND ${KRML_EXE} -locate-include
+        OUTPUT_VARIABLE KRML_INC_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    execute_process(
+        COMMAND ${KRML_EXE} -locate-krmllib
+        OUTPUT_VARIABLE KRML_LIB_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(EXISTS "${KRML_INC_DIR}" AND EXISTS "${CMAKE_SOURCE_DIR}/src/core/generated/QuantumFlex_Core.c")
+        add_executable(test_differential_core
+            tools/test_differential_core.cpp
+            src/core/verified_core.c
+            src/core/generated/QuantumFlex_Core.c
+        )
+        target_include_directories(test_differential_core PRIVATE
+            ${CMAKE_SOURCE_DIR}/include
+            ${CMAKE_SOURCE_DIR}/src/core/generated
+            ${OPENSSL_INCLUDE_DIR}
+        )
+        target_include_directories(test_differential_core SYSTEM PRIVATE
+            ${KRML_INC_DIR}
+            ${KRML_LIB_DIR}/dist/minimal
+        )
+        target_compile_definitions(test_differential_core PRIVATE _DEFAULT_SOURCE _GNU_SOURCE)
+        target_link_libraries(test_differential_core PRIVATE OpenSSL::Crypto)
+    endif()
+endif()

@@ -13,6 +13,7 @@ open FStar.UInt16
      4. Single-Session Wire Frame Bounding & Rollover Protection
    ========================================================================= *)
 
+noextract
 type krml_attribute =
   | CIntEnum : string -> krml_attribute
   | CExport  : string -> krml_attribute
@@ -126,49 +127,50 @@ let lemma_pqc_downgrade_impossible proposal = ()
 
 (* --- Strata 3: Wire Framing Bounds & Monotonicity Invariant --- *)
 
-let max_chunk_len : nat = 1450
-let max_total_chunks : nat = 64
-let max_sequence_id : nat = 4294967294 (* 0xFFFFFFFE = 2^32 - 2 *)
+let max_chunk_len : FStar.UInt16.t = 1450us
+let max_total_chunks : FStar.UInt16.t = 64us
+let max_sequence_id : FStar.UInt32.t = 4294967294ul
 
 type wire_frame_meta = {
-  chunk_len    : nat;
-  chunk_idx    : nat;
-  total_chunks : nat;
-  seq_id       : nat;
+  chunk_len    : FStar.UInt16.t;
+  chunk_idx    : FStar.UInt16.t;
+  total_chunks : FStar.UInt16.t;
+  seq_id       : FStar.UInt32.t;
 }
 
 [@ (CIntEnum "qf_wire_error_t") ]
 type frame_verdict =
   | FrameValid   : frame_verdict
-  | FrameInvalid : reason:nat -> frame_verdict
+  | FrameInvalid : reason:FStar.UInt16.t -> frame_verdict
 
 [@ (CExport "qf_core_eval_wire_bounds") ]
 val eval_wire_bounds : frame:wire_frame_meta -> frame_verdict
 let eval_wire_bounds frame =
-  if frame.chunk_len = 0 || frame.chunk_len > max_chunk_len then
-    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
-  else if frame.total_chunks = 0 || frame.total_chunks > max_total_chunks then
-    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
+  if frame.chunk_len = 0us || frame.chunk_len > max_chunk_len then
+    FrameInvalid 3us (* ERR_CHUNK_BOUNDS *)
+  else if frame.total_chunks = 0us || frame.total_chunks > max_total_chunks then
+    FrameInvalid 3us (* ERR_CHUNK_BOUNDS *)
   else if frame.chunk_idx >= frame.total_chunks then
-    FrameInvalid 3 (* ERR_CHUNK_BOUNDS *)
+    FrameInvalid 3us (* ERR_CHUNK_BOUNDS *)
   else if frame.seq_id >= max_sequence_id then
-    FrameInvalid 7 (* ERR_SEQ_EXHAUSTED - silent wraparound forbidden *)
+    FrameInvalid 7us (* ERR_SEQ_EXHAUSTED - silent wraparound forbidden *)
   else
     FrameValid
 
 (* Formal Invariant Theorem 4: Frames exceeding 1450 bytes, zero-length, or out-of-range chunks are strictly rejected *)
 val lemma_wire_bounds_enforced : frame:wire_frame_meta ->
-  Lemma (requires (frame.chunk_len = 0 \/ frame.chunk_len > max_chunk_len \/
-                   frame.total_chunks = 0 \/ frame.total_chunks > max_total_chunks \/
+  Lemma (requires (frame.chunk_len = 0us \/ frame.chunk_len > max_chunk_len \/
+                   frame.total_chunks = 0us \/ frame.total_chunks > max_total_chunks \/
                    frame.chunk_idx >= frame.total_chunks))
-        (ensures (eval_wire_bounds frame == FrameInvalid 3))
+        (ensures (eval_wire_bounds frame == FrameInvalid 3us))
 let lemma_wire_bounds_enforced frame = ()
 
 (* Formal Invariant Theorem 5: Sequence rollover past 0xFFFFFFFE is strictly rejected on structurally valid frames *)
 val lemma_seq_rollover_rejected : frame:wire_frame_meta ->
-  Lemma (requires (frame.chunk_len > 0 /\ frame.chunk_len <= max_chunk_len /\
-                   frame.total_chunks > 0 /\ frame.total_chunks <= max_total_chunks /\
+  Lemma (requires (frame.chunk_len > 0us /\ frame.chunk_len <= max_chunk_len /\
+                   frame.total_chunks > 0us /\ frame.total_chunks <= max_total_chunks /\
                    frame.chunk_idx < frame.total_chunks /\
                    frame.seq_id >= max_sequence_id))
-        (ensures (eval_wire_bounds frame == FrameInvalid 7))
+        (ensures (eval_wire_bounds frame == FrameInvalid 7us))
 let lemma_seq_rollover_rejected frame = ()
+

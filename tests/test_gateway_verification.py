@@ -27,7 +27,7 @@ def test_gateway():
 
     seq = 101
     timestamp = 1788065000000
-    valid_payload = json.dumps({"bssid": "AA:BB:CC:00:00:00", "rssi": -55, "channel": 6})
+    valid_payload = json.dumps({"cpu_load_1m": 0.45, "ram_used_pct": 32.1, "temp_c": 41.5})
     
     # Sign deterministic message: "node_id:seq:payload"
     message_bytes = f"{node_id}:{seq}:{valid_payload}".encode("utf-8")

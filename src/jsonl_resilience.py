@@ -160,10 +160,10 @@ def run_jsonl_fsync_benchmark(
         {
             "node_id": "qfx-yoga",
             "seq": i,
-            "ssid": f"QF-Mesh-Sector-{i}",
-            "bssid": f"00:1a:2b:3c:4d:{i:02x}",
-            "rssi_dbm": -45 - (i % 20),
-            "ts": 1761518000 + i,
+            "cpu_load_1m": 0.25 + (i % 10) * 0.05,
+            "ram_used_pct": 40.0 + (i % 20),
+            "temp_c": 45.0 + (i % 5),
+            "timestamp": 1761518000 + i,
         }
         for i in range(batch_size)
     ]
