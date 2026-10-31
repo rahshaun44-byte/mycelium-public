@@ -726,3 +726,117 @@ def evaluate_sovereign_bounty_gates(
             "QF-BOUNTY-03": g3,
         },
     }
+
+
+def evaluate_qf_m6_economic_return_gates(
+    *,
+    mission_slot: int,
+    pillar: str,
+    target_scope: str,
+    local_reproducible: bool,
+    evidence_verified: bool,
+    compliant_submission: bool,
+    human_authorized: bool,
+    human_authorizer_id: str,
+    award_confirmed: bool,
+    award_amount_usd: float,
+    funds_settled: bool,
+    settlement_network_or_method: str,
+    settlement_tx_hash_or_ref: str,
+    current_liquid_reserves_usd: float,
+    monthly_obligations_usd: float,
+    tax_reserve_rate: float = 0.30,
+) -> Dict[str, Any]:
+    """
+    QF-M6-D: Evaluates the Seven Sovereign Economic Return Acceptance Gates (M6-01 .. M6-07).
+    Fails closed on any invariant violation or premature recognition of unsettled funds.
+    """
+    # Gate M6-01: Explicitly Authorized Target
+    if mission_slot not in (1, 2, 3):
+        raise BountyGateError(f"M6-01 FAIL: invalid mission_slot {mission_slot}; must be in (1, 2, 3).")
+    valid_pillars = {
+        "PILLAR_1_BUG_BOUNTY_PROOF",
+        "PILLAR_2_PUBLIC_GOOD_GRANT",
+        "PILLAR_3_PERSONAL_FAMILY_OFFICE_ORACLE",
+    }
+    if pillar not in valid_pillars:
+        raise BountyGateError(f"M6-01 FAIL: invalid pillar {pillar!r}; must be in {sorted(valid_pillars)}.")
+    if not isinstance(target_scope, str) or not target_scope.strip():
+        raise BountyGateError("M6-01 FAIL: target_scope cannot be empty.")
+
+    # Gate M6-02: Local Reproducible Finding
+    if local_reproducible is not True:
+        raise BountyGateError(
+            "M6-02 FAIL: local reproducible finding required in offline sandbox; live target exploitation forbidden."
+        )
+
+    # Gate M6-03: Independent Evidence Verification
+    if evidence_verified is not True:
+        raise BountyGateError("M6-03 FAIL: independent evidence verification required.")
+
+    # Gate M6-04: Compliant Submission
+    if compliant_submission is not True:
+        raise BountyGateError("M6-04 FAIL: compliant submission verification failed (privacy/cloud-spend).")
+    if human_authorized is not True:
+        raise BountyGateError("M6-04 FAIL: mandatory human submission authorization not granted.")
+    clean_approver = (human_authorizer_id or "").strip().lower()
+    if clean_approver not in ALLOWED_HUMAN_APPROVERS:
+        raise BountyGateError(f"M6-04 FAIL: authorizer {human_authorizer_id!r} not in authorized Operator list.")
+
+    # Gate M6-05: Verified Award
+    if award_confirmed is not True:
+        raise BountyGateError("M6-05 FAIL: verified bounty or grant award announcement required.")
+    if not math.isfinite(award_amount_usd) or award_amount_usd <= 0.0:
+        raise BountyGateError(f"M6-05 FAIL: invalid award_amount_usd ({award_amount_usd}); must be positive.")
+
+    # Gate M6-06: Settled Funds Independently Reconciled (Unsettled awards strictly forbidden from counting as income)
+    if funds_settled is not True:
+        raise BountyGateError(
+            "M6-06 FAIL: unsettled awards cannot be recognized as realized income or counted toward capital reserves."
+        )
+    if not settlement_network_or_method or not isinstance(settlement_network_or_method, str):
+        raise BountyGateError("M6-06 FAIL: settlement_network_or_method must be specified.")
+    if not settlement_tx_hash_or_ref or not isinstance(settlement_tx_hash_or_ref, str):
+        raise BountyGateError("M6-06 FAIL: settlement_tx_hash_or_ref must be specified.")
+
+    # Gate M6-07: Six-Month Reserve Protected (R >= 6O)
+    if not math.isfinite(current_liquid_reserves_usd) or current_liquid_reserves_usd < 0.0:
+        raise BountyGateError("M6-07 FAIL: invalid current_liquid_reserves_usd.")
+    if not math.isfinite(monthly_obligations_usd) or monthly_obligations_usd <= 0.0:
+        raise BountyGateError("M6-07 FAIL: invalid monthly_obligations_usd.")
+
+    required_reserves = 6.0 * monthly_obligations_usd
+    if current_liquid_reserves_usd < required_reserves:
+        raise BountyGateError(
+            f"M6-07 FAIL: reserve coverage breach ({current_liquid_reserves_usd:.2f} < {required_reserves:.2f}). "
+            f"Preserve the six-month financial reserve before capital allocation."
+        )
+
+    tax_set_aside = round(award_amount_usd * tax_reserve_rate, 2)
+    net_routed_reserves = round(award_amount_usd - tax_set_aside, 2)
+    post_settlement_reserves = round(current_liquid_reserves_usd + net_routed_reserves, 2)
+    coverage_months = round(post_settlement_reserves / monthly_obligations_usd, 2)
+
+    return {
+        "m6_economic_return_admitted": True,
+        "gates": {
+            "M6-01_authorized_target": "PASS",
+            "M6-02_local_reproducible": "PASS",
+            "M6-03_evidence_verified": "PASS",
+            "M6-04_compliant_submission": "PASS",
+            "M6-05_verified_award": "PASS",
+            "M6-06_settled_funds_reconciled": "PASS",
+            "M6-07_reserve_protected": f"PASS ({coverage_months:.2f} months coverage)",
+        },
+        "financial_reconciliation": {
+            "gross_settled_award_usd": award_amount_usd,
+            "tax_reserve_set_aside_usd": tax_set_aside,
+            "net_routed_to_reserve_reinvestment_usd": net_routed_reserves,
+            "prior_liquid_reserves_usd": current_liquid_reserves_usd,
+            "post_settlement_liquid_reserves_usd": post_settlement_reserves,
+            "monthly_obligations_usd": monthly_obligations_usd,
+            "reserve_coverage_months": coverage_months,
+            "unsettled_award_counted_as_income": False,
+        },
+    }
+
