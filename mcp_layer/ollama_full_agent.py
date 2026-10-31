@@ -41,15 +41,28 @@ class OllamaAgent:
         self.conn.commit()
         return full_response
 
+    def close(self):
+        if hasattr(self, "conn") and self.conn:
+            self.conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
 def main():
     agent = OllamaAgent()
     print("Ollama Agent with Memory & Streaming Ready")
     print("Type 'exit' to quit\n")
-    while True:
-        user_input = input("You: ")
-        if user_input.lower() in ["exit", "quit"]:
-            break
-        agent.chat_stream(user_input)
+    try:
+        while True:
+            user_input = input("You: ")
+            if user_input.lower() in ["exit", "quit"]:
+                break
+            agent.chat_stream(user_input)
+    finally:
+        agent.close()
 
 if __name__ == "__main__":
     main()

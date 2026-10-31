@@ -185,6 +185,12 @@ class SingleTransactionalAuthorityStore:
     def close(self):
         self.conn.close()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
 
 # ── [GATE 3]: Pre-Parse Rate Boundary Limiting ───────────────────────────────
 
@@ -346,6 +352,7 @@ def main():
         assert success
         s_clean, d_clean, c_clean = store.get_state()
         assert s_clean == 2 and "dec-clean-commit-100" in c_clean
+        store.close()
         print(f"    • Clean Transactional Commit    : PASS (Atomically transitioned to k_2)")
 
         # ---------------------------------------------------------------------
