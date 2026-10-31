@@ -243,7 +243,7 @@ def reconcile_track0_worksheet(
                 "reserves": round(independent_coverage_months, 6),
                 "monthly_obligations": 1.0,
                 "allocation_amount": 0.0,
-                "funding_bucket": "CORE_RESERVE" if not independent_pass else "SURPLUS_GROWTH",
+                "funding_bucket": "CASH_FLOW_ENGINE",
                 "financial_shock": False,
                 "discretionary_expansion": False,
             },
@@ -271,7 +271,12 @@ def reconcile_track0_worksheet(
         },
         require_wasm=True,
     )
-    if not wasm_eval.get("wasm_verified") or not wasm_eval.get("parity_verified"):
+    cap_ctrl = wasm_eval.get("controls", {}).get("QF-CAPITAL-01", {})
+    if (
+        not wasm_eval.get("wasm_verified")
+        or not wasm_eval.get("parity_verified")
+        or bool(cap_ctrl.get("allow")) != independent_pass
+    ):
         raise SecurityBoundaryError("Operating Constitution Wasm verification failed during Track 0 check.")
 
     gate_status = HardStopGateStatus(
