@@ -11,16 +11,14 @@
 #include "krmllib.h"
 
 #define StateUninitialized 0
-#define StateLocked 1
-#define StateActive 2
-#define StateQuarantine 3
-#define StateRecovery 4
+#define StateActive 1
+#define StateQuarantine 2
+#define StateRecovery 3
+#define StateCollapsed 4
 
 typedef uint8_t engine_state;
 
 bool uu___is_StateUninitialized(engine_state projectee);
-
-bool uu___is_StateLocked(engine_state projectee);
 
 bool uu___is_StateActive(engine_state projectee);
 
@@ -28,87 +26,76 @@ bool uu___is_StateQuarantine(engine_state projectee);
 
 bool uu___is_StateRecovery(engine_state projectee);
 
+bool uu___is_StateCollapsed(engine_state projectee);
+
+#define VerdictCompliant 0
+#define VerdictDegraded 1
+#define VerdictToxic 2
+#define VerdictSupervisorUnreachable 3
+
+typedef uint8_t policy_verdict;
+
+bool uu___is_VerdictCompliant(policy_verdict projectee);
+
+bool uu___is_VerdictDegraded(policy_verdict projectee);
+
+bool uu___is_VerdictToxic(policy_verdict projectee);
+
+bool uu___is_VerdictSupervisorUnreachable(policy_verdict projectee);
+
 #define CredNone 0
-#define CredMtlsCertVerified 1
-#define CredShamirThresholdMet 2
-#define CredTwoManAttestation 3
+#define CredOperatorAttestation 1
+#define CredTwoManAttestation 2
 
 typedef uint8_t auth_credential;
 
 bool uu___is_CredNone(auth_credential projectee);
 
-bool uu___is_CredMtlsCertVerified(auth_credential projectee);
-
-bool uu___is_CredShamirThresholdMet(auth_credential projectee);
+bool uu___is_CredOperatorAttestation(auth_credential projectee);
 
 bool uu___is_CredTwoManAttestation(auth_credential projectee);
 
-#define VerdictAllow 0
-#define VerdictDeny 1
-
-typedef uint8_t transition_verdict_tags;
-
-typedef struct transition_verdict_s
+typedef struct transition_result_s
 {
-  transition_verdict_tags tag;
-  engine_state next;
+  engine_state next_state;
+  uint16_t retries_out;
+  bool permitted;
 }
-transition_verdict;
+transition_result;
 
-bool uu___is_VerdictAllow(transition_verdict projectee);
+extern uint16_t max_quarantine_retries;
 
-bool uu___is_VerdictDeny(transition_verdict projectee);
+transition_result
+step_fsm(engine_state current, policy_verdict verdict, auth_credential cred, uint16_t retries);
 
-transition_verdict
-eval_transition(engine_state current, engine_state target, auth_credential cred);
+#define LevelLegacyDeprecated 0
+#define LevelStandardClassical 1
+#define LevelPostQuantumFips 2
 
-#define ProfileStrictFips203 0
-#define ProfileAgileTransition 1
-#define ProfileLegacyClassical 2
+typedef uint8_t crypto_security_level;
 
-typedef uint8_t pqc_profile;
+bool uu___is_LevelLegacyDeprecated(crypto_security_level projectee);
 
-bool uu___is_ProfileStrictFips203(pqc_profile projectee);
+bool uu___is_LevelStandardClassical(crypto_security_level projectee);
 
-bool uu___is_ProfileAgileTransition(pqc_profile projectee);
+bool uu___is_LevelPostQuantumFips(crypto_security_level projectee);
 
-bool uu___is_ProfileLegacyClassical(pqc_profile projectee);
-
-#define AlgMLKEM768 0
-#define AlgMLKEM1024 1
-#define AlgFrodo976 2
-#define AlgX25519 3
-#define AlgUnknown 4
-
-typedef uint8_t pqc_algorithm;
-
-bool uu___is_AlgMLKEM768(pqc_algorithm projectee);
-
-bool uu___is_AlgMLKEM1024(pqc_algorithm projectee);
-
-bool uu___is_AlgFrodo976(pqc_algorithm projectee);
-
-bool uu___is_AlgX25519(pqc_algorithm projectee);
-
-bool uu___is_AlgUnknown(pqc_algorithm projectee);
-
-#define PolicyAllow 0
-#define PolicyDeny 1
-
-typedef uint8_t policy_verdict_tags;
-
-typedef struct policy_verdict_s
+typedef struct crypto_asset_descriptor_s
 {
-  policy_verdict_tags tag;
-  pqc_algorithm _0;
+  uint16_t asset_id;
+  crypto_security_level security_level;
+  bool is_revoked;
 }
-policy_verdict;
+crypto_asset_descriptor;
 
-bool uu___is_PolicyAllow(policy_verdict projectee);
+typedef struct policy_criteria_s
+{
+  crypto_security_level min_required_level;
+  bool allow_revoked;
+}
+policy_criteria;
 
-bool uu___is_PolicyDeny(policy_verdict projectee);
-
-policy_verdict eval_pqc_proposal(pqc_profile profile, pqc_algorithm proposal);
+policy_verdict eval_crypto_asset(policy_criteria policy, crypto_asset_descriptor asset);
 
 extern uint16_t max_chunk_len;
 

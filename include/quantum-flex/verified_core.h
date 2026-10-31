@@ -16,104 +16,108 @@ extern "C" {
    Assurance Mapping:
      - Property Specification: QF-A3 Formally Specified (formal/QuantumFlex_Core.fst)
      - C ABI & Implementation: QF-A1 Tested / QF-A2 Policy-Enforced
-     - KaRaMeL Machine Extraction: NULL (Gap admitted; manual C reference)
+     - KaRaMeL Machine Extraction: QF-A4 Extracted & Verified (src/core/generated/)
    ========================================================================= */
 
 /* --- Finite State Machine Invariants --- */
 typedef enum {
     QF_STATE_UNINITIALIZED = 0,
-    QF_STATE_LOCKED        = 1,
-    QF_STATE_ACTIVE        = 2,
-    QF_STATE_QUARANTINE    = 3,
-    QF_STATE_RECOVERY      = 4
+    QF_STATE_ACTIVE        = 1,
+    QF_STATE_QUARANTINE    = 2,
+    QF_STATE_RECOVERY      = 3,
+    QF_STATE_COLLAPSED     = 4
 } qf_engine_state_t;
 
 typedef enum {
-    QF_CRED_NONE                = 0,
-    QF_CRED_MTLS_CERT           = 1,
-    QF_CRED_SHAMIR_THRESHOLD    = 2,
-    QF_CRED_TWO_MAN_ATTESTATION = 3
+    QF_VERDICT_COMPLIANT              = 0,
+    QF_VERDICT_DEGRADED               = 1,
+    QF_VERDICT_TOXIC                  = 2,
+    QF_VERDICT_SUPERVISOR_UNREACHABLE = 3
+} qf_policy_verdict_t;
+
+typedef enum {
+    QF_CRED_NONE                 = 0,
+    QF_CRED_OPERATOR_ATTESTATION = 1,
+    QF_CRED_TWO_MAN_ATTESTATION  = 2
 } qf_auth_cred_t;
 
-typedef enum {
-    QF_VERDICT_DENY  = 0,
-    QF_VERDICT_ALLOW = 1
-} qf_verdict_t;
+typedef struct {
+    qf_engine_state_t next_state;
+    uint16_t          retries_out;
+    bool              permitted;
+} qf_transition_result_t;
 
-/* --- Cryptographic Agility & Strict FIPS 203 Invariants --- */
-typedef enum {
-    QF_PROFILE_STRICT_FIPS203   = 1,
-    QF_PROFILE_AGILE_TRANSITION = 2,
-    QF_PROFILE_LEGACY_CLASSICAL = 3
-} qf_pqc_profile_t;
+#define QF_MAX_QUARANTINE_RETRIES 5
 
+/* --- Decoupled Cryptographic Policy Invariants --- */
 typedef enum {
-    QF_ALG_ML_KEM_768  = 1,
-    QF_ALG_ML_KEM_1024 = 2,
-    QF_ALG_FRODO_976   = 3,
-    QF_ALG_X25519      = 4,
-    QF_ALG_UNKNOWN     = 255
-} qf_pqc_alg_t;
+    QF_CRYPTO_LEGACY_DEPRECATED  = 0,
+    QF_CRYPTO_STANDARD_CLASSICAL = 1,
+    QF_CRYPTO_POST_QUANTUM_FIPS  = 2
+} qf_crypto_level_t;
+
+typedef struct {
+    uint16_t          asset_id;
+    qf_crypto_level_t security_level;
+    bool              is_revoked;
+} qf_crypto_asset_descriptor_t;
+
+typedef struct {
+    qf_crypto_level_t min_required_level;
+    bool              allow_revoked;
+} qf_policy_criteria_t;
 
 /* --- Wire Protocol Constants & Bounds --- */
 #define QF_WIRE_MAX_CHUNK_LEN      1450
 #define QF_WIRE_MAX_TOTAL_CHUNKS   64
-#define QF_WIRE_MAX_SEQ_ID         0xFFFFFFFEU /* 2^32 - 2, no silent wraparound; keep equal to quantumflex::wire::MAX_SEQ_ID */
-#define QF_WIRE_MAGIC_BE           0x5146584BU /* "QFXK" */
+#define QF_WIRE_MAX_SEQ_ID         0xFFFFFFFEU
 
 typedef enum {
-    QF_WIRE_OK                 = 0,
-    QF_WIRE_ERR_MAGIC          = 1,
-    QF_WIRE_ERR_LENGTH         = 2,
-    QF_WIRE_ERR_CHUNK_BOUNDS   = 3,
-    QF_WIRE_ERR_CRC_MISMATCH   = 4,
-    QF_WIRE_ERR_TIMEOUT        = 5,
-    QF_WIRE_ERR_TABLE_FULL     = 6,
-    QF_WIRE_ERR_SEQ_EXHAUSTED  = 7,
-    QF_WIRE_ERR_DECAP_FAILED   = 8
-} qf_wire_error_t;
+    QF_WIRE_FRAME_VALID   = 0,
+    QF_WIRE_FRAME_INVALID = 1
+} qf_frame_verdict_tag_t;
+
+typedef struct {
+    qf_frame_verdict_tag_t tag;
+    uint16_t               reason;
+} qf_frame_verdict_t;
+
+typedef struct {
+    uint16_t chunk_len;
+    uint16_t chunk_idx;
+    uint16_t total_chunks;
+    uint32_t seq_id;
+} qf_wire_frame_meta_t;
 
 /* --- Core Invariant Verification APIs --- */
 
 /**
- * Validates state transition legality according to Theorem 1 & 2.
- * Enforces absorbing quarantine sink and mandatory credentials.
+ * Validates state transition legality according to Theorems 1-5.
+ * Enforces absorbing collapse sink, quarantine recovery routing, and operator credentials.
  */
-qf_verdict_t qf_core_eval_transition(
-    qf_engine_state_t current,
-    qf_engine_state_t target,
-    qf_auth_cred_t cred
+qf_transition_result_t qf_core_step_fsm(
+    qf_engine_state_t   current,
+    qf_policy_verdict_t verdict,
+    qf_auth_cred_t      cred,
+    uint16_t            retries
 );
 
 /**
- * Validates PQC algorithm negotiation according to Theorem 3.
- * Enforces strict FIPS 203 downgrade impossibility.
+ * Validates cryptographic asset compliance according to Theorems 6-7.
+ * Enforces fail-closed rejection of revoked or downgraded primitives.
  */
-qf_verdict_t qf_core_eval_pqc_proposal(
-    qf_pqc_profile_t profile,
-    qf_pqc_alg_t proposal
+qf_policy_verdict_t qf_core_eval_crypto_asset(
+    qf_policy_criteria_t         policy,
+    qf_crypto_asset_descriptor_t asset
 );
 
 /**
- * Validates wire frame bounds according to Theorem 4 & 5.
+ * Validates wire frame bounds according to Theorems 8-9.
  * Enforces chunk limits and strictly forbids silent sequence wraparound.
  */
-qf_wire_error_t qf_core_eval_wire_bounds(
-    uint16_t chunk_len,
-    uint16_t chunk_idx,
-    uint16_t total_chunks,
-    uint32_t seq_id
+qf_frame_verdict_t qf_core_eval_wire_bounds(
+    qf_wire_frame_meta_t frame
 );
-
-/**
- * Computes standard IEEE 802.3 CRC32 checksum.
- */
-uint32_t qf_core_compute_crc32(const uint8_t *data, size_t len);
-
-/**
- * Memory zeroization with compiler barrier.
- */
-void qf_core_zeroize(void *buf, size_t len);
 
 #ifdef __cplusplus
 }

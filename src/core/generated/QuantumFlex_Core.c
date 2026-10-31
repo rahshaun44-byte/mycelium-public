@@ -22,21 +22,6 @@ bool uu___is_StateUninitialized(engine_state projectee)
   }
 }
 
-bool uu___is_StateLocked(engine_state projectee)
-{
-  switch (projectee)
-  {
-    case StateLocked:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
 bool uu___is_StateActive(engine_state projectee)
 {
   switch (projectee)
@@ -82,6 +67,81 @@ bool uu___is_StateRecovery(engine_state projectee)
   }
 }
 
+bool uu___is_StateCollapsed(engine_state projectee)
+{
+  switch (projectee)
+  {
+    case StateCollapsed:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+bool uu___is_VerdictCompliant(policy_verdict projectee)
+{
+  switch (projectee)
+  {
+    case VerdictCompliant:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+bool uu___is_VerdictDegraded(policy_verdict projectee)
+{
+  switch (projectee)
+  {
+    case VerdictDegraded:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+bool uu___is_VerdictToxic(policy_verdict projectee)
+{
+  switch (projectee)
+  {
+    case VerdictToxic:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+bool uu___is_VerdictSupervisorUnreachable(policy_verdict projectee)
+{
+  switch (projectee)
+  {
+    case VerdictSupervisorUnreachable:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
 bool uu___is_CredNone(auth_credential projectee)
 {
   switch (projectee)
@@ -97,26 +157,11 @@ bool uu___is_CredNone(auth_credential projectee)
   }
 }
 
-bool uu___is_CredMtlsCertVerified(auth_credential projectee)
+bool uu___is_CredOperatorAttestation(auth_credential projectee)
 {
   switch (projectee)
   {
-    case CredMtlsCertVerified:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_CredShamirThresholdMet(auth_credential projectee)
-{
-  switch (projectee)
-  {
-    case CredShamirThresholdMet:
+    case CredOperatorAttestation:
       {
         return true;
       }
@@ -142,314 +187,307 @@ bool uu___is_CredTwoManAttestation(auth_credential projectee)
   }
 }
 
-bool uu___is_VerdictAllow(transition_verdict projectee)
-{
-  return projectee.tag == VerdictAllow;
-}
+uint16_t max_quarantine_retries = 5U;
 
-bool uu___is_VerdictDeny(transition_verdict projectee)
+typedef struct __QuantumFlex_Core_policy_verdict_QuantumFlex_Core_auth_credential_s
 {
-  return projectee.tag == VerdictDeny;
+  policy_verdict fst;
+  auth_credential snd;
 }
+__QuantumFlex_Core_policy_verdict_QuantumFlex_Core_auth_credential;
 
-typedef struct
-__QuantumFlex_Core_engine_state_QuantumFlex_Core_engine_state_QuantumFlex_Core_auth_credential_s
+transition_result
+step_fsm(engine_state current, policy_verdict verdict, auth_credential cred, uint16_t retries)
 {
-  engine_state fst;
-  engine_state snd;
-  auth_credential thd;
-}
-__QuantumFlex_Core_engine_state_QuantumFlex_Core_engine_state_QuantumFlex_Core_auth_credential;
-
-transition_verdict
-eval_transition(engine_state current, engine_state target, auth_credential cred)
-{
-  __QuantumFlex_Core_engine_state_QuantumFlex_Core_engine_state_QuantumFlex_Core_auth_credential
-  scrut = { .fst = current, .snd = target, .thd = cred };
-  return
-    scrut.fst == StateUninitialized && scrut.snd == StateLocked ? (
-                                                                  (transition_verdict){
-                                                                    .tag = VerdictAllow,
-                                                                    .next = StateLocked
-                                                                  }
-                                                                )
-                                                                : scrut.fst == StateLocked &&
-                                                                  scrut.snd == StateActive &&
-                                                                    scrut.thd ==
-                                                                      CredShamirThresholdMet ? (
-                                                                                               (transition_verdict){
-                                                                                                 .tag = VerdictAllow,
-                                                                                                 .next = StateActive
-                                                                                               }
-                                                                                             )
-                                                                                             : scrut.fst
-                                                                                             ==
-                                                                                               StateLocked
-                                                                                             &&
-                                                                                               scrut.snd
-                                                                                               ==
-                                                                                                 StateActive
-                                                                                               &&
-                                                                                                 scrut.thd
-                                                                                                 ==
-                                                                                                   CredMtlsCertVerified ? (
-                                                                                                                          (transition_verdict){
-                                                                                                                            .tag = VerdictAllow,
-                                                                                                                            .next = StateActive
-                                                                                                                          }
-                                                                                                                        )
-                                                                                                                        : scrut.fst
-                                                                                                                        ==
-                                                                                                                          StateActive
-                                                                                                                        &&
-                                                                                                                          scrut.snd
-                                                                                                                          ==
-                                                                                                                            StateQuarantine ? (
-                                                                                                                                              (transition_verdict){
-                                                                                                                                                .tag = VerdictAllow,
-                                                                                                                                                .next = StateQuarantine
-                                                                                                                                              }
-                                                                                                                                            )
-                                                                                                                                            : scrut.fst
-                                                                                                                                            ==
-                                                                                                                                              StateActive
-                                                                                                                                            &&
-                                                                                                                                              scrut.snd
-                                                                                                                                              ==
-                                                                                                                                                StateLocked
-                                                                                                                                              &&
-                                                                                                                                                scrut.thd
-                                                                                                                                                ==
-                                                                                                                                                  CredMtlsCertVerified ? (
-                                                                                                                                                                         (transition_verdict){
-                                                                                                                                                                           .tag = VerdictAllow,
-                                                                                                                                                                           .next = StateLocked
-                                                                                                                                                                         }
-                                                                                                                                                                       )
-                                                                                                                                                                       : scrut.fst
-                                                                                                                                                                       ==
-                                                                                                                                                                         StateQuarantine
-                                                                                                                                                                       &&
-                                                                                                                                                                         scrut.snd
-                                                                                                                                                                         ==
-                                                                                                                                                                           StateRecovery
-                                                                                                                                                                         &&
-                                                                                                                                                                           scrut.thd
-                                                                                                                                                                           ==
-                                                                                                                                                                             CredTwoManAttestation ? (
-                                                                                                                                                                                                     (transition_verdict){
-                                                                                                                                                                                                       .tag = VerdictAllow,
-                                                                                                                                                                                                       .next = StateRecovery
-                                                                                                                                                                                                     }
-                                                                                                                                                                                                   )
-                                                                                                                                                                                                   : scrut.fst
-                                                                                                                                                                                                   ==
-                                                                                                                                                                                                     StateRecovery
-                                                                                                                                                                                                   &&
-                                                                                                                                                                                                     scrut.snd
-                                                                                                                                                                                                     ==
-                                                                                                                                                                                                       StateLocked
-                                                                                                                                                                                                     &&
-                                                                                                                                                                                                       scrut.thd
-                                                                                                                                                                                                       ==
-                                                                                                                                                                                                         CredMtlsCertVerified ? (
-                                                                                                                                                                                                                                (transition_verdict){
-                                                                                                                                                                                                                                  .tag = VerdictAllow,
-                                                                                                                                                                                                                                  .next = StateLocked
-                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                              )
-                                                                                                                                                                                                                              : (
-                                                                                                                                                                                                                                (transition_verdict){
-                                                                                                                                                                                                                                  .tag = VerdictDeny
-                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                              );
-}
-
-bool uu___is_ProfileStrictFips203(pqc_profile projectee)
-{
-  switch (projectee)
+  switch (current)
   {
-    case ProfileStrictFips203:
+    case StateCollapsed:
       {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_ProfileAgileTransition(pqc_profile projectee)
-{
-  switch (projectee)
-  {
-    case ProfileAgileTransition:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_ProfileLegacyClassical(pqc_profile projectee)
-{
-  switch (projectee)
-  {
-    case ProfileLegacyClassical:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_AlgMLKEM768(pqc_algorithm projectee)
-{
-  switch (projectee)
-  {
-    case AlgMLKEM768:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_AlgMLKEM1024(pqc_algorithm projectee)
-{
-  switch (projectee)
-  {
-    case AlgMLKEM1024:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_AlgFrodo976(pqc_algorithm projectee)
-{
-  switch (projectee)
-  {
-    case AlgFrodo976:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_AlgX25519(pqc_algorithm projectee)
-{
-  switch (projectee)
-  {
-    case AlgX25519:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_AlgUnknown(pqc_algorithm projectee)
-{
-  switch (projectee)
-  {
-    case AlgUnknown:
-      {
-        return true;
-      }
-    default:
-      {
-        return false;
-      }
-  }
-}
-
-bool uu___is_PolicyAllow(policy_verdict projectee)
-{
-  return projectee.tag == PolicyAllow;
-}
-
-bool uu___is_PolicyDeny(policy_verdict projectee)
-{
-  return projectee.tag == PolicyDeny;
-}
-
-policy_verdict eval_pqc_proposal(pqc_profile profile, pqc_algorithm proposal)
-{
-  switch (profile)
-  {
-    case ProfileStrictFips203:
-      {
-        switch (proposal)
-        {
-          case AlgMLKEM768:
-            {
-              return ((policy_verdict){ .tag = PolicyAllow, ._0 = AlgMLKEM768 });
+        return
+          (
+            (transition_result){
+              .next_state = StateCollapsed,
+              .retries_out = retries,
+              .permitted = false
             }
-          case AlgMLKEM1024:
+          );
+      }
+    case StateUninitialized:
+      {
+        switch (verdict)
+        {
+          case VerdictCompliant:
             {
-              return ((policy_verdict){ .tag = PolicyAllow, ._0 = AlgMLKEM1024 });
+              return
+                (
+                  (transition_result){
+                    .next_state = StateActive,
+                    .retries_out = 0U,
+                    .permitted = true
+                  }
+                );
             }
           default:
             {
-              return ((policy_verdict){ .tag = PolicyDeny });
+              return
+                (
+                  (transition_result){
+                    .next_state = StateQuarantine,
+                    .retries_out = 0U,
+                    .permitted = false
+                  }
+                );
             }
         }
         break;
       }
-    case ProfileAgileTransition:
+    case StateActive:
       {
-        switch (proposal)
+        switch (verdict)
         {
-          case AlgMLKEM768:
+          case VerdictCompliant:
             {
-              return ((policy_verdict){ .tag = PolicyAllow, ._0 = AlgMLKEM768 });
+              return
+                (
+                  (transition_result){
+                    .next_state = StateActive,
+                    .retries_out = 0U,
+                    .permitted = true
+                  }
+                );
             }
-          case AlgMLKEM1024:
+          case VerdictDegraded:
             {
-              return ((policy_verdict){ .tag = PolicyAllow, ._0 = AlgMLKEM1024 });
+              return
+                (
+                  (transition_result){
+                    .next_state = StateQuarantine,
+                    .retries_out = 0U,
+                    .permitted = false
+                  }
+                );
             }
-          case AlgFrodo976:
+          case VerdictSupervisorUnreachable:
             {
-              return ((policy_verdict){ .tag = PolicyAllow, ._0 = AlgFrodo976 });
+              return
+                (
+                  (transition_result){
+                    .next_state = StateQuarantine,
+                    .retries_out = 0U,
+                    .permitted = false
+                  }
+                );
+            }
+          case VerdictToxic:
+            {
+              return
+                (
+                  (transition_result){
+                    .next_state = StateCollapsed,
+                    .retries_out = 0U,
+                    .permitted = false
+                  }
+                );
             }
           default:
             {
-              return ((policy_verdict){ .tag = PolicyDeny });
+              KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+              KRML_HOST_EXIT(253U);
             }
         }
         break;
       }
-    case ProfileLegacyClassical:
+    case StateQuarantine:
       {
-        return ((policy_verdict){ .tag = PolicyDeny });
+        switch (verdict)
+        {
+          case VerdictCompliant:
+            {
+              return
+                (
+                  (transition_result){
+                    .next_state = StateRecovery,
+                    .retries_out = 0U,
+                    .permitted = false
+                  }
+                );
+            }
+          case VerdictToxic:
+            {
+              return
+                (
+                  (transition_result){
+                    .next_state = StateCollapsed,
+                    .retries_out = retries,
+                    .permitted = false
+                  }
+                );
+            }
+          case VerdictDegraded:
+            {
+              return
+                retries >= max_quarantine_retries ? (
+                                                    (transition_result){
+                                                      .next_state = StateCollapsed,
+                                                      .retries_out = retries,
+                                                      .permitted = false
+                                                    }
+                                                  )
+                                                  : (
+                                                    (transition_result){
+                                                      .next_state = StateQuarantine,
+                                                      .retries_out = (uint32_t)retries + 1U,
+                                                      .permitted = false
+                                                    }
+                                                  );
+            }
+          case VerdictSupervisorUnreachable:
+            {
+              return
+                retries >= max_quarantine_retries ? (
+                                                    (transition_result){
+                                                      .next_state = StateCollapsed,
+                                                      .retries_out = retries,
+                                                      .permitted = false
+                                                    }
+                                                  )
+                                                  : (
+                                                    (transition_result){
+                                                      .next_state = StateQuarantine,
+                                                      .retries_out = (uint32_t)retries + 1U,
+                                                      .permitted = false
+                                                    }
+                                                  );
+            }
+          default:
+            {
+              KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+              KRML_HOST_EXIT(253U);
+            }
+        }
+        break;
+      }
+    case StateRecovery:
+      {
+        __QuantumFlex_Core_policy_verdict_QuantumFlex_Core_auth_credential
+        scrut = { .fst = verdict, .snd = cred };
+        return
+          scrut.fst == VerdictCompliant && scrut.snd == CredOperatorAttestation ? (
+                                                                                  (transition_result){
+                                                                                    .next_state = StateActive,
+                                                                                    .retries_out = 0U,
+                                                                                    .permitted = true
+                                                                                  }
+                                                                                )
+                                                                                : scrut.fst ==
+                                                                                  VerdictCompliant
+                                                                                &&
+                                                                                  scrut.snd ==
+                                                                                    CredTwoManAttestation ? (
+                                                                                                            (transition_result){
+                                                                                                              .next_state = StateActive,
+                                                                                                              .retries_out = 0U,
+                                                                                                              .permitted = true
+                                                                                                            }
+                                                                                                          )
+                                                                                                          : scrut.fst
+                                                                                                          ==
+                                                                                                            VerdictToxic ? (
+                                                                                                                           (transition_result){
+                                                                                                                             .next_state = StateCollapsed,
+                                                                                                                             .retries_out = 0U,
+                                                                                                                             .permitted = false
+                                                                                                                           }
+                                                                                                                         )
+                                                                                                                         : (
+                                                                                                                           (transition_result){
+                                                                                                                             .next_state = StateRecovery,
+                                                                                                                             .retries_out = 0U,
+                                                                                                                             .permitted = false
+                                                                                                                           }
+                                                                                                                         );
       }
     default:
       {
         KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
         KRML_HOST_EXIT(253U);
       }
+  }
+}
+
+bool uu___is_LevelLegacyDeprecated(crypto_security_level projectee)
+{
+  switch (projectee)
+  {
+    case LevelLegacyDeprecated:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+bool uu___is_LevelStandardClassical(crypto_security_level projectee)
+{
+  switch (projectee)
+  {
+    case LevelStandardClassical:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+bool uu___is_LevelPostQuantumFips(crypto_security_level projectee)
+{
+  switch (projectee)
+  {
+    case LevelPostQuantumFips:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
+}
+
+typedef struct
+__QuantumFlex_Core_crypto_security_level_QuantumFlex_Core_crypto_security_level_s
+{
+  crypto_security_level fst;
+  crypto_security_level snd;
+}
+__QuantumFlex_Core_crypto_security_level_QuantumFlex_Core_crypto_security_level;
+
+policy_verdict eval_crypto_asset(policy_criteria policy, crypto_asset_descriptor asset)
+{
+  if (asset.is_revoked && !policy.allow_revoked)
+    return VerdictToxic;
+  else
+  {
+    __QuantumFlex_Core_crypto_security_level_QuantumFlex_Core_crypto_security_level
+    scrut = { .fst = policy.min_required_level, .snd = asset.security_level };
+    return
+      scrut.fst == LevelPostQuantumFips && scrut.snd == LevelPostQuantumFips ? VerdictCompliant
+                                                                             : scrut.fst ==
+                                                                               LevelPostQuantumFips ? VerdictDegraded
+                                                                                                    : scrut.fst
+                                                                                                    ==
+                                                                                                      LevelStandardClassical
+                                                                                                    &&
+                                                                                                      scrut.snd
+                                                                                                      ==
+                                                                                                        LevelLegacyDeprecated ? VerdictDegraded
+                                                                                                                              : VerdictCompliant;
   }
 }
 

@@ -104,7 +104,7 @@
       "dossier_markdown_path": "sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.md",
       "dossier_pdf_path": "sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf",
       "dossier_pdf_sha256": "0340ed5f731a66fcf238cb4972f7f0dec9683bbbca6e8d773a640673ded0c3b6",
-      "corpus_merkle_root_sha256": "0be63cb1c5398b4983dcb10cb42d1ecfae0315a4fc0d2722f6d8ff9e33d02771",
+      "corpus_merkle_root_sha256": "73af1b4d183cab05078b927ce501df0e8c20bc72ce1edf6a1e1a66509440ed2f",
       "pre_sign_off_audit": "PASSED_DEFENSIBLE",
       "operator_sign_off_status": "PENDING_OPERATOR_APPROVAL",
       "operator_deep_work_hours": 2.0,

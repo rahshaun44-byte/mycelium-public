@@ -1,5 +1,4 @@
 #include "quantum-flex/verified_core.h"
-#include <openssl/crypto.h>
 #include <string.h>
 
 /* =========================================================================
@@ -7,144 +6,148 @@
    Strictly maps to formal invariants in formal/QuantumFlex_Core.fst
    ========================================================================= */
 
-qf_verdict_t qf_core_eval_transition(
-    qf_engine_state_t current,
-    qf_engine_state_t target,
-    qf_auth_cred_t cred
+qf_transition_result_t qf_core_step_fsm(
+    qf_engine_state_t   current,
+    qf_policy_verdict_t verdict,
+    qf_auth_cred_t      cred,
+    uint16_t            retries
 ) {
-    /* Boot / Genesis */
-    if (current == QF_STATE_UNINITIALIZED && target == QF_STATE_LOCKED) {
-        return QF_VERDICT_ALLOW;
+    qf_transition_result_t res;
+    res.next_state = current;
+    res.retries_out = retries;
+    res.permitted = false;
+
+    /* ABSORBING TERMINAL SINK (Theorem 1) */
+    if (current == QF_STATE_COLLAPSED) {
+        res.next_state = QF_STATE_COLLAPSED;
+        res.retries_out = retries;
+        res.permitted = false;
+        return res;
     }
 
-    /* Unseal / Activation */
-    if (current == QF_STATE_LOCKED && target == QF_STATE_ACTIVE) {
-        if (cred == QF_CRED_SHAMIR_THRESHOLD || cred == QF_CRED_MTLS_CERT) {
-            return QF_VERDICT_ALLOW;
+    /* UNINITIALIZED: Enters Active only on verified policy compliance */
+    if (current == QF_STATE_UNINITIALIZED) {
+        if (verdict == QF_VERDICT_COMPLIANT) {
+            res.next_state = QF_STATE_ACTIVE;
+            res.retries_out = 0;
+            res.permitted = true;
+        } else {
+            res.next_state = QF_STATE_QUARANTINE;
+            res.retries_out = 0;
+            res.permitted = false;
         }
-        return QF_VERDICT_DENY; /* Missing auth cannot unlock */
+        return res;
     }
 
-    /* Active -> Quarantine triggered on any invariant violation */
-    if (current == QF_STATE_ACTIVE && target == QF_STATE_QUARANTINE) {
-        return QF_VERDICT_ALLOW;
-    }
-
-    /* Active -> Locked on operator unmount */
-    if (current == QF_STATE_ACTIVE && target == QF_STATE_LOCKED) {
-        if (cred == QF_CRED_MTLS_CERT) {
-            return QF_VERDICT_ALLOW;
+    /* ACTIVE: Normal operation. Violations trigger Quarantine or Collapse */
+    if (current == QF_STATE_ACTIVE) {
+        if (verdict == QF_VERDICT_COMPLIANT) {
+            res.next_state = QF_STATE_ACTIVE;
+            res.retries_out = 0;
+            res.permitted = true;
+        } else if (verdict == QF_VERDICT_DEGRADED || verdict == QF_VERDICT_SUPERVISOR_UNREACHABLE) {
+            res.next_state = QF_STATE_QUARANTINE;
+            res.retries_out = 0;
+            res.permitted = false;
+        } else if (verdict == QF_VERDICT_TOXIC) {
+            res.next_state = QF_STATE_COLLAPSED;
+            res.retries_out = 0;
+            res.permitted = false;
         }
-        return QF_VERDICT_DENY;
+        return res;
     }
 
-    /* ABSORBING QUARANTINE SINK (Theorem 1):
-       Quarantine can NEVER transition directly to Active.
-       Quarantine can ONLY transition to Recovery via Two-Man Attestation. */
-    if (current == QF_STATE_QUARANTINE && target == QF_STATE_RECOVERY) {
-        if (cred == QF_CRED_TWO_MAN_ATTESTATION) {
-            return QF_VERDICT_ALLOW;
+    /* QUARANTINE: Errors increment retry budget. Recovery mandates StateRecovery (Theorem 2 & 3) */
+    if (current == QF_STATE_QUARANTINE) {
+        if (verdict == QF_VERDICT_COMPLIANT) {
+            res.next_state = QF_STATE_RECOVERY;
+            res.retries_out = 0;
+            res.permitted = false;
+        } else if (verdict == QF_VERDICT_TOXIC) {
+            res.next_state = QF_STATE_COLLAPSED;
+            res.retries_out = retries;
+            res.permitted = false;
+        } else {
+            if (retries >= QF_MAX_QUARANTINE_RETRIES) {
+                res.next_state = QF_STATE_COLLAPSED;
+                res.retries_out = retries;
+                res.permitted = false;
+            } else {
+                res.next_state = QF_STATE_QUARANTINE;
+                res.retries_out = (uint16_t)(retries + 1);
+                res.permitted = false;
+            }
         }
-        return QF_VERDICT_DENY;
+        return res;
     }
 
-    /* Recovery -> Locked upon complete zeroization and ledger attestation */
-    if (current == QF_STATE_RECOVERY && target == QF_STATE_LOCKED) {
-        if (cred == QF_CRED_MTLS_CERT) {
-            return QF_VERDICT_ALLOW;
+    /* RECOVERY: Post-quarantine clearance. Active requires operator credentials (Theorem 4) */
+    if (current == QF_STATE_RECOVERY) {
+        if (verdict == QF_VERDICT_COMPLIANT &&
+            (cred == QF_CRED_OPERATOR_ATTESTATION || cred == QF_CRED_TWO_MAN_ATTESTATION)) {
+            res.next_state = QF_STATE_ACTIVE;
+            res.retries_out = 0;
+            res.permitted = true;
+        } else if (verdict == QF_VERDICT_TOXIC) {
+            res.next_state = QF_STATE_COLLAPSED;
+            res.retries_out = 0;
+            res.permitted = false;
+        } else {
+            res.next_state = QF_STATE_RECOVERY;
+            res.retries_out = 0;
+            res.permitted = false;
         }
-        return QF_VERDICT_DENY;
+        return res;
     }
 
-    /* All other transitions strictly forbidden */
-    return QF_VERDICT_DENY;
+    return res;
 }
 
-qf_verdict_t qf_core_eval_pqc_proposal(
-    qf_pqc_profile_t profile,
-    qf_pqc_alg_t proposal
+qf_policy_verdict_t qf_core_eval_crypto_asset(
+    qf_policy_criteria_t         policy,
+    qf_crypto_asset_descriptor_t asset
 ) {
-    if (profile == QF_PROFILE_STRICT_FIPS203) {
-        /* Strictly FIPS 203 approved primitives only; zero downgrade */
-        if (proposal == QF_ALG_ML_KEM_768 || proposal == QF_ALG_ML_KEM_1024) {
-            return QF_VERDICT_ALLOW;
+    if (asset.is_revoked && !policy.allow_revoked) {
+        return QF_VERDICT_TOXIC;
+    }
+    if (policy.min_required_level == QF_CRYPTO_POST_QUANTUM_FIPS) {
+        if (asset.security_level == QF_CRYPTO_POST_QUANTUM_FIPS) {
+            return QF_VERDICT_COMPLIANT;
         }
-        return QF_VERDICT_DENY;
+        return QF_VERDICT_DEGRADED;
     }
-
-    if (profile == QF_PROFILE_AGILE_TRANSITION) {
-        if (proposal == QF_ALG_ML_KEM_768 ||
-            proposal == QF_ALG_ML_KEM_1024 ||
-            proposal == QF_ALG_FRODO_976) {
-            return QF_VERDICT_ALLOW;
+    if (policy.min_required_level == QF_CRYPTO_STANDARD_CLASSICAL) {
+        if (asset.security_level == QF_CRYPTO_LEGACY_DEPRECATED) {
+            return QF_VERDICT_DEGRADED;
         }
-        return QF_VERDICT_DENY;
+        return QF_VERDICT_COMPLIANT;
     }
-
-    /* Legacy or unknown profiles fail closed */
-    return QF_VERDICT_DENY;
+    return QF_VERDICT_COMPLIANT;
 }
 
-qf_wire_error_t qf_core_eval_wire_bounds(
-    uint16_t chunk_len,
-    uint16_t chunk_idx,
-    uint16_t total_chunks,
-    uint32_t seq_id
-) {
-    /* Chunk length bounds: 1 <= chunk_len <= 1450 */
-    if (chunk_len == 0 || chunk_len > QF_WIRE_MAX_CHUNK_LEN) {
-        return QF_WIRE_ERR_CHUNK_BOUNDS;
+qf_frame_verdict_t qf_core_eval_wire_bounds(qf_wire_frame_meta_t frame) {
+    qf_frame_verdict_t v;
+    if (frame.chunk_len == 0 || frame.chunk_len > QF_WIRE_MAX_CHUNK_LEN) {
+        v.tag = QF_WIRE_FRAME_INVALID;
+        v.reason = 3;
+        return v;
     }
-
-    /* Total chunks bounds: 1 <= total_chunks <= 64 */
-    if (total_chunks == 0 || total_chunks > QF_WIRE_MAX_TOTAL_CHUNKS) {
-        return QF_WIRE_ERR_CHUNK_BOUNDS;
+    if (frame.total_chunks == 0 || frame.total_chunks > QF_WIRE_MAX_TOTAL_CHUNKS) {
+        v.tag = QF_WIRE_FRAME_INVALID;
+        v.reason = 3;
+        return v;
     }
-
-    /* Index bound: 0 <= chunk_idx < total_chunks */
-    if (chunk_idx >= total_chunks) {
-        return QF_WIRE_ERR_CHUNK_BOUNDS;
+    if (frame.chunk_idx >= frame.total_chunks) {
+        v.tag = QF_WIRE_FRAME_INVALID;
+        v.reason = 3;
+        return v;
     }
-
-    /* Monotonic sequence bound: no silent wraparound past 2^32 - 2 */
-    if (seq_id >= QF_WIRE_MAX_SEQ_ID) {
-        return QF_WIRE_ERR_SEQ_EXHAUSTED;
+    if (frame.seq_id >= QF_WIRE_MAX_SEQ_ID) {
+        v.tag = QF_WIRE_FRAME_INVALID;
+        v.reason = 7;
+        return v;
     }
-
-    return QF_WIRE_OK;
-}
-
-static const uint32_t crc32_table[16] = {
-    0x00000000, 0x1DB71064, 0x3B6E20C8, 0x26D930AC,
-    0x76DC4190, 0x6B6B51F4, 0x4DB26158, 0x5005713C,
-    0xEDB88320, 0xF00F9344, 0xD6D6A3E8, 0xCB61B38C,
-    0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
-};
-
-uint32_t qf_core_compute_crc32(const uint8_t *data, size_t len) {
-    if (!data || len == 0) {
-        return 0;
-    }
-    uint32_t crc = 0xFFFFFFFFU;
-    for (size_t i = 0; i < len; ++i) {
-        uint8_t byte = data[i];
-        crc = (crc >> 4) ^ crc32_table[(crc ^ (byte & 0x0F)) & 0x0F];
-        crc = (crc >> 4) ^ crc32_table[(crc ^ (byte >> 4)) & 0x0F];
-    }
-    return ~crc;
-}
-
-void qf_core_zeroize(void *buf, size_t len) {
-    if (!buf || len == 0) {
-        return;
-    }
-#if defined(OPENSSL_VERSION_NUMBER)
-    OPENSSL_cleanse(buf, len);
-#else
-    volatile unsigned char *p = (volatile unsigned char *)buf;
-    while (len--) {
-        *p++ = 0;
-    }
-    __asm__ __volatile__("" : : "r"(buf) : "memory");
-#endif
+    v.tag = QF_WIRE_FRAME_VALID;
+    v.reason = 0;
+    return v;
 }
