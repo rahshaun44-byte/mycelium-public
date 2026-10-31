@@ -114,3 +114,9 @@ quantumflex-ghost-sink/target/
 
 # Browser CSP violation reports (sentinel.browser_guard)
 logs/csp_violations.jsonl
+
+# Private Track 0 Household Financial Worksheets (never commit raw household dollar figures)
+household_private/
+*track0_private*.json
+*track0_worksheet*.json
+*household_worksheet*.json

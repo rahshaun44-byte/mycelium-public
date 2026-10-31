@@ -308,3 +308,113 @@ def test_qf_m5_sovereign_safeguards_and_boundaries():
     with pytest.raises(SecurityBoundaryError, match="Role Isolation Violation"):
         store.retrieve_for_dossier("ledger", allowed_roles={"household_financial", "public"})
 
+
+def test_track0_reconciler_and_qf_a5_ceremony_boundary(tmp_path: Path):
+    """
+    QF-M5.1 Track 0 Reconciler & QF-A5 Ceremony Boundary:
+      - Unreconciled snapshot keeps TRACK_0=OPEN, PERSONAL_HARD_STOPS_CLEARED=False,
+        ALL_HARD_STOPS=False, QF_A5_SIGNING=GATED, ADMISSION_SIGNED=False.
+      - Reconciling a passing 0600 worksheet (>= 6O) closes TRACK_0 and emits dimensionless
+        ratios only (zero raw dollar figures), while keeping ALL_HARD_STOPS=False and
+        ADMISSION_SIGNED=False until explicit QF-A5 ceremony confirmation.
+      - Guarded QF-A5 ceremony blocks signing when TRACK_0 is OPEN or confirmation phrase is absent.
+    """
+    import datetime as dt
+    from scripts.prepare_qf_a5_ceremony import (
+        build_qf_a5_preflight_manifest,
+        execute_guarded_qf_a5_ceremony,
+    )
+    from scripts.reconcile_track0_reserves import (
+        build_unreconciled_status_snapshot,
+        reconcile_track0_worksheet,
+    )
+
+    unrec = build_unreconciled_status_snapshot()
+    assert unrec["track_0_gate"]["status"] == "OPEN"
+    assert unrec["cryptographic_boundary"]["HS-PX"] == "CLOSED"
+    assert unrec["cryptographic_boundary"]["AS-01..03"] == "CLOSED"
+    assert unrec["cryptographic_boundary"]["PA-LLC"] == "RETIRED"
+    assert unrec["cryptographic_boundary"]["TRACK_0"] == "OPEN"
+    assert unrec["cryptographic_boundary"]["PERSONAL_HARD_STOPS_CLEARED"] is False
+    assert unrec["cryptographic_boundary"]["ALL_HARD_STOPS"] is False
+    assert unrec["cryptographic_boundary"]["QF_A5_SIGNING"] == "GATED"
+    assert unrec["cryptographic_boundary"]["ADMISSION_SIGNED"] is False
+
+    # Passing Track 0 worksheet (7.50 months coverage; pending bounties/grants excluded)
+    ref_now = dt.datetime(2026, 10, 30, 22, 30, tzinfo=dt.timezone.utc)
+    passing_ws = {
+        "schema": "qf.track0_worksheet.v1",
+        "reconciled_at_utc": "2026-10-30T22:00:00Z",
+        "operator_attestation": {
+            "operator_id": "rahshaun_chambers",
+            "operator_attested": True,
+            "statements_verified_against_primary_institutions": True,
+            "pending_awards_and_speculative_assets_excluded": True,
+        },
+        "verified_liquid_accounts_usd": {
+            "checking_fdic": 10000.0,
+            "savings_or_money_market_fdic": 10000.0,
+            "settled_short_term_tbills": 10000.0,
+        },
+        "excluded_non_reserve_items_usd": {
+            "pending_bounties": 50000.0,
+            "anticipated_grants": 25000.0,
+            "speculative_or_illiquid_assets": 15000.0,
+        },
+        "outstanding_debts": [
+            {
+                "name": "primary_housing",
+                "principal_balance_usd": 120000.0,
+                "monthly_payment_usd": 1500.0,
+            }
+        ],
+        "monthly_household_living_expenses_usd": {
+            "utilities_and_connectivity": 500.0,
+            "groceries_and_essentials": 1000.0,
+            "healthcare_and_insurance": 500.0,
+            "transportation": 300.0,
+            "family_and_contingency": 175.0,
+        },
+        "committed_quantumflex_operating_expenses_usd": {
+            "external_cloud_llm_spend": 0.0,
+            "corporate_llc_overhead": 0.0,
+            "local_compute_electricity": 10.0,
+            "network_and_hardware_reserve": 15.0,
+        },
+    }
+    receipt = reconcile_track0_worksheet(passing_ws, reference_now_utc=ref_now)
+    assert receipt["raw_dollar_figures_omitted"] is True
+    assert receipt["dimensionless_ratios"]["verified_liquid_coverage_months"] == 7.5
+    assert receipt["track_0_gate"]["status"] == "CLOSED"
+    assert receipt["cryptographic_boundary"]["TRACK_0"] == "CLOSED"
+    assert receipt["cryptographic_boundary"]["PERSONAL_HARD_STOPS_CLEARED"] is True
+    assert receipt["cryptographic_boundary"]["ALL_HARD_STOPS"] is False
+    assert receipt["cryptographic_boundary"]["QF_A5_SIGNING"] == "READY_FOR_HUMAN_CEREMONY"
+    assert receipt["cryptographic_boundary"]["ADMISSION_SIGNED"] is False
+
+    # Guarded QF-A5 ceremony blocks execution when Track 0 receipt is missing/OPEN
+    with pytest.raises(PermissionError, match="TRACK_0 financial reserve gate is OPEN"):
+        execute_guarded_qf_a5_ceremony(
+            track0_receipt_path=tmp_path / "nonexistent_track0.json",
+            output_receipt_path=tmp_path / "signed.json",
+            operator_confirmation="I_AUTHORIZE_QF_A5_SIGNING",
+        )
+
+    # Even with passing Track 0 receipt, missing human confirmation phrase blocks signing
+    t0_path = tmp_path / "track0_pass.json"
+    import json
+
+    t0_path.write_text(json.dumps(receipt), encoding="utf-8")
+    preflight = build_qf_a5_preflight_manifest(track0_receipt_path=t0_path)
+    assert preflight["ledger_state"]["TRACK_0"] == "CLOSED"
+    assert preflight["ledger_state"]["ALL_HARD_STOPS"] is False
+    assert preflight["ledger_state"]["ADMISSION_SIGNED"] is False
+
+    with pytest.raises(PermissionError, match="Explicit human authorization phrase"):
+        execute_guarded_qf_a5_ceremony(
+            track0_receipt_path=t0_path,
+            output_receipt_path=tmp_path / "signed.json",
+            operator_confirmation="",
+        )
+
+

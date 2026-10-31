@@ -22,16 +22,17 @@
 │  LOCAL GIT BASELINE   │                                │ EXTERNAL HARD STOPS  │
 │  (100% PASS / CLOSED) │                                │  (OPEN / GATED)      │
 ├───────────────────────┤                                ├──────────────────────┤
-│ • Telemetry Wiring    │                                │ • PA LLC Standing    │
-│ • Metrics Validation  │                                │ • Household R/O      │
-│ • Storage Resilience  │                                └──────────────────────┘
-│ • Database ACL Roles  │
-│ • Circuit Breakers    │
+│ • Telemetry Wiring    │                                │ • Household R/O      │
+│ • Metrics Validation  │                                │   (Track 0 P0 Open)  │
+│ • Storage Resilience  │                                │ • QF-A5 Signing      │
+│ • Database ACL Roles  │                                │   (Gated / Unsigned) │
+│ • Circuit Breakers    │                                └──────────────────────┘
 │ • QF-A3 Formal Proof  │
 │ • QF-A4 Differential  │
 │ • Tailscale Tailworm  │
 │ • HS-PX Pixel Patch   │
 │ • Account Alerts (3x) │
+│ • PA-LLC (Retired)    │
 └───────────────────────┘
 ```
 
@@ -50,8 +51,8 @@
 | **QF-A6 Hardware Root of Trust**| Gated | Gated | **GATED** | Requires Pluton TPM + Titan M2 runtime binding |
 | **HS-PX (Pixel Bulletin)**     | Open | Closed | **CLOSED (OPERATOR)** | Pixel 11 Pro (`qfx-pixel`) verified at patch `2026-10-05` (`Android 17`, build `CD1A.261005.003`; [`quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L39)) |
 | **Account Security Alerts**    | Open | Closed | **CLOSED (OPERATOR)** | CircleCI OAuth (09-24), 2× TP-Link resets (09-23/24), and Uber sign-in (09-23) confirmed legitimate by Operator ([`quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L40)) |
-| **PA LLC Standing**            | Open | Open | **EXTERNALLY GATED** | FINALLYFUNGUS LLC (PA 13706513) Department of State record |
-| **Household R/O Baseline**     | Open | Open | **OPERATOR ACTION** | Paper R/O worksheet demonstrating 6-month reserve coverage |
+| **PA LLC Standing**            | Open | Retired | **RETIRED (`QF-SOVEREIGN`)** | Non-corporate operating mode (`Safeguard A` preserves individual 1099/grant tax & program compliance) |
+| **Household R/O Baseline**     | Open | Open | **OPEN (EXCLUSIVE P0)** | Offline Track 0 worksheet (`R_verified_liquid >= 6O`; [`TRACK_0_RESERVE_WORKSHEET_TEMPLATE.md`](file:///home/quant/mycelium/docs/TRACK_0_RESERVE_WORKSHEET_TEMPLATE.md)) |
 
 ---
 
@@ -104,16 +105,19 @@
 
 ---
 
-## 3. Standing External P0 Hard Stops (Action Plan for Operator)
+## 3. Standing External P0 Hard Stops & Cryptographic Boundary (`QF-M5.1`)
 
-Operator-owned security items `HS-PX` and `AS-01..03` were verified closed on 2026-10-26 ([`docs/fellowship/quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L39-L40)). The remaining 2 items require out-of-band operator verification before `signed: true` release promotion:
+Operator-owned security items `HS-PX` and `AS-01..03` were verified closed on 2026-10-26 ([`docs/fellowship/quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L39-L40)), and `PA-LLC` is formally retired under `QF-SOVEREIGN` non-corporate operating mode. Closing personal security gates does **not** automatically authorize cryptographic signing (`ALL_HARD_STOPS = FALSE`, `QF_A5_SIGNING = GATED`, `ADMISSION_SIGNED = FALSE`):
 
 | Item | Identifier | Status | Trigger & Context | Evidence / Remaining Action |
 |---|---|---|---|---|
 | **Pixel Security** | `HS-PX` | **CLOSED** | Google Pixel 11 Pro (`qfx-pixel`), `CVE-2026-58704`. | Verified via direct ADB query at security patch `2026-10-05` (`Android 17`, build `CD1A.261005.003`). |
-| **Account Security** | `AS-01..03` | **CLOSED** | CircleCI GitHub OAuth grant (2026-09-24), 2× TP-Link resets (2026-09-23/24), Uber login (2026-09-23). | Confirmed legitimate by Rahshaun Chambers on 2026-10-26. |
-| **Legal Entity Standing** | `PA-LLC` | **OPEN** | Source conflict: FINALLYFUNGUS LLC (PA 13706513) vs. non-corporate mode. | Pull Certificate of Subsistence / Business Entity Search from PA Department of State; confirm EIN and banking link. |
-| **Household Reserves** | `TRACK-0` | **OPEN** | Risk of premature commercial overextension before financial cushion. | Complete paper R/O worksheet. Verify liquid reserves exceed 6 months of mandatory living and operating obligations ($R \ge O \times 6$). |
+| **Account Security (CircleCI)** | `AS-01` | **CLOSED** | CircleCI GitHub OAuth grant (2026-09-24). | OAuth activity confirmed legitimate by Rahshaun Chambers on 2026-10-26. |
+| **Account Security (TP-Link)** | `AS-02` | **CLOSED** | 2× TP-Link ID password resets (2026-09-23/24). | Both password resets confirmed legitimate by Rahshaun Chambers on 2026-10-26. |
+| **Account Security (Uber)** | `AS-03` | **CLOSED** | Uber account login alert (2026-09-23). | Login confirmed legitimate by Rahshaun Chambers on 2026-10-26. |
+| **Legal Entity Standing** | `PA-LLC` | **RETIRED** | Non-corporate `QF-SOVEREIGN` researcher mode. | Retired as P0 corporate gate; `Safeguard A` enforces individual 1099/grant tax & program-eligibility compliance. |
+| **Household Reserves** | `TRACK_0` | **OPEN** | Exclusive P0 priority: $R_{\text{verified liquid}} \ge 6O$ (pending bounties/grants/speculative assets excluded). | Complete offline worksheet ([`docs/TRACK_0_RESERVE_WORKSHEET_TEMPLATE.md`](file:///home/quant/mycelium/docs/TRACK_0_RESERVE_WORKSHEET_TEMPLATE.md)) and verify via [`scripts/reconcile_track0_reserves.py`](file:///home/quant/mycelium/scripts/reconcile_track0_reserves.py). |
+| **Cryptographic Signing** | `QF-A5` | **GATED** | `ALL_HARD_STOPS = FALSE`, `ADMISSION_SIGNED = FALSE`. | Remains unsigned until `TRACK_0` passes AND explicit human-authorized `QF-A5` signing ceremony is executed ([`scripts/prepare_qf_a5_ceremony.py`](file:///home/quant/mycelium/scripts/prepare_qf_a5_ceremony.py)). |
 
 ---
 
@@ -122,9 +126,9 @@ Operator-owned security items `HS-PX` and `AS-01..03` were verified closed on 20
 *Copy the section below directly into the Notion Open Action Checklist to align operational records:*
 
 ```markdown
-## QuantumFlex Open Action Checklist (Reconciled 2026-10-30)
+## QuantumFlex Open Action Checklist (Reconciled 2026-10-30 // QF-M5.1)
 
-### 🟢 Closed Mycelium Engineering Items (Verified in Git)
+### 🟢 Closed Mycelium Engineering & Personal Security Items (Verified in Git)
 - [x] **Telemetry Wiring Proof**: Verified SDK calls PrivacyFilter before writing. (22/22 tests passing in tests/test_telemetry_wiring_proof.py, Git commit 61648f7).
 - [x] **Metrics Validation (Yoga)**: Benchmarked 4,000 JSONL records. p50 < 25ms, p99 < 50ms, >500 rec/s. (5/5 tests passing in tests/test_jsonl_resilience_and_metrics.py, Git commit 318ffd7).
 - [x] **Resilience Testing**: Verified power-loss torn-tail truncation, simulated ENOSPC rollback, and simulated EIO fsync rollback. (Git commit 318ffd7).
@@ -132,13 +136,14 @@ Operator-owned security items `HS-PX` and `AS-01..03` were verified closed on 20
 - [x] **Circuit Breaker Wiring**: Wired agent circuit breakers into mcp_layer dispatcher. (17/17 tests passing in tests/test_*circuit_breaker.py).
 - [x] **Formal Verification (QF-A3)**: 5 core invariant theorems discharged under F* 2026.09 in 0.30s. (formal/QuantumFlex_Core.fst, Git commit 32f2162).
 - [x] **Machine Extraction (QF-A4)**: Automated KaRaMeL C extraction + 10,131 differential C ABI checks passed with 0 divergences. (Git commit 318ffd7).
-- [x] **Admission Receipts**: Validated honest fail-closed state (`signed: false`) until external hard stops clear. (6/6 tests passing in tests/test_admission_receipt.py).
+- [x] **Admission Receipts**: Validated honest fail-closed state (`signed: false`) until Track 0 + explicit QF-A5 ceremony complete.
 - [x] **Tailscale Tailworm Remediation**: Upgraded host qfx-yoga to Tailscale 1.104.4, patching Tailscale SSH vulnerabilities.
 - [x] **HS-PX (Pixel 11 Pro Security Bulletin)**: Verified Android 17 security patch level 2026-10-05 (build CD1A.261005.003) on qfx-pixel; CVE-2026-58704 resolved.
 - [x] **Account Security Verification (AS-01..03)**: Confirmed CircleCI OAuth grant (2026-09-24), 2× TP-Link ID resets (2026-09-23/24), and Uber sign-in (2026-09-23) legitimate.
+- [x] **PA-LLC Gate**: Retired under non-corporate QF-SOVEREIGN operating mode (Safeguard A preserves individual tax/program compliance).
 
-### 🔴 Open P0 Hard Stops (Owner: Rahshaun — External Actions Required)
-- [ ] **PA LLC Standing**: Confirm FINALLYFUNGUS LLC (PA 13706513) on Pennsylvania Department of State records + EIN/banking.
-- [ ] **Track 0 Household Baseline**: Complete paper R/O worksheet (Reserves / Obligations >= 6 months).
+### 🔴 Exclusive P0 Operational Gate & Gated Signing Boundary (Owner: Rahshaun)
+- [ ] **Track 0 Household Financial Reserve (`R_verified_liquid >= 6O`)**: Complete offline worksheet and reconcile verified liquid balances, debts, monthly household expenses, and QuantumFlex operating baseline (excluding pending bounties, speculative assets, and anticipated grants).
+- [ ] **QF-A5 Cryptographic Signing (`GATED` / `ADMISSION_SIGNED = FALSE`)**: Execute human-authorized QF-A5 signing ceremony only after Track 0 independently passes.
 ```
 
