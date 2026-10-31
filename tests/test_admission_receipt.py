@@ -111,3 +111,123 @@ def test_missing_artifact_fails_closed_before_signing(temp_git_repo):
     repo_root, _ = temp_git_repo
     with pytest.raises(FileNotFoundError, match="Required artifact missing"):
         build_admission_payload(repo_root=repo_root, required_artifacts=["src/non_existent_module.py"])
+
+
+def test_qf_m6_a_hybrid_ed25519_mldsa65_sign_and_conjunctive_verify(temp_git_repo, tmp_path):
+    """
+    QF-M6-A (`QF-CRYPTO-01` & `QF-RELEASE-01`):
+    Verifies hybrid Ed25519 + NIST FIPS 204 ML-DSA-65 signing and conjunctive fail-closed
+    verification over SHA-256 + SHA-384 artifact digests, SBOM, and anti-rollback counter.
+    """
+    import base64
+    from src.admission_receipt import (
+        build_hybrid_admission_payload_v2,
+        ensure_or_load_mldsa65_keypair,
+        sign_hybrid_admission_receipt_v2,
+        verify_hybrid_admission_receipt_v2,
+    )
+
+    repo_root, artifacts = temp_git_repo
+    sbom_path = repo_root / "cbom_alpha_node_template.json"
+    sbom_path.write_text('{"bomFormat": "CycloneDX", "specVersion": "1.6"}\n', encoding="utf-8")
+
+    ed_priv_path = tmp_path / "keys" / "ed25519.pem"
+    ed_pub_path = tmp_path / "keys" / "ed25519.pub.pem"
+    pq_priv_path = tmp_path / "keys" / "mldsa65.pem"
+    pq_pub_path = tmp_path / "keys" / "mldsa65.pub.pem"
+
+    ed_priv, ed_pub = ensure_or_load_release_keypair(ed_priv_path, ed_pub_path, auto_generate_if_missing=True)
+    _, pq_pub_pem = ensure_or_load_mldsa65_keypair(pq_priv_path, pq_pub_path, auto_generate_if_missing=True)
+    assert (pq_priv_path.stat().st_mode & 0o777) == 0o600
+
+    payload_v2 = build_hybrid_admission_payload_v2(
+        repo_root=repo_root,
+        required_artifacts=artifacts,
+        release_version="QF-M6.0.0",
+        anti_rollback_counter=2,
+        key_environment="prod",
+        sbom_rel_path="cbom_alpha_node_template.json",
+        previous_checkpoint_rel_path=None,
+    )
+    receipt_v2 = sign_hybrid_admission_receipt_v2(
+        payload=payload_v2,
+        ed25519_private_key=ed_priv,
+        mldsa65_private_key_path=pq_priv_path,
+        mldsa65_public_key_pem=pq_pub_pem,
+    )
+
+    # 1. Both Ed25519 and ML-DSA-65 valid -> PASS
+    assert (
+        verify_hybrid_admission_receipt_v2(
+            receipt_v2,
+            repo_root=repo_root,
+            trusted_ed25519_public_key=ed_pub,
+            trusted_mldsa65_public_key_pem=pq_pub_pem,
+            min_accepted_counter=1,
+            expected_key_environment="prod",
+        )
+        is True
+    )
+
+    # 2. Tamper ONLY Ed25519 signature while ML-DSA-65 remains valid -> FAIL-CLOSED
+    bad_ed = copy.deepcopy(receipt_v2)
+    raw_ed_sig = bytearray(base64.b64decode(bad_ed["cryptographic_seal"]["ed25519"]["signature_b64"]))
+    raw_ed_sig[0] ^= 0xFF
+    bad_ed["cryptographic_seal"]["ed25519"]["signature_b64"] = base64.b64encode(bytes(raw_ed_sig)).decode("ascii")
+    with pytest.raises(PermissionError, match="Ed25519 signature verification FAILED"):
+        verify_hybrid_admission_receipt_v2(
+            bad_ed,
+            repo_root=repo_root,
+            trusted_ed25519_public_key=ed_pub,
+            trusted_mldsa65_public_key_pem=pq_pub_pem,
+        )
+
+    # 3. Tamper ONLY ML-DSA-65 signature while Ed25519 remains valid -> FAIL-CLOSED
+    bad_pq = copy.deepcopy(receipt_v2)
+    raw_pq_sig = bytearray(base64.b64decode(bad_pq["cryptographic_seal"]["ml_dsa_65"]["signature_b64"]))
+    raw_pq_sig[0] ^= 0xFF
+    bad_pq["cryptographic_seal"]["ml_dsa_65"]["signature_b64"] = base64.b64encode(bytes(raw_pq_sig)).decode("ascii")
+    with pytest.raises(PermissionError, match="ML-DSA-65 signature verification FAILED"):
+        verify_hybrid_admission_receipt_v2(
+            bad_pq,
+            repo_root=repo_root,
+            trusted_ed25519_public_key=ed_pub,
+            trusted_mldsa65_public_key_pem=pq_pub_pem,
+        )
+
+    # 4. Anti-rollback violation (counter <= min_accepted_counter) -> FAIL-CLOSED
+    with pytest.raises(PermissionError, match="Anti-rollback violation"):
+        verify_hybrid_admission_receipt_v2(
+            receipt_v2,
+            repo_root=repo_root,
+            trusted_ed25519_public_key=ed_pub,
+            trusted_mldsa65_public_key_pem=pq_pub_pem,
+            min_accepted_counter=2,
+        )
+
+    # 5. Key environment mismatch (dev/test key used for prod verification) -> FAIL-CLOSED
+    with pytest.raises(PermissionError, match="Key environment mismatch"):
+        verify_hybrid_admission_receipt_v2(
+            receipt_v2,
+            repo_root=repo_root,
+            trusted_ed25519_public_key=ed_pub,
+            trusted_mldsa65_public_key_pem=pq_pub_pem,
+            expected_key_environment="dev",
+        )
+
+
+def test_qf_m5_historical_checkpoint_preserved():
+    """Verifies that build_check/qf_m5_signed_admission_receipt.json is preserved untouched as a v1 checkpoint."""
+    import json
+    from pathlib import Path
+    from cryptography.hazmat.primitives import serialization
+    from src.admission_receipt import DEFAULT_PUBLIC_KEY_PATH
+
+    m5_path = Path(__file__).resolve().parent.parent / "build_check" / "qf_m5_signed_admission_receipt.json"
+    assert m5_path.is_file()
+    m5_receipt = json.loads(m5_path.read_text(encoding="utf-8"))
+    assert m5_receipt["payload"]["schema"] == "qf.admission_receipt.v1"
+    assert m5_receipt["payload"]["qf_m5_ceremony_boundary"]["ADMISSION_SIGNED"] is True
+    pub_key = serialization.load_pem_public_key(DEFAULT_PUBLIC_KEY_PATH.read_bytes())
+    assert verify_admission_receipt(m5_receipt, trusted_public_key=pub_key) is True
+

@@ -132,11 +132,38 @@ To stay **100% legal, low-profile, and sovereign**, QuantumFlex rejects traditio
 
 ---
 
-## 7. Enforceable Mycelium Constitutional Controls
+## 7. Seven Permanent Security & Constitutional Controls (`QF-M6` Upgrade)
 
-| Control ID | Domain | Enforcement Mechanism |
+| Control ID | Requirement | Authoritative Enforcement Mechanism |
 | :--- | :--- | :--- |
-| **`QF-CAPITAL-01`** | Capital-Allocation Gate | Fail-closed check verifying $R - \Delta \ge 6O$ (verified reconciled liquid assets only; excludes speculative assets, pending bounties, and pending grants; household + committed operating obligations; default `DENY` on stale or unavailable assessment) before any expenditure (`scripts/verify_operating_constitution.py`). |
-| **`QF-PRIVACY-01`** | Sovereign Privacy Gate | Enforces loopback-only inference (`127.0.0.1:11434`), \$0.00 cloud spend, `PrivacyFilter` zero-ambient-data sanitization, and strict physical/logical isolation of `sovereign_internal` / `household_financial` data from external corpora. |
-| **`QF-AUTH-01`** | Financial & Signing Gate | Requires explicit human Operator sign-off (`operator_authorized == True`) before any state-mutating financial action, and requires an explicit `QF-A5` signing ceremony (`qf_a5_signing_ceremony_completed == True`) before `signed: true` admission. |
-| **`QF-OPS-01`** | Operator Sustainability Gate | Enforces daily workload ceiling, authorized bounty scope verification (`verify_authorized_bounty_scope`), and recovery buffers so operational cadence never exhausts or exposes the Operator. |
+| **`QF-CRYPTO-01`** | Hybrid classical (`Ed25519`) and post-quantum (`ML-DSA-65`, NIST FIPS 204) release signing; `ML-KEM-768` (FIPS 203) strictly for key establishment; `SHA-256` + `SHA-384` hash agility. | [`src/admission_receipt.py`](file:///home/quant/mycelium/src/admission_receipt.py) & [`docs/QF_M6_A_CRYPTOGRAPHIC_DESIGN.md`](file:///home/quant/mycelium/docs/QF_M6_A_CRYPTOGRAPHIC_DESIGN.md) |
+| **`QF-KEY-01`** | Offline root keys, hardware-protected release signing, strict `dev` / `test` / `prod` key separation, and documented revocation/recovery procedures. | Sovereign Core key hierarchy (`0600` isolated keys; zero private keys in Git or app containers) |
+| **`QF-RELEASE-01`** | Independently verified software releases (pinned Git commit, reproducible build record, `SHA-256` + `SHA-384` digests, `Ed25519 + ML-DSA-65` signatures, signed SBOM/CBOM, anti-rollback counter, SLSA / in-toto provenance). | [`verify_hybrid_admission_receipt_v2`](file:///home/quant/mycelium/src/admission_receipt.py) & [`scripts/verify_dossier_independent.py`](file:///home/quant/mycelium/scripts/verify_dossier_independent.py) |
+| **`QF-IDENTITY-01`** | Three-Domain Security Architecture (`Sovereign Core`, `Research Engine`, `Execution Environment`) with least-privilege identities and short-lived credentials. | [`src/bounty_assurance.py`](file:///home/quant/mycelium/src/bounty_assurance.py) & [`src/operating_constitution.py`](file:///home/quant/mycelium/src/operating_constitution.py) |
+| **`QF-PRIVACY-01`** | Physical and logical household-data isolation; loopback-only inference (`127.0.0.1:11434`); `$0.00` cloud spend; `PrivacyFilter` sanitization. | [`src/operating_constitution.py`](file:///home/quant/mycelium/src/operating_constitution.py) & [`sentinel/policies/operating_constitution.wasm`](file:///home/quant/mycelium/sentinel/policies/operating_constitution.wasm) |
+| **`QF-CAPITAL-01`** | Preserve the six-month financial reserve ($R_{\text{verified liquid}} \ge 6O$; excludes pending bounties, pending grants, and speculative assets). | [`scripts/reconcile_track0_reserves.py`](file:///home/quant/mycelium/scripts/reconcile_track0_reserves.py) & [`src/operating_constitution.py`](file:///home/quant/mycelium/src/operating_constitution.py) |
+| **`QF-OPS-01`** | Sustainable workload ($\le 6\text{ hrs/day}$) and mutual Operator–Machine protection: *The Operator and the Machine serve and elevate each other.* | [`src/operating_constitution.py`](file:///home/quant/mycelium/src/operating_constitution.py) |
+
+---
+
+## 8. `QF-M6` — Sovereign Security Consolidation & Three-Domain Model
+
+> **The Consolidation Rule:** *One capability, one authoritative implementation, one verification path, one accountable owner.* Preserve historical signed receipts (`build_check/qf_m5_signed_admission_receipt.json`) as immutable checkpoints rather than silently rewriting them.
+
+### Three-Domain Security Architecture
+
+| Domain | Responsibilities | Access Boundary |
+| :--- | :--- | :--- |
+| **1. Sovereign Core** | Offline/hardware keys, release signing, financial authorization (`Track 0`), household data (`household_financial`) | Strictly Operator-controlled (`Rahshaun Chambers`) |
+| **2. Research Engine** | Athena, Mycelium, local Ollama (`127.0.0.1:11434`), security & dossier analysis | Restricted local access (zero signing or financial authority) |
+| **3. Execution Environment** | Mobile Cockpit, APIs, automation, deployments | Least privilege (verifies signed outputs; zero access to signing keys) |
+
+### Four-Phase `QF-M6` Consolidation Roadmap
+
+| Phase | Objective | Acceptance Criteria |
+| :--- | :--- | :--- |
+| **`M6-A`** | Cryptographic Modernization | Documented cryptographic design ([`docs/QF_M6_A_CRYPTOGRAPHIC_DESIGN.md`](file:///home/quant/mycelium/docs/QF_M6_A_CRYPTOGRAPHIC_DESIGN.md)) + conjunctive `Ed25519 + ML-DSA-65` (FIPS 204) and `SHA-256 + SHA-384` verification (`qf.admission_receipt.v2`) |
+| **`M6-B`** | Key Sovereignty | Offline root key hierarchy, `dev`/`test`/`prod` key separation, and hardware-protected release signing (gated on `M6-A`) |
+| **`M6-C`** | Supply-Chain Integrity | Reproducible builds, signed SBOM/CBOM, anti-rollback counter, and SLSA / in-toto provenance |
+| **`M6-D`** | Independent Assurance | Security review, adversarial tests, recovery exercises, and first verified sovereign economic return (`M6-01`..`M6-07`) |
+

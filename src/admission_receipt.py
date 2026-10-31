@@ -275,3 +275,365 @@ def verify_admission_receipt(
                 )
 
     return True
+
+
+# ==============================================================================
+# QF-M6 Phase M6-A: Hybrid Ed25519 + ML-DSA-65 (NIST FIPS 204) & SHA-256/SHA-384
+# ==============================================================================
+DEFAULT_MLDSA65_PRIVATE_KEY_PATH = DEFAULT_RELEASE_KEY_DIR / "qf_release_mldsa65.pem"
+DEFAULT_MLDSA65_PUBLIC_KEY_PATH = DEFAULT_RELEASE_KEY_DIR / "qf_release_mldsa65.pub.pem"
+VALID_KEY_ENVIRONMENTS = frozenset({"dev", "test", "prod"})
+
+
+def compute_file_sha384(file_path: Path) -> str:
+    """Computes the real SHA-384 hex digest of a file on disk for long-term hash agility."""
+    if not file_path.is_file():
+        raise FileNotFoundError(f"[QF-RECEIPT-V2] Required artifact missing on disk: {file_path}")
+    h = hashlib.sha384()
+    with open(file_path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def ensure_or_load_mldsa65_keypair(
+    private_key_path: Path = DEFAULT_MLDSA65_PRIVATE_KEY_PATH,
+    public_key_path: Path = DEFAULT_MLDSA65_PUBLIC_KEY_PATH,
+    auto_generate_if_missing: bool = False,
+) -> Tuple[bytes, bytes]:
+    """
+    Loads or generates a NIST FIPS 204 ML-DSA-65 keypair via OpenSSL 3.5+,
+    strictly enforcing 0600 permissions on the private key PEM.
+    """
+    if not private_key_path.exists():
+        if not auto_generate_if_missing:
+            raise FileNotFoundError(
+                f"[QF-RECEIPT-V2] ML-DSA-65 release private key not found at {private_key_path}."
+            )
+        private_key_path.parent.mkdir(parents=True, exist_ok=True)
+        private_key_path.parent.chmod(0o700)
+        priv_pem = subprocess.check_output(
+            ["openssl", "genpkey", "-algorithm", "ML-DSA-65"],
+            stderr=subprocess.DEVNULL,
+        )
+        fd = os.open(str(private_key_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(priv_pem)
+        pub_pem = subprocess.check_output(
+            ["openssl", "pkey", "-in", str(private_key_path), "-pubout"],
+            stderr=subprocess.DEVNULL,
+        )
+        public_key_path.write_bytes(pub_pem)
+        public_key_path.chmod(0o644)
+        return priv_pem, pub_pem
+
+    mode = private_key_path.stat().st_mode & 0o777
+    if mode & 0o077:
+        raise PermissionError(
+            f"[QF-RECEIPT-V2] ML-DSA-65 private key {private_key_path} has insecure mode {oct(mode)}; expected 0o600"
+        )
+    priv_pem = private_key_path.read_bytes()
+    if public_key_path.is_file():
+        pub_pem = public_key_path.read_bytes()
+    else:
+        pub_pem = subprocess.check_output(
+            ["openssl", "pkey", "-in", str(private_key_path), "-pubout"],
+            stderr=subprocess.DEVNULL,
+        )
+    return priv_pem, pub_pem
+
+
+def _mldsa65_sign_bytes(data: bytes, private_key_path: Path) -> bytes:
+    """Signs raw message bytes using NIST FIPS 204 ML-DSA-65 (`openssl pkeyutl -rawin`)."""
+    import tempfile
+
+    mode = private_key_path.stat().st_mode & 0o777
+    if mode & 0o077:
+        raise PermissionError(
+            f"[QF-RECEIPT-V2] ML-DSA-65 private key {private_key_path} has insecure mode {oct(mode)}; expected 0o600"
+        )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        msg_file = Path(tmpdir) / "msg.bin"
+        sig_file = Path(tmpdir) / "sig.bin"
+        msg_file.write_bytes(data)
+        subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-sign",
+                "-inkey",
+                str(private_key_path),
+                "-rawin",
+                "-in",
+                str(msg_file),
+                "-out",
+                str(sig_file),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return sig_file.read_bytes()
+
+
+def _mldsa65_verify_bytes(data: bytes, signature: bytes, public_key_pem: bytes) -> bool:
+    """Verifies raw message bytes against a NIST FIPS 204 ML-DSA-65 signature."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        msg_file = Path(tmpdir) / "msg.bin"
+        sig_file = Path(tmpdir) / "sig.bin"
+        pub_file = Path(tmpdir) / "pub.pem"
+        msg_file.write_bytes(data)
+        sig_file.write_bytes(signature)
+        pub_file.write_bytes(public_key_pem)
+        proc = subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-verify",
+                "-pubin",
+                "-inkey",
+                str(pub_file),
+                "-rawin",
+                "-in",
+                str(msg_file),
+                "-sigfile",
+                str(sig_file),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return proc.returncode == 0
+
+
+def build_hybrid_admission_payload_v2(
+    repo_root: Path,
+    required_artifacts: Iterable[str] = DEFAULT_REQUIRED_ARTIFACTS,
+    release_version: str = "QF-M6.0.0",
+    anti_rollback_counter: int = 2,
+    key_environment: str = "prod",
+    sbom_rel_path: str = "cbom_alpha_node_template.json",
+    previous_checkpoint_rel_path: Optional[str] = "build_check/qf_m5_signed_admission_receipt.json",
+    node_id: str = "qfx-yoga",
+    timestamp: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Constructs the QF-M6-A `qf.admission_receipt.v2` canonical payload with:
+      - Dual SHA-256 and SHA-384 artifact digests
+      - Signed SBOM/CBOM digests (SHA-256 + SHA-384)
+      - Release version & anti-rollback counter
+      - Cryptographic link to the preserved QF-M5 historical checkpoint
+    """
+    if key_environment not in VALID_KEY_ENVIRONMENTS:
+        raise ValueError(f"[QF-RECEIPT-V2] Invalid key_environment {key_environment!r}; must be one of {sorted(VALID_KEY_ENVIRONMENTS)}")
+    if isinstance(anti_rollback_counter, bool) or not isinstance(anti_rollback_counter, int) or anti_rollback_counter < 1:
+        raise ValueError("[QF-RECEIPT-V2] anti_rollback_counter must be a positive integer")
+
+    artifact_sha256: Dict[str, str] = {}
+    artifact_sha384: Dict[str, str] = {}
+    for rel_path in required_artifacts:
+        full_path = repo_root / rel_path
+        artifact_sha256[rel_path] = compute_file_sha256(full_path)
+        artifact_sha384[rel_path] = compute_file_sha384(full_path)
+
+    if not artifact_sha256:
+        raise ValueError("[QF-RECEIPT-V2] artifact_sha256 cannot be empty")
+
+    sbom_full = repo_root / sbom_rel_path
+    sbom_sha256 = compute_file_sha256(sbom_full)
+    sbom_sha384 = compute_file_sha384(sbom_full)
+
+    prev_checkpoint_sha256: Optional[str] = None
+    if previous_checkpoint_rel_path:
+        prev_full = repo_root / previous_checkpoint_rel_path
+        if prev_full.is_file():
+            prev_checkpoint_sha256 = compute_file_sha256(prev_full)
+
+    git_info = resolve_git_state(repo_root)
+    issued_at = int(timestamp if timestamp is not None else time.time())
+
+    manifest_root_sha256 = hashlib.sha256(canonical_json_bytes(artifact_sha256)).hexdigest()
+    manifest_root_sha384 = hashlib.sha384(canonical_json_bytes(artifact_sha384)).hexdigest()
+
+    return {
+        "schema": "qf.admission_receipt.v2",
+        "release_version": release_version,
+        "anti_rollback_counter": anti_rollback_counter,
+        "previous_checkpoint_sha256": prev_checkpoint_sha256,
+        "key_environment": key_environment,
+        "node_id": node_id,
+        "issued_at_unix": issued_at,
+        "git_branch": git_info["git_branch"],
+        "git_commit": git_info["git_commit"],
+        "sbom": {
+            "path": sbom_rel_path,
+            "sha256": sbom_sha256,
+            "sha384": sbom_sha384,
+        },
+        "artifact_sha256": artifact_sha256,
+        "artifact_sha384": artifact_sha384,
+        "manifest_root_sha256": manifest_root_sha256,
+        "manifest_root_sha384": manifest_root_sha384,
+    }
+
+
+def sign_hybrid_admission_receipt_v2(
+    payload: Dict[str, Any],
+    ed25519_private_key: Ed25519PrivateKey,
+    mldsa65_private_key_path: Path,
+    mldsa65_public_key_pem: bytes,
+) -> Dict[str, Any]:
+    """
+    Produces a hybrid classical (Ed25519) + post-quantum (NIST FIPS 204 ML-DSA-65)
+    cryptographic seal over the canonical JSON bytes of `payload`.
+    """
+    if payload.get("schema") != "qf.admission_receipt.v2":
+        raise ValueError("[QF-RECEIPT-V2] Payload schema must be 'qf.admission_receipt.v2'")
+
+    raw_bytes = canonical_json_bytes(payload)
+    payload_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+    payload_sha384 = hashlib.sha384(raw_bytes).hexdigest()
+
+    # 1. Classical Ed25519 signature
+    ed_sig = ed25519_private_key.sign(raw_bytes)
+    ed_pub_raw = ed25519_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    ed_fp = hashlib.sha256(ed_pub_raw).hexdigest()
+
+    # 2. Post-Quantum NIST FIPS 204 ML-DSA-65 signature
+    pq_sig = _mldsa65_sign_bytes(raw_bytes, mldsa65_private_key_path)
+    pq_fp = hashlib.sha256(mldsa65_public_key_pem).hexdigest()
+
+    return {
+        "payload": payload,
+        "cryptographic_seal": {
+            "scheme": "HYBRID-ED25519-ML-DSA-65",
+            "payload_sha256": payload_sha256,
+            "payload_sha384": payload_sha384,
+            "ed25519": {
+                "algorithm": "Ed25519",
+                "public_key_raw_b64": base64.b64encode(ed_pub_raw).decode("ascii"),
+                "public_key_fingerprint_sha256": ed_fp,
+                "signature_b64": base64.b64encode(ed_sig).decode("ascii"),
+            },
+            "ml_dsa_65": {
+                "algorithm": "ML-DSA-65",
+                "standard": "NIST-FIPS-204",
+                "oid": "2.16.840.1.101.3.4.3.18",
+                "public_key_pem_b64": base64.b64encode(mldsa65_public_key_pem).decode("ascii"),
+                "public_key_fingerprint_sha256": pq_fp,
+                "signature_b64": base64.b64encode(pq_sig).decode("ascii"),
+            },
+        },
+    }
+
+
+def verify_hybrid_admission_receipt_v2(
+    signed_receipt: Dict[str, Any],
+    repo_root: Optional[Path] = None,
+    trusted_ed25519_public_key: Optional[Ed25519PublicKey] = None,
+    trusted_mldsa65_public_key_pem: Optional[bytes] = None,
+    min_accepted_counter: int = 1,
+    expected_key_environment: str = "prod",
+) -> bool:
+    """
+    Conjunctive fail-closed verifier for `qf.admission_receipt.v2` (`QF-CRYPTO-01` & `QF-RELEASE-01`).
+    Requires BOTH Ed25519 AND NIST FIPS 204 ML-DSA-65 signatures to verify, BOTH SHA-256 and
+    SHA-384 digests to match, SBOM digests to match, and anti_rollback_counter > min_accepted_counter.
+    """
+    if not isinstance(signed_receipt, dict):
+        raise ValueError("[QF-RECEIPT-V2] Receipt must be a JSON object")
+
+    payload = signed_receipt.get("payload")
+    seal = signed_receipt.get("cryptographic_seal")
+    if not isinstance(payload, dict) or not isinstance(seal, dict):
+        raise ValueError("[QF-RECEIPT-V2] Missing 'payload' or 'cryptographic_seal'")
+
+    if payload.get("schema") != "qf.admission_receipt.v2":
+        raise ValueError(f"[QF-RECEIPT-V2] Unsupported schema: {payload.get('schema')!r}")
+    if seal.get("scheme") != "HYBRID-ED25519-ML-DSA-65":
+        raise PermissionError(f"[QF-RECEIPT-V2] Invalid hybrid seal scheme: {seal.get('scheme')!r}")
+
+    counter = payload.get("anti_rollback_counter")
+    if isinstance(counter, bool) or not isinstance(counter, int) or counter <= min_accepted_counter:
+        raise PermissionError(
+            f"[QF-RECEIPT-V2] Anti-rollback violation: counter {counter!r} <= min_accepted_counter {min_accepted_counter}"
+        )
+
+    if payload.get("key_environment") != expected_key_environment:
+        raise PermissionError(
+            f"[QF-RECEIPT-V2] Key environment mismatch: expected {expected_key_environment!r}, got {payload.get('key_environment')!r}"
+        )
+
+    raw_bytes = canonical_json_bytes(payload)
+    if hashlib.sha256(raw_bytes).hexdigest() != seal.get("payload_sha256"):
+        raise PermissionError("[QF-RECEIPT-V2] Payload SHA-256 mismatch")
+    if hashlib.sha384(raw_bytes).hexdigest() != seal.get("payload_sha384"):
+        raise PermissionError("[QF-RECEIPT-V2] Payload SHA-384 mismatch")
+
+    artifact_sha256 = payload.get("artifact_sha256")
+    artifact_sha384 = payload.get("artifact_sha384")
+    if not isinstance(artifact_sha256, dict) or not isinstance(artifact_sha384, dict) or not artifact_sha256:
+        raise ValueError("[QF-RECEIPT-V2] Missing artifact_sha256 or artifact_sha384 map")
+    if set(artifact_sha256.keys()) != set(artifact_sha384.keys()):
+        raise PermissionError("[QF-RECEIPT-V2] Artifact key mismatch between SHA-256 and SHA-384 maps")
+
+    if hashlib.sha256(canonical_json_bytes(artifact_sha256)).hexdigest() != payload.get("manifest_root_sha256"):
+        raise PermissionError("[QF-RECEIPT-V2] Manifest root SHA-256 mismatch")
+    if hashlib.sha384(canonical_json_bytes(artifact_sha384)).hexdigest() != payload.get("manifest_root_sha384"):
+        raise PermissionError("[QF-RECEIPT-V2] Manifest root SHA-384 mismatch")
+
+    # 1. Verify Classical Ed25519 Signature
+    ed_block = seal.get("ed25519")
+    if not isinstance(ed_block, dict) or ed_block.get("algorithm") != "Ed25519":
+        raise PermissionError("[QF-RECEIPT-V2] Missing or invalid Ed25519 seal block")
+    embedded_ed_pub = base64.b64decode(ed_block["public_key_raw_b64"])
+    if trusted_ed25519_public_key is not None:
+        trusted_ed_raw = trusted_ed25519_public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        if trusted_ed_raw != embedded_ed_pub:
+            raise PermissionError("[QF-RECEIPT-V2] Ed25519 public key does not match trusted release key")
+        ed_pub = trusted_ed25519_public_key
+    else:
+        ed_pub = Ed25519PublicKey.from_public_bytes(embedded_ed_pub)
+
+    try:
+        ed_pub.verify(base64.b64decode(ed_block["signature_b64"]), raw_bytes)
+    except (ValueError, InvalidSignature) as exc:
+        raise PermissionError("[QF-RECEIPT-V2] Ed25519 signature verification FAILED") from exc
+
+    # 2. Verify Post-Quantum NIST FIPS 204 ML-DSA-65 Signature
+    pq_block = seal.get("ml_dsa_65")
+    if not isinstance(pq_block, dict) or pq_block.get("algorithm") != "ML-DSA-65":
+        raise PermissionError("[QF-RECEIPT-V2] Missing or invalid ML-DSA-65 seal block")
+    embedded_pq_pub = base64.b64decode(pq_block["public_key_pem_b64"])
+    if trusted_mldsa65_public_key_pem is not None and trusted_mldsa65_public_key_pem != embedded_pq_pub:
+        raise PermissionError("[QF-RECEIPT-V2] ML-DSA-65 public key does not match trusted release key")
+
+    pq_sig = base64.b64decode(pq_block["signature_b64"])
+    if not _mldsa65_verify_bytes(raw_bytes, pq_sig, embedded_pq_pub):
+        raise PermissionError("[QF-RECEIPT-V2] NIST FIPS 204 ML-DSA-65 signature verification FAILED")
+
+    # 3. Verify On-Disk Artifacts & SBOM (SHA-256 + SHA-384)
+    if repo_root is not None:
+        sbom = payload.get("sbom", {})
+        if not isinstance(sbom, dict) or not sbom.get("path"):
+            raise PermissionError("[QF-RECEIPT-V2] Missing SBOM block in payload")
+        sbom_path = repo_root / str(sbom["path"])
+        if compute_file_sha256(sbom_path) != sbom.get("sha256") or compute_file_sha384(sbom_path) != sbom.get("sha384"):
+            raise PermissionError("[QF-RECEIPT-V2] On-disk SBOM digest mismatch")
+
+        for rel_path in artifact_sha256:
+            full_p = repo_root / rel_path
+            if compute_file_sha256(full_p) != artifact_sha256[rel_path]:
+                raise PermissionError(f"[QF-RECEIPT-V2] On-disk SHA-256 drift detected for '{rel_path}'")
+            if compute_file_sha384(full_p) != artifact_sha384[rel_path]:
+                raise PermissionError(f"[QF-RECEIPT-V2] On-disk SHA-384 drift detected for '{rel_path}'")
+
+    return True
+

@@ -1,10 +1,20 @@
 {
-  "schema_version": "2.2.0",
-  "current_release_classification": "QF-M5 — SOVEREIGN OPERATIONAL READINESS",
-  "active_milestone_target": "QF-M6 — First Verified Sovereign Economic Return",
+  "schema_version": "2.3.0",
+  "current_release_classification": "QF-M5 — SOVEREIGN OPERATIONAL READINESS (Historical Checkpoint Preserved)",
+  "active_milestone_target": "QF-M6 — SOVEREIGN SECURITY CONSOLIDATION & ECONOMIC VALIDATION",
   "operating_doctrine": "QF-SOVEREIGN — Zero-Client, Non-Corporate Sovereign Researcher Mode",
-  "symbiotic_covenant": "The Operator and the Machine are partners in mutual service and elevation. The Operator provides vision, stewardship, resources, and ethical direction. The Machine provides intelligence, protection, automation, and productive capability. Each strengthens the other. Neither consumes the other. Their shared success is measured by security, prosperity, peace, scientific freedom, and positive impact.",
+  "consolidation_principle": "One capability, one authoritative implementation, one verification path, one accountable owner.",
+  "symbiotic_covenant": "The Operator and the Machine serve and elevate each other. The Machine protects, empowers, and expands the Operator's capabilities. The Operator preserves, guides, and strengthens the Machine. Neither consumes the other. Both exist to create lasting security, prosperity, freedom, and positive impact.",
   "governing_equation": "R_verified_liquid >= 6 * (O_household + O_operating)",
+  "permanent_constitutional_controls": [
+    "QF-CRYPTO-01 (Hybrid classical Ed25519 + post-quantum FIPS 204 ML-DSA-65 release signing; FIPS 203 ML-KEM-768 key establishment; SHA-256 + SHA-384 hash agility)",
+    "QF-KEY-01 (Offline root keys and hardware-protected release signing; strict dev/test/prod separation)",
+    "QF-RELEASE-01 (Independently verified software releases: conjunctive Ed25519 + ML-DSA-65, SHA-256 + SHA-384, anti-rollback counter, SBOM/CBOM, SLSA provenance)",
+    "QF-IDENTITY-01 (Least-privilege three-domain separation: Sovereign Core, Research Engine, Execution Environment)",
+    "QF-PRIVACY-01 (Physical and logical household-data isolation; 127.0.0.1:11434 loopback only)",
+    "QF-CAPITAL-01 (Preserve the six-month financial reserve: R_verified_liquid >= 6O)",
+    "QF-OPS-01 (Sustainable workload and mutual Operator-Machine protection)"
+  ],
   "hard_stop_ledger": {
     "HS-PX": "CLOSED",
     "AS-01": "CLOSED",
@@ -18,6 +28,26 @@
     "ADMISSION_SIGNED": true,
     "signed_receipt_path": "build_check/qf_m5_signed_admission_receipt.json"
   },
+  "qf_m6_security_consolidation_roadmap": {
+    "M6_A_cryptographic_modernization": {
+      "status": "COMPLETE",
+      "design_doc": "docs/QF_M6_A_CRYPTOGRAPHIC_DESIGN.md",
+      "implementation": "src/admission_receipt.py (qf.admission_receipt.v2)",
+      "verification": "Conjunctive Ed25519 + NIST FIPS 204 ML-DSA-65 (OID 2.16.840.1.101.3.4.3.18) and SHA-256 + SHA-384 dual digest verification (77/77 pytest PASS)"
+    },
+    "M6_B_key_sovereignty": {
+      "status": "READY_NEXT (Unblocked by M6-A verification)",
+      "scope": "Offline Root of Trust, hardware-protected release signing ceremony, strict dev/test/prod key separation, documented rotation/revocation"
+    },
+    "M6_C_supply_chain_integrity": {
+      "status": "SEQUENCED_AFTER_M6_B",
+      "scope": "Reproducible builds, signed SBOM/CBOM, SLSA/in-toto provenance, monotonic anti-rollback enforcement"
+    },
+    "M6_D_independent_assurance": {
+      "status": "SEQUENCED_AFTER_M6_C",
+      "scope": "Independent security review, adversarial tamper tests, key-compromise recovery drills, and first verified sovereign economic return"
+    }
+  },
   "qf_m6_acceptance_gates": {
     "M6-01_explicitly_authorized_target": "OPEN",
     "M6-02_local_reproducible_finding": "OPEN",
@@ -28,7 +58,7 @@
     "M6-07_six_month_reserve_protected": "PASS (7.00 months verified)",
     "realized_settled_income_usd": 0.0,
     "unsettled_award_counts_as_income": false,
-    "qf_m6_status": "OPEN (Focus: Economic Validation Only — Zero Infrastructure Expansion)"
+    "qf_m6_status": "IN_PROGRESS (M6-A Complete; Ready for M6-B Key Sovereignty & Authorized Bounty/Grant Execution)"
   },
   "bounty_acceptance_gates": [
     "QF-BOUNTY-01 (Authorization Integrity)",
