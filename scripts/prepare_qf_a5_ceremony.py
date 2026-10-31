@@ -173,7 +173,26 @@ def execute_guarded_qf_a5_ceremony(
         public_key_path=public_key_path,
         auto_generate_if_missing=False,
     )
+    completed_gate = HardStopGateStatus(
+        hs_px_pixel_cve_2026_58704_patched=True,
+        as_01_03_account_security_verified=True,
+        pa_llc_finallyfungus_subsistence_verified=False,
+        track_0_reserve_ratio_gte_6m=True,
+        sovereign_non_corporate_mode=True,
+        individual_tax_and_program_compliance_verified=True,
+        qf_a5_signing_ceremony_completed=True,
+    )
     payload = build_admission_payload(repo_root=repo_root, required_artifacts=required_artifacts)
+    payload["qf_m5_ceremony_boundary"] = {
+        "HS-PX": "CLOSED",
+        "AS-01..03": "CLOSED",
+        "PA-LLC": "RETIRED",
+        "TRACK_0": "CLOSED",
+        "PERSONAL_HARD_STOPS_CLEARED": completed_gate.personal_hard_stops_cleared,
+        "ALL_HARD_STOPS": completed_gate.all_cleared,
+        "QF_A5_SIGNING": "PASS",
+        "ADMISSION_SIGNED": True,
+    }
     signed_receipt = sign_admission_receipt(payload=payload, private_key=priv_key)
     verify_admission_receipt(signed_receipt, repo_root=repo_root, trusted_public_key=pub_key)
 

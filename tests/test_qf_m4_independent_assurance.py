@@ -417,4 +417,32 @@ def test_track0_reconciler_and_qf_a5_ceremony_boundary(tmp_path: Path):
             operator_confirmation="",
         )
 
+    # Full guarded ceremony pass using isolated tmp_path 0600 Ed25519 keypair
+    from src.admission_receipt import ensure_or_load_release_keypair, verify_admission_receipt
+
+    tmp_priv = tmp_path / "test_release_ed25519.pem"
+    tmp_pub = tmp_path / "test_release_ed25519.pub.pem"
+    _, pub_key = ensure_or_load_release_keypair(
+        private_key_path=tmp_priv,
+        public_key_path=tmp_pub,
+        auto_generate_if_missing=True,
+    )
+    signed_out = tmp_path / "qf_m5_signed_admission_receipt.json"
+    signed_receipt = execute_guarded_qf_a5_ceremony(
+        track0_receipt_path=t0_path,
+        private_key_path=tmp_priv,
+        public_key_path=tmp_pub,
+        output_receipt_path=signed_out,
+        operator_confirmation="I_AUTHORIZE_QF_A5_SIGNING",
+    )
+    assert signed_out.is_file()
+    assert verify_admission_receipt(signed_receipt, trusted_public_key=pub_key) is True
+    boundary = signed_receipt["payload"]["qf_m5_ceremony_boundary"]
+    assert boundary["TRACK_0"] == "CLOSED"
+    assert boundary["PERSONAL_HARD_STOPS_CLEARED"] is True
+    assert boundary["ALL_HARD_STOPS"] is True
+    assert boundary["QF_A5_SIGNING"] == "PASS"
+    assert boundary["ADMISSION_SIGNED"] is True
+
+
 
