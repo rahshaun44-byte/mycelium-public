@@ -147,10 +147,11 @@ The core prototype code, tests, and cryptographic verification mechanisms refere
 | **Supply Chain & Hybrid Attestation** | [`src/admission_receipt.py`](file:///home/quant/mycelium/src/admission_receipt.py) | 550 passed tests |
 | **Economic & Milestone Gates** | [`src/bounty_assurance.py`](file:///home/quant/mycelium/src/bounty_assurance.py) | Verified (`M6-01..M6-07`) |
 | **Independent Verifier** | [`scripts/verify_dossier_independent.py`](file:///home/quant/mycelium/scripts/verify_dossier_independent.py) | Verified offline |
-| **Current Git Commit** | `56bac15` (`main`) | Clean working tree |
+| **Current Git Commit** | `e8ff6d0` (`main`) | Clean working tree |
 
 ---
 
-*Submitted for Operator Attestation & Public-Good Dispatch.*  
+*Operator Attestation & Formal Sign-Off: APPROVED by Rahshaun Chambers (Rocky) on October 31, 2026 (2026-10-31T08:16:38Z).*  
+*Status: FORMALLY SIGNED OFF — AUTHORIZED FOR PUBLIC-GOOD DISPATCH TO NLNET FOUNDATION.*  
 *Architect: Rahshaun Chambers (Rocky)*  
 *QuantumFlex Autonomous Systems & Applied Cryptography*

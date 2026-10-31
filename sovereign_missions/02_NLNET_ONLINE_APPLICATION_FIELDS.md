@@ -3,7 +3,8 @@
 **Document ID:** `QF-GRANT-NLNET-2026-ONLINE-001`  
 **Portal URL:** <https://nlnet.nl/propose/>  
 **Parent Dossier:** [`02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.md`](file:///home/quant/mycelium/sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.md) (`QF-GRANT-NLNET-2026-001`)  
-**Parent PDF:** [`02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf`](file:///home/quant/mycelium/sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf) (`SHA-256: 0340ed5f731a...`)  
+**Parent PDF:** [`02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf`](file:///home/quant/mycelium/sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf) (`SHA-256: 7a697014dc12...`)  
+**Root Upload Link:** [`NLNET_PROPOSAL_ATTACHMENT.pdf`](file:///home/quant/mycelium/NLNET_PROPOSAL_ATTACHMENT.pdf)  
 **Applicant:** Rahshaun Chambers (Rocky)  
 **Contracting Structure:** Option A: Individual Developer / Natural Person (Zero-equity, non-corporate)  
 **Requested Budget:** €40,000 across 4 milestone tranches  
@@ -226,10 +227,11 @@ The project has no commercial backing, venture capital investment, corporate spo
 ## 6. Attachments
 The proposal fields are completely self-contained. However, you can optionally attach the compiled PDF dossier:
 - **File Name:** `02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf`
+- **Root Direct Link:** [`NLNET_PROPOSAL_ATTACHMENT.pdf`](file:///home/quant/mycelium/NLNET_PROPOSAL_ATTACHMENT.pdf)
 - **Location:** [`sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf`](file:///home/quant/mycelium/sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf)
 - **File Size:** ~23 KB (Well below the 50 MB total limit)
-- **Specification:** PDF-1.4, US-Letter, 5 pages
-- **Cryptographic SHA-256 Digest:** `0340ed5f731a66fcf238cb4972f7f0dec9683bbbca6e8d773a640673ded0c3b6`
+- **Specification:** PDF-1.4, US-Letter, 6 pages
+- **Cryptographic SHA-256 Digest:** `7a697014dc123103a214629773cacf9a55b5479ded01e987b37a8f0e17dd37b1`
 
 ---
 

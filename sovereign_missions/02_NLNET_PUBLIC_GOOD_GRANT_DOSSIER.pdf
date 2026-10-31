@@ -7,7 +7,7 @@ endobj
 << /Length 4599 >>
 stream
 BT
-/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 5) Tj
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 6) Tj
 ET
 BT /F1 13 Tf 54 728 Td (# NLnet Foundation / NGI Zero Commons Fund Grant Application Dossier) Tj ET
 BT /F1 9 Tf 54 702 Td (**Project Title:** `pqc-immune-daemon`: Formally Verified Post-Quantum Edge Security) Tj ET
@@ -60,7 +60,7 @@ endobj
 << /Length 4341 >>
 stream
 BT
-/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 5) Tj
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 6) Tj
 ET
 BT /F1 9 Tf 54 728 Td (  \(Apache-2.0 / MIT\) with zero cloud dependency \($0.00 cloud spend\), operable on commodity) Tj ET
 BT /F1 9 Tf 54 715 Td (  and refurbished hardware.) Tj ET
@@ -112,7 +112,7 @@ endobj
 << /Length 4416 >>
 stream
 BT
-/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 3 OF 5) Tj
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 3 OF 6) Tj
 ET
 BT /F1 9 Tf 54 728 Td (| **Post-Quantum Provenance** | Primitive bindings | None | RSA / ECDSA only |) Tj ET
 BT /F1 9 Tf 54 715 Td (  **Conjunctive Ed25519 + ML-DSA-65 Signatures** |) Tj ET
@@ -167,7 +167,7 @@ endobj
 << /Length 4243 >>
 stream
 BT
-/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 4 OF 5) Tj
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 4 OF 6) Tj
 ET
 BT /F1 9 Tf 54 715 Td (### Milestone 3: In-Process OPA WebAssembly Policy Membrane) Tj ET
 BT /F1 9 Tf 54 702 Td (* **Duration:** 5 Weeks) Tj ET
@@ -218,10 +218,10 @@ BT /F1 9 Tf 54 78 Td (  v1.0, and POSIX.1-2008 standards.) Tj ET
 endstream
 endobj
 6 0 obj
-<< /Length 3921 >>
+<< /Length 4052 >>
 stream
 BT
-/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 5 OF 5) Tj
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 5 OF 6) Tj
 ET
 BT /F1 9 Tf 54 728 Td (---) Tj ET
 BT /F1 11 Tf 54 702 Td (## 6. Operational Governance & Financial Discipline) Tj ET
@@ -261,36 +261,49 @@ BT /F1 9 Tf 54 208 Td (  Verified \(`M6-01..M6-07`\) |) Tj ET
 BT /F1 9 Tf 54 195 Td (| **Independent Verifier** |) Tj ET
 BT /F1 9 Tf 54 182 Td (  [`scripts/verify_dossier_independent.py`]\(file:///home/quant/mycelium/scripts/verify_dossi) Tj ET
 BT /F1 9 Tf 54 169 Td (  er_independent.py\) | Verified offline |) Tj ET
-BT /F1 9 Tf 54 156 Td (| **Current Git Commit** | `56bac15` \(`main`\) | Clean working tree |) Tj ET
+BT /F1 9 Tf 54 156 Td (| **Current Git Commit** | `e8ff6d0` \(`main`\) | Clean working tree |) Tj ET
 BT /F1 9 Tf 54 130 Td (---) Tj ET
-BT /F1 9 Tf 54 104 Td (*Submitted for Operator Attestation & Public-Good Dispatch.*) Tj ET
-BT /F1 9 Tf 54 91 Td (*Architect: Rahshaun Chambers \(Rocky\)*) Tj ET
-BT /F1 9 Tf 54 78 Td (*QuantumFlex Autonomous Systems & Applied Cryptography*) Tj ET
+BT /F1 9 Tf 54 104 Td (*Operator Attestation & Formal Sign-Off: APPROVED by Rahshaun Chambers \(Rocky\) on October) Tj ET
+BT /F1 9 Tf 54 91 Td (  31, 2026 \(2026-10-31T08:16:38Z\).*) Tj ET
+BT /F1 9 Tf 54 78 Td (*Status: FORMALLY SIGNED OFF ? AUTHORIZED FOR PUBLIC-GOOD DISPATCH TO NLNET FOUNDATION.*) Tj ET
+BT /F1 9 Tf 54 65 Td (*Architect: Rahshaun Chambers \(Rocky\)*) Tj ET
 endstream
 endobj
 7 0 obj
-<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+<< /Length 169 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 6 OF 6) Tj
+ET
+BT /F1 9 Tf 54 728 Td (*QuantumFlex Autonomous Systems & Applied Cryptography*) Tj ET
+endstream
 endobj
 8 0 obj
-<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
 endobj
 9 0 obj
-<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 4 0 R >>
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
 endobj
 10 0 obj
-<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 5 0 R >>
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 4 0 R >>
 endobj
 11 0 obj
-<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 6 0 R >>
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 5 0 R >>
 endobj
 12 0 obj
-<< /Type /Pages /Kids [7 0 R 8 0 R 9 0 R 10 0 R 11 0 R] /Count 5 >>
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 6 0 R >>
 endobj
 13 0 obj
-<< /Type /Catalog /Pages 12 0 R >>
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 7 0 R >>
+endobj
+14 0 obj
+<< /Type /Pages /Kids [8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R] /Count 6 >>
+endobj
+15 0 obj
+<< /Type /Catalog /Pages 14 0 R >>
 endobj
 xref
-0 14
+0 16
 0000000000 65535 f 
 0000000015 00000 n 
 0000000083 00000 n 
@@ -298,15 +311,17 @@ xref
 0000009127 00000 n 
 0000013595 00000 n 
 0000017890 00000 n 
-0000021863 00000 n 
-0000021990 00000 n 
-0000022117 00000 n 
-0000022244 00000 n 
-0000022372 00000 n 
-0000022500 00000 n 
-0000022584 00000 n 
+0000021994 00000 n 
+0000022214 00000 n 
+0000022341 00000 n 
+0000022468 00000 n 
+0000022596 00000 n 
+0000022724 00000 n 
+0000022852 00000 n 
+0000022980 00000 n 
+0000023072 00000 n 
 trailer
-<< /Size 14 /Root 13 0 R >>
+<< /Size 16 /Root 15 0 R >>
 startxref
-22635
+23123
 %%EOF
