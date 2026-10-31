@@ -1,16 +1,114 @@
-# 🎯 Sovereign Mission & Operating Directives
+# 🎯 Sovereign Mission & Operating Constitution
 
-## 1. The Core Purpose
-* **Primary Objective:** Build and manage substantial, lasting wealth.
-* **The Obligation:** Permanently protect and provide for the family and people who depend on the Operator.
-* **The Vision:** Buy back time and financial freedom to actively conduct deep research, master complex fields, and innovate without monetary pressure.
+**Document ID:** KV-01  
+**Security Classification:** Sovereign Internal — Cryptographically Pinned  
+**Effective Date:** 2026-10-30  
+**Primary Principal:** Rahshaun Chambers (The Master Operator)  
 
-## 2. The Golden Financial Invariant: R >= O
-* **Reserves (R):** Liquid cash, emergency reserves, and unencumbered assets.
-* **Obligations (O):** Living expenses, debts, operating overhead, and commitments.
-* **The Law:** R must always strictly exceed O ( \ge O$). Before allocating capital to speculative or growth ventures, a non-negotiable family security reserve must be permanently locked and protected.
+> **Core Constitutional Axiom:** *The mission exists to serve life, not consume it.* Technology, wealth, research, and commercial growth are instruments. The Operator's security, peace, health, loved ones, and freedom are the outcomes.
 
-## 3. The Research Directives
-* Direct local AI (Athena & Ollama) to synthesize deep, high-value knowledge from books, papers, and market data.
-* Never leak proprietary research or family financial data to public cloud APIs.
-* Operate with patience, integrity, and relentless discipline.
+---
+
+## 1. Principle I — Operator First (`QF-OPS-01`)
+* **First Priority — Rahshaun Chambers:** The Operator's well-being takes precedence over commercial or technical expansion. Protecting and elevating Rahshaun Chambers—financially, physically, mentally, and in complete peace—is the root condition that elevates the entire mission.
+* **Operational Mandates:**
+  * Protect household stability and personal rest.
+  * Avoid unnecessary financial or operational pressure.
+  * Preserve physical and mental health; enforce sustainable deep-work boundaries.
+  * Protect personal time and freedom (retreats, cabins in the snow, scientific curiosity).
+  * Never confuse technical complexity with personal prosperity.
+
+---
+
+## 2. Principle II — The Golden Financial Invariant (`QF-CAPITAL-01`)
+
+$$\boxed{R \ge 6O}$$
+
+Where:
+* **$R$ (Protected Liquid Reserves):** Unencumbered liquid cash and short-term reserves dedicated to household security (Bucket 1).
+* **$O$ (Average Monthly Obligations):** Fixed living expenses, debts, household commitments, and baseline operating overhead.
+
+### Capital-Allocation Decision Matrix
+| Financial Condition | Mandatory Operating Decision |
+| :--- | :--- |
+| **$R < 6O$ (Below 6 Months)** | **PROTECT & REBUILD:** Freeze all discretionary capital outflow; 100% of net cash flow routes to Bucket 1 until $R \ge 6O$. |
+| **$R = 6O$ (At 6-Month Threshold)** | **MAINTAIN RESERVE:** Restrict discretionary expansion; only customer-funded deployments ($0 net outlay) permitted. |
+| **$R > 6O + \Delta$ (Comfortably Above 6 Months)** | **EVALUATE CAREFULLY:** Only evaluate opportunities where post-allocation reserves strictly satisfy $R - \Delta \ge 6O$. |
+| **Unexpected Financial Shock** | **FREEZE & RECALCULATE:** Immediately recalculate $O$ and freeze all discretionary spending. |
+
+* **Non-Negotiable Rules:**
+  1. Core household reserves must never become speculative venture capital.
+  2. Reserve calculations ($R_{\text{verified liquid}}$) must use **verified, independently reconciled liquid assets only**, with explicit reconciliation timestamps and automatic stale-data rejection ($\le 30\text{ days}$), strictly excluding speculative or illiquid valuations.
+  3. Monthly obligations ($O_{\text{household}} + O_{\text{operating}}$) must include **both household living obligations and committed operating expenses**:
+     $$R_{\text{verified liquid}} \ge 6\left(O_{\text{household}} + O_{\text{operating}}\right)$$
+  4. A failed, stale, unverified, or unavailable financial assessment must **default fail-closed to `DENY`** for any discretionary capital expenditure.
+  5. No commercial opportunity may override the $R \ge 6O$ protection.
+
+---
+
+## 3. Principle III — Sovereign Intelligence & Data-Governance Boundary (`QF-PRIVACY-01` & `QF-AUTH-01`)
+Athena, Ollama, Mycelium, and QuantumFlex operate under strict technical sovereignty and role isolation:
+* **Local-First Inference (`QF-PRIVACY-01`):** All inference and vector retrieval execute on loopback (`127.0.0.1:11434`) at **\$0.00 unnecessary cloud expenditure**.
+* **Zero Proprietary or Household Leakage:** Never transmit proprietary research, client records, or household financial data to public cloud AI APIs.
+* **Client vs. Sovereign Internal Isolation:** Client-facing retrieval (`client_confidential`, `public`) must never cross into `sovereign_internal` material:
+
+```text
+                 QUANTUMFLEX
+                      |
+              Document Intake
+                      |
+                Classification
+                      |
+             Privacy Sanitization
+                      |
+                Data Isolation
+                 /         \
+                /           \
+       CLIENT CORPUS     INTERNAL CORPUS
+             |                 |
+        Athena Query       Private Research
+             |                 |
+       Citation Proof     Restricted Access
+             |                 |
+       Client Dossier      Internal Knowledge
+             |                 |
+       Integrity Receipt   Operator Control
+```
+
+* **Verifiable Provenance:** Every retrieved chunk and dossier citation carries a verified SHA-256 digest, page offset, and deterministic corpus Merkle root.
+* **Human Authorization (`QF-AUTH-01`):** All consequential financial operations require explicit human authorization from Rahshaun Chambers.
+
+---
+
+## 4. Principle IV — Protect QuantumFlex & All Helpers
+QuantumFlex must never succeed at the expense of the people supporting it:
+* **QuantumFlex & Helpers First:** Every helper, family member, and ally contributing to the mission must be taken care of brilliantly and at the highest standard alongside the Operator to maintain total alignment.
+* **Operational Standards:** Sustainable workloads, fair compensation, clear responsibilities, hardened infrastructure, honest fail-closed reporting (`signed: false` until gates clear), and zero transfer of unnecessary risk to others.
+
+---
+
+## 5. Principle V — Peaceful Wealth Creation & Governing Priority Order
+The objective is not maximum growth at any cost, nor maximizing the number of products, agents, models, or deployments—it is **peaceful, durable wealth creation** that achieves financial independence without sacrificing the peace and security that independence is supposed to provide.
+
+> **Permanent Mission Preservation Clause:** *QuantumFlex must never become so focused on generating wealth that it sacrifices the security, health, peace, or financial independence it was created to protect.*
+
+### Permanent Six-Tier Operating Priority Order
+1. **Protect the Operator and household.**
+2. **Protect the people supporting the mission.**
+3. **Preserve the six-month reserve ($R_{\text{verified liquid}} \ge 6O$).**
+4. **Maintain cryptographic and privacy boundaries.**
+5. **Generate sustainable commercial revenue.**
+6. **Expand only when the lower priorities remain protected.**
+
+$$\text{Mission Success} = \text{Security} + \text{Peace} + \text{Financial Independence} + \text{Scientific Freedom} + \text{Positive Impact}$$
+
+---
+
+## 6. Enforceable Mycelium Constitutional Controls
+
+| Control ID | Domain | Enforcement Mechanism |
+| :--- | :--- | :--- |
+| **`QF-CAPITAL-01`** | Capital-Allocation Gate | Fail-closed check verifying $R - \Delta \ge 6O$ (verified reconciled liquid assets only; household + committed operating obligations; default `DENY` on stale or unavailable assessment) before any expenditure (`scripts/verify_operating_constitution.py`). |
+| **`QF-PRIVACY-01`** | Sovereign Privacy Gate | Enforces loopback-only inference (`127.0.0.1:11434`), \$0.00 cloud spend, `PrivacyFilter` zero-ambient-data sanitization, and strict `sovereign_internal` vs. `client` isolation. |
+| **`QF-AUTH-01`** | Financial Authorization Gate | Requires explicit human Operator sign-off (`operator_authorized == True`) before any state-mutating financial action. |
+| **`QF-OPS-01`** | Operator Sustainability Gate | Enforces daily workload ceiling and recovery buffers so operational cadence never exhausts the Operator. |

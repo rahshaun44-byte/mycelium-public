@@ -29,6 +29,7 @@ except ImportError:
 POLICY_DIR = Path(__file__).resolve().parent
 MEMBRANE_WASM = POLICY_DIR / "membrane_health.wasm"
 RESERVE_WASM = POLICY_DIR / "reserve_invariant.wasm"
+CONSTITUTION_WASM = POLICY_DIR / "operating_constitution.wasm"
 
 
 class OPAWasmEngine:
@@ -200,8 +201,22 @@ class ReserveInvariantWasmGatekeeper:
         return {"allow": False, "verdict": "DENY", "domain_verdict": "DENY", "reason": "Invalid evaluation payload"}
 
 
+class OperatingConstitutionWasmGatekeeper:
+    def __init__(self, wasm_path: Optional[Path] = None):
+        target_path = wasm_path or CONSTITUTION_WASM
+        self.engine = OPAWasmEngine(target_path)
+        self.ep_evaluation = self.engine.entrypoints.get("quantumflex/constitution/evaluation", 0)
+
+    def evaluate_constitution(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        res = self.engine.evaluate(input_data=payload, data={}, entrypoint_id=self.ep_evaluation)
+        if isinstance(res, dict):
+            return res
+        return {"allow": False, "verdict": "DENY", "controls": {}}
+
+
 _MEMBRANE_GATEKEEPER: Optional[MembraneHealthWasmGatekeeper] = None
 _RESERVE_GATEKEEPER: Optional[ReserveInvariantWasmGatekeeper] = None
+_CONSTITUTION_GATEKEEPER: Optional[OperatingConstitutionWasmGatekeeper] = None
 
 
 def get_membrane_wasm_gatekeeper() -> Optional[MembraneHealthWasmGatekeeper]:
@@ -222,3 +237,13 @@ def get_reserve_wasm_gatekeeper() -> Optional[ReserveInvariantWasmGatekeeper]:
         except Exception:
             _RESERVE_GATEKEEPER = None
     return _RESERVE_GATEKEEPER
+
+
+def get_constitution_wasm_gatekeeper() -> Optional[OperatingConstitutionWasmGatekeeper]:
+    global _CONSTITUTION_GATEKEEPER
+    if _CONSTITUTION_GATEKEEPER is None and CONSTITUTION_WASM.is_file() and wasmtime is not None:
+        try:
+            _CONSTITUTION_GATEKEEPER = OperatingConstitutionWasmGatekeeper(CONSTITUTION_WASM)
+        except Exception:
+            _CONSTITUTION_GATEKEEPER = None
+    return _CONSTITUTION_GATEKEEPER

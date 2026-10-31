@@ -2,5 +2,6 @@
   "bootgate.rego": {"max_survived": 0},
   "gatekeeper_attestation.rego": {"max_survived": 0},
   "membrane_health.rego": {"max_survived": 20},
+  "operating_constitution.rego": {"max_survived": 0},
   "reserve_invariant.rego": {"max_survived": 39}
 }
