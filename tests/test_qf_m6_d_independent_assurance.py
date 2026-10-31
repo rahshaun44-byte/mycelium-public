@@ -444,3 +444,56 @@ def test_qf_m6_d_unauthorized_human_approver_fails_closed_gate_m6_04():
             current_liquid_reserves_usd=40000.00,
             monthly_obligations_usd=3975.00,
         )
+
+
+def test_qf_m6_d_nlnet_grant_dossier_cryptographic_cross_binding():
+    """
+    Independent Assurance Gate: Validates cryptographic cross-binding of the
+    Pillar 2 NLnet NGI Zero Commons Fund grant dossier:
+      1. On-disk markdown & PDF SHA-256 match recorded manifest
+      2. 7-file ordered corpus Merkle root recomputes independently from disk
+      3. Tampering with any corpus artifact breaks Merkle root fail-closed
+      4. Tracker records Option A (natural person) and zero unearned income
+    """
+    import hashlib
+    import json
+    from scripts.generate_research_dossier import compute_merkle_root
+
+    tracker_path = Path("sovereign_missions/sovereign_bounty_and_grant_tracker.json")
+    tracker = json.loads(tracker_path.read_text(encoding="utf-8"))
+    slot2 = next(m for m in tracker["sovereign_income_missions"] if m["mission_slot"] == 2)
+
+    assert slot2["platform"] == "NLnet Foundation (NGI Zero Commons Fund)"
+    assert slot2["applicant_structure"] == "OPTION_A_INDIVIDUAL_DEVELOPER_NATURAL_PERSON"
+    assert slot2["budget_eur"] == 40000
+    assert slot2["grant_milestone_payout_usd"] is None  # Unsettled grant never counted as income
+
+    md_path = Path("sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.md")
+    pdf_path = Path("sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf")
+
+    assert md_path.exists()
+    assert pdf_path.exists()
+    assert md_path.read_text(encoding="utf-8").startswith("# NLnet Foundation / NGI Zero Commons Fund Grant Application Dossier")
+
+    pdf_sha = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    assert pdf_sha == slot2["dossier_pdf_sha256"]
+
+    corpus_files = [
+        "sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.md",
+        "sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.pdf",
+        "pqc-immune-daemon/README.md",
+        "pqc-immune-daemon/immune_daemon.py",
+        "pqc-immune-daemon/membrane_health.rego",
+        "scripts/verify_formal_core.sh",
+        "scripts/verify_dossier_independent.py",
+    ]
+
+    hashes = [hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in corpus_files]
+    computed_root = compute_merkle_root(hashes)
+
+    assert computed_root == slot2["corpus_merkle_root_sha256"]
+
+    # Adversarial tamper check: single-byte corruption breaks Merkle root
+    tampered_hashes = list(hashes)
+    tampered_hashes[0] = hashlib.sha256(b"CORRUPTED_DOSSIER").hexdigest()
+    assert compute_merkle_root(tampered_hashes) != slot2["corpus_merkle_root_sha256"]
