@@ -12,6 +12,7 @@ import os
 import sys
 import json
 import math
+import hashlib
 import sqlite3
 import urllib.request
 from pathlib import Path
@@ -75,9 +76,23 @@ class AthenaVectorStore:
         finally:
             conn.close()
 
+    def delete_by_source(self, source: str) -> int:
+        """Removes existing chunks for a given source document to guarantee idempotent re-ingestion."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                cur = conn.execute("DELETE FROM neural_chunks WHERE source = ?", (source,))
+                return cur.rowcount
+        finally:
+            conn.close()
+
     def add_document(self, content: str, source: str = "manual", metadata: dict = None):
         if not metadata:
             metadata = {}
+        else:
+            metadata = dict(metadata)
+        metadata.setdefault("chunk_sha256", hashlib.sha256(content.encode("utf-8")).hexdigest())
+        metadata.setdefault("access_role", "sovereign_internal")
         embedding = get_embedding(content)
         if not embedding:
             return False
@@ -86,13 +101,18 @@ class AthenaVectorStore:
             with conn:
                 conn.execute(
                     "INSERT INTO neural_chunks (source, content, metadata, embedding, created_at) VALUES (?, ?, ?, ?, ?)",
-                    (source, content, json.dumps(metadata), json.dumps(embedding), datetime.now().isoformat())
+                    (source, content, json.dumps(metadata, sort_keys=True), json.dumps(embedding), datetime.now().isoformat())
                 )
             return True
         finally:
             conn.close()
 
-    def similarity_search(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
+    def similarity_search(
+        self,
+        query: str,
+        top_k: int = 4,
+        allowed_roles: List[str] = None,
+    ) -> List[Dict[str, Any]]:
         query_emb = get_embedding(query)
         if not query_emb:
             return []
@@ -109,7 +129,10 @@ class AthenaVectorStore:
         for r_id, source, content, meta_raw, emb_raw in rows:
             try:
                 emb = json.loads(emb_raw)
-                meta = json.loads(meta_raw)
+                meta = json.loads(meta_raw) if meta_raw else {}
+                doc_role = meta.get("access_role", "sovereign_internal")
+                if allowed_roles is not None and doc_role not in allowed_roles:
+                    continue
                 score = cosine_similarity(query_emb, emb)
                 scored.append({
                     "id": r_id,
