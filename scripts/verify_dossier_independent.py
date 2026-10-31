@@ -158,9 +158,18 @@ def verify_dossier_artifacts_independently(
         if pat.lower() in md_text.lower():
             raise IndependentAssuranceError(f"Internal/PII leakage detected in Markdown for marker '{pat}'.")
 
-    # 6. Verify fail-closed unsigned posture & commercial cost accounting (P1.3)
+    # 6. Verify fail-closed unsigned posture, constitutional Wasm gate, & commercial cost accounting (P1.3)
     if receipt["invariants"]["signed"] is not False or receipt["assurance"]["qf_a5_signed_provenance"] != "GATED":
         raise IndependentAssuranceError("Receipt violated fail-closed GATED signing state while P0 hard stops remain pending.")
+
+    const_gate = receipt["assurance"].get("operating_constitution_wasm") or {}
+    if (
+        receipt["invariants"].get("operating_constitution_wasm_verified") is not True
+        or const_gate.get("verdict") != "ADMIT"
+        or const_gate.get("wasm_verified") is not True
+        or const_gate.get("parity_verified") is not True
+    ):
+        raise IndependentAssuranceError("Receipt missing verified Operating Constitution Wasm parity attestation.")
 
     econ = receipt.get("commercial_economics") or {}
     if float(econ.get("gross_margin_pct", 0.0)) <= 0.0 or float(econ.get("external_cloud_api_spend_usd", -1.0)) != 0.0:

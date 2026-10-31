@@ -165,10 +165,85 @@ def test_loopback_endpoint_and_end_to_end_pipeline(tmp_path: Path):
     assert md_path.is_file()
     assert receipt_path.is_file()
     assert receipt.invariants["signed"] is False
+    assert receipt.invariants["operating_constitution_wasm_verified"] is True
     assert receipt.assurance["qf_a5_signed_provenance"] == "GATED"
+    const_wasm = receipt.assurance["operating_constitution_wasm"]
+    assert const_wasm["verdict"] == "ADMIT"
+    assert const_wasm["wasm_verified"] is True
+    assert const_wasm["parity_verified"] is True
     assert receipt.provenance["citations_verified_pct"] == 100.0
     assert receipt.provenance["privacy_filter_redactions"] >= 3
     md_text = md_path.read_text(encoding="utf-8")
     assert "Rahshaun" not in md_text
     assert "/home/quant" not in md_text
     assert "ghp_" not in md_text
+
+
+def test_dossier_pipeline_enforces_operating_constitution_wasm_fail_closed(tmp_path: Path, monkeypatch):
+    """Verifies execute_dossier_pipeline() rejects QF-CAPITAL-01 / QF-OPS-01 breaches and Wasm unavailability."""
+    # 1. Under-reserved capital context (R < 6O) -> denied by operating_constitution.wasm
+    with pytest.raises(SecurityBoundaryError, match="PROTECT_AND_REBUILD_RESERVES"):
+        execute_dossier_pipeline(
+            dossier_id="QF-RDOS-CAP-DENY",
+            client_name="Test Counsel LLP",
+            title="Municipal Zoning, Post-Quantum Cryptography & Escrow Liability Dossier",
+            corpus_documents=_build_demo_corpus(),
+            output_dir=tmp_path / "cap_deny",
+            capital_context={
+                "reserves": 4.0,
+                "monthly_obligations": 1.0,
+                "allocation_amount": 0.0,
+                "funding_bucket": "CASH_FLOW_ENGINE",
+                "financial_shock": False,
+                "discretionary_expansion": False,
+            },
+        )
+
+    # 2. Sacred Bucket 1 (IRON_RESERVE) drawdown -> denied by operating_constitution.wasm
+    with pytest.raises(SecurityBoundaryError, match="IRON_RESERVE_SACRED_LOCK"):
+        execute_dossier_pipeline(
+            dossier_id="QF-RDOS-IRON-DENY",
+            client_name="Test Counsel LLP",
+            title="Municipal Zoning, Post-Quantum Cryptography & Escrow Liability Dossier",
+            corpus_documents=_build_demo_corpus(),
+            output_dir=tmp_path / "iron_deny",
+            capital_context={
+                "reserves": 10.0,
+                "monthly_obligations": 1.0,
+                "allocation_amount": 1.0,
+                "funding_bucket": "IRON_RESERVE",
+                "financial_shock": False,
+                "discretionary_expansion": False,
+            },
+        )
+
+    # 3. Operator fatigue flag -> denied by operating_constitution.wasm (QF-OPS-01)
+    with pytest.raises(SecurityBoundaryError, match="OPERATOR_FATIGUE_RECOVERY_REQUIRED"):
+        execute_dossier_pipeline(
+            dossier_id="QF-RDOS-OPS-DENY",
+            client_name="Test Counsel LLP",
+            title="Municipal Zoning, Post-Quantum Cryptography & Escrow Liability Dossier",
+            corpus_documents=_build_demo_corpus(),
+            output_dir=tmp_path / "ops_deny",
+            ops_context={
+                "continuous_block_minutes": 45,
+                "daily_deep_work_hours": 4.0,
+                "named_objects_in_block": 1,
+                "rest_hours_last_24h": 8.0,
+                "operator_fatigue_flag": True,
+                "helper_fairness_verified": True,
+            },
+        )
+
+    # 4. Missing Wasm engine -> fail-closed denial
+    import src.operating_constitution as const_mod
+
+    monkeypatch.setattr(const_mod, "get_constitution_wasm_gatekeeper", lambda: None)
+    with pytest.raises(SecurityBoundaryError, match="FAIL_CLOSED_WASM_ENGINE_UNAVAILABLE"):
+        execute_dossier_pipeline(
+            dossier_id="QF-RDOS-NOWASM-DENY",
+            client_name="Test Counsel LLP",
+            title="Municipal Zoning, Post-Quantum Cryptography & Escrow Liability Dossier",
+            corpus_documents=_build_demo_corpus(),
+            output_dir=tmp_path / "nowasm_deny",
+        )

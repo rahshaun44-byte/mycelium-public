@@ -29,7 +29,18 @@ import socket
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+import sys
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from sentinel.policies.wasm_gatekeeper import get_constitution_wasm_gatekeeper
+from src.operating_constitution import (
+    evaluate_operating_constitution,
+    evaluate_qf_capital_01,
+)
 
 # ==============================================================================
 # Constants & Governing Invariants
@@ -164,6 +175,23 @@ def evaluate_golden_financial_invariant(
     else:
         coverage = reserves_usd / total_monthly_obligations
         satisfied = reserves_usd >= required_reserves
+        if required_months == REQUIRED_RESERVE_MONTHS:
+            cap_ctx = {
+                "reserves": float(reserves_usd),
+                "monthly_obligations": float(total_monthly_obligations),
+                "allocation_amount": 0.0,
+                "funding_bucket": "CASH_FLOW_ENGINE",
+                "financial_shock": False,
+                "discretionary_expansion": False,
+            }
+            py_cap = evaluate_qf_capital_01(cap_ctx)
+            wasm_gk = get_constitution_wasm_gatekeeper()
+            if wasm_gk is None:
+                satisfied = False
+            else:
+                wasm_cap = wasm_gk.evaluate_constitution({"capital": cap_ctx}).get("controls", {}).get("QF-CAPITAL-01", {})
+                wasm_cap_ok = bool(wasm_cap.get("allow", False)) and wasm_cap.get("decision") == py_cap.decision
+                satisfied = bool(satisfied and py_cap.allow and wasm_cap_ok)
 
     return ReserveInvariantEvaluation(
         reserves_usd=round(reserves_usd, 2),
@@ -662,6 +690,8 @@ def execute_dossier_pipeline(
     hard_stops: Optional[HardStopGateStatus] = None,
     inference_endpoint: str = LOCAL_OLLAMA_ENDPOINT,
     generated_at_override: Optional[str] = None,
+    capital_context: Optional[Dict[str, Any]] = None,
+    ops_context: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Path, Path, DossierAdmissionReceipt]:
     """
     Runs the complete end-to-end Phase C / QF-M4 Research Dossier pipeline and emits:
@@ -745,6 +775,66 @@ def execute_dossier_pipeline(
     client_chunks = store.all_client_SAFE_chunks
     merkle_root = compute_merkle_root([c.chunk_sha256 for c in client_chunks])
 
+    # Stage 4.5: Dual-Engine Operating Constitution Gate (Python + operating_constitution.wasm)
+    effective_capital_ctx: Dict[str, Any] = (
+        dict(capital_context)
+        if capital_context is not None
+        else {
+            "reserves": 6.0,
+            "monthly_obligations": 1.0,
+            "allocation_amount": 0.0,
+            "funding_bucket": "CLIENT_DEPOSIT",
+            "financial_shock": False,
+            "discretionary_expansion": False,
+        }
+    )
+    effective_ops_ctx: Dict[str, Any] = (
+        dict(ops_context)
+        if ops_context is not None
+        else {
+            "continuous_block_minutes": round(elapsed_sec / 60.0, 4),
+            "daily_deep_work_hours": 1.5,
+            "named_objects_in_block": 1,
+            "rest_hours_last_24h": 8.0,
+            "operator_fatigue_flag": False,
+            "helper_fairness_verified": True,
+        }
+    )
+    constitution_eval = evaluate_operating_constitution(
+        {
+            "capital": effective_capital_ctx,
+            "privacy": {
+                "inference_endpoint": inference_endpoint,
+                "cloud_spend_usd": 0.0,
+                "external_egress": False,
+                "data_classification": "client_confidential",
+                "provenance_verified": len(verified_citations) > 0,
+                "raw_household_dollars_exposed": False,
+                "ambient_identifiers_present": False,
+            },
+            "auth": {
+                "consequential_financial_action": False,
+                "actor_type": "operator_cosigned_agent",
+            },
+            "ops": effective_ops_ctx,
+        },
+        require_wasm=True,
+    )
+    if (
+        not constitution_eval.get("allow")
+        or not constitution_eval.get("wasm_verified")
+        or not constitution_eval.get("parity_verified")
+    ):
+        failed_decisions = {
+            cid: ctrl.get("decision")
+            for cid, ctrl in constitution_eval.get("controls", {}).items()
+            if not ctrl.get("allow")
+        }
+        reason = constitution_eval.get("reason") or failed_decisions
+        raise SecurityBoundaryError(
+            f"Operating Constitution Wasm Gate Denied Dossier Execution: {reason}"
+        )
+
     # Render Dossier Markdown & Printable PDF
     is_signed = gate_status.all_cleared
     generated_at_ts = generated_at_override or dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -821,11 +911,24 @@ def execute_dossier_pipeline(
             "qf_a4_machine_extraction": "LOCAL_PASS",
             "qf_a5_signed_provenance": "PASS" if is_signed else "GATED",
             "qf_a6_hardware_root_of_trust": "PASS" if is_signed else "GATED",
+            "operating_constitution_wasm": {
+                "verdict": constitution_eval["verdict"],
+                "wasm_verified": constitution_eval["wasm_verified"],
+                "parity_verified": constitution_eval["parity_verified"],
+                "controls": {
+                    cid: {
+                        "allow": ctrl["allow"],
+                        "decision": ctrl["decision"],
+                    }
+                    for cid, ctrl in constitution_eval["controls"].items()
+                },
+            },
             "hard_stops": asdict(gate_status),
         },
         invariants={
             "supreme_alignment_law_enforced": True,
             "golden_financial_invariant_r_gte_o_6m_gated": True,
+            "operating_constitution_wasm_verified": True,
             "zero_cloud_spend_usd": 0.00,
             "inference_endpoint": inference_endpoint.replace("http://", ""),
             "zero_ambient_data_active": True,
