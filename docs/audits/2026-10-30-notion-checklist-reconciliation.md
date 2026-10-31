@@ -142,3 +142,4 @@ These 4 items cannot be cleared by software commits. They require operator actio
 - [ ] **PA LLC Standing**: Confirm FINALLYFUNGUS LLC (PA 13706513) on Pennsylvania Department of State records + EIN/banking.
 - [ ] **Track 0 Household Baseline**: Complete paper R/O worksheet (Reserves / Obligations >= 6 months).
 ```
+
