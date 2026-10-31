@@ -21,8 +21,10 @@
     "AS-02": "CLOSED",
     "AS-03": "CLOSED",
     "PA-LLC": "RETIRED",
-    "TRACK_0": "CLOSED",
+    "TRACK_0": "CLOSED_OFFLINE_VERIFICATION_ONLY",
     "reserve_coverage_months": 7.0,
+    "is_synthetic_test_fixture": true,
+    "offline_ground_truth_note": "Synthetic test fixture for pytest automated gate verification. Real household reserve is tracked strictly offline by the Operator via physical paper / live bank statements (Track 0). Real cash value in repo = $0.00.",
     "ALL_HARD_STOPS": true,
     "QF_A5_SIGNING": "PASS",
     "ADMISSION_SIGNED": true,
@@ -61,10 +63,12 @@
     "M6-04_compliant_submission": "VERIFIED_GATE_ACTIVE",
     "M6-05_verified_bounty_or_grant_award": "VERIFIED_GATE_ACTIVE",
     "M6-06_settled_funds_independently_reconciled": "VERIFIED_GATE_ACTIVE",
-    "M6-07_six_month_reserve_protected": "PASS (7.00 months verified)",
+    "M6-07_six_month_reserve_protected": "PASS (7.00 months synthetic test fixture)",
     "realized_settled_income_usd": 0.0,
     "unsettled_award_counts_as_income": false,
-    "qf_m6_status": "COMPLETE \u2014 ALL 4 PHASES (M6-A..M6-D) CONSOLIDATED & VERIFIED"
+    "is_synthetic_test_fixture": true,
+    "offline_ground_truth_note": "Track 0 real household reserve (R >= 6O) is verified offline exclusively by Rocky via paper bank statements. Zero repo balances constitute real cash.",
+    "qf_m6_status": "COMPLETE — ALL 4 PHASES (M6-A..M6-D) CONSOLIDATED & VERIFIED"
   },
   "bounty_acceptance_gates": [
     "QF-BOUNTY-01 (Authorization Integrity)",
