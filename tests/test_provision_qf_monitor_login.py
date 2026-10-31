@@ -314,7 +314,27 @@ def isolated_database():
         subprocess.run(["podman", "rm", "--force", name], capture_output=True, text=True, check=True)
 
 
-@pytest.mark.skipif(os.environ.get("QF_MONITOR_LOGIN_ISOLATED_TESTS") != "1", reason="opt in to isolated cached PostgreSQL container")
+def _isolated_postgres_ready() -> bool:
+    flag = os.environ.get("QF_MONITOR_LOGIN_ISOLATED_TESTS")
+    if flag == "0":
+        return False
+    if flag == "1":
+        return True
+    try:
+        res = subprocess.run(
+            ["podman", "image", "exists", "docker.io/library/postgres:15-alpine"],
+            capture_output=True,
+            timeout=5,
+        )
+        return res.returncode == 0
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return False
+
+
+ISOLATED_POSTGRES_AVAILABLE = _isolated_postgres_ready()
+
+
+@pytest.mark.skipif(not ISOLATED_POSTGRES_AVAILABLE, reason="cached docker.io/library/postgres:15-alpine podman image unavailable")
 def test_scram_verifier_authenticates_over_isolated_container_tcp(tool):
     with isolated_database() as (name, sql):
         password = "A" * 43
@@ -334,7 +354,7 @@ def test_scram_verifier_authenticates_over_isolated_container_tcp(tool):
         assert sql("SELECT rolcanlogin FROM pg_roles WHERE rolname='qf_monitor_writer'").stdout.strip() == "f"
 
 
-@pytest.mark.skipif(os.environ.get("QF_MONITOR_LOGIN_ISOLATED_TESTS") != "1", reason="opt in to isolated cached PostgreSQL container")
+@pytest.mark.skipif(not ISOLATED_POSTGRES_AVAILABLE, reason="cached docker.io/library/postgres:15-alpine podman image unavailable")
 @pytest.mark.parametrize("unexpected", [
     "ALTER ROLE qf_monitor_writer LOGIN",
     "ALTER ROLE qf_monitor_writer SUPERUSER",
