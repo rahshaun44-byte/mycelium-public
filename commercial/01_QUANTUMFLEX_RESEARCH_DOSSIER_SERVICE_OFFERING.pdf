@@ -1,0 +1,106 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+2 0 obj
+<< /Length 3794 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 2) Tj
+ET
+BT /F1 13 Tf 54 728 Td (# QuantumFlex Sovereign Research Dossier Service) Tj ET
+BT /F1 9 Tf 54 702 Td (**Institutional Evidence Synthesis, Cross-Document Compliance Verification & Cryptographic) Tj ET
+BT /F1 9 Tf 54 689 Td (  Citation Provenance**) Tj ET
+BT /F1 9 Tf 54 663 Td (---) Tj ET
+BT /F1 11 Tf 54 637 Td (## 1. Executive Summary) Tj ET
+BT /F1 9 Tf 54 624 Td (Regulated legal, M&A, real estate, and technical diligence teams routinely face) Tj ET
+BT /F1 9 Tf 54 611 Td (  multi-hundred-page document sets?municipal zoning codes, technical exhibits, regulatory) Tj ET
+BT /F1 9 Tf 54 598 Td (  dockets, and contract schedules?under tight transaction timelines. Public cloud AI tools) Tj ET
+BT /F1 9 Tf 54 585 Td (  introduce confidentiality exposure and unverified citation hallucinations.) Tj ET
+BT /F1 9 Tf 54 559 Td (The **QuantumFlex Sovereign Research Dossier Service** processes your confidential document) Tj ET
+BT /F1 9 Tf 54 546 Td (  corpus entirely on isolated, air-gapped local compute hardware \(`$0.00` public cloud data) Tj ET
+BT /F1 9 Tf 54 533 Td (  transmission\) and delivers an executive-ready analytical dossier where **100% of factual) Tj ET
+BT /F1 9 Tf 54 520 Td (  claims are cryptographically bound to exact source document pages and SHA-256 content) Tj ET
+BT /F1 9 Tf 54 507 Td (  hashes**.) Tj ET
+BT /F1 9 Tf 54 481 Td (---) Tj ET
+BT /F1 11 Tf 54 455 Td (## 2. Core Service Guarantees) Tj ET
+BT /F1 9 Tf 54 429 Td (| Assurance Pillar | Institutional Guarantee |) Tj ET
+BT /F1 9 Tf 54 416 Td (| :--- | :--- |) Tj ET
+BT /F1 9 Tf 54 403 Td (| **100% Local & Confidential Processing** | Zero documents, prompts, or excerpts ever) Tj ET
+BT /F1 9 Tf 54 390 Td (  leave dedicated local hardware. No third-party cloud LLM APIs are called. |) Tj ET
+BT /F1 9 Tf 54 377 Td (| **Deterministic Citation Verification** | Every analytical bullet cites its exact source) Tj ET
+BT /F1 9 Tf 54 364 Td (  document, chunk identifier, and page offset \(`[doc_id:p<page>]`\), verified against a) Tj ET
+BT /F1 9 Tf 54 351 Td (  SHA-256 content digest. |) Tj ET
+BT /F1 9 Tf 54 338 Td (| **Tamper-Evident Corpus Merkle Root** | Every delivered dossier includes a cryptographic) Tj ET
+BT /F1 9 Tf 54 325 Td (  admission receipt recording the SHA-256 Merkle root of the entire analyzed document set. |) Tj ET
+BT /F1 9 Tf 54 312 Td (| **Automated PII & Credential Redaction** | Pre-ingestion sanitization automatically) Tj ET
+BT /F1 9 Tf 54 299 Td (  scrubs accidental bearer tokens, private keys, or sensitive identifiers before indexing. |) Tj ET
+BT /F1 9 Tf 54 273 Td (---) Tj ET
+BT /F1 11 Tf 54 247 Td (## 3. Standard Deliverables \(Per Engagement\)) Tj ET
+BT /F1 9 Tf 54 221 Td (1. **Executive Research Dossier \(`.pdf` & `.md`\):**) Tj ET
+BT /F1 9 Tf 54 208 Td (- Structured executive findings, regulatory posture analysis, cross-document anomaly) Tj ET
+BT /F1 9 Tf 54 195 Td (  detection, and risk/liability synthesis.) Tj ET
+BT /F1 9 Tf 54 182 Td (- Embedded **Deterministic Citation & Cryptographic Provenance Ledger** mapping every claim) Tj ET
+BT /F1 9 Tf 54 169 Td (  to its primary filing and page number.) Tj ET
+BT /F1 9 Tf 54 156 Td (2. **Machine-Readable Cryptographic Receipt \(`.json`\):**) Tj ET
+BT /F1 9 Tf 54 143 Td (- Records the dossier SHA-256 digest, PDF SHA-256 digest, corpus SHA-256 Merkle root, and) Tj ET
+BT /F1 9 Tf 54 130 Td (  citation verification metrics for independent auditability.) Tj ET
+BT /F1 9 Tf 54 117 Td (3. **Preserved Sanitized Corpus Snapshot:**) Tj ET
+BT /F1 9 Tf 54 104 Td (- Enables deterministic, bit-identical reconstruction of the dossier for regulatory or) Tj ET
+BT /F1 9 Tf 54 91 Td (  litigation verification.) Tj ET
+BT /F1 9 Tf 54 65 Td (---) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Length 1610 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 2) Tj
+ET
+BT /F1 11 Tf 54 715 Td (## 4. Engagement Scope, Turnaround & Pricing) Tj ET
+BT /F1 9 Tf 54 689 Td (| Engagement Tier | Corpus Volume | Turnaround SLA | Fixed Engagement Fee |) Tj ET
+BT /F1 9 Tf 54 676 Td (| :--- | :--- | :--- | :--- |) Tj ET
+BT /F1 9 Tf 54 663 Td (| **Standard Diligence Dossier** | Up to `500 pages` \(`~25 filings`\) | `48?72 hours`) Tj ET
+BT /F1 9 Tf 54 650 Td (  \(includes human analyst review\) | **`$2,500`** |) Tj ET
+BT /F1 9 Tf 54 637 Td (| **Comprehensive Transaction Dossier** | `500 ? 2,000 pages` | `3?5 business days` |) Tj ET
+BT /F1 9 Tf 54 624 Td (  **`$5,000`** |) Tj ET
+BT /F1 9 Tf 54 611 Td (| **Dedicated On-Premise Appliance** | Unlimited internal runs | Turnkey local deployment +) Tj ET
+BT /F1 9 Tf 54 598 Td (  monthly assurance | **`$2,500` setup + `$300/mo`** |) Tj ET
+BT /F1 9 Tf 54 572 Td (---) Tj ET
+BT /F1 11 Tf 54 546 Td (## 5. Engagement Workflow) Tj ET
+BT /F1 9 Tf 54 533 Td (1. **Scoped Intake:** Client provides target research questions and document corpus via) Tj ET
+BT /F1 9 Tf 54 520 Td (  encrypted archive or physical media.) Tj ET
+BT /F1 9 Tf 54 507 Td (2. **Isolated Local Indexing & Verification:** Corpus is sanitized, chunked, and verified) Tj ET
+BT /F1 9 Tf 54 494 Td (  on isolated hardware with zero external network egress.) Tj ET
+BT /F1 9 Tf 54 481 Td (3. **Human Quality Review & Delivery:** Every citation and finding undergoes final) Tj ET
+BT /F1 9 Tf 54 468 Td (  verification prior to delivery of the signed PDF dossier and cryptographic receipt.) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+6 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R] /Count 2 >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 6 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000083 00000 n 
+0000003929 00000 n 
+0000005591 00000 n 
+0000005717 00000 n 
+0000005843 00000 n 
+0000005906 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R >>
+startxref
+5955
+%%EOF

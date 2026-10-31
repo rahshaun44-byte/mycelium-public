@@ -1,0 +1,97 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+2 0 obj
+<< /Length 3948 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 2) Tj
+ET
+BT /F1 13 Tf 54 728 Td (# QuantumFlex Security & Data-Governance Statement) Tj ET
+BT /F1 9 Tf 54 702 Td (**Institutional Assurance for Confidential Legal, Financial, and Technical Diligence**) Tj ET
+BT /F1 9 Tf 54 676 Td (---) Tj ET
+BT /F1 11 Tf 54 650 Td (## 1. Zero-Cloud Data Sovereignty) Tj ET
+BT /F1 9 Tf 54 637 Td (QuantumFlex processes all client documents, embeddings, and analytical synthesis) Tj ET
+BT /F1 9 Tf 54 624 Td (  exclusively on isolated local hardware.) Tj ET
+BT /F1 9 Tf 54 611 Td (- **No External API Egress:** Client files are never transmitted to public cloud AI) Tj ET
+BT /F1 9 Tf 54 598 Td (  providers, third-party model APIs, or external SaaS indexing services.) Tj ET
+BT /F1 9 Tf 54 585 Td (- **No Model Training on Client Data:** Client materials are never used to train,) Tj ET
+BT /F1 9 Tf 54 572 Td (  fine-tune, or update shared foundation models.) Tj ET
+BT /F1 9 Tf 54 559 Td (- **Loopback-Enforced Execution:** Local inference endpoints are programmatically) Tj ET
+BT /F1 9 Tf 54 546 Td (  restricted to loopback interfaces \(`127.0.0.1`\), failing closed if any external network) Tj ET
+BT /F1 9 Tf 54 533 Td (  endpoint is configured.) Tj ET
+BT /F1 9 Tf 54 507 Td (---) Tj ET
+BT /F1 11 Tf 54 481 Td (## 2. Strict Corpus Isolation & Role Governance) Tj ET
+BT /F1 9 Tf 54 468 Td (Every document ingested into the QuantumFlex pipeline is assigned an explicit security) Tj ET
+BT /F1 9 Tf 54 455 Td (  classification prior to indexing:) Tj ET
+BT /F1 9 Tf 54 442 Td (- **Client Corpus Isolation:** Each client engagement executes within a dedicated, isolated) Tj ET
+BT /F1 9 Tf 54 429 Td (  document store.) Tj ET
+BT /F1 9 Tf 54 416 Td (- **Boundary Enforcement:** Automated access controls prevent cross-matter retrieval and) Tj ET
+BT /F1 9 Tf 54 403 Td (  block internal operational records from entering any client-facing index or report.) Tj ET
+BT /F1 9 Tf 54 390 Td (- **Idempotent Purge & Retention Control:** Upon engagement completion, client indices can) Tj ET
+BT /F1 9 Tf 54 377 Td (  be archived as a deterministic snapshot for client audit recovery or cryptographically) Tj ET
+BT /F1 9 Tf 54 364 Td (  purged upon written instruction.) Tj ET
+BT /F1 9 Tf 54 338 Td (---) Tj ET
+BT /F1 11 Tf 54 312 Td (## 3. Pre-Ingestion Privacy Sanitization) Tj ET
+BT /F1 9 Tf 54 299 Td (Before any document page is indexed or analyzed, an automated sanitization filter scans for) Tj ET
+BT /F1 9 Tf 54 286 Td (  and redacts sensitive ambient identifiers:) Tj ET
+BT /F1 9 Tf 54 273 Td (- Unrotated API keys, bearer tokens, and PEM-encoded private keys \(`[REDACTED_CREDENTIAL]`) Tj ET
+BT /F1 9 Tf 54 260 Td (  / `[REDACTED_PRIVATE_KEY]`\).) Tj ET
+BT /F1 9 Tf 54 247 Td (- Social Security Numbers and personal tax identifiers \(`[REDACTED_SSN]`\).) Tj ET
+BT /F1 9 Tf 54 234 Td (- Financial routing and bank account numbers \(`[REDACTED_FAMILY_FINANCIAL_ACCT]`\).) Tj ET
+BT /F1 9 Tf 54 221 Td (- Local workstation filesystem paths.) Tj ET
+BT /F1 9 Tf 54 195 Td (---) Tj ET
+BT /F1 11 Tf 54 169 Td (## 4. Deterministic Citation & Tamper Detection) Tj ET
+BT /F1 9 Tf 54 156 Td (To eliminate unverified generative claims, QuantumFlex enforces a fail-closed cryptographic) Tj ET
+BT /F1 9 Tf 54 143 Td (  verification gate \(`AT-RDOS-02` / `AT-RDOS-03`\):) Tj ET
+BT /F1 9 Tf 54 130 Td (1. **Chunk-Level SHA-256 Hashing:** Every extracted document segment is hashed with) Tj ET
+BT /F1 9 Tf 54 117 Td (  `SHA-256` at intake.) Tj ET
+BT /F1 9 Tf 54 104 Td (2. **Mandatory Page & Chunk Binding:** Every analytical claim in a delivered dossier must) Tj ET
+BT /F1 9 Tf 54 91 Td (  reference a valid `[chunk_id:p<page>]` identifier. Uncited claims or page mismatches) Tj ET
+BT /F1 9 Tf 54 78 Td (  cause compilation to fail closed.) Tj ET
+BT /F1 9 Tf 54 65 Td (3. **Corpus Merkle Root:** All verified chunk digests are combined into a deterministic) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Length 719 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 2) Tj
+ET
+BT /F1 9 Tf 54 728 Td (  `SHA-256` Merkle root recorded in the accompanying JSON Admission Receipt. Modifying even) Tj ET
+BT /F1 9 Tf 54 715 Td (  a single character in a source document alters the Merkle root and is immediately) Tj ET
+BT /F1 9 Tf 54 702 Td (  detected by independent verification.) Tj ET
+BT /F1 9 Tf 54 689 Td (4. **Honest Assurance Reporting:** Cryptographic receipts explicitly distinguish between) Tj ET
+BT /F1 9 Tf 54 676 Td (  locally verified provenance and hardware-signed production attestations \(`signed: false`) Tj ET
+BT /F1 9 Tf 54 663 Td (  when external hardware ceremony gates are not invoked\).) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+6 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R] /Count 2 >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 6 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000083 00000 n 
+0000004083 00000 n 
+0000004853 00000 n 
+0000004979 00000 n 
+0000005105 00000 n 
+0000005168 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R >>
+startxref
+5217
+%%EOF

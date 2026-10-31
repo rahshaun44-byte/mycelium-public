@@ -88,6 +88,31 @@ def test_strengthened_golden_financial_invariant_conditions():
     assert eval_unavailable.invariant_satisfied is False
     assert eval_unavailable.discretionary_capex_decision == "DENY"
 
+    # Condition 4: Stale reconciliation timestamp (> 30 days old) -> fail-closed DENY
+    eval_stale = evaluate_golden_financial_invariant(
+        reserves_usd=50000.0,
+        monthly_obligations_usd=4000.0,
+        reconciled_at_utc="2026-08-01T00:00:00Z",
+        reference_now_utc="2026-10-30T21:00:00Z",
+        max_reconciliation_age_days=30.0,
+    )
+    assert eval_stale.reconciliation_fresh is False
+    assert eval_stale.invariant_satisfied is False
+    assert eval_stale.discretionary_capex_decision == "DENY"
+
+    # Fresh reconciliation timestamp (within 30 days) -> ALLOW
+    eval_fresh = evaluate_golden_financial_invariant(
+        reserves_usd=50000.0,
+        monthly_obligations_usd=4000.0,
+        reconciled_at_utc="2026-10-25T00:00:00Z",
+        reference_now_utc="2026-10-30T21:00:00Z",
+        max_reconciliation_age_days=30.0,
+        require_reconciled_timestamp=True,
+    )
+    assert eval_fresh.reconciliation_fresh is True
+    assert eval_fresh.invariant_satisfied is True
+    assert eval_fresh.discretionary_capex_decision == "ALLOW"
+
 
 def test_qf_m4_cross_run_reproducibility_and_modification_sensitivity(tmp_path: Path):
     """P0.3: Identical corpus -> MerkleRoot_1 == MerkleRoot_2; modified doc -> MerkleRoot_1 != MerkleRoot_3."""

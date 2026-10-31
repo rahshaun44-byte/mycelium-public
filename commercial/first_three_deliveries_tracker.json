@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "milestone": "QF-M5 First Commercial Delivery — Empirical Economics Tracker",
+  "accounting_note": "Tracks actual realized economics across the first three paid customer deliveries to validate modeled contribution margins against full operational overhead.",
+  "modeled_baseline_reference": {
+    "dossier_fee_usd": 2500.0,
+    "modeled_operator_hours": 1.5,
+    "modeled_operator_labor_usd": 225.0,
+    "modeled_hardware_energy_usd": 0.3239,
+    "modeled_cloud_spend_usd": 0.0,
+    "modeled_contribution_margin_pct": 90.99
+  },
+  "deliveries": [
+    {
+      "delivery_slot": 1,
+      "status": "PENDING_FIRST_CUSTOMER",
+      "dossier_id": null,
+      "client_sector": null,
+      "corpus_pages": null,
+      "actual_operator_hours": null,
+      "actual_processing_seconds": null,
+      "hardware_allocation_usd": null,
+      "customer_acquisition_cost_usd": null,
+      "administrative_and_qa_hours": null,
+      "insurance_and_tax_reserve_usd": null,
+      "revisions_count": null,
+      "customer_satisfaction_score_1_to_10": null,
+      "gross_fee_collected_usd": null,
+      "realized_net_margin_usd": null,
+      "realized_net_margin_pct": null
+    },
+    {
+      "delivery_slot": 2,
+      "status": "PENDING",
+      "dossier_id": null,
+      "client_sector": null,
+      "corpus_pages": null,
+      "actual_operator_hours": null,
+      "actual_processing_seconds": null,
+      "hardware_allocation_usd": null,
+      "customer_acquisition_cost_usd": null,
+      "administrative_and_qa_hours": null,
+      "insurance_and_tax_reserve_usd": null,
+      "revisions_count": null,
+      "customer_satisfaction_score_1_to_10": null,
+      "gross_fee_collected_usd": null,
+      "realized_net_margin_usd": null,
+      "realized_net_margin_pct": null
+    },
+    {
+      "delivery_slot": 3,
+      "status": "PENDING",
+      "dossier_id": null,
+      "client_sector": null,
+      "corpus_pages": null,
+      "actual_operator_hours": null,
+      "actual_processing_seconds": null,
+      "hardware_allocation_usd": null,
+      "customer_acquisition_cost_usd": null,
+      "administrative_and_qa_hours": null,
+      "insurance_and_tax_reserve_usd": null,
+      "revisions_count": null,
+      "customer_satisfaction_score_1_to_10": null,
+      "gross_fee_collected_usd": null,
+      "realized_net_margin_usd": null,
+      "realized_net_margin_pct": null
+    }
+  ]
+}

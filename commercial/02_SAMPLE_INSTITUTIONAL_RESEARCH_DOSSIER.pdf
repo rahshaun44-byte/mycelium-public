@@ -1,0 +1,109 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+2 0 obj
+<< /Length 3668 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 2) Tj
+ET
+BT /F1 13 Tf 54 728 Td (# Sample Institutional Research Dossier: Municipal Zoning, Post-Quantum) Tj ET
+BT /F1 13 Tf 54 715 Td (  Cryptography & Escrow Liability Assessment) Tj ET
+BT /F1 9 Tf 54 689 Td (**Dossier ID:** `QF-RDOS-SAMPLE-2026-001`) Tj ET
+BT /F1 9 Tf 54 676 Td (**Prepared For:** Institutional M&A & Regulatory Diligence Counsel) Tj ET
+BT /F1 9 Tf 54 663 Td (**Date of Issue:** `2026-10-30`) Tj ET
+BT /F1 9 Tf 54 650 Td (**Corpus Merkle Root \(SHA-256\):**) Tj ET
+BT /F1 9 Tf 54 637 Td (  `9efdda9e6d9745f3bcfcebeecbacf7606236411e0eba659567b9648b8721bf95`) Tj ET
+BT /F1 9 Tf 54 624 Td (**Citation Verification Status:** `100.0% Grounded \(4/4 Primary Source Chunks Verified\)`) Tj ET
+BT /F1 9 Tf 54 611 Td (**Data Governance Posture:** `100% Local Isolated Compute \(Zero External Cloud) Tj ET
+BT /F1 9 Tf 54 598 Td (  Transmission\)`) Tj ET
+BT /F1 9 Tf 54 572 Td (---) Tj ET
+BT /F1 11 Tf 54 546 Td (## 1. Executive Findings & Regulatory Posture) Tj ET
+BT /F1 9 Tf 54 520 Td (- **Treasury Escrow Single-Signer Exposure \(`target_ma_crypto_inventory.pdf`\):** Target) Tj ET
+BT /F1 9 Tf 54 507 Td (  entity's treasury state mutation workflows currently lack hardware-enforced dual-control) Tj ET
+BT /F1 9 Tf 54 494 Td (  physical attestation, creating a single-signer drain vulnerability prior to closing) Tj ET
+BT /F1 9 Tf 54 481 Td (  `[target_ma_crypto_inventory_c0002_d6ca4c84:p2]`.) Tj ET
+BT /F1 9 Tf 54 468 Td (- **Legacy Cryptographic & Credential Hygiene Finding \(`target_ma_crypto_inventory.pdf`\):**) Tj ET
+BT /F1 9 Tf 54 455 Td (  Target entity relies on legacy RSA-2048 TLS certificates and an unrotated internal) Tj ET
+BT /F1 9 Tf 54 442 Td (  microservice credential \(`[REDACTED_CREDENTIAL]`\). Remediation requires immediate) Tj ET
+BT /F1 9 Tf 54 429 Td (  credential rotation and staged migration to NIST FIPS 203 \(`ML-KEM-768`\) and FIPS 204) Tj ET
+BT /F1 9 Tf 54 416 Td (  \(`ML-DSA-65`\) `[target_ma_crypto_inventory_c0001_a7951bbd:p1]`.) Tj ET
+BT /F1 9 Tf 54 390 Td (---) Tj ET
+BT /F1 11 Tf 54 364 Td (## 2. Cross-Document Municipal & Facility Compliance Verification) Tj ET
+BT /F1 9 Tf 54 338 Td (- **Permitted Light-Industrial Compute Load \(`pittston_zoning_code_2026.pdf`\):** Under) Tj ET
+BT /F1 9 Tf 54 325 Td (  Section 402.1 \(Light Industrial & Sovereign Compute Overlay\), sealed commercial) Tj ET
+BT /F1 9 Tf 54 312 Td (  data-processing installations with zero external radio-frequency emission are permitted) Tj ET
+BT /F1 9 Tf 54 299 Td (  by right up to a continuous electrical load of `15 kW`) Tj ET
+BT /F1 9 Tf 54 286 Td (  `[pittston_zoning_code_2026_c0001_48c715b9:p1]`.) Tj ET
+BT /F1 9 Tf 54 260 Td (---) Tj ET
+BT /F1 11 Tf 54 234 Td (## 3. Acoustic & Environmental Operating Covenants) Tj ET
+BT /F1 9 Tf 54 208 Td (- **Nighttime Exterior Acoustic Ceiling \(`pittston_zoning_code_2026.pdf`\):** Pursuant to) Tj ET
+BT /F1 9 Tf 54 195 Td (  Section 508.4 \(Setback & Acoustic Mandate\), all cooling assemblies and uninterruptible) Tj ET
+BT /F1 9 Tf 54 182 Td (  power supply \(UPS\) enclosures must maintain exterior parcel-boundary sound pressure) Tj ET
+BT /F1 9 Tf 54 169 Td (  levels strictly below `45 dBA` between `22:00` and `07:00` local time) Tj ET
+BT /F1 9 Tf 54 156 Td (  `[pittston_zoning_code_2026_c0002_47b263c3:p2]`.) Tj ET
+BT /F1 9 Tf 54 130 Td (---) Tj ET
+BT /F1 11 Tf 54 104 Td (## 4. Summary of Recommended Transaction Conditions) Tj ET
+BT /F1 9 Tf 54 78 Td (| Priority | Diligence Domain | Recommended Closing / Escrow Condition | Source Reference |) Tj ET
+BT /F1 9 Tf 54 65 Td (| :--- | :--- | :--- | :--- |) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Length 2403 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 2) Tj
+ET
+BT /F1 9 Tf 54 728 Td (| **P0 \(Pre-Close\)** | Treasury Escrow | Enforce hardware-bound two-person authorization) Tj ET
+BT /F1 9 Tf 54 715 Td (  prior to funding escrow accounts. | `target_ma_crypto_inventory.pdf` \(p. 2\) |) Tj ET
+BT /F1 9 Tf 54 702 Td (| **P0 \(Pre-Close\)** | Credential Hygiene | Rotate exposed microservice bearer token and) Tj ET
+BT /F1 9 Tf 54 689 Td (  revoke legacy static credentials. | `target_ma_crypto_inventory.pdf` \(p. 1\) |) Tj ET
+BT /F1 9 Tf 54 676 Td (| **P1 \(Post-Close 90d\)** | Post-Quantum TLS | Upgrade key-exchange and signature) Tj ET
+BT /F1 9 Tf 54 663 Td (  primitives to NIST FIPS 203 / FIPS 204. | `target_ma_crypto_inventory.pdf` \(p. 1\) |) Tj ET
+BT /F1 9 Tf 54 650 Td (| **P1 \(Facility Ops\)** | Acoustic Compliance | Certify cabinet acoustic baffling `< 45) Tj ET
+BT /F1 9 Tf 54 637 Td (  dBA` at parcel boundary during night hours. | `pittston_zoning_code_2026.pdf` \(p. 2\) |) Tj ET
+BT /F1 9 Tf 54 611 Td (---) Tj ET
+BT /F1 11 Tf 54 585 Td (## 5. Deterministic Citation & Cryptographic Provenance Ledger) Tj ET
+BT /F1 9 Tf 54 559 Td (Every factual statement in this dossier is verified against the following primary filing) Tj ET
+BT /F1 9 Tf 54 546 Td (  digests:) Tj ET
+BT /F1 9 Tf 54 520 Td (| Chunk Identifier | Primary Source Filing | Page Offset | Verified Chunk SHA-256 Digest |) Tj ET
+BT /F1 9 Tf 54 507 Td (| :--- | :--- | :--- | :--- |) Tj ET
+BT /F1 9 Tf 54 494 Td (| `target_ma_crypto_inventory_c0002_d6ca4c84` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
+BT /F1 9 Tf 54 481 Td (  p. 2 | `d6ca4c8408449b037843aaf775077e69fcf18d7227d0a340631fa158c3690d1e` |) Tj ET
+BT /F1 9 Tf 54 468 Td (| `target_ma_crypto_inventory_c0001_a7951bbd` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
+BT /F1 9 Tf 54 455 Td (  p. 1 | `a7951bbde5bc672ac7a8278d09522ae7e6968d22f30b6e7d9ef0a389bc6ee53c` |) Tj ET
+BT /F1 9 Tf 54 442 Td (| `pittston_zoning_code_2026_c0001_48c715b9` | `filings/pittston_zoning_code_2026.pdf` | p.) Tj ET
+BT /F1 9 Tf 54 429 Td (  1 | `48c715b9af90d378bd3f501478a4bde1ea96ab73105fd82bf3f04da7b219d9fc` |) Tj ET
+BT /F1 9 Tf 54 416 Td (| `pittston_zoning_code_2026_c0002_47b263c3` | `filings/pittston_zoning_code_2026.pdf` | p.) Tj ET
+BT /F1 9 Tf 54 403 Td (  2 | `47b263c39d940a00f7fa2b31bbe885008ebd8c1a282dba44036e027f0c4d8838` |) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+6 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R] /Count 2 >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 6 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000083 00000 n 
+0000003803 00000 n 
+0000006258 00000 n 
+0000006384 00000 n 
+0000006510 00000 n 
+0000006573 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R >>
+startxref
+6622
+%%EOF
