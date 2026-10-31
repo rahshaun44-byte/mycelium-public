@@ -97,18 +97,32 @@ The objective is not maximum growth at any cost, nor maximizing the number of pr
 2. **Protect the people supporting the mission.**
 3. **Preserve the six-month reserve ($R_{\text{verified liquid}} \ge 6O$).**
 4. **Maintain cryptographic and privacy boundaries.**
-5. **Generate sustainable commercial revenue.**
-6. **Expand only when the lower priorities remain protected.**
+5. **Generate sustainable, zero-client sovereign income (Bug Bounties, Public-Good Grants, Personal Capital Oracle).**
+6. **Never accumulate corporate, client, or administrative gravity.**
 
 $$\text{Mission Success} = \text{Security} + \text{Peace} + \text{Financial Independence} + \text{Scientific Freedom} + \text{Positive Impact}$$
 
 ---
 
-## 6. Enforceable Mycelium Constitutional Controls
+## 6. The Sovereign Non-Corporate Operating Doctrine (`QF-SOVEREIGN`)
+To stay **100% legal, low-profile, and sovereign**, QuantumFlex rejects traditional B2B client service businesses (zero sales calls, zero client retainers, zero SLAs, zero employees, and `PA-LLC` retired as an operational blocker). Instead, the verified technology stack operates across three zero-client pillars:
+
+1. **Pillar I — Competitive Security Audits & Bug Bounties (Pay-Per-Proof):**
+   * Use the local `qfx-yoga` verification engine (Athena dossier pipeline + Foundry + F\* + static/runtime analysis) to identify and prove critical vulnerabilities (`QF-A6` TOCTOU race conditions, single-signer escrow drain, 6-decimal USDC math flaws, post-quantum key weaknesses) on **Immunefi**, **Code4rena**, **Sherlock**, **Cantina**, and **HackerOne**.
+   * **Sovereign Advantage:** 100% legal 1099 bounty payouts, pseudonymous public researcher handle, zero ongoing client obligations, and direct protection of public infrastructure for the greater good.
+2. **Pillar II — Non-Dilutive Open-Source Public-Good Grants:**
+   * Apply as an individual researcher to public-good foundations (**NLnet NGI Zero**, **OpenSSF**, **Ethereum Foundation ESP**) to fund open-source defensive code in `pqc-immune-daemon` (`ML-KEM-768` / `FrodoKEM-976-AES`, OPA Wasm membrane, F\*/KaRaMeL verified C extraction).
+   * **Sovereign Advantage:** Non-dilutive milestone grants paid directly to the researcher with zero commercial customers or data-broker surface.
+3. **Pillar III — Personal "Family Office" Intelligence Oracle (Self-Only):**
+   * Run `scripts/generate_research_dossier.py` exclusively for the Operator's own household capital preservation ($R_{\text{verified liquid}} \ge 6O$), public filing analysis (SEC 10-K/10-Q, municipal codes, distressed assets), and scientific research—triggering zero external regulatory surface.
+
+---
+
+## 7. Enforceable Mycelium Constitutional Controls
 
 | Control ID | Domain | Enforcement Mechanism |
 | :--- | :--- | :--- |
 | **`QF-CAPITAL-01`** | Capital-Allocation Gate | Fail-closed check verifying $R - \Delta \ge 6O$ (verified reconciled liquid assets only; household + committed operating obligations; default `DENY` on stale or unavailable assessment) before any expenditure (`scripts/verify_operating_constitution.py`). |
-| **`QF-PRIVACY-01`** | Sovereign Privacy Gate | Enforces loopback-only inference (`127.0.0.1:11434`), \$0.00 cloud spend, `PrivacyFilter` zero-ambient-data sanitization, and strict `sovereign_internal` vs. `client` isolation. |
+| **`QF-PRIVACY-01`** | Sovereign Privacy Gate | Enforces loopback-only inference (`127.0.0.1:11434`), \$0.00 cloud spend, `PrivacyFilter` zero-ambient-data sanitization, and strict `sovereign_internal` vs. external output isolation. |
 | **`QF-AUTH-01`** | Financial Authorization Gate | Requires explicit human Operator sign-off (`operator_authorized == True`) before any state-mutating financial action. |
 | **`QF-OPS-01`** | Operator Sustainability Gate | Enforces daily workload ceiling and recovery buffers so operational cadence never exhausts the Operator. |

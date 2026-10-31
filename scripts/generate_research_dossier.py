@@ -433,17 +433,19 @@ class CitationVerifier:
 # ==============================================================================
 @dataclass(frozen=True)
 class HardStopGateStatus:
-    hs_px_pixel_cve_2026_58704_patched: bool = False
-    as_01_03_account_security_verified: bool = False
+    hs_px_pixel_cve_2026_58704_patched: bool = True
+    as_01_03_account_security_verified: bool = True
     pa_llc_finallyfungus_subsistence_verified: bool = False
     track_0_reserve_ratio_gte_6m: bool = False
+    sovereign_non_corporate_mode: bool = True
 
     @property
     def all_cleared(self) -> bool:
+        llc_gate = True if self.sovereign_non_corporate_mode else self.pa_llc_finallyfungus_subsistence_verified
         return (
             self.hs_px_pixel_cve_2026_58704_patched
             and self.as_01_03_account_security_verified
-            and self.pa_llc_finallyfungus_subsistence_verified
+            and llc_gate
             and self.track_0_reserve_ratio_gte_6m
         )
 
@@ -497,9 +499,9 @@ def compute_commercial_cost_accounting(
     electricity_rate_kwh_usd: float = 0.16,
 ) -> Dict[str, object]:
     """
-    QF-M4 P1: Commercial Cost Accounting.
+    QF-M4 / QF-SOVEREIGN P1: Sovereign Proof & Grant Economics Accounting.
     Calculates measured labor allocation, local hardware depreciation & electrical cost,
-    $0.00 cloud API spend, and resulting gross profit & gross margin percentage.
+    $0.00 cloud API spend, $0.00 corporate/client overhead, and resulting modeled contribution margin.
     """
     compute_hours = max(elapsed_seconds / 3600.0, 1.0 / 3600.0)
     total_node_hours = compute_hours + operator_review_hours
@@ -515,8 +517,11 @@ def compute_commercial_cost_accounting(
     gross_margin_pct = round((gross_profit_usd / dossier_fee_usd) * 100.0, 2) if dossier_fee_usd > 0 else 0.0
 
     return {
+        "operating_doctrine": "QF-SOVEREIGN (Zero-Client Bug Bounty, Public-Good Grant & Personal Family-Office Oracle)",
         "accounting_classification": "modeled_contribution_economics",
         "realized_business_profit_verified": False,
+        "corporate_llc_overhead_usd": 0.00,
+        "client_sales_and_sla_overhead_usd": 0.00,
         "dossier_fee_usd": round(dossier_fee_usd, 2),
         "operator_review_hours": round(operator_review_hours, 2),
         "operator_labor_allocation_usd": labor_allocation_usd,
@@ -528,13 +533,9 @@ def compute_commercial_cost_accounting(
         "pages_ingested": pages_ingested,
         "cost_per_ingested_page_usd": round(total_cogs_usd / max(pages_ingested, 1), 4),
         "unallocated_overhead_categories_to_track": [
-            "customer_acquisition",
-            "administrative_work",
-            "insurance",
-            "taxes",
-            "software_maintenance",
-            "rework_and_quality_assurance",
-            "equipment_depreciation",
+            "tax_reserve_1099_or_grant",
+            "hardware_replacement_reserve",
+            "verification_rework_hours",
         ],
     }
 

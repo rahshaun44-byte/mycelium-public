@@ -38,59 +38,59 @@ Before operationalizing intelligence or commercial projections into execution mi
 
 ---
 
-## 2. Pillar 1: Commercialization — B2B Sovereign AI Appliance
+## 2. Pillar 1: Competitive Security Audits & Bug Bounties (Pay-Per-Proof)
 
-**Offering:** Sovereign, Airgapped On-Premises Search & Document Intelligence Appliance  
-**Target Profile:** Regional law firms, CPAs, wealth managers, medical offices subject to confidentiality mandates (GLBA, HIPAA, Attorney-Client Privilege).  
-**Pricing Architecture:** \$2,500 Setup / Appliance Provisioning + \$300/month Maintenance & Security Retainer.
+**Operating Mode:** Pseudonymous, Zero-Client Vulnerability Discovery & Formal Proof Submission  
+**Target Platforms:** Immunefi, Code4rena, Sherlock, Cantina, HackerOne, Linux/OpenSSF Bug Bounties.  
+**Payout Architecture:** \$5,000 to \$100,000+ per verified High/Critical proof (1099 platform payout; zero sales calls, zero retainers, zero client SLAs).
 
-### 2.1 Technical Specifications of the Appliance
-* **Hardware Unit:** Dedicated Mini-PC (e.g., AMD Ryzen 7 / 32 GB or 64 GB DDR5 / 1 TB NVMe SSD) pre-configured with QuantumFlex Core.
-* **Network Isolation:** Airgapped or local LAN-only loopback (`127.0.0.1:11434`, zero external internet egress required for inference).
-* **Software Stack:**
-  * Local Ingestion & Vector Engine: Athena / ChromaDB or pgvector on PostgreSQL.
-  * Local Neural Models: `qwen2.5-coder:7b` / `gemma:7b` + `nomic-embed-text`.
-  * User Interface: Sovereign Web UI bound exclusively to internal LAN with client TLS.
+### 2.1 Technical Specifications of the Sovereign Audit Engine
+* **Host Unit:** `qfx-yoga` (Airgapped / Loopback `127.0.0.1:11434`, zero external cloud API spend).
+* **Verification Toolchain:**
+  * **Formal & ABI Verification:** F\* 2026.09 + KaRaMeL C11 differential equivalence (`QF-A3` / `QF-A4`).
+  * **EVM & Settlement Verification:** Foundry (`forge test -vvv`, `evm_version = "paris"`, 6-decimal USDC invariant, single-signer escrow drain & idempotency checks).
+  * **Runtime Kernel & Descriptor Verification:** `fexecve` `EXECUTED_FD == VERIFIED_FD` TOCTOU race elimination (`QF-A6`).
+  * **Automated Proof Compilation:** `scripts/generate_research_dossier.py` emits deterministic Markdown + PDF-1.4 vulnerability reports with `100%` SHA-256 citation provenance (`AT-RDOS-02`).
 
 ### 2.2 Acceptance Tests & Acceptance Criteria
-* `AT-COMM-01`: Verify zero outbound packets leave the appliance during document ingestion, embedding generation, and prompt completion (monitored via `tcpdump -i eth0`).
-* `AT-COMM-02`: Document ingestion throughput $\ge 50$ PDF pages/minute with OCR and vectorization.
-* `AT-COMM-03`: Cold reboot to ready state $\le 45$ seconds with auto-unseal via local operator token.
+* `AT-COMM-01`: Verify zero outbound packets leave `qfx-yoga` to third-party AI APIs during target codebase ingestion, embedding generation, and proof synthesis.
+* `AT-COMM-02`: Codebase/specification ingestion throughput $\ge 50$ pages/minute (`396.7 pages/min` verified on SQLite + Ollama `nomic-embed-text`).
+* `AT-COMM-03`: Every submitted vulnerability claim includes a reproducible PoC test and verified SHA-256 source citation.
 
 ---
 
-## 3. Pillar 2: Research Automation — High-Speed Research Dossier Service
+## 3. Pillar 2: Non-Dilutive Open-Source Public-Good Grants & Personal Family-Office Oracle
 
-**Offering:** Institutional-Grade 50-Page Research Dossiers (Zoning, Municipal Code, Competitor OSINT, Regulatory Liabilities).  
-**Target Profile:** Commercial real estate developers, private equity search funds, corporate M&A counsel.  
-**Pricing Architecture:** \$1,500 to \$3,500 per dossier delivered within 24–48 hours.
+**Operating Mode:** Individual Researcher Fellowships + Self-Only Household Capital Research  
+**Grant Targets:** NLnet Foundation (NGI Zero Core / Entrust), OpenSSF, Sovereign Tech fellowships, Ethereum Foundation ESP (`€5,000 – €50,000+` non-dilutive individual grants for `pqc-immune-daemon`).  
+**Personal Oracle Scope:** Private analysis of public SEC 10-K/10-Q filings, municipal tax/zoning codes, distressed assets, and scientific literature strictly for the Operator's own household capital preservation ($R_{\text{verified liquid}} \ge 6O$).
 
 ### 3.1 Technical Workflow
 ```
-Client Ingestion (PDFs/Public Filings)
+Target Corpus (Open-Source Repo / Grant Spec / Public SEC & Municipal Filings)
                │
                ▼
    Local Athena Ingestion Pipeline
-   ├── Chunking & OCR Extraction
-   ├── Zero Ambient Data Sanitization
-   └── Nomic Vector Database Ingestion
+   ├── Chunking & Page-Offset Extraction
+   ├── PrivacyFilter Zero-Ambient-Data Sanitization
+   └── Role-Isolated Vector & Provenance Store (blocks 'sovereign_internal' leakage)
                │
                ▼
-   Multi-Perspective Synthesizer Swarm
-   ├── Cross-Document Anomaly Detection
-   ├── Regulatory Compliance Check
-   └── Quantitative Citation Verification
+   Deterministic Verification & Synthesis
+   ├── Vulnerability / Compliance / Risk Extraction
+   ├── 100% Citation & SHA-256 Verification (AT-RDOS-02)
+   └── Corpus SHA-256 Merkle Root Computation
                │
                ▼
-   Deterministic Output Generation
-   ├── Markdown / LaTeX Dossier Compilation
-   └── PDF Compilation with Cryptographic Receipt
+   Sovereign Output Generation
+   ├── Markdown + Native Printable PDF-1.4 Dossier
+   └── Machine-Readable Cryptographic Admission Receipt (AT-RDOS-03)
 ```
 
 ### 3.2 Acceptance Tests & Acceptance Criteria
-* `AT-RDOS-01`: Ingestion of 500-page municipal or regulatory corpus completed in $\le 10$ minutes on local compute.
+* `AT-RDOS-01`: Ingestion of 500-page regulatory or technical audit corpus completed in $\le 600$ seconds on local compute (`0.0216s` synthetic pipeline / `109.63s` full SQLite + Ollama embedding).
 * `AT-RDOS-02`: Zero factual hallucinations in citations: 100% of claims cite verified chunk IDs and page offsets.
-* `AT-RDOS-03`: Cryptographic verification receipt generated and embedded in final dossier.
+* `AT-RDOS-03`: Cryptographic verification receipt generated and independently reproducible via `scripts/verify_dossier_independent.py`.
 
 ---
 
@@ -130,31 +130,30 @@ Building upon our verified formal core and differential C ABI equivalence (10,13
    * Wire `scripts/verify_formal_core.sh` and `scripts/extract_verified_core.sh` into standard build automation.
    * Promote QF-A4 to `PASS` in repository audit accounting once verified across release builds.
 2. **QF-A5 Signing Ceremony Execution:**
-   * Execute `scripts/qf_signing_ceremony.py` utilizing the offline release key.
-   * Generate signed CBOM (`cbom_alpha_node_template.json`) and publish signed admission receipts.
+   * Execute `scripts/qf_signing_ceremony.py` utilizing the offline release key once personal security Hard Stops clear.
 3. **QF-A6 Hardware Root of Trust Attestation:**
    * Execute `scripts/create_quantumflex_runtime_binding.py` binding node runtime state to Microsoft Pluton TPM 2.0 PCR quotes on `qfx-yoga` and Titan M2 StrongBox on `qfx-pixel`.
 
 ---
 
-## 6. Pillar 5: Capital Preservation & Reserve Invariant ($R \ge O$)
+## 6. Pillar 5: Capital Preservation & Reserve Invariant ($R_{\text{verified liquid}} \ge 6O$)
 
 ### 6.1 The Mathematical Governing Rule
-$$\text{Reserves } (R) \ge \text{Obligations } (O) \times 6\text{ months}$$
+$$R_{\text{verified liquid}} \ge 6 \times \left(O_{\text{household}} + O_{\text{operating}}\right)$$
 
-* **Hard Rule:** Public sales outreach and capital commitments are strictly gated behind having at least 6 months of verified operating and living reserves in place.
-* **Zero Infrastructure Expansion Cost:** No external GPUs, cloud instances, or paid SaaS may be purchased until paid client retainers fund the equipment upfront.
+* **Hard Rule:** Discretionary capital outlays are strictly gated behind having at least 6 months of independently reconciled liquid reserves in place ($\le 30\text{ days}$ reconciliation freshness).
+* **Zero Corporate Overhead (`PA-LLC` Retired as Operational Blocker):** Operating as a sovereign individual researcher/auditor requires `$0.00` in annual corporate franchise fees, commercial insurance, or client acquisition overhead.
 * **Cash Flow Funnel:**
-  1. Complete 1 Research Dossier (\$1,500) $\rightarrow$ allocates 100% to capital reserve pool.
-  2. Deploy 1 Appliance (\$2,500 setup + \$300/mo) $\rightarrow$ hardware funded by client deposit; setup profit funds appliance reserve.
+  1. Complete Bug Bounty Proofs & Public-Good Grant Milestones $\rightarrow$ route 100% of net proceeds to Bucket 1 (Iron Reserve) until $R_{\text{verified liquid}} \ge 6O$.
+  2. Compound surplus peacefully through the Personal Family-Office Intelligence Oracle with zero client obligations.
 
 ---
 
-## 7. Immediate 30-Day Execution Timeline
+## 7. Immediate Sovereign Execution Timeline (`QF-SOVEREIGN`)
 
-| Milestone | Deliverable / Task | Acceptance Gate | Target Date |
+| Milestone | Deliverable / Task | Acceptance Gate | Status |
 |---|---|---|---|
-| **M1: Security Hard Stops** | Apply Pixel September 2026 bulletin (`CVE-2026-58704`); resolve CircleCI/TP-Link/Uber alerts. | Verification log in `docs/audits/` | Week 1 |
-| **M2: Appliance Packaging** | Package Athena + Ollama + Web UI into turnkey setup script (`scripts/provision_appliance.sh`). | `AT-COMM-01`, `02`, `03` pass | Week 2 |
-| **M3: Dossier Pipeline** | Build automated PDF ingestion and Markdown-to-PDF report generator with cryptographic receipts. | `AT-RDOS-01`, `02`, `03` pass | Week 3 |
-| **M4: Commercial Outreach** | Finalize 1-page Appliance Sheet & Sample Dossier for direct presentation to vetted local professional firms. | Review against legal guidelines | Week 4 |
+| **M1: Personal Security Hard Stops** | Apply Pixel September 2026 bulletin (`CVE-2026-58704`); resolve CircleCI/TP-Link/Uber account alerts; reconcile Track 0 $R \ge 6O$ worksheet. | Operator sign-off (`PA-LLC` retired as non-corporate) | Pending Operator |
+| **M2: Sovereign Node & Recovery** | Automated node audit, SQLite backup & restoration drill (`scripts/provision_appliance.sh`). | `40/40` vector parity & integrity check | **COMPLETE** |
+| **M3/M4: Dossier & Independent Verifier** | Automated Markdown/PDF-1.4 dossier pipeline (`scripts/generate_research_dossier.py`) + independent verifier (`scripts/verify_dossier_independent.py`). | `61/61` pytest suite & 500p gate | **COMPLETE** |
+| **M5: Sovereign Bounty & Grant Missions** | Deploy Bug Bounty Proof Template, NLnet Grant Proposal for `pqc-immune-daemon`, and Personal Family-Office Protocol in `sovereign_missions/`. | Zero-client, zero-PII verification | **ACTIVE** |
