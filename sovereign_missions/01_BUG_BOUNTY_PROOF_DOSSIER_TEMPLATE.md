@@ -1,8 +1,8 @@
 # QuantumFlex Sovereign Mission Slot 1: Bug Bounty Proof Dossier & Local Foundry Harness
 
 **Document ID:** `01_BUG_BOUNTY_PROOF_DOSSIER_TEMPLATE`  
-**Repository Path:** `sovereign_missions/01_BUG_BOUNTY_PROOF_DOSSIER_TEMPLATE.md`  
-**Baseline Commit:** `f98c72d` (`origin/main` synchronized — NLnet `2026-11-4af` Recorded; Track 0 Household Reserve Protected Offline; $0.00 Speculative Credit Counted)  
+**Baseline Commit:** `f98c72d` (`origin/main` synchronized — NLnet `2026-11-4af` Application Submitted; $0.00 Grant Funds Received to Date)  
+**Track 0 Financial Truth Status:** OPERATOR PAPER VERIFICATION REQUIRED (Any $40,000 / $5,714 = 7.00 months figures in code/JSON are synthetic test fixtures only, not real bank balances)  
 **Foundry Harness Status:** OPERATIONAL (`solc 0.8.24`, `evm_version = "paris"`, `PoC_EscrowAndDecimalInvariants.t.sol` PASS in 1.29ms with `--fuzz-seed 0x318ffd7`)  
 **Governing Controls:** `QF-BOUNTY-01` (Zero Mainnet Mutation) | `QF-BOUNTY-02` (Deterministic Local `forge test -vvv` Proof) | `QF-BOUNTY-03` (Operator Sign-Off & `QF-OPS-01` Rest Gate)  
 **Zero-Cloud Spend Invariant:** $0.00 External Cloud Inference (`127.0.0.1:11434` Local Athena + Local Anvil/Foundry Only)  
@@ -19,7 +19,7 @@
 | **1. Platform Re-Routing** | [Code4rena announced in 2026](https://code4rena.com/) that it is closing its doors after winding down active contests. | Route active hunting strictly to [Immunefi](https://immunefi.com/bug-bounty/) (persistent high-payout bounties with [Safe Harbor](https://immunefi.com/bug-bounty/immunefi/safe-harbor/)), [Sherlock](https://smartcontractshacking.com/tools/web3-auditing-competitions-and-bug-bounties/sherlock), and [Cantina](https://smartcontractshacking.com/tools/web3-auditing-competitions-and-bug-bounties). | Spend: $0.00; Expected Payout Tier: High / Critical ($10k–$250k+ USDC) | **ROUTE TO IMMUNEFI / SHERLOCK / CANTINA** |
 | **2. Zero Mainnet State Manipulation (`QF-BOUNTY-01`)** | Interacting with live production contracts during PoC validation violates [Immunefi Rules](https://immunefi.com/rules/) and exposes the Operator to legal liability. | All PoC reproductions MUST run exclusively inside local [Foundry (forge test -vvv)](https://www.getfoundry.sh/reference/forge/test) harnesses (`~/Documents/qf/foundry.toml`, `solc 0.8.24`, `paris`). | Mainnet Tx Broadcasts: 0 (Hard-Blocked); Cloud Spend: $0.00 | **VERIFIED (1.29ms Local Pass)** |
 | **3. Three High-Signal Vulnerability Archetypes** | General surface scanning wastes operator hours; focusing on the exact invariant classes already modeled in `QuantumFlex_Core.fst` maximizes hit rate per hour. | Restrict target selection to: (A) Multi-party / Two-Person Escrow & Quorum Invariants, (B) ERC-20 / USDC 6-Decimal (1e6 vs 1e18) Precision Mismatches, and (C) Runtime TOCTOU / State-Transition Ordering Flaws. | Athena Role: client_confidential / public; Max Session: Bounded by `QF-OPS-01` | **LOCK 3 TARGET ARCHETYPES** |
-| **4. Accounting & Reserve Discipline (`QF-CAPITAL-01`)** | Unconfirmed bounty submissions are contingent claims, not liquid cash. | Pending bounty claims carry $0.00 credit toward $R_{\text{verified liquid}} \ge 6(O_{\text{household}} + O_{\text{operating}})$ (7.00 months currently verified: $40,000 / $5,714) until payout settles in reconciled cash/USDC. | Speculative Credit: $0.00; Disclosure Gate: `signed: false` until Operator sign-off | **ENFORCE FAIL-CLOSED ACCOUNTING** |
+| **4. Honest Financial Ground Truth (`QF-CAPITAL-01` / Track 0)** | Software test fixtures ($40,000 / $5,714 = 7.00m) and unapproved grant applications (€40,000 NLnet 2026-11-4af) are not real cash in the bank. | Both pending NLnet grants and pending bug bounties carry $0.00 real cash value until paid out and deposited. Actual household reserve coverage must be verified on your physical Track 0 paper worksheet against real bank statements. | Real Grant/Bounty Cash Settled: $0.00; Repo $40k/$5,714 Figure: Synthetic Test Fixture Only | **ENFORCE REAL-BANK TRUTH** |
 
 ---
 
@@ -224,7 +224,7 @@ Bind all approvals cryptographically to the immutable hash of the proposal param
 - [ ] **`QF-BOUNTY-01` (Zero Live-Network Touch):** Confirmed target PoC ran 100% inside local `forge test` with zero packets sent to live protocol contracts.
 - [ ] **`QF-BOUNTY-02` (Deterministic Reproducibility & Citation Proof):** Confirmed every code reference cites an exact commit SHA, line range, and `chunk_sha256`.
 - [ ] **`QF-PRIVACY-01` (Zero Ambient Data Leakage):** Confirmed `PrivacyFilter` scrubbed the markdown report — zero local host paths, zero local hostnames, and zero internal markers.
-- [ ] **`QF-CAPITAL-01` (Reserve Exclusion):** Pending bounty expected value recorded at $0.00 in liquid reserves until payout settles (7.00 months verified liquid reserve preserved).
+- [ ] **`QF-CAPITAL-01` (Honest Cash Accounting):** Pending bounty and grant claims recorded at $0.00 until actual payout settles in a real bank/USDC account.
 - [ ] **`QF-OPS-01` & `QF-BOUNTY-03` (Operator Rest & Physical Sign-Off):** Confirmed `operator_fatigue_flag == False` and explicit Operator authorization granted prior to external submission.
 
 ---
