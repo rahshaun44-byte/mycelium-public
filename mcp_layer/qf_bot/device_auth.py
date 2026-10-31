@@ -73,42 +73,52 @@ def _load_device_key(device_id: str) -> Optional[ec.EllipticCurvePublicKey]:
 
 def _consume_nonce(nonce: str, now: float) -> bool:
     """
-    Atomically consumes a nonce with cross-worker concurrency safety and restart persistence.
-    Uses an atomic SQLite journal under keys_dir(), with in-memory fallback.
+    Atomically consumes a nonce with in-process thread serialization, cross-worker
+    SQLite WAL concurrency safety, and fail-closed error handling.
     """
     db_path = keys_dir() / "consumed_nonces.sqlite"
-    try:
-        keys_dir().mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(db_path), timeout=30.0)
+    with _nonce_lock:
+        for n, expiry in list(_seen_nonces.items()):
+            if expiry < now:
+                del _seen_nonces[n]
+        cache_key = f"{db_path}:{nonce}"
+        if cache_key in _seen_nonces:
+            return False
+
+        conn: Optional[sqlite3.Connection] = None
         try:
-            with conn:
-                conn.execute("PRAGMA busy_timeout=30000")
-                conn.execute("PRAGMA journal_mode=WAL")
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS consumed_nonces (
-                        nonce TEXT PRIMARY KEY,
-                        expires_at REAL NOT NULL
-                    )
-                """)
+            keys_dir().mkdir(parents=True, exist_ok=True)
+            conn = sqlite3.connect(str(db_path), timeout=30.0, isolation_level=None)
+            conn.execute("PRAGMA busy_timeout=30000")
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS consumed_nonces (
+                    nonce TEXT PRIMARY KEY,
+                    expires_at REAL NOT NULL
+                )
+                """
+            )
+            conn.execute("BEGIN IMMEDIATE")
+            try:
                 conn.execute("DELETE FROM consumed_nonces WHERE expires_at < ?", (now,))
                 conn.execute(
                     "INSERT INTO consumed_nonces (nonce, expires_at) VALUES (?, ?)",
-                    (nonce, now + 2 * MAX_SKEW_SECONDS)
+                    (nonce, now + 2 * MAX_SKEW_SECONDS),
                 )
+                conn.execute("COMMIT")
+            except BaseException:
+                conn.execute("ROLLBACK")
+                raise
+            _seen_nonces[cache_key] = now + 2 * MAX_SKEW_SECONDS
             return True
+        except sqlite3.IntegrityError:
+            return False
+        except (sqlite3.Error, OSError):
+            return False
         finally:
-            conn.close()
-    except sqlite3.IntegrityError:
-        return False
-    except Exception:
-        with _nonce_lock:
-            for n, expiry in list(_seen_nonces.items()):
-                if expiry < now:
-                    del _seen_nonces[n]
-            if nonce in _seen_nonces:
-                return False
-            _seen_nonces[nonce] = now + 2 * MAX_SKEW_SECONDS
-            return True
+            if conn is not None:
+                conn.close()
 
 
 def verify(method: str, path_and_query: str, headers: Dict[str, str], body: bytes,
