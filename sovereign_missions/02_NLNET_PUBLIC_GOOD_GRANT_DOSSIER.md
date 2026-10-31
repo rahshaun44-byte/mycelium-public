@@ -22,7 +22,7 @@ Edge Linux nodes, autonomous local software agents, decentralized validators, an
 
 `pqc-immune-daemon` is a lightweight, zero-cloud, formally verified supervisor and admission membrane that solves both vulnerabilities for commodity Linux devices:
 
-- **Crypto-Agility & Post-Quantum Key Encapsulation:** Enforces NIST FIPS 203 (`ML-KEM-768`) and `FrodoKEM-976-AES` with `X25519` hybrid key encapsulation, paired with detached provenance signatures under NIST FIPS 204 (`ML-DSA-65`) and `Ed25519`.
+- **Crypto-Agility & Post-Quantum Key Encapsulation:** Implements NIST FIPS 203 (`ML-KEM-768`) as the primary key encapsulation mechanism via OpenSSL 3.5, with research agility fallback to `FrodoKEM-976-AES` (ISO/IEC 18033-2) in agility profile. Pair-attested with detached dual-signature provenance under NIST FIPS 204 (`ML-DSA-65`) and `Ed25519`. *(Note: Algorithmic standard compliance; FIPS 140-3 CMVP module certification is not claimed.)*
 - **Formally Verified Decision Core:** A machine-checked F* specification extracted via KaRaMeL to deterministic, zero-dependency C11, guaranteeing that security state transitions (`ACTIVE`, `QUARANTINE`, `RECOVERY`, `COLLAPSE`) can never deadlock, bypass checks, or silently downgrade ciphers.
 - **Descriptor-Bound Runtime Execution (`fexecve`):** Replaces path-based process spawning with Linux `memfd_create` and `fexecve`, cryptographically sealing the anonymous memory file descriptor (`F_SEAL_WRITE`) to ensure that `EXECUTED_FD == VERIFIED_FD` with 100% elimination of binary substitution races.
 - **Zero-Network-Hop OPA WebAssembly Policy Membrane:** Compiles Open Policy Agent (OPA) Rego security assertions into an in-process WebAssembly module, providing sub-millisecond (<0.5ms) policy evaluation without open network sockets or remote API latency.
@@ -46,7 +46,7 @@ The global transition toward Post-Quantum Cryptography (PQC), formalized in NIST
 `pqc-immune-daemon` implements an autonomous, self-healing supervisor control plane that runs locally on the host:
 
 1. **Continuous Inventory:** Periodically constructs a CycloneDX 1.6 Cryptographic Bill of Materials (CBOM) representing all active cryptographic assets, ciphersuites, and parameter sets.
-2. **Declarative Evaluation:** Evaluates the CBOM against declarative Rego policies compiled to WebAssembly. If an algorithm is flagged as toxic, compromised, or deprecated, the daemon executes atomic configuration rollover via `fsync` + `os.replace` and signals worker processes (`SIGHUP`).
+2. **Declarative Evaluation:** Evaluates the CBOM against declarative Rego policies compiled to WebAssembly. The default `fips_strict` profile allowlists NIST FIPS 203/204 algorithms and fails closed (`recommended_fallback=NONE`) on algorithm compromise. The research `agility` profile enables supervised rollover to ISO/IEC 18033-2 `FrodoKEM-976-AES` via `fsync` + `os.replace` with POSIX signal notification (`SIGHUP`). *(Legacy Frodo wire framing 0x02/0x03 was retired; production IPC utilizes native ML-KEM-768 message framing).*
 3. **Atomic Execution Sealing:** Verifies release payloads directly in anonymous memory buffers (`memfd_create`), attaches cryptographic provenance attestations, seals the buffer against write modifications (`F_SEAL_WRITE | F_SEAL_SEAL`), and invokes `fexecve(fd)`.
 
 ---
@@ -55,8 +55,8 @@ The global transition toward Post-Quantum Cryptography (PQC), formalized in NIST
 
 | Capability | OpenSSL 3.5 / liboqs | AppArmor / SELinux | Commercial Cloud EDR | `pqc-immune-daemon` (This Project) |
 | :--- | :--- | :--- | :--- | :--- |
-| **PQC Key Encapsulation (FIPS 203)** | Raw primitives only | None | None | **ML-KEM-768 + FrodoKEM + X25519 Hybrid** |
-| **Post-Quantum Provenance (FIPS 204)** | Primitive bindings | None | RSA / ECDSA only | **Conjunctive Ed25519 + ML-DSA-65 Signatures** |
+| **PQC Key Encapsulation (NIST FIPS 203)** | Raw primitives only | None | None | **Primary ML-KEM-768; ISO 18033-2 FrodoKEM-976 in agility profile** |
+| **Post-Quantum Provenance (NIST FIPS 204)** | Primitive bindings | None | RSA / ECDSA only | **Conjunctive Ed25519 + ML-DSA-65 Signatures** |
 | **Formal State Machine Proofs** | None | None | None | **Machine-checked F* 2026.09 proofs extracted to C11** |
 | **TOCTOU Binary Elimination** | Path-based `execve` | Path-based MAC | Heuristic agent inspection | **Descriptor-Bound `memfd_create` + `fexecve`** |
 | **Policy Engine Architecture** | Hardcoded config | Kernel LSM rules | Cloud API telemetry stream | **In-Process OPA WebAssembly (<0.5ms latency)** |
@@ -128,7 +128,7 @@ The project is structured into four sequential, pay-per-milestone deliverables. 
 - **Grant Allocation:** €10,000  
 - **Public Deliverables:**
   1. Pure in-process WebAssembly policy runtime embedding `membrane_health.rego` without requiring an external HTTP daemon or open network port.
-  2. Complete crypto-agility fallback matrix (`fips_strict` vs `agility` profiles) implementing automatic rollover between `ML-KEM-768`, `FrodoKEM-976`, and `X25519`.
+  2. Complete policy-driven crypto-agility fallback matrix: strict fail-closed enforcement under default `fips_strict` (halting on algorithmic compromise with `recommended_fallback=NONE`), paired with supervised emergency rollover to ISO/IEC 18033-2 `FrodoKEM-976-AES` under the research `agility` profile.
   3. Three-state self-healing circuit breaker with configurable quarantine windows and clean recovery telemetry.
 - **Verification & Acceptance Criteria:**
   - Micro-benchmark proving average policy evaluation latency $< 0.50\text{ ms}$ on commodity x86_64 and aarch64 hardware.
@@ -175,12 +175,12 @@ The core prototype code, tests, and cryptographic verification mechanisms refere
 
 | Artifact / Component | Repository Location | Verification Status |
 | :--- | :--- | :--- |
-| **Supervisor Daemon** | [`pqc-immune-daemon/immune_daemon.py`](file:///home/quant/mycelium/pqc-immune-daemon/immune_daemon.py) | Fully operational |
+| **Supervisor Daemon** | [`pqc-immune-daemon/immune_daemon.py`](file:///home/quant/mycelium/pqc-immune-daemon/immune_daemon.py) | Fully operational prototype |
 | **Rego Policy Bundle** | [`pqc-immune-daemon/membrane_health.rego`](file:///home/quant/mycelium/pqc-immune-daemon/membrane_health.rego) | 100% test coverage |
 | **Supply Chain & Hybrid Attestation** | [`src/admission_receipt.py`](file:///home/quant/mycelium/src/admission_receipt.py) | 550 passed tests |
 | **Economic & Milestone Gates** | [`src/bounty_assurance.py`](file:///home/quant/mycelium/src/bounty_assurance.py) | Verified (`M6-01..M6-07`) |
 | **Independent Verifier** | [`scripts/verify_dossier_independent.py`](file:///home/quant/mycelium/scripts/verify_dossier_independent.py) | Verified offline |
-| **Current Git Commit** | `24fdb77` (`main`) | Clean working tree |
+| **Current Git Commit** | `1dec631` (`main`) | Clean working tree |
 
 ---
 

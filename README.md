@@ -1,6 +1,6 @@
 # Mycelium — QuantumFlex Engine & Coordination Architecture
 
-> **Status:** Research prototype, published for study and review, not for production use. Local tests and source reviews do not establish independent cryptographic validation or whole-system assurance; `fips_strict` is an algorithm policy, not a FIPS 140-3 validation claim. Canonical cryptographic runtime definitions and wire specifications reside in [`quantumflex`](https://github.com/rahshaun44-byte/quantumflex). See [`quantumflex/README.md`](quantumflex/README.md) and [`docs/MLKEM_STRICT_MIGRATION.md`](docs/MLKEM_STRICT_MIGRATION.md).
+> **Status:** Research prototype, published for study and review, not for production use. All experimental post-quantum key establishment modules (FrodoKEM-976 and ML-KEM-768) are formally **retired**. There are no claims of end-to-end post-quantum cryptographic protection, wire-level PQ payload encryption, or FIPS 140-3 validation. Canonical cryptographic runtime definitions and physical silicon evidence reside in [`quantumflex`](https://github.com/rahshaun44-byte/quantumflex). See [`STATUS.md`](STATUS.md) and [`HANDOFF.md`](HANDOFF.md).
 
 ---
 
@@ -8,18 +8,18 @@
 
 **Mycelium** is the coordination, admission, policy enforcement, and telemetry engine for the QuantumFlex architecture. It governs and consumes the standalone [`QuantumFlex::runtime`](quantumflex/README.md) library across mutual TLS (mTLS) boundaries.
 
-The system enforces fail-closed cryptographic state transitions, verifiable audit logging, and automated admission policies:
+The system enforces fail-closed state transitions, verifiable audit logging, and automated admission policies:
 
-- **Host Engine & IPC Server** (`src/core/ipc_server.cpp`): Exposes native post-quantum key establishment over mTLS.
-- **QuantumFlex Runtime Integration**: Admits and links the `QuantumFlex::runtime` package (`quantumflex/`) containing cryptographic primitives and the QFXK wire codec via SHA-256 receipt verification (`cmake/AdmitQuantumFlex.cmake`).
-- **Live Key Exchange Path**: ML-KEM-768 key encapsulation via OpenSSL 3.5 native provider (`MLKem768Engine`) with server HMAC-SHA256 key confirmation.
+- **Host Engine & IPC Server** (`src/core/ipc_server.cpp`): Coordinates node communication over mTLS.
+- **QuantumFlex Runtime Integration**: Admits and links the `QuantumFlex::runtime` package (`quantumflex/`) via SHA-256 receipt verification (`cmake/AdmitQuantumFlex.cmake`).
+- **Cryptographic Retirement**: FrodoKEM-976 and ML-KEM-768 are formally retired. Hand-written Frodo matrix math is unaudited research code quarantined behind `-DQUANTUMFLEX_ENABLE_LEGACY_FRODO_RESEARCH=OFF`.
 - **Fail-Closed Admission Gates**: OPA/Rego-based policy enforcement across runtime and execution boundaries.
 - **Cryptographic Evidence & Provenance**: SHA-256 hash-chained ledger and CycloneDX v1.5 Cryptographic Bill of Materials (CBOM).
 
 **What this is not:**
 - It is **not** a production-ready cryptographic appliance.
-- It does **not** employ a hybrid KEM on the live wire path; legacy FrodoKEM-976 is deprecated research code not selected by the engine.
-- It does **not** encrypt application stream payloads with the ML-KEM shared secret, nor does it override the TLS handshake's negotiated cipher group.
+- It does **not** employ active post-quantum key establishment on the live wire path; FrodoKEM-976 and ML-KEM-768 are formally retired.
+- It does **not** encrypt application stream payloads with post-quantum secrets, nor does it override the TLS handshake's negotiated cipher group.
 - It carries **no** FIPS 140-3 certifications or independent audit seals.
 
 ---

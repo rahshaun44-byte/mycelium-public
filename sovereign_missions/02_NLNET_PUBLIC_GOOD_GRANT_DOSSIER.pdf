@@ -4,7 +4,7 @@
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 2 0 obj
-<< /Length 4575 >>
+<< /Length 4628 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 6) Tj
@@ -37,263 +37,271 @@ BT /F1 9 Tf 54 351 Td (  between the moment signature verification completes and
 BT /F1 9 Tf 54 338 Td (  file into memory.) Tj ET
 BT /F1 9 Tf 54 312 Td (`pqc-immune-daemon` is a lightweight, zero-cloud, formally verified supervisor and) Tj ET
 BT /F1 9 Tf 54 299 Td (  admission membrane that solves both vulnerabilities for commodity Linux devices:) Tj ET
-BT /F1 9 Tf 54 273 Td (- **Crypto-Agility & Post-Quantum Key Encapsulation:** Enforces NIST FIPS 203) Tj ET
-BT /F1 9 Tf 54 260 Td (  \(`ML-KEM-768`\) and `FrodoKEM-976-AES` with `X25519` hybrid key encapsulation, paired with) Tj ET
-BT /F1 9 Tf 54 247 Td (  detached provenance signatures under NIST FIPS 204 \(`ML-DSA-65`\) and `Ed25519`.) Tj ET
-BT /F1 9 Tf 54 234 Td (- **Formally Verified Decision Core:** A machine-checked F* specification extracted via) Tj ET
-BT /F1 9 Tf 54 221 Td (  KaRaMeL to deterministic, zero-dependency C11, guaranteeing that security state) Tj ET
-BT /F1 9 Tf 54 208 Td (  transitions \(`ACTIVE`, `QUARANTINE`, `RECOVERY`, `COLLAPSE`\) can never deadlock, bypass) Tj ET
-BT /F1 9 Tf 54 195 Td (  checks, or silently downgrade ciphers.) Tj ET
-BT /F1 9 Tf 54 182 Td (- **Descriptor-Bound Runtime Execution \(`fexecve`\):** Replaces path-based process spawning) Tj ET
-BT /F1 9 Tf 54 169 Td (  with Linux `memfd_create` and `fexecve`, cryptographically sealing the anonymous memory) Tj ET
-BT /F1 9 Tf 54 156 Td (  file descriptor \(`F_SEAL_WRITE`\) to ensure that `EXECUTED_FD == VERIFIED_FD` with 100%) Tj ET
-BT /F1 9 Tf 54 143 Td (  elimination of binary substitution races.) Tj ET
-BT /F1 9 Tf 54 130 Td (- **Zero-Network-Hop OPA WebAssembly Policy Membrane:** Compiles Open Policy Agent \(OPA\)) Tj ET
-BT /F1 9 Tf 54 117 Td (  Rego security assertions into an in-process WebAssembly module, providing sub-millisecond) Tj ET
-BT /F1 9 Tf 54 104 Td (  \(<0.5ms\) policy evaluation without open network sockets or remote API latency.) Tj ET
-BT /F1 9 Tf 54 78 Td (The entire codebase is published under dual Apache-2.0 / MIT licenses, operates with zero) Tj ET
-BT /F1 9 Tf 54 65 Td (  cloud API dependencies, and runs efficiently on low-cost hardware \(from Raspberry Pi 5 to) Tj ET
+BT /F1 9 Tf 54 273 Td (- **Crypto-Agility & Post-Quantum Key Encapsulation:** Implements NIST FIPS 203) Tj ET
+BT /F1 9 Tf 54 260 Td (  \(`ML-KEM-768`\) as the primary key encapsulation mechanism via OpenSSL 3.5, with research) Tj ET
+BT /F1 9 Tf 54 247 Td (  agility fallback to `FrodoKEM-976-AES` \(ISO/IEC 18033-2\) in agility profile.) Tj ET
+BT /F1 9 Tf 54 234 Td (  Pair-attested with detached dual-signature provenance under NIST FIPS 204 \(`ML-DSA-65`\)) Tj ET
+BT /F1 9 Tf 54 221 Td (  and `Ed25519`. *\(Note: Algorithmic standard compliance; FIPS 140-3 CMVP module) Tj ET
+BT /F1 9 Tf 54 208 Td (  certification is not claimed.\)*) Tj ET
+BT /F1 9 Tf 54 195 Td (- **Formally Verified Decision Core:** A machine-checked F* specification extracted via) Tj ET
+BT /F1 9 Tf 54 182 Td (  KaRaMeL to deterministic, zero-dependency C11, guaranteeing that security state) Tj ET
+BT /F1 9 Tf 54 169 Td (  transitions \(`ACTIVE`, `QUARANTINE`, `RECOVERY`, `COLLAPSE`\) can never deadlock, bypass) Tj ET
+BT /F1 9 Tf 54 156 Td (  checks, or silently downgrade ciphers.) Tj ET
+BT /F1 9 Tf 54 143 Td (- **Descriptor-Bound Runtime Execution \(`fexecve`\):** Replaces path-based process spawning) Tj ET
+BT /F1 9 Tf 54 130 Td (  with Linux `memfd_create` and `fexecve`, cryptographically sealing the anonymous memory) Tj ET
+BT /F1 9 Tf 54 117 Td (  file descriptor \(`F_SEAL_WRITE`\) to ensure that `EXECUTED_FD == VERIFIED_FD` with 100%) Tj ET
+BT /F1 9 Tf 54 104 Td (  elimination of binary substitution races.) Tj ET
+BT /F1 9 Tf 54 91 Td (- **Zero-Network-Hop OPA WebAssembly Policy Membrane:** Compiles Open Policy Agent \(OPA\)) Tj ET
+BT /F1 9 Tf 54 78 Td (  Rego security assertions into an in-process WebAssembly module, providing sub-millisecond) Tj ET
+BT /F1 9 Tf 54 65 Td (  \(<0.5ms\) policy evaluation without open network sockets or remote API latency.) Tj ET
 endstream
 endobj
 3 0 obj
-<< /Length 3898 >>
+<< /Length 4049 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 6) Tj
 ET
-BT /F1 9 Tf 54 728 Td (  refurbished enterprise laptops\).) Tj ET
-BT /F1 9 Tf 54 702 Td (---) Tj ET
-BT /F1 11 Tf 54 676 Td (## 2. Project Description & Ecosystem Context) Tj ET
-BT /F1 9 Tf 54 650 Td (### 2.1 The Problem) Tj ET
-BT /F1 9 Tf 54 624 Td (The global transition toward Post-Quantum Cryptography \(PQC\), formalized in NIST FIPS) Tj ET
-BT /F1 9 Tf 54 611 Td (  203/204/205 and OMB Memorandum M-26-15, mandates rapid modernization of cryptographic) Tj ET
-BT /F1 9 Tf 54 598 Td (  systems. However, real-world deployment on edge systems faces three structural obstacles:) Tj ET
-BT /F1 9 Tf 54 572 Td (- **Algorithmic Rigidity:** Modern Linux services compile cryptographic algorithms directly) Tj ET
-BT /F1 9 Tf 54 559 Td (  into binary dependencies. When a PQC parameter set or mathematical assumption experiences) Tj ET
-BT /F1 9 Tf 54 546 Td (  cryptanalytic degradation, systems cannot pivot dynamically without extensive) Tj ET
-BT /F1 9 Tf 54 533 Td (  recompilation and downtime.) Tj ET
-BT /F1 9 Tf 54 520 Td (- **The TOCTOU Race Condition:** High-integrity edge nodes typically verify GPG/cosign) Tj ET
-BT /F1 9 Tf 54 507 Td (  signatures against files stored on local disks. An unprivileged local attacker or) Tj ET
-BT /F1 9 Tf 54 494 Td (  container escape leveraging inotify or mount namespace manipulation can overwrite the) Tj ET
-BT /F1 9 Tf 54 481 Td (  executable file immediately after validation passes but before the `execve` syscall) Tj ET
-BT /F1 9 Tf 54 468 Td (  executes.) Tj ET
-BT /F1 9 Tf 54 455 Td (- **Proprietary Cloud EDR Centralization:** Commercial Endpoint Detection and Response) Tj ET
-BT /F1 9 Tf 54 442 Td (  \(EDR\) solutions require persistent telemetry exfiltration to centralized corporate) Tj ET
-BT /F1 9 Tf 54 429 Td (  clouds, creating high subscription costs, privacy violations, and single points of) Tj ET
-BT /F1 9 Tf 54 416 Td (  failure that decentralized networks cannot tolerate.) Tj ET
-BT /F1 9 Tf 54 390 Td (### 2.2 The Solution) Tj ET
-BT /F1 9 Tf 54 364 Td (`pqc-immune-daemon` implements an autonomous, self-healing supervisor control plane that) Tj ET
-BT /F1 9 Tf 54 351 Td (  runs locally on the host:) Tj ET
-BT /F1 9 Tf 54 325 Td (1. **Continuous Inventory:** Periodically constructs a CycloneDX 1.6 Cryptographic Bill of) Tj ET
-BT /F1 9 Tf 54 312 Td (  Materials \(CBOM\) representing all active cryptographic assets, ciphersuites, and) Tj ET
-BT /F1 9 Tf 54 299 Td (  parameter sets.) Tj ET
-BT /F1 9 Tf 54 286 Td (2. **Declarative Evaluation:** Evaluates the CBOM against declarative Rego policies) Tj ET
-BT /F1 9 Tf 54 273 Td (  compiled to WebAssembly. If an algorithm is flagged as toxic, compromised, or deprecated,) Tj ET
-BT /F1 9 Tf 54 260 Td (  the daemon executes atomic configuration rollover via `fsync` + `os.replace` and signals) Tj ET
-BT /F1 9 Tf 54 247 Td (  worker processes \(`SIGHUP`\).) Tj ET
-BT /F1 9 Tf 54 234 Td (3. **Atomic Execution Sealing:** Verifies release payloads directly in anonymous memory) Tj ET
-BT /F1 9 Tf 54 221 Td (  buffers \(`memfd_create`\), attaches cryptographic provenance attestations, seals the) Tj ET
-BT /F1 9 Tf 54 208 Td (  buffer against write modifications \(`F_SEAL_WRITE | F_SEAL_SEAL`\), and invokes) Tj ET
-BT /F1 9 Tf 54 195 Td (  `fexecve\(fd\)`.) Tj ET
-BT /F1 9 Tf 54 169 Td (---) Tj ET
-BT /F1 11 Tf 54 143 Td (## 3. Comparison with Existing State of the Art) Tj ET
-BT /F1 9 Tf 54 117 Td (| Capability | OpenSSL 3.5 / liboqs | AppArmor / SELinux | Commercial Cloud EDR |) Tj ET
-BT /F1 9 Tf 54 104 Td (  `pqc-immune-daemon` \(This Project\) |) Tj ET
-BT /F1 9 Tf 54 91 Td (| :--- | :--- | :--- | :--- | :--- |) Tj ET
-BT /F1 9 Tf 54 78 Td (| **PQC Key Encapsulation \(FIPS 203\)** | Raw primitives only | None | None | **ML-KEM-768 +) Tj ET
-BT /F1 9 Tf 54 65 Td (  FrodoKEM + X25519 Hybrid** |) Tj ET
+BT /F1 9 Tf 54 715 Td (The entire codebase is published under dual Apache-2.0 / MIT licenses, operates with zero) Tj ET
+BT /F1 9 Tf 54 702 Td (  cloud API dependencies, and runs efficiently on low-cost hardware \(from Raspberry Pi 5 to) Tj ET
+BT /F1 9 Tf 54 689 Td (  refurbished enterprise laptops\).) Tj ET
+BT /F1 9 Tf 54 663 Td (---) Tj ET
+BT /F1 11 Tf 54 637 Td (## 2. Project Description & Ecosystem Context) Tj ET
+BT /F1 9 Tf 54 611 Td (### 2.1 The Problem) Tj ET
+BT /F1 9 Tf 54 585 Td (The global transition toward Post-Quantum Cryptography \(PQC\), formalized in NIST FIPS) Tj ET
+BT /F1 9 Tf 54 572 Td (  203/204/205 and OMB Memorandum M-26-15, mandates rapid modernization of cryptographic) Tj ET
+BT /F1 9 Tf 54 559 Td (  systems. However, real-world deployment on edge systems faces three structural obstacles:) Tj ET
+BT /F1 9 Tf 54 533 Td (- **Algorithmic Rigidity:** Modern Linux services compile cryptographic algorithms directly) Tj ET
+BT /F1 9 Tf 54 520 Td (  into binary dependencies. When a PQC parameter set or mathematical assumption experiences) Tj ET
+BT /F1 9 Tf 54 507 Td (  cryptanalytic degradation, systems cannot pivot dynamically without extensive) Tj ET
+BT /F1 9 Tf 54 494 Td (  recompilation and downtime.) Tj ET
+BT /F1 9 Tf 54 481 Td (- **The TOCTOU Race Condition:** High-integrity edge nodes typically verify GPG/cosign) Tj ET
+BT /F1 9 Tf 54 468 Td (  signatures against files stored on local disks. An unprivileged local attacker or) Tj ET
+BT /F1 9 Tf 54 455 Td (  container escape leveraging inotify or mount namespace manipulation can overwrite the) Tj ET
+BT /F1 9 Tf 54 442 Td (  executable file immediately after validation passes but before the `execve` syscall) Tj ET
+BT /F1 9 Tf 54 429 Td (  executes.) Tj ET
+BT /F1 9 Tf 54 416 Td (- **Proprietary Cloud EDR Centralization:** Commercial Endpoint Detection and Response) Tj ET
+BT /F1 9 Tf 54 403 Td (  \(EDR\) solutions require persistent telemetry exfiltration to centralized corporate) Tj ET
+BT /F1 9 Tf 54 390 Td (  clouds, creating high subscription costs, privacy violations, and single points of) Tj ET
+BT /F1 9 Tf 54 377 Td (  failure that decentralized networks cannot tolerate.) Tj ET
+BT /F1 9 Tf 54 351 Td (### 2.2 The Solution) Tj ET
+BT /F1 9 Tf 54 325 Td (`pqc-immune-daemon` implements an autonomous, self-healing supervisor control plane that) Tj ET
+BT /F1 9 Tf 54 312 Td (  runs locally on the host:) Tj ET
+BT /F1 9 Tf 54 286 Td (1. **Continuous Inventory:** Periodically constructs a CycloneDX 1.6 Cryptographic Bill of) Tj ET
+BT /F1 9 Tf 54 273 Td (  Materials \(CBOM\) representing all active cryptographic assets, ciphersuites, and) Tj ET
+BT /F1 9 Tf 54 260 Td (  parameter sets.) Tj ET
+BT /F1 9 Tf 54 247 Td (2. **Declarative Evaluation:** Evaluates the CBOM against declarative Rego policies) Tj ET
+BT /F1 9 Tf 54 234 Td (  compiled to WebAssembly. The default `fips_strict` profile allowlists NIST FIPS 203/204) Tj ET
+BT /F1 9 Tf 54 221 Td (  algorithms and fails closed \(`recommended_fallback=NONE`\) on algorithm compromise. The) Tj ET
+BT /F1 9 Tf 54 208 Td (  research `agility` profile enables supervised rollover to ISO/IEC 18033-2) Tj ET
+BT /F1 9 Tf 54 195 Td (  `FrodoKEM-976-AES` via `fsync` + `os.replace` with POSIX signal notification \(`SIGHUP`\).) Tj ET
+BT /F1 9 Tf 54 182 Td (  *\(Legacy Frodo wire framing 0x02/0x03 was retired; production IPC utilizes native) Tj ET
+BT /F1 9 Tf 54 169 Td (  ML-KEM-768 message framing\).*) Tj ET
+BT /F1 9 Tf 54 156 Td (3. **Atomic Execution Sealing:** Verifies release payloads directly in anonymous memory) Tj ET
+BT /F1 9 Tf 54 143 Td (  buffers \(`memfd_create`\), attaches cryptographic provenance attestations, seals the) Tj ET
+BT /F1 9 Tf 54 130 Td (  buffer against write modifications \(`F_SEAL_WRITE | F_SEAL_SEAL`\), and invokes) Tj ET
+BT /F1 9 Tf 54 117 Td (  `fexecve\(fd\)`.) Tj ET
+BT /F1 9 Tf 54 91 Td (---) Tj ET
+BT /F1 11 Tf 54 65 Td (## 3. Comparison with Existing State of the Art) Tj ET
 endstream
 endobj
 4 0 obj
-<< /Length 4193 >>
+<< /Length 4281 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 3 OF 6) Tj
 ET
-BT /F1 9 Tf 54 728 Td (| **Post-Quantum Provenance \(FIPS 204\)** | Primitive bindings | None | RSA / ECDSA only |) Tj ET
-BT /F1 9 Tf 54 715 Td (  **Conjunctive Ed25519 + ML-DSA-65 Signatures** |) Tj ET
-BT /F1 9 Tf 54 702 Td (| **Formal State Machine Proofs** | None | None | None | **Machine-checked F* 2026.09) Tj ET
-BT /F1 9 Tf 54 689 Td (  proofs extracted to C11** |) Tj ET
-BT /F1 9 Tf 54 676 Td (| **TOCTOU Binary Elimination** | Path-based `execve` | Path-based MAC | Heuristic agent) Tj ET
-BT /F1 9 Tf 54 663 Td (  inspection | **Descriptor-Bound `memfd_create` + `fexecve`** |) Tj ET
-BT /F1 9 Tf 54 650 Td (| **Policy Engine Architecture** | Hardcoded config | Kernel LSM rules | Cloud API) Tj ET
-BT /F1 9 Tf 54 637 Td (  telemetry stream | **In-Process OPA WebAssembly \(<0.5ms latency\)** |) Tj ET
-BT /F1 9 Tf 54 624 Td (| **Cryptographic Bill of Materials** | Manual inspection | None | Proprietary dashboard |) Tj ET
-BT /F1 9 Tf 54 611 Td (  **Native CycloneDX 1.6 CBOM with NIST levels** |) Tj ET
-BT /F1 9 Tf 54 598 Td (| **Operating Cost & Cloud Spend** | $0.00 | $0.00 | $15?$60 / node / month | **$0.00 \(Zero) Tj ET
-BT /F1 9 Tf 54 585 Td (  cloud dependencies, runs offline\)** |) Tj ET
-BT /F1 9 Tf 54 559 Td (---) Tj ET
-BT /F1 11 Tf 54 533 Td (## 4. Technical Architecture & Component Breakdown) Tj ET
-BT /F1 9 Tf 54 507 Td (```) Tj ET
-BT /F1 9 Tf 54 494 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 481 Td (?                        pqc-immune-daemon Architecture                  ?) Tj ET
-BT /F1 9 Tf 54 468 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 455 Td (?) Tj ET
-BT /F1 9 Tf 54 442 Td (?????????????????????????????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 429 Td (?                                                               ?) Tj ET
-BT /F1 9 Tf 54 416 Td (????????????????????????????????????????  ????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 403 Td (? Control Plane \(Supervisor\)           ?  ? Data & Execution Plane \(Runtime\)     ?) Tj ET
-BT /F1 9 Tf 54 390 Td (?                                      ?  ?                                      ?) Tj ET
-BT /F1 9 Tf 54 377 Td (? ? CycloneDX 1.6 CBOM Generator       ?  ? ? Anonymous Memory Buffer \(memfd\)    ?) Tj ET
-BT /F1 9 Tf 54 364 Td (? ? OPA Wasm Policy Evaluator          ?  ? ? FIPS 204 ML-DSA-65 / Ed25519 Seal  ?) Tj ET
-BT /F1 9 Tf 54 351 Td (? ? Self-Healing Circuit Breaker       ?  ? ? Kernel Sealing \(F_SEAL_WRITE\)      ?) Tj ET
-BT /F1 9 Tf 54 338 Td (?   \(ACTIVE -> QUARANTINE -> RECOVERY\) ?  ? ? TOCTOU-Free fexecve Loader         ?) Tj ET
-BT /F1 9 Tf 54 325 Td (? ? Atomic Ciphersuite Rollover        ?  ? ? Worker Process Supervision \(POSIX\) ?) Tj ET
-BT /F1 9 Tf 54 312 Td (????????????????????????????????????????  ????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 299 Td (?                                                               ?) Tj ET
-BT /F1 9 Tf 54 286 Td (?????????????????????????????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 273 Td (?) Tj ET
-BT /F1 9 Tf 54 260 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 247 Td (? Formal Assurance: F* 2026.09 Machine-Checked Proofs -> KaRaMeL -> C11   ?) Tj ET
-BT /F1 9 Tf 54 234 Td (? SLSA v1.0 Level 3 Provenance Attestation \(in-toto v1.0 JSON\)           ?) Tj ET
-BT /F1 9 Tf 54 221 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
-BT /F1 9 Tf 54 208 Td (```) Tj ET
-BT /F1 9 Tf 54 182 Td (---) Tj ET
-BT /F1 11 Tf 54 156 Td (## 5. Measurable Technical Milestones & Budget \(?40,000\)) Tj ET
-BT /F1 9 Tf 54 130 Td (The project is structured into four sequential, pay-per-milestone deliverables. Each) Tj ET
-BT /F1 9 Tf 54 117 Td (  milestone concludes with verifiable open-source artifacts, test suites, and cryptographic) Tj ET
-BT /F1 9 Tf 54 104 Td (  receipts.) Tj ET
-BT /F1 9 Tf 54 78 Td (### Milestone 1: Formally Verified Decision Core & C11 Differential Suite) Tj ET
+BT /F1 9 Tf 54 715 Td (| Capability | OpenSSL 3.5 / liboqs | AppArmor / SELinux | Commercial Cloud EDR |) Tj ET
+BT /F1 9 Tf 54 702 Td (  `pqc-immune-daemon` \(This Project\) |) Tj ET
+BT /F1 9 Tf 54 689 Td (| :--- | :--- | :--- | :--- | :--- |) Tj ET
+BT /F1 9 Tf 54 676 Td (| **PQC Key Encapsulation \(NIST FIPS 203\)** | Raw primitives only | None | None | **Primary) Tj ET
+BT /F1 9 Tf 54 663 Td (  ML-KEM-768; ISO 18033-2 FrodoKEM-976 in agility profile** |) Tj ET
+BT /F1 9 Tf 54 650 Td (| **Post-Quantum Provenance \(NIST FIPS 204\)** | Primitive bindings | None | RSA / ECDSA) Tj ET
+BT /F1 9 Tf 54 637 Td (  only | **Conjunctive Ed25519 + ML-DSA-65 Signatures** |) Tj ET
+BT /F1 9 Tf 54 624 Td (| **Formal State Machine Proofs** | None | None | None | **Machine-checked F* 2026.09) Tj ET
+BT /F1 9 Tf 54 611 Td (  proofs extracted to C11** |) Tj ET
+BT /F1 9 Tf 54 598 Td (| **TOCTOU Binary Elimination** | Path-based `execve` | Path-based MAC | Heuristic agent) Tj ET
+BT /F1 9 Tf 54 585 Td (  inspection | **Descriptor-Bound `memfd_create` + `fexecve`** |) Tj ET
+BT /F1 9 Tf 54 572 Td (| **Policy Engine Architecture** | Hardcoded config | Kernel LSM rules | Cloud API) Tj ET
+BT /F1 9 Tf 54 559 Td (  telemetry stream | **In-Process OPA WebAssembly \(<0.5ms latency\)** |) Tj ET
+BT /F1 9 Tf 54 546 Td (| **Cryptographic Bill of Materials** | Manual inspection | None | Proprietary dashboard |) Tj ET
+BT /F1 9 Tf 54 533 Td (  **Native CycloneDX 1.6 CBOM with NIST levels** |) Tj ET
+BT /F1 9 Tf 54 520 Td (| **Operating Cost & Cloud Spend** | $0.00 | $0.00 | $15?$60 / node / month | **$0.00 \(Zero) Tj ET
+BT /F1 9 Tf 54 507 Td (  cloud dependencies, runs offline\)** |) Tj ET
+BT /F1 9 Tf 54 481 Td (---) Tj ET
+BT /F1 11 Tf 54 455 Td (## 4. Technical Architecture & Component Breakdown) Tj ET
+BT /F1 9 Tf 54 429 Td (```) Tj ET
+BT /F1 9 Tf 54 416 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 403 Td (?                        pqc-immune-daemon Architecture                  ?) Tj ET
+BT /F1 9 Tf 54 390 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 377 Td (?) Tj ET
+BT /F1 9 Tf 54 364 Td (?????????????????????????????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 351 Td (?                                                               ?) Tj ET
+BT /F1 9 Tf 54 338 Td (????????????????????????????????????????  ????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 325 Td (? Control Plane \(Supervisor\)           ?  ? Data & Execution Plane \(Runtime\)     ?) Tj ET
+BT /F1 9 Tf 54 312 Td (?                                      ?  ?                                      ?) Tj ET
+BT /F1 9 Tf 54 299 Td (? ? CycloneDX 1.6 CBOM Generator       ?  ? ? Anonymous Memory Buffer \(memfd\)    ?) Tj ET
+BT /F1 9 Tf 54 286 Td (? ? OPA Wasm Policy Evaluator          ?  ? ? FIPS 204 ML-DSA-65 / Ed25519 Seal  ?) Tj ET
+BT /F1 9 Tf 54 273 Td (? ? Self-Healing Circuit Breaker       ?  ? ? Kernel Sealing \(F_SEAL_WRITE\)      ?) Tj ET
+BT /F1 9 Tf 54 260 Td (?   \(ACTIVE -> QUARANTINE -> RECOVERY\) ?  ? ? TOCTOU-Free fexecve Loader         ?) Tj ET
+BT /F1 9 Tf 54 247 Td (? ? Atomic Ciphersuite Rollover        ?  ? ? Worker Process Supervision \(POSIX\) ?) Tj ET
+BT /F1 9 Tf 54 234 Td (????????????????????????????????????????  ????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 221 Td (?                                                               ?) Tj ET
+BT /F1 9 Tf 54 208 Td (?????????????????????????????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 195 Td (?) Tj ET
+BT /F1 9 Tf 54 182 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 169 Td (? Formal Assurance: F* 2026.09 Machine-Checked Proofs -> KaRaMeL -> C11   ?) Tj ET
+BT /F1 9 Tf 54 156 Td (? SLSA v1.0 Level 3 Provenance Attestation \(in-toto v1.0 JSON\)           ?) Tj ET
+BT /F1 9 Tf 54 143 Td (??????????????????????????????????????????????????????????????????????????) Tj ET
+BT /F1 9 Tf 54 130 Td (```) Tj ET
+BT /F1 9 Tf 54 104 Td (---) Tj ET
+BT /F1 11 Tf 54 78 Td (## 5. Measurable Technical Milestones & Budget \(?40,000\)) Tj ET
 endstream
 endobj
 5 0 obj
-<< /Length 4185 >>
+<< /Length 4239 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 4 OF 6) Tj
 ET
-BT /F1 9 Tf 54 728 Td (* **Duration:** 6 Weeks) Tj ET
-BT /F1 9 Tf 54 715 Td (- **Grant Allocation:** ?12,000) Tj ET
-BT /F1 9 Tf 54 702 Td (- **Public Deliverables:**) Tj ET
-BT /F1 9 Tf 54 689 Td (1. Complete machine-checked F* formal specification \(`pqc_state_machine.fst`\) modeling all) Tj ET
-BT /F1 9 Tf 54 676 Td (  state transitions \(`ACTIVE`, `QUARANTINE`, `RECOVERY`, `COLLAPSED`\), proving progress,) Tj ET
-BT /F1 9 Tf 54 663 Td (  non-bypassability, and fail-closed termination.) Tj ET
-BT /F1 9 Tf 54 650 Td (2. KaRaMeL extraction pipeline generating standalone, zero-dependency C11 source code) Tj ET
-BT /F1 9 Tf 54 637 Td (  \(`pqc_core.c` / `pqc_core.h`\).) Tj ET
-BT /F1 9 Tf 54 624 Td (3. Differential fuzzing and parity verification suite running `10,000+` automated test) Tj ET
-BT /F1 9 Tf 54 611 Td (  vectors across Python, C11, and Wasm targets with zero divergence.) Tj ET
-BT /F1 9 Tf 54 598 Td (- **Verification & Acceptance Criteria:**) Tj ET
-BT /F1 9 Tf 54 585 Td (- Automated CI script) Tj ET
-BT /F1 9 Tf 54 572 Td (  [`verify_formal_core.sh`]\(file:///home/quant/mycelium/scripts/verify_formal_core.sh\)) Tj ET
-BT /F1 9 Tf 54 559 Td (  passes cleanly in an isolated container.) Tj ET
-BT /F1 9 Tf 54 546 Td (- Formal proof verification succeeds via F* 2026.09 with zero admitted axioms.) Tj ET
-BT /F1 9 Tf 54 520 Td (### Milestone 2: Descriptor-Bound `fexecve` Runtime Admission Loader) Tj ET
-BT /F1 9 Tf 54 494 Td (* **Duration:** 6 Weeks) Tj ET
-BT /F1 9 Tf 54 481 Td (- **Grant Allocation:** ?12,000) Tj ET
-BT /F1 9 Tf 54 468 Td (- **Public Deliverables:**) Tj ET
-BT /F1 9 Tf 54 455 Td (1. Linux runtime admission binary \(`pqc-exec-bound`\) implementing `memfd_create` anonymous) Tj ET
-BT /F1 9 Tf 54 442 Td (  buffer creation, hybrid cryptographic validation, kernel write sealing \(`fcntl\(fd,) Tj ET
-BT /F1 9 Tf 54 429 Td (  F_ADD_SEALS, F_SEAL_WRITE | F_SEAL_SEAL\)`\), and direct `fexecve` execution.) Tj ET
-BT /F1 9 Tf 54 416 Td (2. Multi-threaded race condition test harness simulating high-frequency inotify-triggered) Tj ET
-BT /F1 9 Tf 54 403 Td (  disk file swaps during execution \(`100%` block rate against TOCTOU substitution\).) Tj ET
-BT /F1 9 Tf 54 390 Td (3. Integration with detached Ed25519 and NIST FIPS 204 ML-DSA-65 signatures.) Tj ET
-BT /F1 9 Tf 54 377 Td (- **Verification & Acceptance Criteria:**) Tj ET
-BT /F1 9 Tf 54 364 Td (- Zero successful binary substitution exploits in `1,000` concurrent race test runs.) Tj ET
-BT /F1 9 Tf 54 351 Td (- Full POSIX compliance on Linux kernels $\\ge 5.15$ with standard glibc and musl) Tj ET
-BT /F1 9 Tf 54 338 Td (  compatibility.) Tj ET
-BT /F1 9 Tf 54 312 Td (### Milestone 3: In-Process OPA WebAssembly Policy Membrane) Tj ET
-BT /F1 9 Tf 54 286 Td (* **Duration:** 5 Weeks) Tj ET
-BT /F1 9 Tf 54 273 Td (- **Grant Allocation:** ?10,000) Tj ET
-BT /F1 9 Tf 54 260 Td (- **Public Deliverables:**) Tj ET
-BT /F1 9 Tf 54 247 Td (1. Pure in-process WebAssembly policy runtime embedding `membrane_health.rego` without) Tj ET
-BT /F1 9 Tf 54 234 Td (  requiring an external HTTP daemon or open network port.) Tj ET
-BT /F1 9 Tf 54 221 Td (2. Complete crypto-agility fallback matrix \(`fips_strict` vs `agility` profiles\)) Tj ET
-BT /F1 9 Tf 54 208 Td (  implementing automatic rollover between `ML-KEM-768`, `FrodoKEM-976`, and `X25519`.) Tj ET
-BT /F1 9 Tf 54 195 Td (3. Three-state self-healing circuit breaker with configurable quarantine windows and clean) Tj ET
-BT /F1 9 Tf 54 182 Td (  recovery telemetry.) Tj ET
-BT /F1 9 Tf 54 169 Td (- **Verification & Acceptance Criteria:**) Tj ET
-BT /F1 9 Tf 54 156 Td (- Micro-benchmark proving average policy evaluation latency $< 0.50\\text{ ms}$ on commodity) Tj ET
-BT /F1 9 Tf 54 143 Td (  x86_64 and aarch64 hardware.) Tj ET
-BT /F1 9 Tf 54 130 Td (- Comprehensive adversarial test suite passing 65+ boundary and fault-injection test cases.) Tj ET
-BT /F1 9 Tf 54 104 Td (### Milestone 4: CycloneDX 1.6 CBOM, SLSA v1.0 Provenance & Independent Verifier) Tj ET
-BT /F1 9 Tf 54 78 Td (* **Duration:** 3 Weeks) Tj ET
-BT /F1 9 Tf 54 65 Td (- **Grant Allocation:** ?6,000) Tj ET
+BT /F1 9 Tf 54 728 Td (The project is structured into four sequential, pay-per-milestone deliverables. Each) Tj ET
+BT /F1 9 Tf 54 715 Td (  milestone concludes with verifiable open-source artifacts, test suites, and cryptographic) Tj ET
+BT /F1 9 Tf 54 702 Td (  receipts.) Tj ET
+BT /F1 9 Tf 54 676 Td (### Milestone 1: Formally Verified Decision Core & C11 Differential Suite) Tj ET
+BT /F1 9 Tf 54 650 Td (* **Duration:** 6 Weeks) Tj ET
+BT /F1 9 Tf 54 637 Td (- **Grant Allocation:** ?12,000) Tj ET
+BT /F1 9 Tf 54 624 Td (- **Public Deliverables:**) Tj ET
+BT /F1 9 Tf 54 611 Td (1. Complete machine-checked F* formal specification \(`pqc_state_machine.fst`\) modeling all) Tj ET
+BT /F1 9 Tf 54 598 Td (  state transitions \(`ACTIVE`, `QUARANTINE`, `RECOVERY`, `COLLAPSED`\), proving progress,) Tj ET
+BT /F1 9 Tf 54 585 Td (  non-bypassability, and fail-closed termination.) Tj ET
+BT /F1 9 Tf 54 572 Td (2. KaRaMeL extraction pipeline generating standalone, zero-dependency C11 source code) Tj ET
+BT /F1 9 Tf 54 559 Td (  \(`pqc_core.c` / `pqc_core.h`\).) Tj ET
+BT /F1 9 Tf 54 546 Td (3. Differential fuzzing and parity verification suite running `10,000+` automated test) Tj ET
+BT /F1 9 Tf 54 533 Td (  vectors across Python, C11, and Wasm targets with zero divergence.) Tj ET
+BT /F1 9 Tf 54 520 Td (- **Verification & Acceptance Criteria:**) Tj ET
+BT /F1 9 Tf 54 507 Td (- Automated CI script) Tj ET
+BT /F1 9 Tf 54 494 Td (  [`verify_formal_core.sh`]\(file:///home/quant/mycelium/scripts/verify_formal_core.sh\)) Tj ET
+BT /F1 9 Tf 54 481 Td (  passes cleanly in an isolated container.) Tj ET
+BT /F1 9 Tf 54 468 Td (- Formal proof verification succeeds via F* 2026.09 with zero admitted axioms.) Tj ET
+BT /F1 9 Tf 54 442 Td (### Milestone 2: Descriptor-Bound `fexecve` Runtime Admission Loader) Tj ET
+BT /F1 9 Tf 54 416 Td (* **Duration:** 6 Weeks) Tj ET
+BT /F1 9 Tf 54 403 Td (- **Grant Allocation:** ?12,000) Tj ET
+BT /F1 9 Tf 54 390 Td (- **Public Deliverables:**) Tj ET
+BT /F1 9 Tf 54 377 Td (1. Linux runtime admission binary \(`pqc-exec-bound`\) implementing `memfd_create` anonymous) Tj ET
+BT /F1 9 Tf 54 364 Td (  buffer creation, hybrid cryptographic validation, kernel write sealing \(`fcntl\(fd,) Tj ET
+BT /F1 9 Tf 54 351 Td (  F_ADD_SEALS, F_SEAL_WRITE | F_SEAL_SEAL\)`\), and direct `fexecve` execution.) Tj ET
+BT /F1 9 Tf 54 338 Td (2. Multi-threaded race condition test harness simulating high-frequency inotify-triggered) Tj ET
+BT /F1 9 Tf 54 325 Td (  disk file swaps during execution \(`100%` block rate against TOCTOU substitution\).) Tj ET
+BT /F1 9 Tf 54 312 Td (3. Integration with detached Ed25519 and NIST FIPS 204 ML-DSA-65 signatures.) Tj ET
+BT /F1 9 Tf 54 299 Td (- **Verification & Acceptance Criteria:**) Tj ET
+BT /F1 9 Tf 54 286 Td (- Zero successful binary substitution exploits in `1,000` concurrent race test runs.) Tj ET
+BT /F1 9 Tf 54 273 Td (- Full POSIX compliance on Linux kernels $\\ge 5.15$ with standard glibc and musl) Tj ET
+BT /F1 9 Tf 54 260 Td (  compatibility.) Tj ET
+BT /F1 9 Tf 54 234 Td (### Milestone 3: In-Process OPA WebAssembly Policy Membrane) Tj ET
+BT /F1 9 Tf 54 208 Td (* **Duration:** 5 Weeks) Tj ET
+BT /F1 9 Tf 54 195 Td (- **Grant Allocation:** ?10,000) Tj ET
+BT /F1 9 Tf 54 182 Td (- **Public Deliverables:**) Tj ET
+BT /F1 9 Tf 54 169 Td (1. Pure in-process WebAssembly policy runtime embedding `membrane_health.rego` without) Tj ET
+BT /F1 9 Tf 54 156 Td (  requiring an external HTTP daemon or open network port.) Tj ET
+BT /F1 9 Tf 54 143 Td (2. Complete policy-driven crypto-agility fallback matrix: strict fail-closed enforcement) Tj ET
+BT /F1 9 Tf 54 130 Td (  under default `fips_strict` \(halting on algorithmic compromise with) Tj ET
+BT /F1 9 Tf 54 117 Td (  `recommended_fallback=NONE`\), paired with supervised emergency rollover to ISO/IEC) Tj ET
+BT /F1 9 Tf 54 104 Td (  18033-2 `FrodoKEM-976-AES` under the research `agility` profile.) Tj ET
+BT /F1 9 Tf 54 91 Td (3. Three-state self-healing circuit breaker with configurable quarantine windows and clean) Tj ET
+BT /F1 9 Tf 54 78 Td (  recovery telemetry.) Tj ET
+BT /F1 9 Tf 54 65 Td (- **Verification & Acceptance Criteria:**) Tj ET
 endstream
 endobj
 6 0 obj
-<< /Length 4329 >>
+<< /Length 4061 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 5 OF 6) Tj
 ET
-BT /F1 9 Tf 54 728 Td (- **Public Deliverables:**) Tj ET
-BT /F1 9 Tf 54 715 Td (1. Standalone CycloneDX 1.6 CBOM generator mapping all cryptographic algorithms, parameter) Tj ET
-BT /F1 9 Tf 54 702 Td (  sets, OIDs, and NIST quantum security levels.) Tj ET
-BT /F1 9 Tf 54 689 Td (2. Signed SLSA v1.0 Level 3 build provenance attestation generator binding git commits,) Tj ET
-BT /F1 9 Tf 54 676 Td (  toolchain hashes, and release digests.) Tj ET
-BT /F1 9 Tf 54 663 Td (3. Standalone offline verification script) Tj ET
-BT /F1 9 Tf 54 650 Td (  \([`verify_dossier_independent.py`]\(file:///home/quant/mycelium/scripts/verify_dossier_inde) Tj ET
-BT /F1 9 Tf 54 637 Td (  pendent.py\)\) enabling any third-party auditor to verify release integrity without) Tj ET
-BT /F1 9 Tf 54 624 Td (  proprietary dependencies.) Tj ET
-BT /F1 9 Tf 54 611 Td (4. Packaging and distribution recipes for Debian/Ubuntu \(`.deb`\), Alpine Linux \(`apk`\), and) Tj ET
-BT /F1 9 Tf 54 598 Td (  container images.) Tj ET
-BT /F1 9 Tf 54 585 Td (- **Verification & Acceptance Criteria:**) Tj ET
-BT /F1 9 Tf 54 572 Td (- Bit-for-bit reproducible build verified across two independent build environments.) Tj ET
-BT /F1 9 Tf 54 559 Td (- Clean audit pass against all 10 adversarial vectors \(`TV-M6C-01..10`\).) Tj ET
-BT /F1 9 Tf 54 533 Td (---) Tj ET
-BT /F1 11 Tf 54 507 Td (## 6. Public Good & Community Impact) Tj ET
-BT /F1 9 Tf 54 481 Td (- **Open Source Commitment:** All project outputs are published under OSI-approved) Tj ET
-BT /F1 9 Tf 54 468 Td (  permissive licenses \(Apache-2.0 and MIT\) with no proprietary commercial extensions or) Tj ET
-BT /F1 9 Tf 54 455 Td (  closed-source enterprise tiers.) Tj ET
-BT /F1 9 Tf 54 442 Td (- **Democratic Security Access:** Provides military-grade, post-quantum runtime security to) Tj ET
-BT /F1 9 Tf 54 429 Td (  resource-constrained public institutions, hospitals, municipal networks, non-profit) Tj ET
-BT /F1 9 Tf 54 416 Td (  organizations, and human-rights activists who cannot afford proprietary cloud EDR) Tj ET
-BT /F1 9 Tf 54 403 Td (  subscriptions.) Tj ET
-BT /F1 9 Tf 54 390 Td (- **Standards Contribution:** Reference implementation and operational feedback contributed) Tj ET
-BT /F1 9 Tf 54 377 Td (  to ongoing OpenSSF, IETF, and CycloneDX post-quantum standardization working groups.) Tj ET
-BT /F1 9 Tf 54 364 Td (- **Zero Environmental & Financial Waste:** Requires zero expensive cloud LLM or API) Tj ET
-BT /F1 9 Tf 54 351 Td (  subscriptions \($0.00 cloud spend\); designed to run efficiently on refurbished or legacy) Tj ET
-BT /F1 9 Tf 54 338 Td (  hardware.) Tj ET
-BT /F1 9 Tf 54 312 Td (---) Tj ET
-BT /F1 11 Tf 54 286 Td (## 7. Operational Governance & Financial Discipline) Tj ET
-BT /F1 9 Tf 54 260 Td (This grant proposal adheres strictly to the **QuantumFlex Sovereign Operating) Tj ET
-BT /F1 9 Tf 54 247 Td (  Constitution**:) Tj ET
-BT /F1 9 Tf 54 221 Td (1. **Zero Corporate Gravity:** Applied as an independent individual FOSS researcher. No) Tj ET
-BT /F1 9 Tf 54 208 Td (  corporate overhead, no venture capital, no sales obligations, and no shareholder dilution.) Tj ET
-BT /F1 9 Tf 54 195 Td (2. **Operator First & Mutual-Service Covenant \(`QF-OPS-01`\):** Workload is strictly bounded) Tj ET
-BT /F1 9 Tf 54 182 Td (  to sustainable engineering sessions \($\\le 20\\text{ hours/week}$\), preserving personal) Tj ET
-BT /F1 9 Tf 54 169 Td (  health, family life, and ongoing coursework commitments.) Tj ET
-BT /F1 9 Tf 54 156 Td (3. **The Golden Financial Invariant \(`QF-CAPITAL-01`\):** Liquid household reserves) Tj ET
-BT /F1 9 Tf 54 143 Td (  \($R_{\\text{verified liquid}} \\ge 6O$\) are maintained at all times. In accordance with) Tj ET
-BT /F1 9 Tf 54 130 Td (  strict accounting rules, **unsettled or pending grant milestones are strictly excluded) Tj ET
-BT /F1 9 Tf 54 117 Td (  from liquid reserve calculations** until funds are disbursed and settled in cash.) Tj ET
-BT /F1 9 Tf 54 104 Td (4. **Tax Reserve Set-Aside:** A mandatory 30% tax reserve is immediately set aside from) Tj ET
-BT /F1 9 Tf 54 91 Td (  each settled milestone payment into a designated tax reserve buffer, with the remaining) Tj ET
-BT /F1 9 Tf 54 78 Td (  net funds routed to sovereign infrastructure reinvestment.) Tj ET
+BT /F1 9 Tf 54 728 Td (- Micro-benchmark proving average policy evaluation latency $< 0.50\\text{ ms}$ on commodity) Tj ET
+BT /F1 9 Tf 54 715 Td (  x86_64 and aarch64 hardware.) Tj ET
+BT /F1 9 Tf 54 702 Td (- Comprehensive adversarial test suite passing 65+ boundary and fault-injection test cases.) Tj ET
+BT /F1 9 Tf 54 676 Td (### Milestone 4: CycloneDX 1.6 CBOM, SLSA v1.0 Provenance & Independent Verifier) Tj ET
+BT /F1 9 Tf 54 650 Td (* **Duration:** 3 Weeks) Tj ET
+BT /F1 9 Tf 54 637 Td (- **Grant Allocation:** ?6,000) Tj ET
+BT /F1 9 Tf 54 624 Td (- **Public Deliverables:**) Tj ET
+BT /F1 9 Tf 54 611 Td (1. Standalone CycloneDX 1.6 CBOM generator mapping all cryptographic algorithms, parameter) Tj ET
+BT /F1 9 Tf 54 598 Td (  sets, OIDs, and NIST quantum security levels.) Tj ET
+BT /F1 9 Tf 54 585 Td (2. Signed SLSA v1.0 Level 3 build provenance attestation generator binding git commits,) Tj ET
+BT /F1 9 Tf 54 572 Td (  toolchain hashes, and release digests.) Tj ET
+BT /F1 9 Tf 54 559 Td (3. Standalone offline verification script) Tj ET
+BT /F1 9 Tf 54 546 Td (  \([`verify_dossier_independent.py`]\(file:///home/quant/mycelium/scripts/verify_dossier_inde) Tj ET
+BT /F1 9 Tf 54 533 Td (  pendent.py\)\) enabling any third-party auditor to verify release integrity without) Tj ET
+BT /F1 9 Tf 54 520 Td (  proprietary dependencies.) Tj ET
+BT /F1 9 Tf 54 507 Td (4. Packaging and distribution recipes for Debian/Ubuntu \(`.deb`\), Alpine Linux \(`apk`\), and) Tj ET
+BT /F1 9 Tf 54 494 Td (  container images.) Tj ET
+BT /F1 9 Tf 54 481 Td (- **Verification & Acceptance Criteria:**) Tj ET
+BT /F1 9 Tf 54 468 Td (- Bit-for-bit reproducible build verified across two independent build environments.) Tj ET
+BT /F1 9 Tf 54 455 Td (- Clean audit pass against all 10 adversarial vectors \(`TV-M6C-01..10`\).) Tj ET
+BT /F1 9 Tf 54 429 Td (---) Tj ET
+BT /F1 11 Tf 54 403 Td (## 6. Public Good & Community Impact) Tj ET
+BT /F1 9 Tf 54 377 Td (- **Open Source Commitment:** All project outputs are published under OSI-approved) Tj ET
+BT /F1 9 Tf 54 364 Td (  permissive licenses \(Apache-2.0 and MIT\) with no proprietary commercial extensions or) Tj ET
+BT /F1 9 Tf 54 351 Td (  closed-source enterprise tiers.) Tj ET
+BT /F1 9 Tf 54 338 Td (- **Democratic Security Access:** Provides military-grade, post-quantum runtime security to) Tj ET
+BT /F1 9 Tf 54 325 Td (  resource-constrained public institutions, hospitals, municipal networks, non-profit) Tj ET
+BT /F1 9 Tf 54 312 Td (  organizations, and human-rights activists who cannot afford proprietary cloud EDR) Tj ET
+BT /F1 9 Tf 54 299 Td (  subscriptions.) Tj ET
+BT /F1 9 Tf 54 286 Td (- **Standards Contribution:** Reference implementation and operational feedback contributed) Tj ET
+BT /F1 9 Tf 54 273 Td (  to ongoing OpenSSF, IETF, and CycloneDX post-quantum standardization working groups.) Tj ET
+BT /F1 9 Tf 54 260 Td (- **Zero Environmental & Financial Waste:** Requires zero expensive cloud LLM or API) Tj ET
+BT /F1 9 Tf 54 247 Td (  subscriptions \($0.00 cloud spend\); designed to run efficiently on refurbished or legacy) Tj ET
+BT /F1 9 Tf 54 234 Td (  hardware.) Tj ET
+BT /F1 9 Tf 54 208 Td (---) Tj ET
+BT /F1 11 Tf 54 182 Td (## 7. Operational Governance & Financial Discipline) Tj ET
+BT /F1 9 Tf 54 156 Td (This grant proposal adheres strictly to the **QuantumFlex Sovereign Operating) Tj ET
+BT /F1 9 Tf 54 143 Td (  Constitution**:) Tj ET
+BT /F1 9 Tf 54 117 Td (1. **Zero Corporate Gravity:** Applied as an independent individual FOSS researcher. No) Tj ET
+BT /F1 9 Tf 54 104 Td (  corporate overhead, no venture capital, no sales obligations, and no shareholder dilution.) Tj ET
+BT /F1 9 Tf 54 91 Td (2. **Operator First & Mutual-Service Covenant \(`QF-OPS-01`\):** Workload is strictly bounded) Tj ET
+BT /F1 9 Tf 54 78 Td (  to sustainable engineering sessions \($\\le 20\\text{ hours/week}$\), preserving personal) Tj ET
+BT /F1 9 Tf 54 65 Td (  health, family life, and ongoing coursework commitments.) Tj ET
 endstream
 endobj
 7 0 obj
-<< /Length 2210 >>
+<< /Length 3019 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 6 OF 6) Tj
 ET
-BT /F1 9 Tf 54 728 Td (---) Tj ET
-BT /F1 11 Tf 54 702 Td (## 8. Verification Evidence & Pinned Manifest) Tj ET
-BT /F1 9 Tf 54 676 Td (The core prototype code, tests, and cryptographic verification mechanisms referenced in) Tj ET
-BT /F1 9 Tf 54 663 Td (  this dossier are currently implemented and verified in the QuantumFlex repository:) Tj ET
-BT /F1 9 Tf 54 637 Td (| Artifact / Component | Repository Location | Verification Status |) Tj ET
-BT /F1 9 Tf 54 624 Td (| :--- | :--- | :--- |) Tj ET
-BT /F1 9 Tf 54 611 Td (| **Supervisor Daemon** |) Tj ET
-BT /F1 9 Tf 54 598 Td (  [`pqc-immune-daemon/immune_daemon.py`]\(file:///home/quant/mycelium/pqc-immune-daemon/immun) Tj ET
-BT /F1 9 Tf 54 585 Td (  e_daemon.py\) | Fully operational |) Tj ET
-BT /F1 9 Tf 54 572 Td (| **Rego Policy Bundle** |) Tj ET
-BT /F1 9 Tf 54 559 Td (  [`pqc-immune-daemon/membrane_health.rego`]\(file:///home/quant/mycelium/pqc-immune-daemon/m) Tj ET
-BT /F1 9 Tf 54 546 Td (  embrane_health.rego\) | 100% test coverage |) Tj ET
-BT /F1 9 Tf 54 533 Td (| **Supply Chain & Hybrid Attestation** |) Tj ET
-BT /F1 9 Tf 54 520 Td (  [`src/admission_receipt.py`]\(file:///home/quant/mycelium/src/admission_receipt.py\) | 550) Tj ET
-BT /F1 9 Tf 54 507 Td (  passed tests |) Tj ET
-BT /F1 9 Tf 54 494 Td (| **Economic & Milestone Gates** |) Tj ET
-BT /F1 9 Tf 54 481 Td (  [`src/bounty_assurance.py`]\(file:///home/quant/mycelium/src/bounty_assurance.py\) |) Tj ET
-BT /F1 9 Tf 54 468 Td (  Verified \(`M6-01..M6-07`\) |) Tj ET
-BT /F1 9 Tf 54 455 Td (| **Independent Verifier** |) Tj ET
-BT /F1 9 Tf 54 442 Td (  [`scripts/verify_dossier_independent.py`]\(file:///home/quant/mycelium/scripts/verify_dossi) Tj ET
-BT /F1 9 Tf 54 429 Td (  er_independent.py\) | Verified offline |) Tj ET
-BT /F1 9 Tf 54 416 Td (| **Current Git Commit** | `24fdb77` \(`main`\) | Clean working tree |) Tj ET
-BT /F1 9 Tf 54 390 Td (---) Tj ET
-BT /F1 9 Tf 54 364 Td (*Submitted for Operator Attestation & Public-Good Dispatch.*) Tj ET
-BT /F1 9 Tf 54 351 Td (*Architect: Rahshaun Chambers \(Rocky\)*) Tj ET
-BT /F1 9 Tf 54 338 Td (*QuantumFlex Autonomous Systems & Applied Cryptography*) Tj ET
+BT /F1 9 Tf 54 728 Td (3. **The Golden Financial Invariant \(`QF-CAPITAL-01`\):** Liquid household reserves) Tj ET
+BT /F1 9 Tf 54 715 Td (  \($R_{\\text{verified liquid}} \\ge 6O$\) are maintained at all times. In accordance with) Tj ET
+BT /F1 9 Tf 54 702 Td (  strict accounting rules, **unsettled or pending grant milestones are strictly excluded) Tj ET
+BT /F1 9 Tf 54 689 Td (  from liquid reserve calculations** until funds are disbursed and settled in cash.) Tj ET
+BT /F1 9 Tf 54 676 Td (4. **Tax Reserve Set-Aside:** A mandatory 30% tax reserve is immediately set aside from) Tj ET
+BT /F1 9 Tf 54 663 Td (  each settled milestone payment into a designated tax reserve buffer, with the remaining) Tj ET
+BT /F1 9 Tf 54 650 Td (  net funds routed to sovereign infrastructure reinvestment.) Tj ET
+BT /F1 9 Tf 54 624 Td (---) Tj ET
+BT /F1 11 Tf 54 598 Td (## 8. Verification Evidence & Pinned Manifest) Tj ET
+BT /F1 9 Tf 54 572 Td (The core prototype code, tests, and cryptographic verification mechanisms referenced in) Tj ET
+BT /F1 9 Tf 54 559 Td (  this dossier are currently implemented and verified in the QuantumFlex repository:) Tj ET
+BT /F1 9 Tf 54 533 Td (| Artifact / Component | Repository Location | Verification Status |) Tj ET
+BT /F1 9 Tf 54 520 Td (| :--- | :--- | :--- |) Tj ET
+BT /F1 9 Tf 54 507 Td (| **Supervisor Daemon** |) Tj ET
+BT /F1 9 Tf 54 494 Td (  [`pqc-immune-daemon/immune_daemon.py`]\(file:///home/quant/mycelium/pqc-immune-daemon/immun) Tj ET
+BT /F1 9 Tf 54 481 Td (  e_daemon.py\) | Fully operational prototype |) Tj ET
+BT /F1 9 Tf 54 468 Td (| **Rego Policy Bundle** |) Tj ET
+BT /F1 9 Tf 54 455 Td (  [`pqc-immune-daemon/membrane_health.rego`]\(file:///home/quant/mycelium/pqc-immune-daemon/m) Tj ET
+BT /F1 9 Tf 54 442 Td (  embrane_health.rego\) | 100% test coverage |) Tj ET
+BT /F1 9 Tf 54 429 Td (| **Supply Chain & Hybrid Attestation** |) Tj ET
+BT /F1 9 Tf 54 416 Td (  [`src/admission_receipt.py`]\(file:///home/quant/mycelium/src/admission_receipt.py\) | 550) Tj ET
+BT /F1 9 Tf 54 403 Td (  passed tests |) Tj ET
+BT /F1 9 Tf 54 390 Td (| **Economic & Milestone Gates** |) Tj ET
+BT /F1 9 Tf 54 377 Td (  [`src/bounty_assurance.py`]\(file:///home/quant/mycelium/src/bounty_assurance.py\) |) Tj ET
+BT /F1 9 Tf 54 364 Td (  Verified \(`M6-01..M6-07`\) |) Tj ET
+BT /F1 9 Tf 54 351 Td (| **Independent Verifier** |) Tj ET
+BT /F1 9 Tf 54 338 Td (  [`scripts/verify_dossier_independent.py`]\(file:///home/quant/mycelium/scripts/verify_dossi) Tj ET
+BT /F1 9 Tf 54 325 Td (  er_independent.py\) | Verified offline |) Tj ET
+BT /F1 9 Tf 54 312 Td (| **Current Git Commit** | `1dec631` \(`main`\) | Clean working tree |) Tj ET
+BT /F1 9 Tf 54 286 Td (---) Tj ET
+BT /F1 9 Tf 54 260 Td (*Submitted for Operator Attestation & Public-Good Dispatch.*) Tj ET
+BT /F1 9 Tf 54 247 Td (*Architect: Rahshaun Chambers \(Rocky\)*) Tj ET
+BT /F1 9 Tf 54 234 Td (*QuantumFlex Autonomous Systems & Applied Cryptography*) Tj ET
 endstream
 endobj
 8 0 obj
@@ -325,21 +333,21 @@ xref
 0000000000 65535 f 
 0000000015 00000 n 
 0000000083 00000 n 
-0000004710 00000 n 
-0000008660 00000 n 
-0000012905 00000 n 
-0000017142 00000 n 
-0000021523 00000 n 
-0000023785 00000 n 
-0000023912 00000 n 
-0000024039 00000 n 
-0000024167 00000 n 
-0000024295 00000 n 
-0000024423 00000 n 
-0000024551 00000 n 
-0000024643 00000 n 
+0000004763 00000 n 
+0000008864 00000 n 
+0000013197 00000 n 
+0000017488 00000 n 
+0000021601 00000 n 
+0000024672 00000 n 
+0000024799 00000 n 
+0000024926 00000 n 
+0000025054 00000 n 
+0000025182 00000 n 
+0000025310 00000 n 
+0000025438 00000 n 
+0000025530 00000 n 
 trailer
 << /Size 16 /Root 15 0 R >>
 startxref
-24694
+25581
 %%EOF

@@ -98,7 +98,7 @@
       "status": "PROPOSAL_READY_FOR_OPERATOR_SIGN_OFF",
       "target_scope": "pqc-immune-daemon (ML-KEM-768 / FrodoKEM, F* -> C11 Core, fexecve TOCTOU Binding, OPA Wasm)",
       "dossier_id": "QF-GRANT-NLNET-2026-001",
-      "corpus_merkle_root_sha256": "6b7d089cf19e5a36af6b03d6dc4d6f927eddfd3ec06772389fac4f17e4d6f028",
+      "corpus_merkle_root_sha256": "9c573b5649d8e09d66aeaf42f0e2543cf03d21c3b513908d7760ed3eb4654dcf",
       "operator_deep_work_hours": 2.0,
       "grant_milestone_payout_usd": null,
       "tax_reserve_set_aside_usd": null,
