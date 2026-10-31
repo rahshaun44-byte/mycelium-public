@@ -1,6 +1,6 @@
 {
   "dossier_id": "QF-RDOS-20261030-001",
-  "generated_at": "2026-10-31T02:28:41Z",
+  "generated_at": "2026-10-31T06:31:45Z",
   "git_commit": "0b7c8ab7d5fcbc6e4268ced4b49766a152128fb7",
   "host": {
     "hostname": "quant-Yoga-7-2-in-1-14AKP10",
@@ -10,14 +10,14 @@
   "performance": {
     "pages_ingested": 5,
     "chunks_indexed": 4,
-    "elapsed_seconds": 0.0008,
-    "throughput_pages_per_minute": 360837.14,
+    "elapsed_seconds": 0.0004,
+    "throughput_pages_per_minute": 832653.33,
     "at_rdos_01_sla_pass": true
   },
   "provenance": {
-    "dossier_sha256": "4236f220eb4ba227571f0b1d0dcaf5640932da1a0081e6afcbe00509f8b40592",
+    "dossier_sha256": "75bcbe52d00523e630008043cfa910c3addac5dcc6e2b8bbb85543500d476f5f",
     "dossier_pdf_path": "/home/quant/mycelium/build_check/dossiers/QF-RDOS-20261030-001.pdf",
-    "dossier_pdf_sha256": "8c3a323387b16519a755f83dffbd1a7e2e892e8cdd64b6d86f3133487b66506e",
+    "dossier_pdf_sha256": "d04902e1dec4dae6eae7c677c3d1513800cb7365eedd706da50270e397a90b1c",
     "preserved_corpus_snapshot_path": "/home/quant/mycelium/build_check/dossiers/QF-RDOS-20261030-001_corpus_snapshot.json",
     "corpus_merkle_root_sha256": "9efdda9e6d9745f3bcfcebeecbacf7606236411e0eba659567b9648b8721bf95",
     "cbom_reference": "cbom_alpha_node_template.json",

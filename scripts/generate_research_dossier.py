@@ -621,8 +621,9 @@ def generate_dossier_pdf(markdown_body: str, pdf_path: Path) -> str:
         font_size = 13 if line.startswith("# ") else (11 if line.startswith("## ") else 9)
         width = 76 if font_size >= 11 else 92
         while len(line) > width:
-            split_idx = line.rfind(" ", 0, width)
-            if split_idx <= 0:
+            indent_len = len(line) - len(line.lstrip())
+            split_idx = line.rfind(" ", indent_len, width)
+            if split_idx <= indent_len:
                 split_idx = width
             wrapped_lines.append((line[:split_idx], font_size))
             line = "  " + line[split_idx:].lstrip()
