@@ -102,28 +102,55 @@ void test_differential_fsm() {
                         std::abort();
                     }
 
-                    // Security Theorem Invariant: Absorbing Collapse
+                    // Security Theorem Invariant: Absorbing Collapse (Theorem 1 & 5c)
                     if (cur == QF_STATE_COLLAPSED) {
                         assert(ext_res.next_state == StateCollapsed);
                         assert(ext_res.permitted == false);
                     }
 
-                    // Security Theorem Invariant: Quarantine error never active
+                    // Security Theorem Invariant: Quarantine error never active (Theorem 2)
                     if (cur == QF_STATE_QUARANTINE && ver != QF_VERDICT_COMPLIANT) {
                         assert(ext_res.next_state != StateActive);
                         assert(ext_res.permitted == false);
                     }
 
-                    // Security Theorem Invariant: Quarantine compliant routes to Recovery
+                    // Security Theorem Invariant: Quarantine compliant routes to Recovery (Theorem 3)
                     if (cur == QF_STATE_QUARANTINE && ver == QF_VERDICT_COMPLIANT) {
                         assert(ext_res.next_state == StateRecovery);
                         assert(ext_res.permitted == false);
                     }
 
-                    // Security Theorem Invariant: Recovery requires operator credentials
+                    // Security Theorem Invariant: Recovery requires operator credentials (Theorem 4 & 5b)
                     if (cur == QF_STATE_RECOVERY && crd == QF_CRED_NONE) {
                         assert(ext_res.next_state != StateActive);
                         assert(ext_res.permitted == false);
+                    }
+
+                    // Security Theorem Invariant: Quarantine never permitted (Theorem 5a)
+                    if (cur == QF_STATE_QUARANTINE) {
+                        assert(ext_res.permitted == false);
+                    }
+
+                    // Security Theorem Invariant: Permission implies compliance and auth (Theorem 5d & 5e)
+                    if (ext_res.permitted) {
+                        assert(ver == QF_VERDICT_COMPLIANT);
+                        assert(cur == QF_STATE_ACTIVE || cur == QF_STATE_UNINITIALIZED ||
+                               (cur == QF_STATE_RECOVERY && (crd == QF_CRED_OPERATOR_ATTESTATION || crd == QF_CRED_TWO_MAN_ATTESTATION)));
+                    }
+                    if (ext_res.next_state == StateActive) {
+                        assert(ver == QF_VERDICT_COMPLIANT);
+                        assert(cur == QF_STATE_ACTIVE || cur == QF_STATE_UNINITIALIZED ||
+                               (cur == QF_STATE_RECOVERY && (crd == QF_CRED_OPERATOR_ATTESTATION || crd == QF_CRED_TWO_MAN_ATTESTATION)));
+                    }
+
+                    // Security Theorem Invariant: Retry monotonicity and bounded ceiling (Theorem 5f & 5g)
+                    if (cur == QF_STATE_QUARANTINE && (ver == QF_VERDICT_DEGRADED || ver == QF_VERDICT_SUPERVISOR_UNREACHABLE)) {
+                        if (ret < QF_MAX_QUARANTINE_RETRIES) {
+                            assert(ext_res.retries_out == (uint16_t)(ret + 1));
+                            assert(ext_res.next_state == StateQuarantine);
+                        } else {
+                            assert(ext_res.next_state == StateCollapsed);
+                        }
                     }
 
                     vector_count++;

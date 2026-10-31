@@ -156,6 +156,68 @@ val theorem_toxic_verdict_always_collapses :
                   r.next_state == StateCollapsed /\ r.permitted == false))
 let theorem_toxic_verdict_always_collapses current cred retries = ()
 
+(* Theorem 5a: State Quarantine Never Grants Operational Permission *)
+val theorem_quarantine_never_permitted :
+  verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (let r = step_fsm StateQuarantine verdict cred retries in
+         r.permitted == false)
+let theorem_quarantine_never_permitted verdict cred retries = ()
+
+(* Theorem 5b: State Recovery Without Operator Credentials Never Grants Operational Permission *)
+val theorem_recovery_never_permitted_without_auth :
+  verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (requires (cred == CredNone))
+        (ensures (let r = step_fsm StateRecovery verdict cred retries in
+                  r.permitted == false))
+let theorem_recovery_never_permitted_without_auth verdict cred retries = ()
+
+(* Theorem 5c: State Collapsed Never Grants Operational Permission *)
+val theorem_collapsed_never_permitted :
+  verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (let r = step_fsm StateCollapsed verdict cred retries in
+         r.permitted == false)
+let theorem_collapsed_never_permitted verdict cred retries = ()
+
+(* Theorem 5d: Operational Permission Implies Compliance and Authorization *)
+val theorem_active_requires_compliance_and_authorization :
+  current:engine_state -> verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (let r = step_fsm current verdict cred retries in
+         r.permitted == true ==>
+           (verdict == VerdictCompliant /\
+            (current == StateActive \/ current == StateUninitialized \/
+             (current == StateRecovery /\ (cred == CredOperatorAttestation \/ cred == CredTwoManAttestation)))))
+let theorem_active_requires_compliance_and_authorization current verdict cred retries = ()
+
+(* Theorem 5e: Active State Escalation Requires Compliance and Authorization *)
+val theorem_active_state_requires_compliance :
+  current:engine_state -> verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (let r = step_fsm current verdict cred retries in
+         r.next_state == StateActive ==>
+           (verdict == VerdictCompliant /\
+            (current == StateActive \/ current == StateUninitialized \/
+             (current == StateRecovery /\ (cred == CredOperatorAttestation \/ cred == CredTwoManAttestation)))))
+let theorem_active_state_requires_compliance current verdict cred retries = ()
+
+(* Theorem 5f: Quarantine Retry Counter Is Monotonic and Collapses at Threshold Without Overflow *)
+val theorem_retry_monotonic :
+  verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (requires (verdict == VerdictDegraded \/ verdict == VerdictSupervisorUnreachable))
+        (ensures (let r = step_fsm StateQuarantine verdict cred retries in
+                  if retries < max_quarantine_retries then
+                    FStar.UInt16.v r.retries_out == FStar.UInt16.v retries + 1 /\
+                    r.next_state == StateQuarantine /\ r.permitted == false
+                  else
+                    r.next_state == StateCollapsed /\ r.permitted == false))
+let theorem_retry_monotonic verdict cred retries = ()
+
+(* Theorem 5g: Quarantine Retry Counter Remains Strictly Bounded *)
+val theorem_retry_bounded :
+  verdict:policy_verdict -> cred:auth_credential -> retries:FStar.UInt16.t ->
+  Lemma (requires (FStar.UInt16.v retries <= FStar.UInt16.v max_quarantine_retries))
+        (ensures (let r = step_fsm StateQuarantine verdict cred retries in
+                  FStar.UInt16.v r.retries_out <= FStar.UInt16.v max_quarantine_retries))
+let theorem_retry_bounded verdict cred retries = ()
+
 
 (* --- Strata 2: Decoupled Cryptographic Policy Evaluation --- *)
 
@@ -205,7 +267,11 @@ val theorem_strict_pqc_rejects_deprecated :
 let theorem_strict_pqc_rejects_deprecated policy asset = ()
 
 
-(* --- Strata 3: Wire Framing Bounds & Monotonicity Invariants --- *)
+(* --- Strata 3: Wire Framing Bounds & Monotonicity Invariants ---
+   Accurately scoped to input framing validation, frame length, total chunk limits,
+   and sequence counter overflow prevention.
+   Note: Bounded strictly to frame parsing; does not claim end-to-end cryptographic
+   channel security or physical link layer resilience. *)
 
 let max_chunk_len    : FStar.UInt16.t = 1450us
 let max_total_chunks : FStar.UInt16.t = 64us
