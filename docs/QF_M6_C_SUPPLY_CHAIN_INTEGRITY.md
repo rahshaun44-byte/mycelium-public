@@ -122,5 +122,8 @@ $$\text{Valid}_{\text{M6-C}} \iff \text{Valid}_{\text{M6-A}} \land \text{Valid}_
 | **`TV-M6C-04`** | In-toto subject digest substitution (provenance subject `sha256` or `sha384` differs from release receipt artifact map) | `PermissionError` (`SLSA subject digest mismatch`) |
 | **`TV-M6C-05`** | Provenance commit/version replay (validly signed SLSA provenance from an older commit or lower `anti_rollback_counter` replayed against a new receipt) | `PermissionError` (`SLSA provenance parameter mismatch`) |
 | **`TV-M6C-06`** | Tampered `ML-DSA-65` post-quantum signature on SLSA provenance envelope (while `Ed25519` remains valid) | `PermissionError` (`ML-DSA-65 signature verification FAILED`) |
-| **`TV-M6C-07`** | CycloneDX 1.6 SBOM or CBOM component hash substitution or manifest root mismatch | `PermissionError` (`CycloneDX inventory binding mismatch`) |
+| **`TV-M6C-07`** | CycloneDX 1.6 SBOM or CBOM component hash substitution or manifest root mismatch | `PermissionError` (`CycloneDX inventory manifest_root_sha256 mismatch`) |
 | **`TV-M6C-08`** | Tampered `Ed25519` or `ML-DSA-65` signature on signed CycloneDX SBOM/CBOM envelope | `PermissionError` (`signature verification FAILED`) |
+| **`TV-M6C-09`** | Evidence cross-binding failure (individually authentic documents referring to mismatched releases or resolvedDependencies digest divergence) | `PermissionError` (`[QF-RELEASE-01] Evidence cross-binding mismatch`) |
+| **`TV-M6C-10`** | Untrusted builder identity (SLSA provenance builder ID does not match authorized builder allowlist) | `PermissionError` (`[QF-RELEASE-01] Untrusted builder identity`) |
+

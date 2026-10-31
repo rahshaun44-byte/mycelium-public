@@ -533,8 +533,22 @@ def test_qf_m6_c_supply_chain_integrity_and_adversarial_tamper_matrix(temp_git_r
     sbom_path.write_text(json.dumps(signed_sbom, indent=2), encoding="utf-8")
     cbom_path.write_text(json.dumps(signed_cbom, indent=2), encoding="utf-8")
 
+    # Build payload containing the actual on-disk SBOM & CBOM hashes
+    payload_with_inventories = build_hybrid_admission_payload_v2(
+        repo_root=repo_root,
+        required_artifacts=artifacts,
+        release_version="QF-M6.0.0",
+        anti_rollback_counter=3,
+        key_environment="prod",
+        sbom_rel_path="build_check/cyclonedx_sbom.json",
+        cbom_rel_path="build_check/cyclonedx_cbom.json",
+        slsa_provenance_rel_path="build_check/slsa_provenance.json",
+        reproducible_build_verified=True,
+        timestamp=1793405000,
+    )
+
     signed_slsa = build_signed_slsa_provenance_v1(
-        payload_v2=initial_payload,
+        payload_v2=payload_with_inventories,
         ed25519_private_key=rel_ed_priv,
         mldsa65_private_key_path=rel_pq_priv,
         mldsa65_public_key_pem=rel_pq_pub_pem,
@@ -690,5 +704,88 @@ def test_qf_m6_c_supply_chain_integrity_and_adversarial_tamper_matrix(temp_git_r
             trusted_ed25519_public_key=rel_ed_pub,
             trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
         )
+
+    # TV-M6C-09: Evidence Cross-Binding Failure (Authentic documents referring to mismatched releases)
+    # Case A: Mismatched SBOM release_version presented with valid receipt
+    mismatched_sbom, _ = build_signed_cyclonedx_16_inventories(
+        repo_root=repo_root,
+        artifact_sha256=initial_payload["artifact_sha256"],
+        artifact_sha384=initial_payload["artifact_sha384"],
+        release_version="QF-M6.9.9",  # Cross-binding mismatch!
+        git_commit=initial_payload["git_commit"],
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+    )
+    with pytest.raises(PermissionError, match="CycloneDX release_version mismatch"):
+        verify_hybrid_admission_receipt_v2(
+            signed_receipt,
+            repo_root=repo_root,
+            min_accepted_counter=2,
+            expected_key_environment="prod",
+            delegation_cert=prod_cert,
+            krl=krl,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+            enforce_supply_chain_integrity=True,
+            slsa_provenance=signed_slsa,
+            signed_sbom=mismatched_sbom,
+            signed_cbom=signed_cbom,
+            rebuild_repo_root=rebuild_root,
+        )
+
+    # Case B: SLSA resolvedDependencies does not cross-bind to receipt SBOM digest
+    unbound_slsa_payload = copy.deepcopy(final_payload)
+    unbound_slsa = build_signed_slsa_provenance_v1(
+        payload_v2=unbound_slsa_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+        reproducible_build_verified=True,
+    )
+    # Mutate the resolvedDependency SBOM digest in the statement and re-sign
+    unbound_slsa_payload["sbom"]["sha256"] = "f" * 64
+    tampered_dep_slsa = build_signed_slsa_provenance_v1(
+        payload_v2=unbound_slsa_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+        reproducible_build_verified=True,
+    )
+    with pytest.raises(PermissionError, match="Evidence cross-binding mismatch"):
+        verify_signed_slsa_provenance_v1(
+            signed_envelope=tampered_dep_slsa,
+            receipt_payload=final_payload,
+            trusted_ed25519_public_key=rel_ed_pub,
+            trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
+        )
+
+    # TV-M6C-10: Untrusted Builder Identity
+    untrusted_builder_slsa = build_signed_slsa_provenance_v1(
+        payload_v2=final_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+        builder_id="urn:untrusted:rogue-builder:external",
+        reproducible_build_verified=True,
+    )
+    with pytest.raises(PermissionError, match="Untrusted builder identity"):
+        verify_hybrid_admission_receipt_v2(
+            signed_receipt,
+            repo_root=repo_root,
+            min_accepted_counter=2,
+            expected_key_environment="prod",
+            delegation_cert=prod_cert,
+            krl=krl,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+            enforce_supply_chain_integrity=True,
+            slsa_provenance=untrusted_builder_slsa,
+            signed_sbom=signed_sbom,
+            signed_cbom=signed_cbom,
+            rebuild_repo_root=rebuild_root,
+            expected_builder_id="urn:quantumflex:builder:qfx-yoga:sovereign-core",
+        )
+
 
 

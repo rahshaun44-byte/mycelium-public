@@ -1222,6 +1222,7 @@ def verify_signed_slsa_provenance_v1(
     receipt_payload: Dict[str, Any],
     trusted_ed25519_public_key: Optional[Ed25519PublicKey] = None,
     trusted_mldsa65_public_key_pem: Optional[bytes] = None,
+    expected_builder_id: Optional[str] = "urn:quantumflex:builder:qfx-yoga:sovereign-core",
 ) -> bool:
     """
     Verifies SLSA v1.0 in-toto statement and binds subjects to release artifacts (QF-RELEASE-01).
@@ -1240,7 +1241,20 @@ def verify_signed_slsa_provenance_v1(
     if statement.get("predicateType") != "https://slsa.dev/provenance/v1":
         raise PermissionError(f"[QF-RELEASE-01] Invalid SLSA predicateType: {statement.get('predicateType')!r}")
 
-    # Verify subjects against receipt artifacts
+    predicate = statement.get("predicate", {})
+    build_def = predicate.get("buildDefinition", {})
+    ext_params = build_def.get("externalParameters", {})
+    run_details = predicate.get("runDetails", {})
+
+    # 1. Builder identity verification (TV-M6C-10)
+    builder = run_details.get("builder", {})
+    builder_id = builder.get("id")
+    if expected_builder_id is not None and builder_id != expected_builder_id:
+        raise PermissionError(
+            f"[QF-RELEASE-01] Untrusted builder identity: expected {expected_builder_id!r}, got {builder_id!r}"
+        )
+
+    # 2. Verify subjects against receipt artifacts
     artifact_sha256 = receipt_payload.get("artifact_sha256", {})
     artifact_sha384 = receipt_payload.get("artifact_sha384", {})
     subjects = statement.get("subject", [])
@@ -1260,11 +1274,7 @@ def verify_signed_slsa_provenance_v1(
         if subject_map_384.get(name) != expected_hash:
             raise PermissionError(f"[QF-RELEASE-01] SLSA subject digest mismatch on '{name}' (SHA-384)")
 
-    # Verify buildDefinition externalParameters
-    predicate = statement.get("predicate", {})
-    build_def = predicate.get("buildDefinition", {})
-    ext_params = build_def.get("externalParameters", {})
-
+    # 3. Verify buildDefinition externalParameters
     if ext_params.get("release_version") != receipt_payload.get("release_version"):
         raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: release_version")
     if ext_params.get("git_commit") != receipt_payload.get("git_commit"):
@@ -1275,6 +1285,24 @@ def verify_signed_slsa_provenance_v1(
         raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: key_environment")
     if ext_params.get("reproducible_build_verified") is not True:
         raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: reproducible_build_verified must be True")
+
+    # 4. Evidence Cross-Binding: verify SLSA resolvedDependencies against receipt SBOM & CBOM (TV-M6C-09)
+    resolved_deps = build_def.get("resolvedDependencies", [])
+    dep_digests = {(d.get("digest", {}).get("sha256"), d.get("digest", {}).get("sha384")) for d in resolved_deps if isinstance(d, dict)}
+
+    if receipt_payload.get("sbom"):
+        sbom_tuple = (receipt_payload["sbom"].get("sha256"), receipt_payload["sbom"].get("sha384"))
+        if sbom_tuple not in dep_digests:
+            raise PermissionError(
+                "[QF-RELEASE-01] Evidence cross-binding mismatch: SLSA resolvedDependencies missing matching SBOM digest"
+            )
+
+    if receipt_payload.get("cbom"):
+        cbom_tuple = (receipt_payload["cbom"].get("sha256"), receipt_payload["cbom"].get("sha384"))
+        if cbom_tuple not in dep_digests:
+            raise PermissionError(
+                "[QF-RELEASE-01] Evidence cross-binding mismatch: SLSA resolvedDependencies missing matching CBOM digest"
+            )
 
     return True
 
@@ -1296,6 +1324,7 @@ def verify_hybrid_admission_receipt_v2(
     signed_sbom: Optional[Dict[str, Any]] = None,
     signed_cbom: Optional[Dict[str, Any]] = None,
     rebuild_repo_root: Optional[Path] = None,
+    expected_builder_id: Optional[str] = "urn:quantumflex:builder:qfx-yoga:sovereign-core",
 ) -> bool:
     """
     Conjunctive fail-closed verifier for `qf.admission_receipt.v2` (`QF-CRYPTO-01`, `QF-KEY-01`, `QF-RELEASE-01`).
@@ -1492,6 +1521,7 @@ def verify_hybrid_admission_receipt_v2(
                 receipt_payload=payload,
                 trusted_ed25519_public_key=trusted_ed25519_public_key,
                 trusted_mldsa65_public_key_pem=trusted_mldsa65_public_key_pem,
+                expected_builder_id=expected_builder_id,
             )
 
     return True
