@@ -42,11 +42,13 @@
       "verification": "Two-Tier Offline Root hybrid (Ed25519 + ML-DSA-65) delegation, strict dev/test/prod key separation, and KRL revocation/anti-replay (78/78 pytest PASS)"
     },
     "M6_C_supply_chain_integrity": {
-      "status": "READY_NEXT (Unblocked by M6-B verification)",
-      "scope": "Reproducible builds, signed SBOM/CBOM, SLSA/in-toto provenance, monotonic anti-rollback enforcement"
+      "status": "COMPLETE",
+      "design_doc": "docs/QF_M6_C_SUPPLY_CHAIN_INTEGRITY.md",
+      "implementation": "src/admission_receipt.py (reproducible build verification, signed CycloneDX 1.6 SBOM/CBOM envelopes, and signed SLSA v1.0 / in-toto v1 provenance)",
+      "verification": "Independent reproducible build verification, signed CycloneDX 1.6 SBOM/CBOM, signed SLSA v1.0 in-toto provenance binding, and 8-vector adversarial tamper matrix (79/79 pytest PASS)"
     },
     "M6_D_independent_assurance": {
-      "status": "SEQUENCED_AFTER_M6_C",
+      "status": "READY_NEXT (Unblocked by M6-C verification)",
       "scope": "Independent security review, adversarial tamper tests, key-compromise recovery drills, and first verified sovereign economic return"
     }
   },
@@ -60,7 +62,7 @@
     "M6-07_six_month_reserve_protected": "PASS (7.00 months verified)",
     "realized_settled_income_usd": 0.0,
     "unsettled_award_counts_as_income": false,
-    "qf_m6_status": "IN_PROGRESS (M6-A & M6-B Complete; Ready for M6-C Supply-Chain Integrity & Authorized Bounty/Grant Execution)"
+    "qf_m6_status": "IN_PROGRESS (M6-A, M6-B & M6-C Complete; Ready for M6-D Independent Assurance & Authorized Bounty/Grant Execution)"
   },
   "bounty_acceptance_gates": [
     "QF-BOUNTY-01 (Authorization Integrity)",

@@ -412,3 +412,283 @@ def test_qf_m6_b_offline_root_delegation_env_separation_and_krl_revocation(temp_
         )
 
 
+def test_qf_m6_c_supply_chain_integrity_and_adversarial_tamper_matrix(temp_git_repo, tmp_path):
+    """
+    QF-RELEASE-01 / Phase M6-C Supply-Chain Integrity & Adversarial Tamper Matrix:
+      TV-M6C-01: Nominal full conjunctive chain (Root + KRL + Repro Build + CycloneDX SBOM/CBOM + SLSA v1.0) -> PASS
+      TV-M6C-02: Reproducible build divergence (1 byte difference) -> FAIL-CLOSED
+      TV-M6C-03: Incomplete supply-chain evidence -> FAIL-CLOSED
+      TV-M6C-04: in-toto subject digest substitution -> FAIL-CLOSED
+      TV-M6C-05: SLSA provenance parameter / commit replay -> FAIL-CLOSED
+      TV-M6C-06: SLSA ML-DSA-65 signature tamper -> FAIL-CLOSED
+      TV-M6C-07: CycloneDX manifest root mismatch -> FAIL-CLOSED
+      TV-M6C-08: CycloneDX Ed25519 signature tamper -> FAIL-CLOSED
+    """
+    import base64
+    import copy
+    import shutil
+    from src.admission_receipt import (
+        build_hybrid_admission_payload_v2,
+        build_signed_cyclonedx_16_inventories,
+        build_signed_slsa_provenance_v1,
+        ensure_or_load_mldsa65_keypair,
+        issue_key_delegation_certificate,
+        issue_key_revocation_list,
+        sign_hybrid_admission_receipt_v2,
+        verify_hybrid_admission_receipt_v2,
+        verify_reproducible_build_artifacts,
+        verify_signed_cyclonedx_16_inventory,
+        verify_signed_slsa_provenance_v1,
+    )
+
+    repo_root, artifacts = temp_git_repo
+
+    # 1. Setup Independent Clean-Room Rebuild Tree
+    rebuild_root = tmp_path / "clean_room_rebuild"
+    rebuild_root.mkdir(parents=True, exist_ok=True)
+    for rel_path in artifacts:
+        dest = rebuild_root / rel_path
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(repo_root / rel_path, dest)
+
+    # 2. Provision Tier 0 Offline Root & Tier 1 Prod Keys
+    root_dir = tmp_path / "offline_root"
+    root_ed_priv, root_ed_pub = ensure_or_load_release_keypair(
+        root_dir / "root_ed.key",
+        root_dir / "root_ed.pub.pem",
+        auto_generate_if_missing=True,
+    )
+    root_pq_priv = root_dir / "root_pq.key"
+    _, root_pq_pub_pem = ensure_or_load_mldsa65_keypair(
+        root_pq_priv,
+        root_dir / "root_pq.pub.pem",
+        auto_generate_if_missing=True,
+    )
+
+    rel_dir = tmp_path / "release_keys"
+    rel_ed_priv, rel_ed_pub = ensure_or_load_release_keypair(
+        rel_dir / "rel_ed.key",
+        rel_dir / "rel_ed.pub.pem",
+        auto_generate_if_missing=True,
+    )
+    rel_pq_priv = rel_dir / "rel_pq.key"
+    _, rel_pq_pub_pem = ensure_or_load_mldsa65_keypair(
+        rel_pq_priv,
+        rel_dir / "rel_pq.pub.pem",
+        auto_generate_if_missing=True,
+    )
+
+    prod_cert = issue_key_delegation_certificate(
+        cert_id="QF-CERT-PROD-2026-002",
+        key_environment="prod",
+        delegated_ed25519_public_key=rel_ed_pub,
+        delegated_mldsa65_public_key_pem=rel_pq_pub_pem,
+        root_ed25519_private_key=root_ed_priv,
+        root_mldsa65_private_key_path=root_pq_priv,
+        root_mldsa65_public_key_pem=root_pq_pub_pem,
+        not_before_unix=1790000000,
+        not_after_unix=1800000000,
+    )
+    krl = issue_key_revocation_list(
+        krl_sequence=1,
+        issued_at_unix=1793400000,
+        root_ed25519_private_key=root_ed_priv,
+        root_mldsa65_private_key_path=root_pq_priv,
+        root_mldsa65_public_key_pem=root_pq_pub_pem,
+    )
+
+    # 3. Build CycloneDX 1.6 SBOM and CBOM
+    sbom_path = repo_root / "build_check" / "cyclonedx_sbom.json"
+    cbom_path = repo_root / "build_check" / "cyclonedx_cbom.json"
+    slsa_path = repo_root / "build_check" / "slsa_provenance.json"
+    sbom_path.parent.mkdir(parents=True, exist_ok=True)
+    sbom_path.write_text('{"placeholder": "sbom"}\n', encoding="utf-8")
+    cbom_path.write_text('{"placeholder": "cbom"}\n', encoding="utf-8")
+    slsa_path.write_text('{"placeholder": "slsa"}\n', encoding="utf-8")
+
+    initial_payload = build_hybrid_admission_payload_v2(
+        repo_root=repo_root,
+        required_artifacts=artifacts,
+        release_version="QF-M6.0.0",
+        anti_rollback_counter=3,
+        key_environment="prod",
+        sbom_rel_path="build_check/cyclonedx_sbom.json",
+        cbom_rel_path="build_check/cyclonedx_cbom.json",
+        slsa_provenance_rel_path="build_check/slsa_provenance.json",
+        reproducible_build_verified=True,
+        timestamp=1793405000,
+    )
+
+    signed_sbom, signed_cbom = build_signed_cyclonedx_16_inventories(
+        repo_root=repo_root,
+        artifact_sha256=initial_payload["artifact_sha256"],
+        artifact_sha384=initial_payload["artifact_sha384"],
+        release_version=initial_payload["release_version"],
+        git_commit=initial_payload["git_commit"],
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+    )
+    import json
+    sbom_path.write_text(json.dumps(signed_sbom, indent=2), encoding="utf-8")
+    cbom_path.write_text(json.dumps(signed_cbom, indent=2), encoding="utf-8")
+
+    signed_slsa = build_signed_slsa_provenance_v1(
+        payload_v2=initial_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+        reproducible_build_verified=True,
+    )
+    slsa_path.write_text(json.dumps(signed_slsa, indent=2), encoding="utf-8")
+
+    # Re-compute payload now that files on disk contain actual signed contents
+    final_payload = build_hybrid_admission_payload_v2(
+        repo_root=repo_root,
+        required_artifacts=artifacts,
+        release_version="QF-M6.0.0",
+        anti_rollback_counter=3,
+        key_environment="prod",
+        sbom_rel_path="build_check/cyclonedx_sbom.json",
+        cbom_rel_path="build_check/cyclonedx_cbom.json",
+        slsa_provenance_rel_path="build_check/slsa_provenance.json",
+        reproducible_build_verified=True,
+        timestamp=1793405000,
+    )
+    signed_receipt = sign_hybrid_admission_receipt_v2(
+        payload=final_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+    )
+
+    # TV-M6C-01: Nominal Full Conjunctive Admission
+    assert verify_hybrid_admission_receipt_v2(
+        signed_receipt,
+        repo_root=repo_root,
+        min_accepted_counter=2,
+        expected_key_environment="prod",
+        delegation_cert=prod_cert,
+        krl=krl,
+        trusted_root_ed25519_public_key=root_ed_pub,
+        trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+        min_krl_sequence=1,
+        enforce_supply_chain_integrity=True,
+        slsa_provenance=signed_slsa,
+        signed_sbom=signed_sbom,
+        signed_cbom=signed_cbom,
+        rebuild_repo_root=rebuild_root,
+    ) is True
+
+    # TV-M6C-02: Reproducible Build Divergence (1 byte altered in clean-room rebuild)
+    tampered_rebuild_file = rebuild_root / artifacts[0]
+    tampered_rebuild_file.write_bytes(tampered_rebuild_file.read_bytes() + b"\x00")
+    with pytest.raises(PermissionError, match="Reproducible build verification FAILED"):
+        verify_hybrid_admission_receipt_v2(
+            signed_receipt,
+            repo_root=repo_root,
+            min_accepted_counter=2,
+            expected_key_environment="prod",
+            delegation_cert=prod_cert,
+            krl=krl,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+            enforce_supply_chain_integrity=True,
+            slsa_provenance=signed_slsa,
+            signed_sbom=signed_sbom,
+            signed_cbom=signed_cbom,
+            rebuild_repo_root=rebuild_root,
+        )
+    # Restore clean rebuild artifact
+    shutil.copy2(repo_root / artifacts[0], rebuild_root / artifacts[0])
+
+    # TV-M6C-03: Missing Supply-Chain Evidence when enforce_supply_chain_integrity=True
+    with pytest.raises(PermissionError, match="Incomplete supply-chain evidence"):
+        verify_hybrid_admission_receipt_v2(
+            signed_receipt,
+            repo_root=repo_root,
+            min_accepted_counter=2,
+            expected_key_environment="prod",
+            delegation_cert=prod_cert,
+            krl=krl,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+            enforce_supply_chain_integrity=True,
+            slsa_provenance=None,
+            signed_sbom=signed_sbom,
+            signed_cbom=signed_cbom,
+            rebuild_repo_root=rebuild_root,
+        )
+
+    # TV-M6C-04: in-toto Subject Digest Substitution
+    bad_slsa_payload = copy.deepcopy(final_payload)
+    bad_slsa_payload["artifact_sha256"][artifacts[0]] = "0" * 64
+    bad_slsa = build_signed_slsa_provenance_v1(
+        payload_v2=bad_slsa_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+        reproducible_build_verified=True,
+    )
+    with pytest.raises(PermissionError, match="SLSA subject digest mismatch"):
+        verify_signed_slsa_provenance_v1(
+            signed_envelope=bad_slsa,
+            receipt_payload=final_payload,
+            trusted_ed25519_public_key=rel_ed_pub,
+            trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
+        )
+
+    # TV-M6C-05: SLSA Provenance Parameter / Commit Replay
+    replay_slsa_payload = copy.deepcopy(final_payload)
+    replay_slsa_payload["anti_rollback_counter"] = 2  # Replay older counter
+    replayed_slsa = build_signed_slsa_provenance_v1(
+        payload_v2=replay_slsa_payload,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+        reproducible_build_verified=True,
+    )
+    with pytest.raises(PermissionError, match="SLSA provenance parameter mismatch: anti_rollback_counter"):
+        verify_signed_slsa_provenance_v1(
+            signed_envelope=replayed_slsa,
+            receipt_payload=final_payload,
+            trusted_ed25519_public_key=rel_ed_pub,
+            trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
+        )
+
+    # TV-M6C-06: SLSA ML-DSA-65 Signature Tamper
+    bad_pq_slsa = copy.deepcopy(signed_slsa)
+    pq_sig_bytes = bytearray(base64.b64decode(bad_pq_slsa["cryptographic_seal"]["ml_dsa_65"]["signature_b64"]))
+    pq_sig_bytes[0] ^= 0xFF
+    bad_pq_slsa["cryptographic_seal"]["ml_dsa_65"]["signature_b64"] = base64.b64encode(bytes(pq_sig_bytes)).decode("ascii")
+    with pytest.raises(PermissionError, match="ML-DSA-65 signature verification FAILED"):
+        verify_signed_slsa_provenance_v1(
+            signed_envelope=bad_pq_slsa,
+            receipt_payload=final_payload,
+            trusted_ed25519_public_key=rel_ed_pub,
+            trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
+        )
+
+    # TV-M6C-07: CycloneDX Manifest Root Mismatch
+    with pytest.raises(PermissionError, match="CycloneDX inventory manifest_root_sha256 mismatch"):
+        verify_signed_cyclonedx_16_inventory(
+            signed_envelope=signed_sbom,
+            trusted_ed25519_public_key=rel_ed_pub,
+            trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
+            expected_manifest_root_sha256="1" * 64,
+            expected_manifest_root_sha384=final_payload["manifest_root_sha384"],
+        )
+
+    # TV-M6C-08: CycloneDX Ed25519 Signature Tamper
+    bad_ed_cbom = copy.deepcopy(signed_cbom)
+    ed_sig_bytes = bytearray(base64.b64decode(bad_ed_cbom["cryptographic_seal"]["ed25519"]["signature_b64"]))
+    ed_sig_bytes[0] ^= 0xFF
+    bad_ed_cbom["cryptographic_seal"]["ed25519"]["signature_b64"] = base64.b64encode(bytes(ed_sig_bytes)).decode("ascii")
+    with pytest.raises(PermissionError, match="Ed25519 signature verification FAILED"):
+        verify_signed_cyclonedx_16_inventory(
+            signed_envelope=bad_ed_cbom,
+            trusted_ed25519_public_key=rel_ed_pub,
+            trusted_mldsa65_public_key_pem=rel_pq_pub_pem,
+        )
+
+

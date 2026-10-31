@@ -414,14 +414,19 @@ def build_hybrid_admission_payload_v2(
     anti_rollback_counter: int = 2,
     key_environment: str = "prod",
     sbom_rel_path: str = "cbom_alpha_node_template.json",
+    cbom_rel_path: Optional[str] = None,
+    slsa_provenance_rel_path: Optional[str] = None,
+    reproducible_build_verified: bool = False,
     previous_checkpoint_rel_path: Optional[str] = "build_check/qf_m5_signed_admission_receipt.json",
     node_id: str = "qfx-yoga",
     timestamp: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
-    Constructs the QF-M6-A `qf.admission_receipt.v2` canonical payload with:
+    Constructs the QF-M6-A / M6-C `qf.admission_receipt.v2` canonical payload with:
       - Dual SHA-256 and SHA-384 artifact digests
-      - Signed SBOM/CBOM digests (SHA-256 + SHA-384)
+      - Signed CycloneDX 1.6 SBOM/CBOM digests (SHA-256 + SHA-384)
+      - SLSA v1.0 provenance attestation binding
+      - Reproducible build verification indicator
       - Release version & anti-rollback counter
       - Cryptographic link to the preserved QF-M5 historical checkpoint
     """
@@ -444,6 +449,26 @@ def build_hybrid_admission_payload_v2(
     sbom_sha256 = compute_file_sha256(sbom_full)
     sbom_sha384 = compute_file_sha384(sbom_full)
 
+    cbom_info: Optional[Dict[str, str]] = None
+    if cbom_rel_path:
+        cbom_full = repo_root / cbom_rel_path
+        if cbom_full.is_file():
+            cbom_info = {
+                "path": cbom_rel_path,
+                "sha256": compute_file_sha256(cbom_full),
+                "sha384": compute_file_sha384(cbom_full),
+            }
+
+    slsa_info: Optional[Dict[str, str]] = None
+    if slsa_provenance_rel_path:
+        slsa_full = repo_root / slsa_provenance_rel_path
+        if slsa_full.is_file():
+            slsa_info = {
+                "path": slsa_provenance_rel_path,
+                "sha256": compute_file_sha256(slsa_full),
+                "sha384": compute_file_sha384(slsa_full),
+            }
+
     prev_checkpoint_sha256: Optional[str] = None
     if previous_checkpoint_rel_path:
         prev_full = repo_root / previous_checkpoint_rel_path
@@ -456,7 +481,7 @@ def build_hybrid_admission_payload_v2(
     manifest_root_sha256 = hashlib.sha256(canonical_json_bytes(artifact_sha256)).hexdigest()
     manifest_root_sha384 = hashlib.sha384(canonical_json_bytes(artifact_sha384)).hexdigest()
 
-    return {
+    ret_payload = {
         "schema": "qf.admission_receipt.v2",
         "release_version": release_version,
         "anti_rollback_counter": anti_rollback_counter,
@@ -476,6 +501,14 @@ def build_hybrid_admission_payload_v2(
         "manifest_root_sha256": manifest_root_sha256,
         "manifest_root_sha384": manifest_root_sha384,
     }
+    if cbom_info is not None:
+        ret_payload["cbom"] = cbom_info
+    if slsa_info is not None:
+        ret_payload["slsa_provenance"] = slsa_info
+    if reproducible_build_verified:
+        ret_payload["reproducible_build_verified"] = True
+
+    return ret_payload
 
 
 def sign_hybrid_admission_receipt_v2(
@@ -772,6 +805,480 @@ def verify_key_sovereignty_chain(
     return Ed25519PublicKey.from_public_bytes(del_ed_raw), del_pq_pem
 
 
+def _sign_envelope_v2(
+    payload: Dict[str, Any],
+    ed25519_private_key: Ed25519PrivateKey,
+    mldsa65_private_key_path: Path,
+    mldsa65_public_key_pem: bytes,
+) -> Dict[str, Any]:
+    """Helper to produce standard HYBRID-ED25519-ML-DSA-65 envelope seal."""
+    raw_bytes = canonical_json_bytes(payload)
+    payload_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+    payload_sha384 = hashlib.sha384(raw_bytes).hexdigest()
+
+    ed_sig = ed25519_private_key.sign(raw_bytes)
+    ed_pub_raw = ed25519_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    ed_fp = hashlib.sha256(ed_pub_raw).hexdigest()
+
+    pq_sig = _mldsa65_sign_bytes(raw_bytes, mldsa65_private_key_path)
+    pq_fp = hashlib.sha256(mldsa65_public_key_pem).hexdigest()
+
+    return {
+        "payload": payload,
+        "cryptographic_seal": {
+            "scheme": "HYBRID-ED25519-ML-DSA-65",
+            "payload_sha256": payload_sha256,
+            "payload_sha384": payload_sha384,
+            "ed25519": {
+                "algorithm": "Ed25519",
+                "public_key_raw_b64": base64.b64encode(ed_pub_raw).decode("ascii"),
+                "public_key_fingerprint_sha256": ed_fp,
+                "signature_b64": base64.b64encode(ed_sig).decode("ascii"),
+            },
+            "ml_dsa_65": {
+                "algorithm": "ML-DSA-65",
+                "standard": "NIST-FIPS-204",
+                "oid": "2.16.840.1.101.3.4.3.18",
+                "public_key_pem_b64": base64.b64encode(mldsa65_public_key_pem).decode("ascii"),
+                "public_key_fingerprint_sha256": pq_fp,
+                "signature_b64": base64.b64encode(pq_sig).decode("ascii"),
+            },
+        },
+    }
+
+
+def _verify_envelope_seal_v2(
+    envelope: Dict[str, Any],
+    trusted_ed25519_public_key: Optional[Ed25519PublicKey] = None,
+    trusted_mldsa65_public_key_pem: Optional[bytes] = None,
+) -> Dict[str, Any]:
+    """Helper to verify HYBRID-ED25519-ML-DSA-65 envelope seal."""
+    if not isinstance(envelope, dict):
+        raise PermissionError("[QF-RELEASE-01] Envelope must be a JSON object")
+    payload = envelope.get("payload")
+    seal = envelope.get("cryptographic_seal")
+    if not isinstance(payload, dict) or not isinstance(seal, dict):
+        raise PermissionError("[QF-RELEASE-01] Missing 'payload' or 'cryptographic_seal' in envelope")
+    if seal.get("scheme") != "HYBRID-ED25519-ML-DSA-65":
+        raise PermissionError(f"[QF-RELEASE-01] Invalid seal scheme {seal.get('scheme')!r}")
+
+    raw_bytes = canonical_json_bytes(payload)
+    if hashlib.sha256(raw_bytes).hexdigest() != seal.get("payload_sha256"):
+        raise PermissionError("[QF-RELEASE-01] Envelope payload SHA-256 mismatch")
+    if hashlib.sha384(raw_bytes).hexdigest() != seal.get("payload_sha384"):
+        raise PermissionError("[QF-RELEASE-01] Envelope payload SHA-384 mismatch")
+
+    # 1. Ed25519
+    ed_block = seal.get("ed25519")
+    if not isinstance(ed_block, dict) or ed_block.get("algorithm") != "Ed25519":
+        raise PermissionError("[QF-RELEASE-01] Missing or invalid Ed25519 seal block")
+    embedded_ed_raw = base64.b64decode(ed_block["public_key_raw_b64"])
+    if trusted_ed25519_public_key is not None:
+        trusted_ed_raw = trusted_ed25519_public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        if trusted_ed_raw != embedded_ed_raw:
+            raise PermissionError("[QF-RELEASE-01] Ed25519 public key does not match trusted key")
+        ed_pub = trusted_ed25519_public_key
+    else:
+        ed_pub = Ed25519PublicKey.from_public_bytes(embedded_ed_raw)
+
+    try:
+        ed_pub.verify(base64.b64decode(ed_block["signature_b64"]), raw_bytes)
+    except (ValueError, InvalidSignature) as exc:
+        raise PermissionError("[QF-RELEASE-01] Ed25519 signature verification FAILED") from exc
+
+    # 2. ML-DSA-65
+    pq_block = seal.get("ml_dsa_65")
+    if not isinstance(pq_block, dict) or pq_block.get("algorithm") != "ML-DSA-65":
+        raise PermissionError("[QF-RELEASE-01] Missing or invalid ML-DSA-65 seal block")
+    embedded_pq_pem = base64.b64decode(pq_block["public_key_pem_b64"])
+    if trusted_mldsa65_public_key_pem is not None and trusted_mldsa65_public_key_pem != embedded_pq_pem:
+        raise PermissionError("[QF-RELEASE-01] ML-DSA-65 public key does not match trusted key")
+
+    pq_sig = base64.b64decode(pq_block["signature_b64"])
+    if not _mldsa65_verify_bytes(raw_bytes, pq_sig, embedded_pq_pem):
+        raise PermissionError("[QF-RELEASE-01] ML-DSA-65 signature verification FAILED")
+
+    return payload
+
+
+def verify_reproducible_build_artifacts(
+    primary_repo_root: Path,
+    rebuild_repo_root: Path,
+    required_artifacts: Iterable[str] = DEFAULT_REQUIRED_ARTIFACTS,
+) -> bool:
+    """
+    QF-RELEASE-01 / M6-C Gate 1: Independent Reproducible Build Verification.
+    Independently verifies that normalized build artifacts produced in `rebuild_repo_root`
+    match the primary artifacts in `primary_repo_root` byte-for-byte across both SHA-256
+    and SHA-384 digests. Fails closed on any divergence.
+    """
+    for rel_path in required_artifacts:
+        p1 = primary_repo_root / rel_path
+        p2 = rebuild_repo_root / rel_path
+        if not p1.is_file():
+            raise PermissionError(f"[QF-RELEASE-01] Reproducible build verification FAILED: missing primary artifact '{rel_path}'")
+        if not p2.is_file():
+            raise PermissionError(f"[QF-RELEASE-01] Reproducible build verification FAILED: missing rebuild artifact '{rel_path}'")
+
+        h1_256 = compute_file_sha256(p1)
+        h2_256 = compute_file_sha256(p2)
+        if h1_256 != h2_256:
+            raise PermissionError(
+                f"[QF-RELEASE-01] Reproducible build verification FAILED: SHA-256 mismatch on '{rel_path}' "
+                f"({h1_256} != {h2_256})"
+            )
+        h1_384 = compute_file_sha384(p1)
+        h2_384 = compute_file_sha384(p2)
+        if h1_384 != h2_384:
+            raise PermissionError(
+                f"[QF-RELEASE-01] Reproducible build verification FAILED: SHA-384 mismatch on '{rel_path}' "
+                f"({h1_384} != {h2_384})"
+            )
+    return True
+
+
+def build_signed_cyclonedx_16_inventories(
+    repo_root: Path,
+    artifact_sha256: Dict[str, str],
+    artifact_sha384: Dict[str, str],
+    release_version: str,
+    git_commit: str,
+    ed25519_private_key: Ed25519PrivateKey,
+    mldsa65_private_key_path: Path,
+    mldsa65_public_key_pem: bytes,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    QF-RELEASE-01 / M6-C Gate 2: Deterministic CycloneDX 1.6 SBOM and CBOM Inventories.
+    Generates and hybrid-signs (Ed25519 + NIST FIPS 204 ML-DSA-65) canonical CycloneDX 1.6
+    JSON envelopes for Software Bill of Materials (SBOM) and Cryptographic Bill of Materials (CBOM).
+    Returns (signed_sbom_envelope, signed_cbom_envelope).
+    """
+    manifest_root_sha256 = hashlib.sha256(canonical_json_bytes(artifact_sha256)).hexdigest()
+    manifest_root_sha384 = hashlib.sha384(canonical_json_bytes(artifact_sha384)).hexdigest()
+
+    # 1. CycloneDX 1.6 SBOM
+    sbom_components = []
+    for rel_path in sorted(artifact_sha256.keys()):
+        sbom_components.append({
+            "name": rel_path,
+            "type": "file",
+            "hashes": [
+                {"alg": "SHA-256", "content": artifact_sha256[rel_path]},
+                {"alg": "SHA-384", "content": artifact_sha384[rel_path]},
+            ],
+        })
+
+    sbom_payload = {
+        "schema": "qf.cyclonedx_envelope.v1",
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "inventory_type": "SBOM",
+        "release_version": release_version,
+        "git_commit": git_commit,
+        "manifest_root_sha256": manifest_root_sha256,
+        "manifest_root_sha384": manifest_root_sha384,
+        "metadata": {
+            "component": {
+                "name": "QuantumFlex Sovereign Release",
+                "version": release_version,
+                "type": "application",
+                "hashes": [
+                    {"alg": "SHA-256", "content": manifest_root_sha256},
+                    {"alg": "SHA-384", "content": manifest_root_sha384},
+                ],
+                "properties": [
+                    {"name": "git_commit", "value": git_commit},
+                ],
+            },
+        },
+        "components": sbom_components,
+    }
+
+    # 2. CycloneDX 1.6 CBOM (Cryptographic Bill of Materials)
+    cbom_components = [
+        {
+            "name": "Ed25519",
+            "type": "cryptographic-asset",
+            "cryptoProperties": {
+                "assetType": "algorithm",
+                "algorithmProperties": {
+                    "primitive": "signature",
+                    "standard": "RFC-8032",
+                    "classicalSecurityLevel": 128,
+                },
+            },
+        },
+        {
+            "name": "ML-DSA-65",
+            "type": "cryptographic-asset",
+            "cryptoProperties": {
+                "assetType": "algorithm",
+                "algorithmProperties": {
+                    "primitive": "signature",
+                    "standard": "NIST-FIPS-204",
+                    "oid": "2.16.840.1.101.3.4.3.18",
+                    "nistQuantumSecurityLevel": 3,
+                },
+            },
+        },
+        {
+            "name": "ML-KEM-768",
+            "type": "cryptographic-asset",
+            "cryptoProperties": {
+                "assetType": "algorithm",
+                "algorithmProperties": {
+                    "primitive": "key-encapsulation",
+                    "standard": "NIST-FIPS-203",
+                    "oid": "2.16.840.1.101.3.4.4.2",
+                    "nistQuantumSecurityLevel": 3,
+                },
+            },
+        },
+        {
+            "name": "SHA-256",
+            "type": "cryptographic-asset",
+            "cryptoProperties": {
+                "assetType": "algorithm",
+                "algorithmProperties": {
+                    "primitive": "hash",
+                    "standard": "NIST-FIPS-180-4",
+                },
+            },
+        },
+        {
+            "name": "SHA-384",
+            "type": "cryptographic-asset",
+            "cryptoProperties": {
+                "assetType": "algorithm",
+                "algorithmProperties": {
+                    "primitive": "hash",
+                    "standard": "NIST-FIPS-180-4",
+                },
+            },
+        },
+    ]
+
+    cbom_payload = {
+        "schema": "qf.cyclonedx_envelope.v1",
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "inventory_type": "CBOM",
+        "release_version": release_version,
+        "git_commit": git_commit,
+        "manifest_root_sha256": manifest_root_sha256,
+        "manifest_root_sha384": manifest_root_sha384,
+        "metadata": {
+            "component": {
+                "name": "QuantumFlex Cryptographic Bill of Materials",
+                "version": release_version,
+                "type": "cryptographic-asset",
+                "hashes": [
+                    {"alg": "SHA-256", "content": manifest_root_sha256},
+                    {"alg": "SHA-384", "content": manifest_root_sha384},
+                ],
+                "properties": [
+                    {"name": "git_commit", "value": git_commit},
+                ],
+            },
+        },
+        "components": cbom_components,
+    }
+
+    signed_sbom = _sign_envelope_v2(sbom_payload, ed25519_private_key, mldsa65_private_key_path, mldsa65_public_key_pem)
+    signed_cbom = _sign_envelope_v2(cbom_payload, ed25519_private_key, mldsa65_private_key_path, mldsa65_public_key_pem)
+    return signed_sbom, signed_cbom
+
+
+def verify_signed_cyclonedx_16_inventory(
+    signed_envelope: Dict[str, Any],
+    trusted_ed25519_public_key: Optional[Ed25519PublicKey] = None,
+    trusted_mldsa65_public_key_pem: Optional[bytes] = None,
+    expected_manifest_root_sha256: Optional[str] = None,
+    expected_manifest_root_sha384: Optional[str] = None,
+    expected_inventory_type: Optional[str] = None,
+    expected_release_version: Optional[str] = None,
+    expected_git_commit: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Verifies CycloneDX 1.6 signed inventory envelope under QF-RELEASE-01.
+    """
+    payload = _verify_envelope_seal_v2(signed_envelope, trusted_ed25519_public_key, trusted_mldsa65_public_key_pem)
+
+    if payload.get("schema") != "qf.cyclonedx_envelope.v1":
+        raise PermissionError(f"[QF-RELEASE-01] Invalid CycloneDX envelope schema: {payload.get('schema')!r}")
+    if payload.get("bomFormat") != "CycloneDX" or str(payload.get("specVersion")) != "1.6":
+        raise PermissionError("[QF-RELEASE-01] Invalid CycloneDX specVersion; expected CycloneDX 1.6")
+
+    inv_type = payload.get("inventory_type")
+    if expected_inventory_type and inv_type != expected_inventory_type:
+        raise PermissionError(
+            f"[QF-RELEASE-01] CycloneDX inventory type mismatch: expected {expected_inventory_type!r}, got {inv_type!r}"
+        )
+
+    if expected_manifest_root_sha256 and payload.get("manifest_root_sha256") != expected_manifest_root_sha256:
+        raise PermissionError("[QF-RELEASE-01] CycloneDX inventory manifest_root_sha256 mismatch")
+    if expected_manifest_root_sha384 and payload.get("manifest_root_sha384") != expected_manifest_root_sha384:
+        raise PermissionError("[QF-RELEASE-01] CycloneDX inventory manifest_root_sha384 mismatch")
+
+    if expected_release_version and payload.get("release_version") != expected_release_version:
+        raise PermissionError(
+            f"[QF-RELEASE-01] CycloneDX release_version mismatch: expected {expected_release_version!r}, got {payload.get('release_version')!r}"
+        )
+    if expected_git_commit and payload.get("git_commit") != expected_git_commit:
+        raise PermissionError(
+            f"[QF-RELEASE-01] CycloneDX git_commit mismatch: expected {expected_git_commit!r}, got {payload.get('git_commit')!r}"
+        )
+
+    return payload
+
+
+def build_signed_slsa_provenance_v1(
+    payload_v2: Dict[str, Any],
+    ed25519_private_key: Ed25519PrivateKey,
+    mldsa65_private_key_path: Path,
+    mldsa65_public_key_pem: bytes,
+    builder_id: str = "urn:quantumflex:builder:qfx-yoga:sovereign-core",
+    reproducible_build_verified: bool = True,
+    historical_m5_baseline_commit: str = "8131899",
+) -> Dict[str, Any]:
+    """
+    QF-RELEASE-01 / M6-C Gate 3: Canonical in-toto v1 Statement with SLSA v1.0 Provenance Predicate.
+    Hybrid-signed (Ed25519 + NIST FIPS 204 ML-DSA-65).
+    """
+    subjects = []
+    artifact_sha256 = payload_v2.get("artifact_sha256", {})
+    artifact_sha384 = payload_v2.get("artifact_sha384", {})
+    for rel_path in sorted(artifact_sha256.keys()):
+        subjects.append({
+            "name": rel_path,
+            "digest": {
+                "sha256": artifact_sha256[rel_path],
+                "sha384": artifact_sha384[rel_path],
+            },
+        })
+
+    resolved_deps = []
+    if payload_v2.get("sbom"):
+        resolved_deps.append({
+            "uri": f"file://{payload_v2['sbom'].get('path', 'sbom.json')}",
+            "digest": {
+                "sha256": payload_v2["sbom"].get("sha256", ""),
+                "sha384": payload_v2["sbom"].get("sha384", ""),
+            },
+        })
+    if payload_v2.get("cbom"):
+        resolved_deps.append({
+            "uri": f"file://{payload_v2['cbom'].get('path', 'cbom.json')}",
+            "digest": {
+                "sha256": payload_v2["cbom"].get("sha256", ""),
+                "sha384": payload_v2["cbom"].get("sha384", ""),
+            },
+        })
+
+    statement = {
+        "_type": "https://in-toto.io/Statement/v1",
+        "subject": subjects,
+        "predicateType": "https://slsa.dev/provenance/v1",
+        "predicate": {
+            "buildDefinition": {
+                "buildType": "https://quantumflex.internal/slsa/reproducible-local-build/v1",
+                "externalParameters": {
+                    "release_version": payload_v2.get("release_version"),
+                    "git_commit": payload_v2.get("git_commit"),
+                    "git_branch": payload_v2.get("git_branch"),
+                    "key_environment": payload_v2.get("key_environment"),
+                    "anti_rollback_counter": payload_v2.get("anti_rollback_counter"),
+                    "reproducible_build_verified": bool(reproducible_build_verified),
+                },
+                "internalParameters": {
+                    "node_id": payload_v2.get("node_id", "qfx-yoga"),
+                    "historical_m5_baseline_commit": historical_m5_baseline_commit,
+                },
+                "resolvedDependencies": resolved_deps,
+            },
+            "runDetails": {
+                "builder": {
+                    "id": builder_id,
+                },
+            },
+        },
+    }
+
+    slsa_payload = {
+        "schema": "qf.slsa_provenance_envelope.v1",
+        "statement": statement,
+    }
+    return _sign_envelope_v2(slsa_payload, ed25519_private_key, mldsa65_private_key_path, mldsa65_public_key_pem)
+
+
+def verify_signed_slsa_provenance_v1(
+    signed_envelope: Dict[str, Any],
+    receipt_payload: Dict[str, Any],
+    trusted_ed25519_public_key: Optional[Ed25519PublicKey] = None,
+    trusted_mldsa65_public_key_pem: Optional[bytes] = None,
+) -> bool:
+    """
+    Verifies SLSA v1.0 in-toto statement and binds subjects to release artifacts (QF-RELEASE-01).
+    """
+    payload = _verify_envelope_seal_v2(signed_envelope, trusted_ed25519_public_key, trusted_mldsa65_public_key_pem)
+
+    if payload.get("schema") != "qf.slsa_provenance_envelope.v1":
+        raise PermissionError(f"[QF-RELEASE-01] Invalid SLSA provenance schema: {payload.get('schema')!r}")
+
+    statement = payload.get("statement")
+    if not isinstance(statement, dict):
+        raise PermissionError("[QF-RELEASE-01] Missing statement in SLSA provenance envelope")
+
+    if statement.get("_type") != "https://in-toto.io/Statement/v1":
+        raise PermissionError(f"[QF-RELEASE-01] Invalid in-toto statement type: {statement.get('_type')!r}")
+    if statement.get("predicateType") != "https://slsa.dev/provenance/v1":
+        raise PermissionError(f"[QF-RELEASE-01] Invalid SLSA predicateType: {statement.get('predicateType')!r}")
+
+    # Verify subjects against receipt artifacts
+    artifact_sha256 = receipt_payload.get("artifact_sha256", {})
+    artifact_sha384 = receipt_payload.get("artifact_sha384", {})
+    subjects = statement.get("subject", [])
+    if not isinstance(subjects, list):
+        raise PermissionError("[QF-RELEASE-01] Invalid subjects list in SLSA statement")
+
+    subject_map_256 = {s.get("name"): s.get("digest", {}).get("sha256") for s in subjects if isinstance(s, dict)}
+    subject_map_384 = {s.get("name"): s.get("digest", {}).get("sha384") for s in subjects if isinstance(s, dict)}
+
+    if set(subject_map_256.keys()) != set(artifact_sha256.keys()):
+        raise PermissionError("[QF-RELEASE-01] SLSA subject list does not match release artifact map")
+
+    for name, expected_hash in artifact_sha256.items():
+        if subject_map_256.get(name) != expected_hash:
+            raise PermissionError(f"[QF-RELEASE-01] SLSA subject digest mismatch on '{name}' (SHA-256)")
+    for name, expected_hash in artifact_sha384.items():
+        if subject_map_384.get(name) != expected_hash:
+            raise PermissionError(f"[QF-RELEASE-01] SLSA subject digest mismatch on '{name}' (SHA-384)")
+
+    # Verify buildDefinition externalParameters
+    predicate = statement.get("predicate", {})
+    build_def = predicate.get("buildDefinition", {})
+    ext_params = build_def.get("externalParameters", {})
+
+    if ext_params.get("release_version") != receipt_payload.get("release_version"):
+        raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: release_version")
+    if ext_params.get("git_commit") != receipt_payload.get("git_commit"):
+        raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: git_commit")
+    if ext_params.get("anti_rollback_counter") != receipt_payload.get("anti_rollback_counter"):
+        raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: anti_rollback_counter")
+    if ext_params.get("key_environment") != receipt_payload.get("key_environment"):
+        raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: key_environment")
+    if ext_params.get("reproducible_build_verified") is not True:
+        raise PermissionError("[QF-RELEASE-01] SLSA provenance parameter mismatch: reproducible_build_verified must be True")
+
+    return True
+
+
 def verify_hybrid_admission_receipt_v2(
     signed_receipt: Dict[str, Any],
     repo_root: Optional[Path] = None,
@@ -784,6 +1291,11 @@ def verify_hybrid_admission_receipt_v2(
     trusted_root_ed25519_public_key: Optional[Ed25519PublicKey] = None,
     trusted_root_mldsa65_public_key_pem: Optional[bytes] = None,
     min_krl_sequence: int = 1,
+    enforce_supply_chain_integrity: bool = False,
+    slsa_provenance: Optional[Dict[str, Any]] = None,
+    signed_sbom: Optional[Dict[str, Any]] = None,
+    signed_cbom: Optional[Dict[str, Any]] = None,
+    rebuild_repo_root: Optional[Path] = None,
 ) -> bool:
     """
     Conjunctive fail-closed verifier for `qf.admission_receipt.v2` (`QF-CRYPTO-01`, `QF-KEY-01`, `QF-RELEASE-01`).
@@ -791,6 +1303,9 @@ def verify_hybrid_admission_receipt_v2(
     SHA-384 digests to match, SBOM digests to match, and anti_rollback_counter > min_accepted_counter.
     When `delegation_cert` or `trusted_root_*` keys are supplied, enforces full Two-Tier Offline Root
     Key Sovereignty (`QF-KEY-01`) and KRL revocation checks prior to trusting the release keys.
+    When `enforce_supply_chain_integrity=True` or supply-chain parameters are provided, enforces
+    reproducible build verification, signed CycloneDX 1.6 SBOM/CBOM inventory validity, and signed
+    SLSA v1.0 in-toto provenance attestation (`QF-RELEASE-01`).
     """
     if not isinstance(signed_receipt, dict):
         raise ValueError("[QF-RECEIPT-V2] Receipt must be a JSON object")
@@ -897,7 +1412,7 @@ def verify_hybrid_admission_receipt_v2(
     if not _mldsa65_verify_bytes(raw_bytes, pq_sig, embedded_pq_pub):
         raise PermissionError("[QF-RECEIPT-V2] NIST FIPS 204 ML-DSA-65 signature verification FAILED")
 
-    # 3. Verify On-Disk Artifacts & SBOM (SHA-256 + SHA-384)
+    # 3. Verify On-Disk Artifacts & SBOM / CBOM / SLSA (SHA-256 + SHA-384)
     if repo_root is not None:
         sbom = payload.get("sbom", {})
         if not isinstance(sbom, dict) or not sbom.get("path"):
@@ -906,12 +1421,78 @@ def verify_hybrid_admission_receipt_v2(
         if compute_file_sha256(sbom_path) != sbom.get("sha256") or compute_file_sha384(sbom_path) != sbom.get("sha384"):
             raise PermissionError("[QF-RECEIPT-V2] On-disk SBOM digest mismatch")
 
+        cbom = payload.get("cbom")
+        if isinstance(cbom, dict) and cbom.get("path"):
+            cbom_path = repo_root / str(cbom["path"])
+            if compute_file_sha256(cbom_path) != cbom.get("sha256") or compute_file_sha384(cbom_path) != cbom.get("sha384"):
+                raise PermissionError("[QF-RECEIPT-V2] On-disk CBOM digest mismatch")
+
+        slsa = payload.get("slsa_provenance")
+        if isinstance(slsa, dict) and slsa.get("path"):
+            slsa_path = repo_root / str(slsa["path"])
+            if compute_file_sha256(slsa_path) != slsa.get("sha256") or compute_file_sha384(slsa_path) != slsa.get("sha384"):
+                raise PermissionError("[QF-RECEIPT-V2] On-disk SLSA provenance digest mismatch")
+
         for rel_path in artifact_sha256:
             full_p = repo_root / rel_path
             if compute_file_sha256(full_p) != artifact_sha256[rel_path]:
                 raise PermissionError(f"[QF-RECEIPT-V2] On-disk SHA-256 drift detected for '{rel_path}'")
             if compute_file_sha384(full_p) != artifact_sha384[rel_path]:
                 raise PermissionError(f"[QF-RECEIPT-V2] On-disk SHA-384 drift detected for '{rel_path}'")
+
+    # 4. QF-RELEASE-01 (M6-C): Conjunctive Supply-Chain Integrity Enforcement
+    if (
+        enforce_supply_chain_integrity
+        or slsa_provenance is not None
+        or signed_sbom is not None
+        or signed_cbom is not None
+        or rebuild_repo_root is not None
+    ):
+        if enforce_supply_chain_integrity:
+            if slsa_provenance is None or signed_sbom is None or signed_cbom is None:
+                raise PermissionError(
+                    "[QF-RELEASE-01] Incomplete supply-chain evidence: SLSA provenance, "
+                    "signed SBOM, and signed CBOM are required when enforce_supply_chain_integrity=True"
+                )
+
+        if rebuild_repo_root is not None:
+            if repo_root is None:
+                raise PermissionError("[QF-RELEASE-01] Primary repo_root required for reproducible build verification")
+            verify_reproducible_build_artifacts(repo_root, rebuild_repo_root, artifact_sha256.keys())
+        elif enforce_supply_chain_integrity and not payload.get("reproducible_build_verified"):
+            raise PermissionError("[QF-RELEASE-01] Incomplete supply-chain evidence: reproducible build verification required")
+
+        if signed_sbom is not None:
+            verify_signed_cyclonedx_16_inventory(
+                signed_sbom,
+                trusted_ed25519_public_key=trusted_ed25519_public_key,
+                trusted_mldsa65_public_key_pem=trusted_mldsa65_public_key_pem,
+                expected_manifest_root_sha256=payload.get("manifest_root_sha256"),
+                expected_manifest_root_sha384=payload.get("manifest_root_sha384"),
+                expected_inventory_type="SBOM",
+                expected_release_version=payload.get("release_version"),
+                expected_git_commit=payload.get("git_commit"),
+            )
+
+        if signed_cbom is not None:
+            verify_signed_cyclonedx_16_inventory(
+                signed_cbom,
+                trusted_ed25519_public_key=trusted_ed25519_public_key,
+                trusted_mldsa65_public_key_pem=trusted_mldsa65_public_key_pem,
+                expected_manifest_root_sha256=payload.get("manifest_root_sha256"),
+                expected_manifest_root_sha384=payload.get("manifest_root_sha384"),
+                expected_inventory_type="CBOM",
+                expected_release_version=payload.get("release_version"),
+                expected_git_commit=payload.get("git_commit"),
+            )
+
+        if slsa_provenance is not None:
+            verify_signed_slsa_provenance_v1(
+                signed_envelope=slsa_provenance,
+                receipt_payload=payload,
+                trusted_ed25519_public_key=trusted_ed25519_public_key,
+                trusted_mldsa65_public_key_pem=trusted_mldsa65_public_key_pem,
+            )
 
     return True
 
