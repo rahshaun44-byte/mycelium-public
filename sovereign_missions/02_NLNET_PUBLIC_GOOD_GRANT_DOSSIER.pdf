@@ -55,17 +55,28 @@ BT /F1 9 Tf 54 78 Td (---) Tj ET
 endstream
 endobj
 3 0 obj
-<< /Length 737 >>
+<< /Length 1818 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 2) Tj
 ET
-BT /F1 11 Tf 54 728 Td (## 3. Why This Serves the Greater Good Without Corporate Gravity) Tj ET
-BT /F1 9 Tf 54 715 Td (- **100% Free & Open Source:** Every line of code, F\\* proof, and test vector in) Tj ET
-BT /F1 9 Tf 54 702 Td (  `pqc-immune-daemon` is released publicly so hospitals, municipalities, journalists, and) Tj ET
-BT /F1 9 Tf 54 689 Td (  independent developers can harden Linux edge systems at `$0.00` licensing cost.) Tj ET
-BT /F1 9 Tf 54 676 Td (- **Zero Cloud Dependency:** Runs entirely on modest commodity hardware \(`<= 14 GiB RAM`\)) Tj ET
-BT /F1 9 Tf 54 663 Td (  without requiring proprietary cloud security subscriptions.) Tj ET
+BT /F1 11 Tf 54 728 Td (## 3. Why This Serves the Greater Good Without Corporate Gravity \(`QF-M5`) Tj ET
+BT /F1 11 Tf 54 715 Td (  Grant Readiness\)) Tj ET
+BT /F1 9 Tf 54 702 Td (- **100% Free & Open Source Deliverable:** Every line of code, F\\* proof, and test vector) Tj ET
+BT /F1 9 Tf 54 689 Td (  in `pqc-immune-daemon` is released publicly under Apache-2.0 / MIT so hospitals,) Tj ET
+BT /F1 9 Tf 54 676 Td (  municipalities, journalists, and independent developers can harden Linux edge systems at) Tj ET
+BT /F1 9 Tf 54 663 Td (  `$0.00` licensing cost.) Tj ET
+BT /F1 9 Tf 54 650 Td (- **Reproducible Technical Demonstrations:** Every milestone is backed by deterministic) Tj ET
+BT /F1 9 Tf 54 637 Td (  verification scripts \(`verify_formal_core.sh`, `verify_dossier_independent.py`\) and a) Tj ET
+BT /F1 9 Tf 54 624 Td (  pinned SHA-256 evidence manifest.) Tj ET
+BT /F1 9 Tf 54 611 Td (- **Realistic Maintenance & Household Boundary:** Milestones are scoped to self-contained,) Tj ET
+BT /F1 9 Tf 54 598 Td (  zero-SLA open-source releases \(`<= 6 hours/day` under `QF-OPS-01`\) that never compromise) Tj ET
+BT /F1 9 Tf 54 585 Td (  Operator household stability.) Tj ET
+BT /F1 9 Tf 54 572 Td (- **Safeguard A & C Compliance:** All individual grant agreements and tax reporting) Tj ET
+BT /F1 9 Tf 54 559 Td (  obligations are honored; unreceived grant milestones \(`pending_grants_usd`\) are strictly) Tj ET
+BT /F1 9 Tf 54 546 Td (  excluded from $R_{\\text{verified liquid}}$ until settled in liquid cash.) Tj ET
+BT /F1 9 Tf 54 533 Td (- **Zero Cloud Dependency:** Runs entirely on modest commodity hardware \(`<= 14 GiB RAM`\)) Tj ET
+BT /F1 9 Tf 54 520 Td (  without requiring proprietary cloud security subscriptions.) Tj ET
 endstream
 endobj
 4 0 obj
@@ -86,12 +97,12 @@ xref
 0000000015 00000 n 
 0000000083 00000 n 
 0000004290 00000 n 
-0000005078 00000 n 
-0000005204 00000 n 
-0000005330 00000 n 
-0000005393 00000 n 
+0000006160 00000 n 
+0000006286 00000 n 
+0000006412 00000 n 
+0000006475 00000 n 
 trailer
 << /Size 8 /Root 7 0 R >>
 startxref
-5442
+6524
 %%EOF

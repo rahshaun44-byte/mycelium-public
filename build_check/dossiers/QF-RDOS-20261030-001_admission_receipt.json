@@ -1,0 +1,99 @@
+{
+  "dossier_id": "QF-RDOS-20261030-001",
+  "generated_at": "2026-10-31T02:28:41Z",
+  "git_commit": "0b7c8ab7d5fcbc6e4268ced4b49766a152128fb7",
+  "host": {
+    "hostname": "quant-Yoga-7-2-in-1-14AKP10",
+    "architecture": "x86_64",
+    "inference_endpoint": "127.0.0.1:11434"
+  },
+  "performance": {
+    "pages_ingested": 5,
+    "chunks_indexed": 4,
+    "elapsed_seconds": 0.0008,
+    "throughput_pages_per_minute": 360837.14,
+    "at_rdos_01_sla_pass": true
+  },
+  "provenance": {
+    "dossier_sha256": "4236f220eb4ba227571f0b1d0dcaf5640932da1a0081e6afcbe00509f8b40592",
+    "dossier_pdf_path": "/home/quant/mycelium/build_check/dossiers/QF-RDOS-20261030-001.pdf",
+    "dossier_pdf_sha256": "8c3a323387b16519a755f83dffbd1a7e2e892e8cdd64b6d86f3133487b66506e",
+    "preserved_corpus_snapshot_path": "/home/quant/mycelium/build_check/dossiers/QF-RDOS-20261030-001_corpus_snapshot.json",
+    "corpus_merkle_root_sha256": "9efdda9e6d9745f3bcfcebeecbacf7606236411e0eba659567b9648b8721bf95",
+    "cbom_reference": "cbom_alpha_node_template.json",
+    "verified_citations_count": 4,
+    "citations_verified_pct": 100.0,
+    "at_rdos_02_zero_hallucinations_pass": true,
+    "privacy_filter_redactions": 3
+  },
+  "assurance": {
+    "qf_a3_formal_verification": "PASS",
+    "qf_a4_machine_extraction": "LOCAL_PASS",
+    "qf_a5_signed_provenance": "GATED",
+    "qf_a6_hardware_root_of_trust": "GATED",
+    "operating_constitution_wasm": {
+      "verdict": "ADMIT",
+      "wasm_verified": true,
+      "parity_verified": true,
+      "controls": {
+        "QF-CAPITAL-01": {
+          "allow": true,
+          "decision": "MAINTAIN_RESERVE_RESTRICT_EXPANSION"
+        },
+        "QF-PRIVACY-01": {
+          "allow": true,
+          "decision": "ADMIT_SOVEREIGN_LOCAL"
+        },
+        "QF-AUTH-01": {
+          "allow": true,
+          "decision": "NON_FINANCIAL_ACTION_PERMITTED"
+        },
+        "QF-OPS-01": {
+          "allow": true,
+          "decision": "SUSTAINABLE_CADENCE_VERIFIED"
+        }
+      }
+    },
+    "hard_stops": {
+      "hs_px_pixel_cve_2026_58704_patched": true,
+      "as_01_03_account_security_verified": true,
+      "pa_llc_finallyfungus_subsistence_verified": false,
+      "track_0_reserve_ratio_gte_6m": false,
+      "sovereign_non_corporate_mode": true,
+      "individual_tax_and_program_compliance_verified": true,
+      "qf_a5_signing_ceremony_completed": false
+    }
+  },
+  "invariants": {
+    "supreme_alignment_law_enforced": true,
+    "golden_financial_invariant_r_gte_o_6m_gated": true,
+    "operating_constitution_wasm_verified": true,
+    "zero_cloud_spend_usd": 0.0,
+    "inference_endpoint": "127.0.0.1:11434",
+    "zero_ambient_data_active": true,
+    "role_isolation_enforced": true,
+    "signed": false
+  },
+  "commercial_economics": {
+    "operating_doctrine": "QF-SOVEREIGN (Zero-Client Bug Bounty, Public-Good Grant & Personal Family-Office Oracle)",
+    "accounting_classification": "modeled_contribution_economics",
+    "realized_business_profit_verified": false,
+    "corporate_llc_overhead_usd": 0.0,
+    "client_sales_and_sla_overhead_usd": 0.0,
+    "dossier_fee_usd": 2500.0,
+    "operator_review_hours": 1.5,
+    "operator_labor_allocation_usd": 225.0,
+    "hardware_allocation_usd": 0.3239,
+    "external_cloud_api_spend_usd": 0.0,
+    "total_direct_cost_usd": 225.32,
+    "gross_profit_usd": 2274.68,
+    "gross_margin_pct": 90.99,
+    "pages_ingested": 5,
+    "cost_per_ingested_page_usd": 45.064,
+    "unallocated_overhead_categories_to_track": [
+      "tax_reserve_1099_or_grant",
+      "hardware_replacement_reserve",
+      "verification_rework_hours"
+    ]
+  }
+}

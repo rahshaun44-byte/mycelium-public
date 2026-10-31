@@ -3,6 +3,16 @@
 **Submission Mode:** Pseudonymous Security Researcher (Immunefi / Code4rena / Sherlock / Cantina / HackerOne)  
 **Verification Engine:** Local Airgapped QuantumFlex Stack (`127.0.0.1:11434`, `$0.00` Cloud Egress)  
 **Citation & PoC Standard:** `100.0%` SHA-256 Source-Bound Citations + Deterministic Reproducer  
+**Authorized Scope Gate (`QF-M5`):** `target_in_authorized_scope == True` / `autonomous_exploitation_enabled == False`  
+
+---
+
+## 0. Authorized Program Scope & Defensive Rules Attestation (`QF-M5`)
+
+- **Authorized Program / Contest URL:** `<Immunefi / Code4rena / Sherlock / Cantina / HackerOne Program URL>`
+- **In-Scope Asset Verified:** `[x]` Confirmed explicitly listed in program scope (`verify_authorized_bounty_scope` == `ALLOW`)
+- **Zero Live / Autonomous Exploitation:** `[x]` All PoC execution performed exclusively against local Foundry forks or offline source snapshots (`127.0.0.1`); zero unsolicited traffic or autonomous exploitation against live third-party infrastructure.
+- **Individual Compliance (`Safeguard A`):** `[x]` Program eligibility, KYC/tax reporting (1099/W-9), and disclosure rules satisfied.
 
 ---
 

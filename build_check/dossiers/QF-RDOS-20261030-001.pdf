@@ -1,0 +1,74 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+2 0 obj
+<< /Length 3977 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 1) Tj
+ET
+BT /F1 13 Tf 54 728 Td (# Municipal Zoning, Post-Quantum Cryptography & Escrow Liability Dossier) Tj ET
+BT /F1 9 Tf 54 702 Td (**Dossier ID:** `QF-RDOS-20261030-001`) Tj ET
+BT /F1 9 Tf 54 689 Td (**Client / Matter:** Vetted Regional M&A Counsel) Tj ET
+BT /F1 9 Tf 54 676 Td (**Generated At:** `2026-10-31T02:28:41Z`) Tj ET
+BT /F1 9 Tf 54 663 Td (**Assurance State:** `FAIL-CLOSED / UNSIGNED \(P0 HARD STOPS GATED\)`) Tj ET
+BT /F1 9 Tf 54 650 Td (**Corpus Merkle Root \(SHA-256\):**) Tj ET
+BT /F1 9 Tf 54 637 Td (  `9efdda9e6d9745f3bcfcebeecbacf7606236411e0eba659567b9648b8721bf95`) Tj ET
+BT /F1 9 Tf 54 624 Td (**Zero-Cloud Spend Invariant:** `$0.00 USD \(127.0.0.1:11434 Local Loopback Only\)`) Tj ET
+BT /F1 11 Tf 54 598 Td (## 1. Executive Findings & Regulatory Posture) Tj ET
+BT /F1 9 Tf 54 572 Td (- **Verified Finding \(target_ma_crypto_inventory.pdf\):** Exhibit B-2 Escrow & Dual-Control) Tj ET
+BT /F1 9 Tf 54 559 Td (  Boundary: Treasury state mutations lack hardware-bound two-man physical attestation) Tj ET
+BT /F1 9 Tf 54 546 Td (  \(CredTwoManAttestation\), creating single-signer drain exposure.) Tj ET
+BT /F1 9 Tf 54 533 Td (  [target_ma_crypto_inventory_c0002_d6ca4c84:p2]) Tj ET
+BT /F1 9 Tf 54 520 Td (- **Verified Finding \(target_ma_crypto_inventory.pdf\):** Exhibit B-1 Legacy Key Store) Tj ET
+BT /F1 9 Tf 54 507 Td (  Audit: Target entity relies on RSA-2048 TLS certificates and unrotated bearer token) Tj ET
+BT /F1 9 Tf 54 494 Td (  [REDACTED_CREDENTIAL] for internal microservice calls. Immediate migration to NIST FIPS) Tj ET
+BT /F1 9 Tf 54 481 Td (  203 \(ML-KEM-768\)... [target_ma_crypto_inventory_c0001_a7951bbd:p1]) Tj ET
+BT /F1 11 Tf 54 455 Td (## 2. Cross-Document Anomaly & Compliance Verification) Tj ET
+BT /F1 9 Tf 54 429 Td (- **Verified Finding \(pittston_zoning_code_2026.pdf\):** Section 402.1 Light Industrial &) Tj ET
+BT /F1 9 Tf 54 416 Td (  Sovereign Compute Overlay: Data processing appliances operating inside sealed commercial) Tj ET
+BT /F1 9 Tf 54 403 Td (  premises with zero external RF emission are permitted by right up to 15 kW continuous) Tj ET
+BT /F1 9 Tf 54 390 Td (  load. Con... [pittston_zoning_code_2026_c0001_48c715b9:p1]) Tj ET
+BT /F1 11 Tf 54 364 Td (## 3. Post-Quantum Cryptographic & Operational Liability Assessment) Tj ET
+BT /F1 9 Tf 54 338 Td (- **Verified Finding \(pittston_zoning_code_2026.pdf\):** Section 508.4 Setback & Acoustic) Tj ET
+BT /F1 9 Tf 54 325 Td (  Mandate: All cooling fans and UPS cabinets must maintain exterior boundary sound levels) Tj ET
+BT /F1 9 Tf 54 312 Td (  below 45 dBA between 22:00 and 07:00 local time.) Tj ET
+BT /F1 9 Tf 54 299 Td (  [pittston_zoning_code_2026_c0002_47b263c3:p2]) Tj ET
+BT /F1 11 Tf 54 273 Td (## Deterministic Citation & Cryptographic Provenance Ledger \(`AT-RDOS-02` /) Tj ET
+BT /F1 11 Tf 54 260 Td (  `AT-RDOS-03`\)) Tj ET
+BT /F1 9 Tf 54 234 Td (| Chunk ID | Source Filing | Page Offset | Chunk SHA-256 Digest |) Tj ET
+BT /F1 9 Tf 54 221 Td (|---|---|---|---|) Tj ET
+BT /F1 9 Tf 54 208 Td (| `target_ma_crypto_inventory_c0002_d6ca4c84` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
+BT /F1 9 Tf 54 195 Td (  p.2 | `d6ca4c8408449b037843aaf775077e69fcf18d7227d0a340631fa158c3690d1e` |) Tj ET
+BT /F1 9 Tf 54 182 Td (| `target_ma_crypto_inventory_c0001_a7951bbd` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
+BT /F1 9 Tf 54 169 Td (  p.1 | `a7951bbde5bc672ac7a8278d09522ae7e6968d22f30b6e7d9ef0a389bc6ee53c` |) Tj ET
+BT /F1 9 Tf 54 156 Td (| `pittston_zoning_code_2026_c0001_48c715b9` | `filings/pittston_zoning_code_2026.pdf` |) Tj ET
+BT /F1 9 Tf 54 143 Td (  p.1 | `48c715b9af90d378bd3f501478a4bde1ea96ab73105fd82bf3f04da7b219d9fc` |) Tj ET
+BT /F1 9 Tf 54 130 Td (| `pittston_zoning_code_2026_c0002_47b263c3` | `filings/pittston_zoning_code_2026.pdf` |) Tj ET
+BT /F1 9 Tf 54 117 Td (  p.2 | `47b263c39d940a00f7fa2b31bbe885008ebd8c1a282dba44036e027f0c4d8838` |) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Type /Page /Parent 4 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+4 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+5 0 obj
+<< /Type /Catalog /Pages 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000083 00000 n 
+0000004112 00000 n 
+0000004238 00000 n 
+0000004295 00000 n 
+trailer
+<< /Size 6 /Root 5 0 R >>
+startxref
+4344
+%%EOF

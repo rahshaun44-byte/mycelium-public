@@ -23,10 +23,14 @@ This protocol governs how the QuantumFlex Research Dossier Engine (`scripts/gene
 
 ---
 
-## 3. Weekly Sovereign Operating Rhythm (Cabin-in-the-Snow Compatible)
+## 3. Weekly Sovereign Operating Rhythm & `QF-M5` Safeguards
 1. **Maximum Sustainable Cadence (`QF-OPS-01`):**
    - $\le 6\text{ hours/day}$ of focused deep work in $\le 90\text{-minute}$ single-object blocks; $\ge 8\text{ hours}$ uninterrupted rest.
-2. **Automated Local Dossier Run:**
-   - Drop public PDFs/filings or target open-source audit repos into a local folder, run `scripts/generate_research_dossier.py` + `scripts/verify_dossier_independent.py`, and review the cited PDF dossier offline.
-3. **Fail-Closed Peace Gate:**
-   - If any opportunity requires sacrificing health, family peace, personal time, or dipping below $R \ge 6O$, the system automatically returns `DENY`.
+2. **Physical & Logical Separation of Household Financial Records (`QF-PRIVACY-01`):**
+   - Personal household financial records (`household_financial` / `sovereign_internal`) are kept physically and logically isolated from all public research, bounty, and grant corpora.
+3. **Mandatory `QF-M5` Operational Safeguards:**
+   - **Safeguard A (Tax & Legal Compliance):** Individual 1099/grant tax, reporting, and program-eligibility obligations are strictly maintained (`individual_tax_and_program_compliance_verified == True`).
+   - **Safeguard B (`QF-A5` Signing Boundary):** Clearing personal hard stops does not auto-sign artifacts; `signed: true` requires an explicit `QF-A5` signing ceremony (`qf_a5_signing_ceremony_completed == True`).
+   - **Safeguard C (Pending Inflows Excluded):** Unsettled bug bounties (`pending_bounties_usd`) and pending grant milestones (`pending_grants_usd`) never count toward $R_{\text{verified liquid}}$.
+4. **Fail-Closed Peace Maxim:**
+   - *No bounty is worth compromising the machine. No grant is worth compromising the mission. No financial opportunity is worth sacrificing the peace the system exists to create.*

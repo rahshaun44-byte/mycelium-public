@@ -30,6 +30,9 @@ Edge Linux nodes, autonomous software agents, and decentralized infrastructure i
 
 ---
 
-## 3. Why This Serves the Greater Good Without Corporate Gravity
-- **100% Free & Open Source:** Every line of code, F\* proof, and test vector in `pqc-immune-daemon` is released publicly so hospitals, municipalities, journalists, and independent developers can harden Linux edge systems at `$0.00` licensing cost.
+## 3. Why This Serves the Greater Good Without Corporate Gravity (`QF-M5` Grant Readiness)
+- **100% Free & Open Source Deliverable:** Every line of code, F\* proof, and test vector in `pqc-immune-daemon` is released publicly under Apache-2.0 / MIT so hospitals, municipalities, journalists, and independent developers can harden Linux edge systems at `$0.00` licensing cost.
+- **Reproducible Technical Demonstrations:** Every milestone is backed by deterministic verification scripts (`verify_formal_core.sh`, `verify_dossier_independent.py`) and a pinned SHA-256 evidence manifest.
+- **Realistic Maintenance & Household Boundary:** Milestones are scoped to self-contained, zero-SLA open-source releases (`<= 6 hours/day` under `QF-OPS-01`) that never compromise Operator household stability.
+- **Safeguard A & C Compliance:** All individual grant agreements and tax reporting obligations are honored; unreceived grant milestones (`pending_grants_usd`) are strictly excluded from $R_{\text{verified liquid}}$ until settled in liquid cash.
 - **Zero Cloud Dependency:** Runs entirely on modest commodity hardware (`<= 14 GiB RAM`) without requiring proprietary cloud security subscriptions.

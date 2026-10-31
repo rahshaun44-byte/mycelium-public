@@ -4,10 +4,10 @@
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 2 0 obj
-<< /Length 4192 >>
+<< /Length 4312 >>
 stream
 BT
-/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 1) Tj
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 2) Tj
 ET
 BT /F1 13 Tf 54 728 Td (# Personal "Family Office" Intelligence Protocol \(`QF-SOVEREIGN-ORACLE`\)) Tj ET
 BT /F1 9 Tf 54 702 Td (**Classification:** Sovereign Internal ? Self-Only Household Capital & Research Protocol) Tj ET
@@ -41,38 +41,61 @@ BT /F1 9 Tf 54 286 Td (  $6O$ \($R - \\Delta \\ge 6O$\). Funds long-term investm
 BT /F1 9 Tf 54 273 Td (  scientific exploration. | Broad low-cost index assets, Treasury ladders, and deeply) Tj ET
 BT /F1 9 Tf 54 260 Td (  researched asymmetric opportunities verified by Athena dossiers. |) Tj ET
 BT /F1 9 Tf 54 234 Td (---) Tj ET
-BT /F1 11 Tf 54 208 Td (## 3. Weekly Sovereign Operating Rhythm \(Cabin-in-the-Snow Compatible\)) Tj ET
+BT /F1 11 Tf 54 208 Td (## 3. Weekly Sovereign Operating Rhythm & `QF-M5` Safeguards) Tj ET
 BT /F1 9 Tf 54 195 Td (1. **Maximum Sustainable Cadence \(`QF-OPS-01`\):**) Tj ET
 BT /F1 9 Tf 54 182 Td (- $\\le 6\\text{ hours/day}$ of focused deep work in $\\le 90\\text{-minute}$ single-object) Tj ET
 BT /F1 9 Tf 54 169 Td (  blocks; $\\ge 8\\text{ hours}$ uninterrupted rest.) Tj ET
-BT /F1 9 Tf 54 156 Td (2. **Automated Local Dossier Run:**) Tj ET
-BT /F1 9 Tf 54 143 Td (- Drop public PDFs/filings or target open-source audit repos into a local folder, run) Tj ET
-BT /F1 9 Tf 54 130 Td (  `scripts/generate_research_dossier.py` + `scripts/verify_dossier_independent.py`, and) Tj ET
-BT /F1 9 Tf 54 117 Td (  review the cited PDF dossier offline.) Tj ET
-BT /F1 9 Tf 54 104 Td (3. **Fail-Closed Peace Gate:**) Tj ET
-BT /F1 9 Tf 54 91 Td (- If any opportunity requires sacrificing health, family peace, personal time, or dipping) Tj ET
-BT /F1 9 Tf 54 78 Td (  below $R \\ge 6O$, the system automatically returns `DENY`.) Tj ET
+BT /F1 9 Tf 54 156 Td (2. **Physical & Logical Separation of Household Financial Records \(`QF-PRIVACY-01`\):**) Tj ET
+BT /F1 9 Tf 54 143 Td (- Personal household financial records \(`household_financial` / `sovereign_internal`\) are) Tj ET
+BT /F1 9 Tf 54 130 Td (  kept physically and logically isolated from all public research, bounty, and grant) Tj ET
+BT /F1 9 Tf 54 117 Td (  corpora.) Tj ET
+BT /F1 9 Tf 54 104 Td (3. **Mandatory `QF-M5` Operational Safeguards:**) Tj ET
+BT /F1 9 Tf 54 91 Td (- **Safeguard A \(Tax & Legal Compliance\):** Individual 1099/grant tax, reporting, and) Tj ET
+BT /F1 9 Tf 54 78 Td (  program-eligibility obligations are strictly maintained) Tj ET
+BT /F1 9 Tf 54 65 Td (  \(`individual_tax_and_program_compliance_verified == True`\).) Tj ET
 endstream
 endobj
 3 0 obj
-<< /Type /Page /Parent 4 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+<< /Length 991 >>
+stream
+BT
+/F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 2) Tj
+ET
+BT /F1 9 Tf 54 728 Td (- **Safeguard B \(`QF-A5` Signing Boundary\):** Clearing personal hard stops does not) Tj ET
+BT /F1 9 Tf 54 715 Td (  auto-sign artifacts; `signed: true` requires an explicit `QF-A5` signing ceremony) Tj ET
+BT /F1 9 Tf 54 702 Td (  \(`qf_a5_signing_ceremony_completed == True`\).) Tj ET
+BT /F1 9 Tf 54 689 Td (- **Safeguard C \(Pending Inflows Excluded\):** Unsettled bug bounties) Tj ET
+BT /F1 9 Tf 54 676 Td (  \(`pending_bounties_usd`\) and pending grant milestones \(`pending_grants_usd`\) never count) Tj ET
+BT /F1 9 Tf 54 663 Td (  toward $R_{\\text{verified liquid}}$.) Tj ET
+BT /F1 9 Tf 54 650 Td (4. **Fail-Closed Peace Maxim:**) Tj ET
+BT /F1 9 Tf 54 637 Td (- *No bounty is worth compromising the machine. No grant is worth compromising the mission.) Tj ET
+BT /F1 9 Tf 54 624 Td (  No financial opportunity is worth sacrificing the peace the system exists to create.*) Tj ET
+endstream
 endobj
 4 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
 endobj
 5 0 obj
-<< /Type /Catalog /Pages 4 0 R >>
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+6 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R] /Count 2 >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 6 0 R >>
 endobj
 xref
-0 6
+0 8
 0000000000 65535 f 
 0000000015 00000 n 
 0000000083 00000 n 
-0000004327 00000 n 
-0000004453 00000 n 
-0000004510 00000 n 
+0000004447 00000 n 
+0000005489 00000 n 
+0000005615 00000 n 
+0000005741 00000 n 
+0000005804 00000 n 
 trailer
-<< /Size 6 /Root 5 0 R >>
+<< /Size 8 /Root 7 0 R >>
 startxref
-4559
+5853
 %%EOF

@@ -4,7 +4,7 @@
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 2 0 obj
-<< /Length 3601 >>
+<< /Length 3993 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 1 OF 2) Tj
@@ -16,73 +16,86 @@ BT /F1 9 Tf 54 676 Td (**Verification Engine:** Local Airgapped QuantumFlex Stac
 BT /F1 9 Tf 54 663 Td (  Cloud Egress\)) Tj ET
 BT /F1 9 Tf 54 650 Td (**Citation & PoC Standard:** `100.0%` SHA-256 Source-Bound Citations + Deterministic) Tj ET
 BT /F1 9 Tf 54 637 Td (  Reproducer) Tj ET
-BT /F1 9 Tf 54 611 Td (---) Tj ET
-BT /F1 11 Tf 54 585 Td (## 1. Vulnerability Summary & Severity Classification) Tj ET
-BT /F1 9 Tf 54 559 Td (- **Title:** `[Severity: High / Critical] <Component / Contract Name> ? <Concise Root-Cause) Tj ET
-BT /F1 9 Tf 54 546 Td (  Vulnerability>`) Tj ET
-BT /F1 9 Tf 54 533 Td (- **Target Protocol / Repository:** `<Protocol Name & Git Commit SHA>`) Tj ET
-BT /F1 9 Tf 54 520 Td (- **Affected Files & Lines:** `[<chunk_id>:p<page_or_line_offset>]`) Tj ET
-BT /F1 9 Tf 54 507 Td (- **Vulnerability Class:**) Tj ET
-BT /F1 9 Tf 54 494 Td (- `[ ]` Single-Signer Escrow / Access-Control Bypass \(`CredTwoManAttestation` absent\)) Tj ET
-BT /F1 9 Tf 54 481 Td (- `[ ]` ERC-20 / USDC 6-Decimal Precision Scaling Flaw \(`10^6` vs `10^18` mismatch\)) Tj ET
-BT /F1 9 Tf 54 468 Td (- `[ ]` Missing Deterministic Idempotency / Replay Drain) Tj ET
-BT /F1 9 Tf 54 455 Td (- `[ ]` Runtime Descriptor / TOCTOU Race Condition \(`EXECUTED_FD != VERIFIED_FD`\)) Tj ET
-BT /F1 9 Tf 54 442 Td (- `[ ]` Post-Quantum / Cryptographic Key-Exchange Downgrade) Tj ET
-BT /F1 9 Tf 54 416 Td (---) Tj ET
-BT /F1 11 Tf 54 390 Td (## 2. Technical Root-Cause Analysis \(Cryptographically Cited\)) Tj ET
-BT /F1 9 Tf 54 364 Td (- **Primary Vulnerable State Transition \(`target_ma_crypto_inventory.pdf`\):** Treasury) Tj ET
-BT /F1 9 Tf 54 351 Td (  state mutations execute without hardware-enforced dual-control attestation, enabling a) Tj ET
-BT /F1 9 Tf 54 338 Td (  single compromised administrative signer to drain escrow balances in a single block) Tj ET
-BT /F1 9 Tf 54 325 Td (  `[target_ma_crypto_inventory_c0002_d6ca4c84:p2]`.) Tj ET
-BT /F1 9 Tf 54 312 Td (- **Credential & Key Hygiene Exposure \(`target_ma_crypto_inventory.pdf`\):** Internal) Tj ET
-BT /F1 9 Tf 54 299 Td (  service authentication relies on legacy RSA-2048 certificates and static bearer) Tj ET
-BT /F1 9 Tf 54 286 Td (  credentials \(`[REDACTED_CREDENTIAL]`\), allowing lateral replay if an edge container is) Tj ET
-BT /F1 9 Tf 54 273 Td (  breached `[target_ma_crypto_inventory_c0001_a7951bbd:p1]`.) Tj ET
-BT /F1 9 Tf 54 247 Td (---) Tj ET
-BT /F1 11 Tf 54 221 Td (## 3. Quantified Funds-at-Risk & Impact Assessment) Tj ET
-BT /F1 9 Tf 54 195 Td (- **Direct Economic Impact:** Up to `100%` of unthrottled treasury escrow balance due to) Tj ET
-BT /F1 9 Tf 54 182 Td (  absence of per-epoch velocity caps and dual-control hardware signatures.) Tj ET
-BT /F1 9 Tf 54 169 Td (- **Exploit Preconditions:** Compromised single hot-wallet or CI/CD signer key \(zero) Tj ET
-BT /F1 9 Tf 54 156 Td (  multi-party hardware quorum required in current target implementation\).) Tj ET
-BT /F1 9 Tf 54 130 Td (---) Tj ET
-BT /F1 11 Tf 54 104 Td (## 4. Deterministic Proof-of-Concept \(Foundry / Python Reproducer\)) Tj ET
-BT /F1 9 Tf 54 78 Td (```solidity) Tj ET
-BT /F1 9 Tf 54 65 Td (// Run locally: forge test --match-test testExploitSingleSignerDrain -vvv) Tj ET
+BT /F1 9 Tf 54 624 Td (**Authorized Scope Gate \(`QF-M5`\):** `target_in_authorized_scope == True` /) Tj ET
+BT /F1 9 Tf 54 611 Td (  `autonomous_exploitation_enabled == False`) Tj ET
+BT /F1 9 Tf 54 585 Td (---) Tj ET
+BT /F1 11 Tf 54 559 Td (## 0. Authorized Program Scope & Defensive Rules Attestation \(`QF-M5`\)) Tj ET
+BT /F1 9 Tf 54 533 Td (- **Authorized Program / Contest URL:** `<Immunefi / Code4rena / Sherlock / Cantina /) Tj ET
+BT /F1 9 Tf 54 520 Td (  HackerOne Program URL>`) Tj ET
+BT /F1 9 Tf 54 507 Td (- **In-Scope Asset Verified:** `[x]` Confirmed explicitly listed in program scope) Tj ET
+BT /F1 9 Tf 54 494 Td (  \(`verify_authorized_bounty_scope` == `ALLOW`\)) Tj ET
+BT /F1 9 Tf 54 481 Td (- **Zero Live / Autonomous Exploitation:** `[x]` All PoC execution performed exclusively) Tj ET
+BT /F1 9 Tf 54 468 Td (  against local Foundry forks or offline source snapshots \(`127.0.0.1`\); zero unsolicited) Tj ET
+BT /F1 9 Tf 54 455 Td (  traffic or autonomous exploitation against live third-party infrastructure.) Tj ET
+BT /F1 9 Tf 54 442 Td (- **Individual Compliance \(`Safeguard A`\):** `[x]` Program eligibility, KYC/tax reporting) Tj ET
+BT /F1 9 Tf 54 429 Td (  \(1099/W-9\), and disclosure rules satisfied.) Tj ET
+BT /F1 9 Tf 54 403 Td (---) Tj ET
+BT /F1 11 Tf 54 377 Td (## 1. Vulnerability Summary & Severity Classification) Tj ET
+BT /F1 9 Tf 54 351 Td (- **Title:** `[Severity: High / Critical] <Component / Contract Name> ? <Concise Root-Cause) Tj ET
+BT /F1 9 Tf 54 338 Td (  Vulnerability>`) Tj ET
+BT /F1 9 Tf 54 325 Td (- **Target Protocol / Repository:** `<Protocol Name & Git Commit SHA>`) Tj ET
+BT /F1 9 Tf 54 312 Td (- **Affected Files & Lines:** `[<chunk_id>:p<page_or_line_offset>]`) Tj ET
+BT /F1 9 Tf 54 299 Td (- **Vulnerability Class:**) Tj ET
+BT /F1 9 Tf 54 286 Td (- `[ ]` Single-Signer Escrow / Access-Control Bypass \(`CredTwoManAttestation` absent\)) Tj ET
+BT /F1 9 Tf 54 273 Td (- `[ ]` ERC-20 / USDC 6-Decimal Precision Scaling Flaw \(`10^6` vs `10^18` mismatch\)) Tj ET
+BT /F1 9 Tf 54 260 Td (- `[ ]` Missing Deterministic Idempotency / Replay Drain) Tj ET
+BT /F1 9 Tf 54 247 Td (- `[ ]` Runtime Descriptor / TOCTOU Race Condition \(`EXECUTED_FD != VERIFIED_FD`\)) Tj ET
+BT /F1 9 Tf 54 234 Td (- `[ ]` Post-Quantum / Cryptographic Key-Exchange Downgrade) Tj ET
+BT /F1 9 Tf 54 208 Td (---) Tj ET
+BT /F1 11 Tf 54 182 Td (## 2. Technical Root-Cause Analysis \(Cryptographically Cited\)) Tj ET
+BT /F1 9 Tf 54 156 Td (- **Primary Vulnerable State Transition \(`target_ma_crypto_inventory.pdf`\):** Treasury) Tj ET
+BT /F1 9 Tf 54 143 Td (  state mutations execute without hardware-enforced dual-control attestation, enabling a) Tj ET
+BT /F1 9 Tf 54 130 Td (  single compromised administrative signer to drain escrow balances in a single block) Tj ET
+BT /F1 9 Tf 54 117 Td (  `[target_ma_crypto_inventory_c0002_d6ca4c84:p2]`.) Tj ET
+BT /F1 9 Tf 54 104 Td (- **Credential & Key Hygiene Exposure \(`target_ma_crypto_inventory.pdf`\):** Internal) Tj ET
+BT /F1 9 Tf 54 91 Td (  service authentication relies on legacy RSA-2048 certificates and static bearer) Tj ET
+BT /F1 9 Tf 54 78 Td (  credentials \(`[REDACTED_CREDENTIAL]`\), allowing lateral replay if an edge container is) Tj ET
+BT /F1 9 Tf 54 65 Td (  breached `[target_ma_crypto_inventory_c0001_a7951bbd:p1]`.) Tj ET
 endstream
 endobj
 3 0 obj
-<< /Length 2407 >>
+<< /Length 3246 >>
 stream
 BT
 /F1 8 Tf 54 750 Td (QUANTUMFLEX SOVEREIGN RESEARCH DOSSIER // PAGE 2 OF 2) Tj
 ET
-BT /F1 9 Tf 54 728 Td (function testExploitSingleSignerDrain\(\) public {) Tj ET
-BT /F1 9 Tf 54 715 Td (uint256 initialVaultBalance = 1_000_000 * 1e6; // 1,000,000 USDC \(6 decimals\)) Tj ET
-BT /F1 9 Tf 54 702 Td (assertEq\(usdc.balanceOf\(address\(escrow\)\), initialVaultBalance\);) Tj ET
-BT /F1 9 Tf 54 676 Td (// Single compromised signer drains vault without two-man hardware attestation) Tj ET
-BT /F1 9 Tf 54 663 Td (vm.prank\(compromisedAdmin\);) Tj ET
-BT /F1 9 Tf 54 650 Td (escrow.emergencySweep\(attackerWallet, initialVaultBalance\);) Tj ET
-BT /F1 9 Tf 54 624 Td (assertEq\(usdc.balanceOf\(address\(escrow\)\), 0\);) Tj ET
-BT /F1 9 Tf 54 611 Td (}) Tj ET
-BT /F1 9 Tf 54 598 Td (```) Tj ET
-BT /F1 9 Tf 54 572 Td (---) Tj ET
-BT /F1 11 Tf 54 546 Td (## 5. Recommended Fail-Closed Remediation) Tj ET
-BT /F1 9 Tf 54 520 Td (1. **Enforce Two-Person / Hardware Quorum:** Require two independent cryptographic) Tj ET
-BT /F1 9 Tf 54 507 Td (  signatures \(or hardware-bound attestation\) before any treasury state mutation.) Tj ET
-BT /F1 9 Tf 54 494 Td (2. **Enforce Deterministic Idempotency & Velocity Caps:** Derive transaction idempotency) Tj ET
-BT /F1 9 Tf 54 481 Td (  keys deterministically from proof block hashes \(`sha256\(blockHash\)`\) and cap per-epoch) Tj ET
-BT /F1 9 Tf 54 468 Td (  outflows.) Tj ET
-BT /F1 9 Tf 54 455 Td (3. **Strict 6-Decimal USDC Invariant:** Pin `1 USDC == 1_000_000` \(`10^6`\) across all) Tj ET
-BT /F1 9 Tf 54 442 Td (  settlement math and target `evm_version = "paris"`.) Tj ET
-BT /F1 9 Tf 54 416 Td (---) Tj ET
-BT /F1 11 Tf 54 390 Td (## 6. Deterministic Citation & Cryptographic Provenance Ledger) Tj ET
-BT /F1 11 Tf 54 377 Td (  \(`AT-RDOS-02`\)) Tj ET
-BT /F1 9 Tf 54 351 Td (| Chunk ID | Source Artifact | Page / Offset | Verified Chunk SHA-256 Digest |) Tj ET
-BT /F1 9 Tf 54 338 Td (| :--- | :--- | :--- | :--- |) Tj ET
-BT /F1 9 Tf 54 325 Td (| `target_ma_crypto_inventory_c0002_d6ca4c84` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
-BT /F1 9 Tf 54 312 Td (  p. 2 | `d6ca4c8408449b037843aaf775077e69fcf18d7227d0a340631fa158c3690d1e` |) Tj ET
-BT /F1 9 Tf 54 299 Td (| `target_ma_crypto_inventory_c0001_a7951bbd` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
-BT /F1 9 Tf 54 286 Td (  p. 1 | `a7951bbde5bc672ac7a8278d09522ae7e6968d22f30b6e7d9ef0a389bc6ee53c` |) Tj ET
+BT /F1 9 Tf 54 715 Td (---) Tj ET
+BT /F1 11 Tf 54 689 Td (## 3. Quantified Funds-at-Risk & Impact Assessment) Tj ET
+BT /F1 9 Tf 54 663 Td (- **Direct Economic Impact:** Up to `100%` of unthrottled treasury escrow balance due to) Tj ET
+BT /F1 9 Tf 54 650 Td (  absence of per-epoch velocity caps and dual-control hardware signatures.) Tj ET
+BT /F1 9 Tf 54 637 Td (- **Exploit Preconditions:** Compromised single hot-wallet or CI/CD signer key \(zero) Tj ET
+BT /F1 9 Tf 54 624 Td (  multi-party hardware quorum required in current target implementation\).) Tj ET
+BT /F1 9 Tf 54 598 Td (---) Tj ET
+BT /F1 11 Tf 54 572 Td (## 4. Deterministic Proof-of-Concept \(Foundry / Python Reproducer\)) Tj ET
+BT /F1 9 Tf 54 546 Td (```solidity) Tj ET
+BT /F1 9 Tf 54 533 Td (// Run locally: forge test --match-test testExploitSingleSignerDrain -vvv) Tj ET
+BT /F1 9 Tf 54 520 Td (function testExploitSingleSignerDrain\(\) public {) Tj ET
+BT /F1 9 Tf 54 507 Td (uint256 initialVaultBalance = 1_000_000 * 1e6; // 1,000,000 USDC \(6 decimals\)) Tj ET
+BT /F1 9 Tf 54 494 Td (assertEq\(usdc.balanceOf\(address\(escrow\)\), initialVaultBalance\);) Tj ET
+BT /F1 9 Tf 54 468 Td (// Single compromised signer drains vault without two-man hardware attestation) Tj ET
+BT /F1 9 Tf 54 455 Td (vm.prank\(compromisedAdmin\);) Tj ET
+BT /F1 9 Tf 54 442 Td (escrow.emergencySweep\(attackerWallet, initialVaultBalance\);) Tj ET
+BT /F1 9 Tf 54 416 Td (assertEq\(usdc.balanceOf\(address\(escrow\)\), 0\);) Tj ET
+BT /F1 9 Tf 54 403 Td (}) Tj ET
+BT /F1 9 Tf 54 390 Td (```) Tj ET
+BT /F1 9 Tf 54 364 Td (---) Tj ET
+BT /F1 11 Tf 54 338 Td (## 5. Recommended Fail-Closed Remediation) Tj ET
+BT /F1 9 Tf 54 312 Td (1. **Enforce Two-Person / Hardware Quorum:** Require two independent cryptographic) Tj ET
+BT /F1 9 Tf 54 299 Td (  signatures \(or hardware-bound attestation\) before any treasury state mutation.) Tj ET
+BT /F1 9 Tf 54 286 Td (2. **Enforce Deterministic Idempotency & Velocity Caps:** Derive transaction idempotency) Tj ET
+BT /F1 9 Tf 54 273 Td (  keys deterministically from proof block hashes \(`sha256\(blockHash\)`\) and cap per-epoch) Tj ET
+BT /F1 9 Tf 54 260 Td (  outflows.) Tj ET
+BT /F1 9 Tf 54 247 Td (3. **Strict 6-Decimal USDC Invariant:** Pin `1 USDC == 1_000_000` \(`10^6`\) across all) Tj ET
+BT /F1 9 Tf 54 234 Td (  settlement math and target `evm_version = "paris"`.) Tj ET
+BT /F1 9 Tf 54 208 Td (---) Tj ET
+BT /F1 11 Tf 54 182 Td (## 6. Deterministic Citation & Cryptographic Provenance Ledger) Tj ET
+BT /F1 11 Tf 54 169 Td (  \(`AT-RDOS-02`\)) Tj ET
+BT /F1 9 Tf 54 143 Td (| Chunk ID | Source Artifact | Page / Offset | Verified Chunk SHA-256 Digest |) Tj ET
+BT /F1 9 Tf 54 130 Td (| :--- | :--- | :--- | :--- |) Tj ET
+BT /F1 9 Tf 54 117 Td (| `target_ma_crypto_inventory_c0002_d6ca4c84` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
+BT /F1 9 Tf 54 104 Td (  p. 2 | `d6ca4c8408449b037843aaf775077e69fcf18d7227d0a340631fa158c3690d1e` |) Tj ET
+BT /F1 9 Tf 54 91 Td (| `target_ma_crypto_inventory_c0001_a7951bbd` | `filings/target_ma_crypto_inventory.pdf` |) Tj ET
+BT /F1 9 Tf 54 78 Td (  p. 1 | `a7951bbde5bc672ac7a8278d09522ae7e6968d22f30b6e7d9ef0a389bc6ee53c` |) Tj ET
 endstream
 endobj
 4 0 obj
@@ -102,13 +115,13 @@ xref
 0000000000 65535 f 
 0000000015 00000 n 
 0000000083 00000 n 
-0000003736 00000 n 
-0000006195 00000 n 
-0000006321 00000 n 
-0000006447 00000 n 
-0000006510 00000 n 
+0000004128 00000 n 
+0000007426 00000 n 
+0000007552 00000 n 
+0000007678 00000 n 
+0000007741 00000 n 
 trailer
 << /Size 8 /Root 7 0 R >>
 startxref
-6559
+7790
 %%EOF

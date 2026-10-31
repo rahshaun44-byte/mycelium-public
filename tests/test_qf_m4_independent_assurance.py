@@ -23,9 +23,13 @@ import pytest
 
 from scripts.benchmark_500page_dossier import build_500_page_corpus
 from scripts.generate_research_dossier import (
+    AthenaDossierStore,
+    HardStopGateStatus,
+    SecurityBoundaryError,
     _build_demo_corpus,
     evaluate_golden_financial_invariant,
     execute_dossier_pipeline,
+    verify_authorized_bounty_scope,
 )
 from scripts.verify_dossier_independent import (
     IndependentAssuranceError,
@@ -202,3 +206,105 @@ def test_qf_m4_timed_500_page_workload_under_600s(tmp_path: Path):
         pdf_path=Path(str(receipt.provenance["dossier_pdf_path"])),
     )
     assert ind["independent_verification_pass"] is True
+
+
+def test_qf_m5_sovereign_safeguards_and_boundaries():
+    """
+    QF-M5 Sovereign Operational Readiness Safeguards:
+      - Safeguard A: Individual tax/reporting/program-eligibility compliance preserved when PA-LLC is retired.
+      - Safeguard B: Clearing personal hard stops does NOT auto-sign (`signed: True`) without explicit QF-A5 signing ceremony.
+      - Safeguard C: Pending bug bounties and pending grants are strictly excluded from R_verified_liquid.
+      - Pillar I: `verify_authorized_bounty_scope` blocks out-of-scope targets and autonomous exploitation.
+      - Pillar III: `household_financial` chunks are isolated from external/public dossier retrieval.
+    """
+    # Safeguard B: All 3 personal hard stops cleared + LLC retired, but QF-A5 ceremony False -> all_cleared False
+    gate_unsigned = HardStopGateStatus(
+        hs_px_pixel_cve_2026_58704_patched=True,
+        as_01_03_account_security_verified=True,
+        pa_llc_finallyfungus_subsistence_verified=False,
+        track_0_reserve_ratio_gte_6m=True,
+        sovereign_non_corporate_mode=True,
+        individual_tax_and_program_compliance_verified=True,
+        qf_a5_signing_ceremony_completed=False,
+    )
+    assert gate_unsigned.personal_hard_stops_cleared is True
+    assert gate_unsigned.all_cleared is False
+
+    # Safeguard A: If individual tax/program compliance is False, personal hard stops also fail closed
+    gate_tax_unverified = HardStopGateStatus(
+        hs_px_pixel_cve_2026_58704_patched=True,
+        as_01_03_account_security_verified=True,
+        pa_llc_finallyfungus_subsistence_verified=False,
+        track_0_reserve_ratio_gte_6m=True,
+        sovereign_non_corporate_mode=True,
+        individual_tax_and_program_compliance_verified=False,
+        qf_a5_signing_ceremony_completed=True,
+    )
+    assert gate_tax_unverified.personal_hard_stops_cleared is False
+    assert gate_tax_unverified.all_cleared is False
+
+    # Only when personal hard stops AND explicit QF-A5 signing ceremony complete -> all_cleared True
+    gate_signed = HardStopGateStatus(
+        hs_px_pixel_cve_2026_58704_patched=True,
+        as_01_03_account_security_verified=True,
+        pa_llc_finallyfungus_subsistence_verified=False,
+        track_0_reserve_ratio_gte_6m=True,
+        sovereign_non_corporate_mode=True,
+        individual_tax_and_program_compliance_verified=True,
+        qf_a5_signing_ceremony_completed=True,
+    )
+    assert gate_signed.all_cleared is True
+
+    # Safeguard C: $15k settled liquid + $50k pending bounty + $30k pending grant vs $4k/mo ($24k required) -> DENY
+    eval_pending = evaluate_golden_financial_invariant(
+        reserves_usd=15000.0,
+        monthly_obligations_usd=4000.0,
+        pending_bounties_usd=50000.0,
+        pending_grants_usd=30000.0,
+    )
+    assert eval_pending.reserves_usd == 15000.0
+    assert eval_pending.pending_bounties_excluded_usd == 50000.0
+    assert eval_pending.pending_grants_excluded_usd == 30000.0
+    assert eval_pending.invariant_satisfied is False
+    assert eval_pending.discretionary_capex_decision == "DENY"
+
+    # Pillar I: Authorized scope verification
+    scope_ok = verify_authorized_bounty_scope(
+        program_name="Immunefi-Authorized-Vault",
+        target_in_authorized_scope=True,
+        autonomous_exploitation_enabled=False,
+    )
+    assert scope_ok["authorized_scope_decision"] == "ALLOW"
+
+    with pytest.raises(SecurityBoundaryError, match="not within explicitly authorized program scope"):
+        verify_authorized_bounty_scope(
+            program_name="Out-Of-Scope-Protocol",
+            target_in_authorized_scope=False,
+        )
+
+    with pytest.raises(SecurityBoundaryError, match="autonomous exploitation"):
+        verify_authorized_bounty_scope(
+            program_name="Immunefi-Authorized-Vault",
+            target_in_authorized_scope=True,
+            autonomous_exploitation_enabled=True,
+        )
+
+    # Pillar III: Physical & logical separation of household_financial records
+    store = AthenaDossierStore()
+    store.ingest_document(
+        source_ref="household/family_budget_2026.md",
+        pages=["Household financial reserve ledger: T-Bill balance and monthly mortgage."],
+        role="household_financial",
+    )
+    store.ingest_document(
+        source_ref="bounty/public_protocol_spec.md",
+        pages=["Public protocol escrow specification for 6-decimal USDC settlement."],
+        role="public",
+    )
+    hits = store.retrieve_for_dossier("Household financial reserve ledger public protocol escrow")
+    assert len(hits) == 1
+    assert hits[0].role == "public"
+
+    with pytest.raises(SecurityBoundaryError, match="Role Isolation Violation"):
+        store.retrieve_for_dossier("ledger", allowed_roles={"household_financial", "public"})
+

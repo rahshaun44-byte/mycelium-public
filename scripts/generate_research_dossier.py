@@ -46,7 +46,8 @@ from src.operating_constitution import (
 # Constants & Governing Invariants
 # ==============================================================================
 ALLOWED_CLIENT_ROLES: Set[str] = {"client_confidential", "public"}
-ALL_VALID_ROLES: Set[str] = {"sovereign_internal", "client_confidential", "public"}
+RESTRICTED_INTERNAL_ROLES: Set[str] = {"sovereign_internal", "household_financial"}
+ALL_VALID_ROLES: Set[str] = ALLOWED_CLIENT_ROLES | RESTRICTED_INTERNAL_ROLES
 LOCAL_OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 DEFAULT_EMBED_MODEL = "nomic-embed-text"
 GRANITE_EMBED_MODEL = "ibm/granite-embedding:278m"
@@ -58,7 +59,7 @@ CITATION_PATTERN = re.compile(r"\[([a-zA-Z0-9_\-]+):p(\d+)\]")
 
 
 class SecurityBoundaryError(RuntimeError):
-    """Raised when Zero-Cloud-Spend, Role Isolation, or PrivacyFilter invariants fail."""
+    """Raised when Zero-Cloud-Spend, Role Isolation, Authorized Scope, or PrivacyFilter invariants fail."""
 
 
 class CitationVerificationError(RuntimeError):
@@ -79,6 +80,8 @@ class ReserveInvariantEvaluation:
     household_obligations_usd: float = 0.0
     committed_operating_obligations_usd: float = 0.0
     speculative_assets_excluded_usd: float = 0.0
+    pending_bounties_excluded_usd: float = 0.0
+    pending_grants_excluded_usd: float = 0.0
     verified_liquid_only: bool = True
     reconciliation_fresh: bool = True
     discretionary_capex_decision: str = "DENY"
@@ -90,6 +93,8 @@ def evaluate_golden_financial_invariant(
     required_months: float = REQUIRED_RESERVE_MONTHS,
     committed_operating_obligations_usd: float = 0.0,
     speculative_assets_usd: float = 0.0,
+    pending_bounties_usd: float = 0.0,
+    pending_grants_usd: float = 0.0,
     verified_liquid_only: bool = True,
     assessment_available: bool = True,
     reconciled_at_utc: Optional[str] = None,
@@ -100,7 +105,9 @@ def evaluate_golden_financial_invariant(
     """
     Enforces Law 2: R_verified_liquid >= 6 * (O_household + O_operating).
     Strengthened QF-M4 / QF-M5 Conditions:
-      1. Reserve calculations use verified liquid assets only (speculative valuations excluded).
+      1. Reserve calculations use verified, settled, available liquid assets only
+         (speculative valuations, pending bug-bounty payouts, and pending grant milestones
+         are strictly excluded under Safeguard C).
       2. Monthly obligations include both household and committed operating expenses.
       3. A failed, unverified, or unavailable financial assessment defaults fail-closed to DENY
          for discretionary capital expenditure.
@@ -141,6 +148,8 @@ def evaluate_golden_financial_invariant(
             household_obligations_usd=0.0,
             committed_operating_obligations_usd=0.0,
             speculative_assets_excluded_usd=round(max(speculative_assets_usd, 0.0), 2),
+            pending_bounties_excluded_usd=round(max(pending_bounties_usd, 0.0), 2),
+            pending_grants_excluded_usd=round(max(pending_grants_usd, 0.0), 2),
             verified_liquid_only=verified_liquid_only,
             reconciliation_fresh=reconciliation_fresh,
             discretionary_capex_decision="DENY",
@@ -151,9 +160,11 @@ def evaluate_golden_financial_invariant(
         or monthly_obligations_usd < 0
         or committed_operating_obligations_usd < 0
         or speculative_assets_usd < 0
+        or pending_bounties_usd < 0
+        or pending_grants_usd < 0
         or required_months <= 0
     ):
-        raise ValueError("Reserves, obligations, and required_months must be non-negative (months > 0).")
+        raise ValueError("Reserves, obligations, excluded inflows, and required_months must be non-negative (months > 0).")
 
     if not (math.isfinite(reserves_usd) and math.isfinite(monthly_obligations_usd) and math.isfinite(committed_operating_obligations_usd)):
         return ReserveInvariantEvaluation(
@@ -203,6 +214,8 @@ def evaluate_golden_financial_invariant(
         household_obligations_usd=round(monthly_obligations_usd, 2),
         committed_operating_obligations_usd=round(committed_operating_obligations_usd, 2),
         speculative_assets_excluded_usd=round(speculative_assets_usd, 2),
+        pending_bounties_excluded_usd=round(pending_bounties_usd, 2),
+        pending_grants_excluded_usd=round(pending_grants_usd, 2),
         verified_liquid_only=True,
         reconciliation_fresh=True,
         discretionary_capex_decision="ALLOW" if satisfied else "DENY",
@@ -323,13 +336,14 @@ class AthenaDossierStore:
     ) -> List[ProvenanceChunk]:
         """
         Retrieves top matching chunks while strictly enforcing access role isolation.
-        Customer dossiers default to {'client_confidential', 'public'} and NEVER access
-        'sovereign_internal' directives or family financial records.
+        External/public/bounty dossiers default to {'client_confidential', 'public'} and NEVER access
+        'sovereign_internal' directives or 'household_financial' records.
         """
         effective_roles = allowed_roles if allowed_roles is not None else ALLOWED_CLIENT_ROLES
-        if "sovereign_internal" in effective_roles:
+        forbidden = effective_roles & RESTRICTED_INTERNAL_ROLES
+        if forbidden:
             raise SecurityBoundaryError(
-                "Role Isolation Violation: 'sovereign_internal' chunks cannot be queried in client dossiers."
+                f"Role Isolation Violation: restricted internal roles {sorted(forbidden)} cannot be queried in external dossiers."
             )
 
         query_terms = {t.lower() for t in re.findall(r"[a-zA-Z0-9_]{3,}", query)}
@@ -433,21 +447,39 @@ class CitationVerifier:
 # ==============================================================================
 @dataclass(frozen=True)
 class HardStopGateStatus:
+    """
+    QF-M5 Sovereign Hard-Stop & Cryptographic Signing Boundary Gate.
+    Safeguard A: Retiring PA-LLC in `sovereign_non_corporate_mode` does not retire
+                 individual 1099/grant tax, reporting, and program-eligibility compliance
+                 (`individual_tax_and_program_compliance_verified`).
+    Safeguard B: Clearing the 3 personal security hard stops (`HS-PX`, `AS-01..03`,
+                 `Track 0` R >= 6O) does NOT automatically authorize `signed: true`.
+                 Signed admission requires an explicit `QF-A5` signing ceremony
+                 (`qf_a5_signing_ceremony_completed == True`).
+    """
+
     hs_px_pixel_cve_2026_58704_patched: bool = True
     as_01_03_account_security_verified: bool = True
     pa_llc_finallyfungus_subsistence_verified: bool = False
     track_0_reserve_ratio_gte_6m: bool = False
     sovereign_non_corporate_mode: bool = True
+    individual_tax_and_program_compliance_verified: bool = True
+    qf_a5_signing_ceremony_completed: bool = False
 
     @property
-    def all_cleared(self) -> bool:
+    def personal_hard_stops_cleared(self) -> bool:
         llc_gate = True if self.sovereign_non_corporate_mode else self.pa_llc_finallyfungus_subsistence_verified
         return (
             self.hs_px_pixel_cve_2026_58704_patched
             and self.as_01_03_account_security_verified
             and llc_gate
+            and self.individual_tax_and_program_compliance_verified
             and self.track_0_reserve_ratio_gte_6m
         )
+
+    @property
+    def all_cleared(self) -> bool:
+        return self.personal_hard_stops_cleared and self.qf_a5_signing_ceremony_completed
 
 
 @dataclass
@@ -485,6 +517,36 @@ def verify_loopback_inference_endpoint(endpoint: str = LOCAL_OLLAMA_ENDPOINT) ->
         raise SecurityBoundaryError(
             f"Zero-Cloud-Spend Invariant Violation: non-loopback endpoint '{endpoint}' is prohibited."
         )
+
+
+def verify_authorized_bounty_scope(
+    program_name: str,
+    target_in_authorized_scope: bool,
+    autonomous_exploitation_enabled: bool = False,
+) -> Dict[str, object]:
+    """
+    QF-M5 Pillar I Authorized Scope & Defensive Research Gate:
+    Enforces that all vulnerability research remains strictly within explicitly
+    authorized program scopes, bounded by program rules, with zero autonomous
+    exploitation of third-party systems.
+    """
+    clean_program = (program_name or "").strip()
+    if not clean_program:
+        raise SecurityBoundaryError("Authorized Scope Violation: program_name must be non-empty.")
+    if not target_in_authorized_scope:
+        raise SecurityBoundaryError(
+            f"Authorized Scope Violation: target for '{clean_program}' is not within explicitly authorized program scope."
+        )
+    if autonomous_exploitation_enabled:
+        raise SecurityBoundaryError(
+            f"Authorized Scope Violation: autonomous exploitation of third-party systems is strictly prohibited ('{clean_program}')."
+        )
+    return {
+        "program_name": clean_program,
+        "target_in_authorized_scope": True,
+        "autonomous_exploitation_enabled": False,
+        "authorized_scope_decision": "ALLOW",
+    }
 
 
 def compute_commercial_cost_accounting(
