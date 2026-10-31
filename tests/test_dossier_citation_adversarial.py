@@ -167,6 +167,10 @@ def test_loopback_endpoint_and_end_to_end_pipeline(tmp_path: Path):
     assert receipt.invariants["signed"] is False
     assert receipt.invariants["operating_constitution_wasm_verified"] is True
     assert receipt.assurance["qf_a5_signed_provenance"] == "GATED"
+    assert receipt.assurance["hard_stops"]["hs_px_pixel_cve_2026_58704_patched"] is True
+    assert receipt.assurance["hard_stops"]["as_01_03_account_security_verified"] is True
+    assert receipt.assurance["hard_stops"]["pa_llc_finallyfungus_subsistence_verified"] is False
+    assert receipt.assurance["hard_stops"]["track_0_reserve_ratio_gte_6m"] is False
     const_wasm = receipt.assurance["operating_constitution_wasm"]
     assert const_wasm["verdict"] == "ADMIT"
     assert const_wasm["wasm_verified"] is True

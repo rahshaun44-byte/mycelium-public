@@ -22,14 +22,16 @@
 │  LOCAL GIT BASELINE   │                                │ EXTERNAL HARD STOPS  │
 │  (100% PASS / CLOSED) │                                │  (OPEN / GATED)      │
 ├───────────────────────┤                                ├──────────────────────┤
-│ • Telemetry Wiring    │                                │ • Pixel Bulletin     │
-│ • Metrics Validation  │                                │ • Account Alerts     │
-│ • Storage Resilience  │                                │ • PA LLC Standing    │
-│ • Database ACL Roles  │                                │ • Household R/O      │
-│ • Circuit Breakers    │                                └──────────────────────┘
+│ • Telemetry Wiring    │                                │ • PA LLC Standing    │
+│ • Metrics Validation  │                                │ • Household R/O      │
+│ • Storage Resilience  │                                └──────────────────────┘
+│ • Database ACL Roles  │
+│ • Circuit Breakers    │
 │ • QF-A3 Formal Proof  │
 │ • QF-A4 Differential  │
 │ • Tailscale Tailworm  │
+│ • HS-PX Pixel Patch   │
+│ • Account Alerts (3x) │
 └───────────────────────┘
 ```
 
@@ -46,8 +48,8 @@
 | **Tailscale SSH (Tailworm)**   | Unpatched 1.104.2 | Closed | **PATCHED** | Upgraded to Tailscale `1.104.4` on host `qfx-yoga` |
 | **QF-A5 Signed Provenance**    | Gated | Gated | **GATED** | Requires offline release key signing ceremony |
 | **QF-A6 Hardware Root of Trust**| Gated | Gated | **GATED** | Requires Pluton TPM + Titan M2 runtime binding |
-| **HS-PX (Pixel Bulletin)**     | Open | Open | **OPERATOR ACTION** | Android September 2026 security bulletin (`CVE-2026-58704`) |
-| **Account Security Alerts**    | Open | Open | **OPERATOR ACTION** | CircleCI OAuth, 2× TP-Link resets, Uber device sign-in |
+| **HS-PX (Pixel Bulletin)**     | Open | Closed | **CLOSED (OPERATOR)** | Pixel 11 Pro (`qfx-pixel`) verified at patch `2026-10-05` (`Android 17`, build `CD1A.261005.003`; [`quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L39)) |
+| **Account Security Alerts**    | Open | Closed | **CLOSED (OPERATOR)** | CircleCI OAuth (09-24), 2× TP-Link resets (09-23/24), and Uber sign-in (09-23) confirmed legitimate by Operator ([`quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L40)) |
 | **PA LLC Standing**            | Open | Open | **EXTERNALLY GATED** | FINALLYFUNGUS LLC (PA 13706513) Department of State record |
 | **Household R/O Baseline**     | Open | Open | **OPERATOR ACTION** | Paper R/O worksheet demonstrating 6-month reserve coverage |
 
@@ -104,14 +106,14 @@
 
 ## 3. Standing External P0 Hard Stops (Action Plan for Operator)
 
-These 4 items cannot be cleared by software commits. They require operator actions:
+Operator-owned security items `HS-PX` and `AS-01..03` were verified closed on 2026-10-26 ([`docs/fellowship/quest-log.md`](file:///home/quant/mycelium/docs/fellowship/quest-log.md#L39-L40)). The remaining 2 items require out-of-band operator verification before `signed: true` release promotion:
 
-| Item | Identifier | Trigger & Vulnerability Context | Required Action / Evidence |
-|---|---|---|---|
-| **Pixel Security** | `HS-PX` | Google Pixel 11 Pro (`qfx-pixel`). Vulnerability: `CVE-2026-58704` (Titan M2 / modem flaw). | Navigate to *Settings > System > Software update*. Apply September 2026 bulletin. Log build ID in `docs/audits/`. |
-| **Account Security** | `AS-01..03` | Unconfirmed authentication notices: CircleCI GitHub OAuth grant (2026-09-24), 2× TP-Link resets (2026-09-23/24), Uber device login (2026-09-23). | Verify audit logs for each service. Revoke unauthorized tokens. Document confirmed dates and 2FA status. |
-| **Legal Entity Standing** | `PA-LLC` | Source conflict: FINALLYFUNGUS LLC (PA 13706513) vs. DAO structure. | Pull Certificate of Subsistence / Business Entity Search from PA Department of State; confirm EIN and banking link. |
-| **Household Reserves** | `TRACK-0` | Risk of premature commercial overextension before financial cushion. | Complete paper R/O worksheet. Verify liquid reserves exceed 6 months of mandatory living and debt obligations ($R \ge O \times 6$). |
+| Item | Identifier | Status | Trigger & Context | Evidence / Remaining Action |
+|---|---|---|---|---|
+| **Pixel Security** | `HS-PX` | **CLOSED** | Google Pixel 11 Pro (`qfx-pixel`), `CVE-2026-58704`. | Verified via direct ADB query at security patch `2026-10-05` (`Android 17`, build `CD1A.261005.003`). |
+| **Account Security** | `AS-01..03` | **CLOSED** | CircleCI GitHub OAuth grant (2026-09-24), 2× TP-Link resets (2026-09-23/24), Uber login (2026-09-23). | Confirmed legitimate by Rahshaun Chambers on 2026-10-26. |
+| **Legal Entity Standing** | `PA-LLC` | **OPEN** | Source conflict: FINALLYFUNGUS LLC (PA 13706513) vs. non-corporate mode. | Pull Certificate of Subsistence / Business Entity Search from PA Department of State; confirm EIN and banking link. |
+| **Household Reserves** | `TRACK-0` | **OPEN** | Risk of premature commercial overextension before financial cushion. | Complete paper R/O worksheet. Verify liquid reserves exceed 6 months of mandatory living and operating obligations ($R \ge O \times 6$). |
 
 ---
 
@@ -132,13 +134,10 @@ These 4 items cannot be cleared by software commits. They require operator actio
 - [x] **Machine Extraction (QF-A4)**: Automated KaRaMeL C extraction + 10,131 differential C ABI checks passed with 0 divergences. (Git commit 318ffd7).
 - [x] **Admission Receipts**: Validated honest fail-closed state (`signed: false`) until external hard stops clear. (6/6 tests passing in tests/test_admission_receipt.py).
 - [x] **Tailscale Tailworm Remediation**: Upgraded host qfx-yoga to Tailscale 1.104.4, patching Tailscale SSH vulnerabilities.
+- [x] **HS-PX (Pixel 11 Pro Security Bulletin)**: Verified Android 17 security patch level 2026-10-05 (build CD1A.261005.003) on qfx-pixel; CVE-2026-58704 resolved.
+- [x] **Account Security Verification (AS-01..03)**: Confirmed CircleCI OAuth grant (2026-09-24), 2× TP-Link ID resets (2026-09-23/24), and Uber sign-in (2026-09-23) legitimate.
 
 ### 🔴 Open P0 Hard Stops (Owner: Rahshaun — External Actions Required)
-- [ ] **HS-PX**: Apply Pixel September 2026 security bulletin on Pixel 11 Pro (CVE-2026-58704).
-- [ ] **Account Security Verification**:
-  - [ ] Confirm CircleCI OAuth GitHub grant (2026-09-24 06:27 UTC).
-  - [ ] Confirm 2× TP-Link ID resets (2026-09-23/24).
-  - [ ] Confirm Uber new-device sign-in (2026-09-23 23:29 UTC).
 - [ ] **PA LLC Standing**: Confirm FINALLYFUNGUS LLC (PA 13706513) on Pennsylvania Department of State records + EIN/banking.
 - [ ] **Track 0 Household Baseline**: Complete paper R/O worksheet (Reserves / Obligations >= 6 months).
 ```
