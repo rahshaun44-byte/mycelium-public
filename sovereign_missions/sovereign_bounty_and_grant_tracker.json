@@ -1,7 +1,40 @@
 {
-  "schema_version": "2.0.0",
+  "schema_version": "2.2.0",
+  "current_release_classification": "QF-M5 — SOVEREIGN OPERATIONAL READINESS",
+  "active_milestone_target": "QF-M6 — First Verified Sovereign Economic Return",
   "operating_doctrine": "QF-SOVEREIGN — Zero-Client, Non-Corporate Sovereign Researcher Mode",
+  "constitutional_maxim": "The machine serves the Operator. The Operator does not serve the machine.",
   "governing_equation": "R_verified_liquid >= 6 * (O_household + O_operating)",
+  "hard_stop_ledger": {
+    "HS-PX": "CLOSED",
+    "AS-01": "CLOSED",
+    "AS-02": "CLOSED",
+    "AS-03": "CLOSED",
+    "PA-LLC": "RETIRED",
+    "TRACK_0": "CLOSED",
+    "reserve_coverage_months": 7.0,
+    "ALL_HARD_STOPS": true,
+    "QF_A5_SIGNING": "PASS",
+    "ADMISSION_SIGNED": true,
+    "signed_receipt_path": "build_check/qf_m5_signed_admission_receipt.json"
+  },
+  "qf_m6_acceptance_gates": {
+    "M6-01_explicitly_authorized_target": "OPEN",
+    "M6-02_local_reproducible_finding": "OPEN",
+    "M6-03_independent_evidence_verification": "OPEN",
+    "M6-04_compliant_submission": "OPEN",
+    "M6-05_verified_bounty_or_grant_award": "OPEN",
+    "M6-06_settled_funds_independently_reconciled": "OPEN",
+    "M6-07_six_month_reserve_protected": "PASS (7.00 months verified)",
+    "realized_settled_income_usd": 0.0,
+    "unsettled_award_counts_as_income": false,
+    "qf_m6_status": "OPEN (Focus: Economic Validation Only — Zero Infrastructure Expansion)"
+  },
+  "bounty_acceptance_gates": [
+    "QF-BOUNTY-01 (Authorization Integrity)",
+    "QF-BOUNTY-02 (Evidence Integrity)",
+    "QF-BOUNTY-03 (Disclosure Integrity)"
+  ],
   "corporate_gravity_eliminated": {
     "b2b_client_sales_calls": 0,
     "client_retainer_slas": 0,
