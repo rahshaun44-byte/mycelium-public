@@ -231,3 +231,184 @@ def test_qf_m5_historical_checkpoint_preserved():
     pub_key = serialization.load_pem_public_key(DEFAULT_PUBLIC_KEY_PATH.read_bytes())
     assert verify_admission_receipt(m5_receipt, trusted_public_key=pub_key) is True
 
+
+def test_qf_m6_b_offline_root_delegation_env_separation_and_krl_revocation(temp_git_repo, tmp_path):
+    """
+    Verifies QF-M6 Phase M6-B (`QF-KEY-01` Key Sovereignty):
+      - Tier 0 Offline Root hybrid (Ed25519 + ML-DSA-65) delegation certificate issuance
+      - Strict `dev` / `test` / `prod` environment separation
+      - Conjunctive Root seal tamper detection
+      - Root Key Revocation List (KRL) revocation and monotonic sequence anti-replay
+    """
+    import base64
+    import copy
+    from src.admission_receipt import (
+        build_hybrid_admission_payload_v2,
+        ensure_or_load_mldsa65_keypair,
+        issue_key_delegation_certificate,
+        issue_key_revocation_list,
+        sign_hybrid_admission_receipt_v2,
+        verify_hybrid_admission_receipt_v2,
+    )
+
+    repo_root, artifacts = temp_git_repo
+    sbom_rel = "build_check/cbom_manifest.json"
+    sbom_path = repo_root / sbom_rel
+    sbom_path.parent.mkdir(parents=True, exist_ok=True)
+    sbom_path.write_text('{"bomFormat":"CycloneDX","specVersion":"1.6"}\n', encoding="utf-8")
+
+    # 1. Provision Tier 0 Offline Root Hybrid Keypair
+    root_dir = tmp_path / "offline_root"
+    root_ed_priv, root_ed_pub = ensure_or_load_release_keypair(
+        root_dir / "qf_root_ed25519.key",
+        root_dir / "qf_root_ed25519.pub.pem",
+        auto_generate_if_missing=True,
+    )
+    root_pq_priv_path = root_dir / "qf_root_mldsa65.key"
+    _, root_pq_pub_pem = ensure_or_load_mldsa65_keypair(
+        root_pq_priv_path,
+        root_dir / "qf_root_mldsa65.pub.pem",
+        auto_generate_if_missing=True,
+    )
+
+    # 2. Provision Tier 1 Prod Release Hybrid Keypair
+    rel_dir = tmp_path / "release_keys"
+    rel_ed_priv, rel_ed_pub = ensure_or_load_release_keypair(
+        rel_dir / "qf_rel_prod_ed25519.key",
+        rel_dir / "qf_rel_prod_ed25519.pub.pem",
+        auto_generate_if_missing=True,
+    )
+    rel_pq_priv_path = rel_dir / "qf_rel_prod_mldsa65.key"
+    _, rel_pq_pub_pem = ensure_or_load_mldsa65_keypair(
+        rel_pq_priv_path,
+        rel_dir / "qf_rel_prod_mldsa65.pub.pem",
+        auto_generate_if_missing=True,
+    )
+
+    # 3. Issue Root-Signed Delegation Certificate (`prod`) and KRL (`krl_sequence=1`)
+    prod_cert = issue_key_delegation_certificate(
+        cert_id="QF-CERT-PROD-2026-001",
+        key_environment="prod",
+        delegated_ed25519_public_key=rel_ed_pub,
+        delegated_mldsa65_public_key_pem=rel_pq_pub_pem,
+        root_ed25519_private_key=root_ed_priv,
+        root_mldsa65_private_key_path=root_pq_priv_path,
+        root_mldsa65_public_key_pem=root_pq_pub_pem,
+        not_before_unix=1790000000,
+        not_after_unix=1800000000,
+    )
+    krl_v1 = issue_key_revocation_list(
+        krl_sequence=1,
+        issued_at_unix=1793400000,
+        root_ed25519_private_key=root_ed_priv,
+        root_mldsa65_private_key_path=root_pq_priv_path,
+        root_mldsa65_public_key_pem=root_pq_pub_pem,
+    )
+
+    payload_v2 = build_hybrid_admission_payload_v2(
+        repo_root=repo_root,
+        required_artifacts=artifacts,
+        sbom_rel_path=sbom_rel,
+        release_version="QF-M6.0.0",
+        anti_rollback_counter=2,
+        key_environment="prod",
+        timestamp=1793405000,
+    )
+    signed_v2 = sign_hybrid_admission_receipt_v2(
+        payload=payload_v2,
+        ed25519_private_key=rel_ed_priv,
+        mldsa65_private_key_path=rel_pq_priv_path,
+        mldsa65_public_key_pem=rel_pq_pub_pem,
+    )
+
+    # Full Two-Tier Sovereign Chain Verification -> PASS
+    assert verify_hybrid_admission_receipt_v2(
+        signed_v2,
+        repo_root=repo_root,
+        min_accepted_counter=1,
+        expected_key_environment="prod",
+        delegation_cert=prod_cert,
+        krl=krl_v1,
+        trusted_root_ed25519_public_key=root_ed_pub,
+        trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+        min_krl_sequence=1,
+    ) is True
+
+    # Environment Separation Violation: `dev` certificate cannot authorize a `prod` release
+    dev_cert = issue_key_delegation_certificate(
+        cert_id="QF-CERT-DEV-2026-001",
+        key_environment="dev",
+        delegated_ed25519_public_key=rel_ed_pub,
+        delegated_mldsa65_public_key_pem=rel_pq_pub_pem,
+        root_ed25519_private_key=root_ed_priv,
+        root_mldsa65_private_key_path=root_pq_priv_path,
+        root_mldsa65_public_key_pem=root_pq_pub_pem,
+        not_before_unix=1790000000,
+        not_after_unix=1800000000,
+    )
+    with pytest.raises(PermissionError, match="Delegated key environment"):
+        verify_hybrid_admission_receipt_v2(
+            signed_v2,
+            repo_root=repo_root,
+            min_accepted_counter=1,
+            expected_key_environment="prod",
+            delegation_cert=dev_cert,
+            krl=krl_v1,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+        )
+
+    # Root ML-DSA-65 Signature Tamper -> FAIL CLOSED
+    bad_root_pq_cert = copy.deepcopy(prod_cert)
+    sig_bytes = bytearray(base64.b64decode(bad_root_pq_cert["root_cryptographic_seal"]["root_mldsa65_signature_b64"]))
+    sig_bytes[0] ^= 0xFF
+    bad_root_pq_cert["root_cryptographic_seal"]["root_mldsa65_signature_b64"] = base64.b64encode(bytes(sig_bytes)).decode("ascii")
+    with pytest.raises(PermissionError, match="Root ML-DSA-65 signature verification FAILED"):
+        verify_hybrid_admission_receipt_v2(
+            signed_v2,
+            repo_root=repo_root,
+            min_accepted_counter=1,
+            expected_key_environment="prod",
+            delegation_cert=bad_root_pq_cert,
+            krl=krl_v1,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+        )
+
+    # Emergency Key Revocation via Root KRL v2 -> FAIL CLOSED
+    krl_v2_revoked = issue_key_revocation_list(
+        krl_sequence=2,
+        issued_at_unix=1793406000,
+        root_ed25519_private_key=root_ed_priv,
+        root_mldsa65_private_key_path=root_pq_priv_path,
+        root_mldsa65_public_key_pem=root_pq_pub_pem,
+        revoked_cert_ids=["QF-CERT-PROD-2026-001"],
+    )
+    with pytest.raises(PermissionError, match="REVOKED by Root KRL"):
+        verify_hybrid_admission_receipt_v2(
+            signed_v2,
+            repo_root=repo_root,
+            min_accepted_counter=1,
+            expected_key_environment="prod",
+            delegation_cert=prod_cert,
+            krl=krl_v2_revoked,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+            min_krl_sequence=2,
+        )
+
+    # Stale KRL Replay (`krl_v1` when `min_krl_sequence=2`) -> FAIL CLOSED
+    with pytest.raises(PermissionError, match="Stale KRL sequence"):
+        verify_hybrid_admission_receipt_v2(
+            signed_v2,
+            repo_root=repo_root,
+            min_accepted_counter=1,
+            expected_key_environment="prod",
+            delegation_cert=prod_cert,
+            krl=krl_v1,
+            trusted_root_ed25519_public_key=root_ed_pub,
+            trusted_root_mldsa65_public_key_pem=root_pq_pub_pem,
+            min_krl_sequence=2,
+        )
+
+

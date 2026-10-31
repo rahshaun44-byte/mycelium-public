@@ -36,11 +36,13 @@
       "verification": "Conjunctive Ed25519 + NIST FIPS 204 ML-DSA-65 (OID 2.16.840.1.101.3.4.3.18) and SHA-256 + SHA-384 dual digest verification (77/77 pytest PASS)"
     },
     "M6_B_key_sovereignty": {
-      "status": "READY_NEXT (Unblocked by M6-A verification)",
-      "scope": "Offline Root of Trust, hardware-protected release signing ceremony, strict dev/test/prod key separation, documented rotation/revocation"
+      "status": "COMPLETE",
+      "design_doc": "docs/QF_M6_B_KEY_SOVEREIGNTY.md",
+      "implementation": "src/admission_receipt.py (qf.key_delegation_cert.v1 + qf.key_revocation_list.v1)",
+      "verification": "Two-Tier Offline Root hybrid (Ed25519 + ML-DSA-65) delegation, strict dev/test/prod key separation, and KRL revocation/anti-replay (78/78 pytest PASS)"
     },
     "M6_C_supply_chain_integrity": {
-      "status": "SEQUENCED_AFTER_M6_B",
+      "status": "READY_NEXT (Unblocked by M6-B verification)",
       "scope": "Reproducible builds, signed SBOM/CBOM, SLSA/in-toto provenance, monotonic anti-rollback enforcement"
     },
     "M6_D_independent_assurance": {
@@ -58,7 +60,7 @@
     "M6-07_six_month_reserve_protected": "PASS (7.00 months verified)",
     "realized_settled_income_usd": 0.0,
     "unsettled_award_counts_as_income": false,
-    "qf_m6_status": "IN_PROGRESS (M6-A Complete; Ready for M6-B Key Sovereignty & Authorized Bounty/Grant Execution)"
+    "qf_m6_status": "IN_PROGRESS (M6-A & M6-B Complete; Ready for M6-C Supply-Chain Integrity & Authorized Bounty/Grant Execution)"
   },
   "bounty_acceptance_gates": [
     "QF-BOUNTY-01 (Authorization Integrity)",

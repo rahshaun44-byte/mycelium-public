@@ -531,6 +531,247 @@ def sign_hybrid_admission_receipt_v2(
     }
 
 
+def issue_key_delegation_certificate(
+    cert_id: str,
+    key_environment: str,
+    delegated_ed25519_public_key: Ed25519PublicKey,
+    delegated_mldsa65_public_key_pem: bytes,
+    root_ed25519_private_key: Ed25519PrivateKey,
+    root_mldsa65_private_key_path: Path,
+    root_mldsa65_public_key_pem: bytes,
+    not_before_unix: int,
+    not_after_unix: int,
+) -> Dict[str, Any]:
+    """
+    Tier 0 Offline Root Ceremony (`QF-KEY-01` / `M6-B`):
+    Issues a conjunctive Hybrid Root-signed Key Delegation Certificate (`qf.key_delegation_cert.v1`)
+    binding a Tier 1 Release Signing Keypair (Ed25519 + ML-DSA-65) to a specific `key_environment`
+    (`dev` | `test` | `prod`) and validity window `[not_before_unix, not_after_unix]`.
+    """
+    if not cert_id or not isinstance(cert_id, str):
+        raise ValueError("[QF-KEY-01] cert_id must be a non-empty string")
+    if key_environment not in VALID_KEY_ENVIRONMENTS:
+        raise ValueError(f"[QF-KEY-01] Invalid key_environment {key_environment!r}; must be in {sorted(VALID_KEY_ENVIRONMENTS)}")
+    if not isinstance(not_before_unix, int) or not isinstance(not_after_unix, int) or not_after_unix <= not_before_unix:
+        raise ValueError("[QF-KEY-01] Invalid certificate validity window")
+
+    del_ed_raw = delegated_ed25519_public_key.public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    del_ed_fp = hashlib.sha256(del_ed_raw).hexdigest()
+    del_pq_fp = hashlib.sha256(delegated_mldsa65_public_key_pem).hexdigest()
+
+    cert_payload = {
+        "schema": "qf.key_delegation_cert.v1",
+        "cert_id": cert_id,
+        "key_environment": key_environment,
+        "not_before_unix": int(not_before_unix),
+        "not_after_unix": int(not_after_unix),
+        "delegated_ed25519_public_key_raw_b64": base64.b64encode(del_ed_raw).decode("ascii"),
+        "delegated_ed25519_fingerprint_sha256": del_ed_fp,
+        "delegated_mldsa65_public_key_pem_b64": base64.b64encode(delegated_mldsa65_public_key_pem).decode("ascii"),
+        "delegated_mldsa65_fingerprint_sha256": del_pq_fp,
+    }
+    raw_bytes = canonical_json_bytes(cert_payload)
+    root_ed_sig = root_ed25519_private_key.sign(raw_bytes)
+    root_ed_pub_raw = root_ed25519_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    root_pq_sig = _mldsa65_sign_bytes(raw_bytes, root_mldsa65_private_key_path)
+
+    return {
+        "payload": cert_payload,
+        "root_cryptographic_seal": {
+            "scheme": "HYBRID-ROOT-ED25519-ML-DSA-65",
+            "payload_sha256": hashlib.sha256(raw_bytes).hexdigest(),
+            "payload_sha384": hashlib.sha384(raw_bytes).hexdigest(),
+            "root_ed25519_public_key_raw_b64": base64.b64encode(root_ed_pub_raw).decode("ascii"),
+            "root_ed25519_fingerprint_sha256": hashlib.sha256(root_ed_pub_raw).hexdigest(),
+            "root_ed25519_signature_b64": base64.b64encode(root_ed_sig).decode("ascii"),
+            "root_mldsa65_public_key_pem_b64": base64.b64encode(root_mldsa65_public_key_pem).decode("ascii"),
+            "root_mldsa65_fingerprint_sha256": hashlib.sha256(root_mldsa65_public_key_pem).hexdigest(),
+            "root_mldsa65_signature_b64": base64.b64encode(root_pq_sig).decode("ascii"),
+        },
+    }
+
+
+def issue_key_revocation_list(
+    krl_sequence: int,
+    issued_at_unix: int,
+    root_ed25519_private_key: Ed25519PrivateKey,
+    root_mldsa65_private_key_path: Path,
+    root_mldsa65_public_key_pem: bytes,
+    revoked_cert_ids: Optional[Sequence[str]] = None,
+    revoked_ed25519_fingerprints_sha256: Optional[Sequence[str]] = None,
+    revoked_mldsa65_fingerprints_sha256: Optional[Sequence[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Tier 0 Offline Root Ceremony (`QF-KEY-01` / `M6-B`):
+    Issues a conjunctive Hybrid Root-signed Key Revocation List (`qf.key_revocation_list.v1`)
+    with monotonic `krl_sequence`.
+    """
+    if isinstance(krl_sequence, bool) or not isinstance(krl_sequence, int) or krl_sequence < 1:
+        raise ValueError("[QF-KEY-01] krl_sequence must be a positive integer")
+
+    krl_payload = {
+        "schema": "qf.key_revocation_list.v1",
+        "krl_sequence": int(krl_sequence),
+        "issued_at_unix": int(issued_at_unix),
+        "revoked_cert_ids": sorted(set(revoked_cert_ids or [])),
+        "revoked_ed25519_fingerprints_sha256": sorted(set(revoked_ed25519_fingerprints_sha256 or [])),
+        "revoked_mldsa65_fingerprints_sha256": sorted(set(revoked_mldsa65_fingerprints_sha256 or [])),
+    }
+    raw_bytes = canonical_json_bytes(krl_payload)
+    root_ed_sig = root_ed25519_private_key.sign(raw_bytes)
+    root_ed_pub_raw = root_ed25519_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    root_pq_sig = _mldsa65_sign_bytes(raw_bytes, root_mldsa65_private_key_path)
+
+    return {
+        "payload": krl_payload,
+        "root_cryptographic_seal": {
+            "scheme": "HYBRID-ROOT-ED25519-ML-DSA-65",
+            "payload_sha256": hashlib.sha256(raw_bytes).hexdigest(),
+            "payload_sha384": hashlib.sha384(raw_bytes).hexdigest(),
+            "root_ed25519_public_key_raw_b64": base64.b64encode(root_ed_pub_raw).decode("ascii"),
+            "root_ed25519_fingerprint_sha256": hashlib.sha256(root_ed_pub_raw).hexdigest(),
+            "root_ed25519_signature_b64": base64.b64encode(root_ed_sig).decode("ascii"),
+            "root_mldsa65_public_key_pem_b64": base64.b64encode(root_mldsa65_public_key_pem).decode("ascii"),
+            "root_mldsa65_fingerprint_sha256": hashlib.sha256(root_mldsa65_public_key_pem).hexdigest(),
+            "root_mldsa65_signature_b64": base64.b64encode(root_pq_sig).decode("ascii"),
+        },
+    }
+
+
+def _verify_root_seal(
+    signed_obj: Dict[str, Any],
+    expected_schema: str,
+    trusted_root_ed25519_public_key: Ed25519PublicKey,
+    trusted_root_mldsa65_public_key_pem: bytes,
+) -> Dict[str, Any]:
+    if not isinstance(signed_obj, dict):
+        raise PermissionError(f"[QF-KEY-01] Expected dict for {expected_schema}")
+    payload = signed_obj.get("payload")
+    seal = signed_obj.get("root_cryptographic_seal")
+    if not isinstance(payload, dict) or not isinstance(seal, dict):
+        raise PermissionError(f"[QF-KEY-01] Missing payload or root_cryptographic_seal in {expected_schema}")
+    if payload.get("schema") != expected_schema:
+        raise PermissionError(f"[QF-KEY-01] Schema mismatch: expected {expected_schema!r}, got {payload.get('schema')!r}")
+    if seal.get("scheme") != "HYBRID-ROOT-ED25519-ML-DSA-65":
+        raise PermissionError(f"[QF-KEY-01] Invalid root seal scheme in {expected_schema}")
+
+    raw_bytes = canonical_json_bytes(payload)
+    if hashlib.sha256(raw_bytes).hexdigest() != seal.get("payload_sha256"):
+        raise PermissionError(f"[QF-KEY-01] Root payload SHA-256 mismatch in {expected_schema}")
+    if hashlib.sha384(raw_bytes).hexdigest() != seal.get("payload_sha384"):
+        raise PermissionError(f"[QF-KEY-01] Root payload SHA-384 mismatch in {expected_schema}")
+
+    trusted_root_ed_raw = trusted_root_ed25519_public_key.public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    if base64.b64decode(seal.get("root_ed25519_public_key_raw_b64", "")) != trusted_root_ed_raw:
+        raise PermissionError(f"[QF-KEY-01] Untrusted Root Ed25519 key in {expected_schema}")
+
+    try:
+        trusted_root_ed25519_public_key.verify(
+            base64.b64decode(seal.get("root_ed25519_signature_b64", "")),
+            raw_bytes,
+        )
+    except (ValueError, InvalidSignature) as exc:
+        raise PermissionError(f"[QF-KEY-01] Root Ed25519 signature verification FAILED on {expected_schema}") from exc
+
+    if base64.b64decode(seal.get("root_mldsa65_public_key_pem_b64", "")) != trusted_root_mldsa65_public_key_pem:
+        raise PermissionError(f"[QF-KEY-01] Untrusted Root ML-DSA-65 key in {expected_schema}")
+
+    if not _mldsa65_verify_bytes(
+        raw_bytes,
+        base64.b64decode(seal.get("root_mldsa65_signature_b64", "")),
+        trusted_root_mldsa65_public_key_pem,
+    ):
+        raise PermissionError(f"[QF-KEY-01] Root ML-DSA-65 signature verification FAILED on {expected_schema}")
+
+    return payload
+
+
+def verify_key_sovereignty_chain(
+    delegation_cert: Dict[str, Any],
+    krl: Dict[str, Any],
+    trusted_root_ed25519_public_key: Ed25519PublicKey,
+    trusted_root_mldsa65_public_key_pem: bytes,
+    expected_key_environment: str,
+    evaluation_time_unix: int,
+    min_krl_sequence: int = 1,
+) -> Tuple[Ed25519PublicKey, bytes]:
+    """
+    Verifies the Two-Tier Sovereign Key Hierarchy (`QF-KEY-01` / `M6-B`):
+      1. Conjunctively verifies the Offline Root seal (`Ed25519` + `ML-DSA-65`) on `delegation_cert`.
+      2. Conjunctively verifies the Offline Root seal (`Ed25519` + `ML-DSA-65`) on `krl`.
+      3. Enforces anti-replay on the KRL (`krl_sequence >= min_krl_sequence`).
+      4. Enforces strict environment separation (`cert.key_environment == expected_key_environment`).
+      5. Enforces delegation validity window (`not_before_unix <= evaluation_time_unix <= not_after_unix`).
+      6. Rejects any certificate or delegated public key (`Ed25519` or `ML-DSA-65`) present in the KRL.
+    Returns `(delegated_ed25519_public_key, delegated_mldsa65_public_key_pem)`.
+    """
+    cert_payload = _verify_root_seal(
+        delegation_cert,
+        "qf.key_delegation_cert.v1",
+        trusted_root_ed25519_public_key,
+        trusted_root_mldsa65_public_key_pem,
+    )
+    krl_payload = _verify_root_seal(
+        krl,
+        "qf.key_revocation_list.v1",
+        trusted_root_ed25519_public_key,
+        trusted_root_mldsa65_public_key_pem,
+    )
+
+    krl_seq = krl_payload.get("krl_sequence")
+    if isinstance(krl_seq, bool) or not isinstance(krl_seq, int) or krl_seq < min_krl_sequence:
+        raise PermissionError(
+            f"[QF-KEY-01] Stale KRL sequence {krl_seq!r} < min_krl_sequence {min_krl_sequence}"
+        )
+
+    if cert_payload.get("key_environment") != expected_key_environment:
+        raise PermissionError(
+            f"[QF-KEY-01] Delegated key environment {cert_payload.get('key_environment')!r} != expected {expected_key_environment!r}"
+        )
+
+    not_before = cert_payload.get("not_before_unix")
+    not_after = cert_payload.get("not_after_unix")
+    if not isinstance(not_before, int) or not isinstance(not_after, int):
+        raise PermissionError("[QF-KEY-01] Invalid validity timestamps in delegation certificate")
+    if evaluation_time_unix < not_before or evaluation_time_unix > not_after:
+        raise PermissionError(
+            f"[QF-KEY-01] Delegation certificate expired or not yet valid at {evaluation_time_unix} "
+            f"(window [{not_before}, {not_after}])"
+        )
+
+    cert_id = cert_payload.get("cert_id")
+    del_ed_fp = cert_payload.get("delegated_ed25519_fingerprint_sha256")
+    del_pq_fp = cert_payload.get("delegated_mldsa65_fingerprint_sha256")
+
+    if cert_id in set(krl_payload.get("revoked_cert_ids", [])):
+        raise PermissionError(f"[QF-KEY-01] Delegation certificate {cert_id!r} has been REVOKED by Root KRL")
+    if del_ed_fp in set(krl_payload.get("revoked_ed25519_fingerprints_sha256", [])):
+        raise PermissionError(f"[QF-KEY-01] Delegated Ed25519 key {del_ed_fp!r} has been REVOKED by Root KRL")
+    if del_pq_fp in set(krl_payload.get("revoked_mldsa65_fingerprints_sha256", [])):
+        raise PermissionError(f"[QF-KEY-01] Delegated ML-DSA-65 key {del_pq_fp!r} has been REVOKED by Root KRL")
+
+    del_ed_raw = base64.b64decode(cert_payload["delegated_ed25519_public_key_raw_b64"])
+    del_pq_pem = base64.b64decode(cert_payload["delegated_mldsa65_public_key_pem_b64"])
+    if hashlib.sha256(del_ed_raw).hexdigest() != del_ed_fp:
+        raise PermissionError("[QF-KEY-01] Delegated Ed25519 public key fingerprint mismatch")
+    if hashlib.sha256(del_pq_pem).hexdigest() != del_pq_fp:
+        raise PermissionError("[QF-KEY-01] Delegated ML-DSA-65 public key fingerprint mismatch")
+
+    return Ed25519PublicKey.from_public_bytes(del_ed_raw), del_pq_pem
+
+
 def verify_hybrid_admission_receipt_v2(
     signed_receipt: Dict[str, Any],
     repo_root: Optional[Path] = None,
@@ -538,11 +779,18 @@ def verify_hybrid_admission_receipt_v2(
     trusted_mldsa65_public_key_pem: Optional[bytes] = None,
     min_accepted_counter: int = 1,
     expected_key_environment: str = "prod",
+    delegation_cert: Optional[Dict[str, Any]] = None,
+    krl: Optional[Dict[str, Any]] = None,
+    trusted_root_ed25519_public_key: Optional[Ed25519PublicKey] = None,
+    trusted_root_mldsa65_public_key_pem: Optional[bytes] = None,
+    min_krl_sequence: int = 1,
 ) -> bool:
     """
-    Conjunctive fail-closed verifier for `qf.admission_receipt.v2` (`QF-CRYPTO-01` & `QF-RELEASE-01`).
+    Conjunctive fail-closed verifier for `qf.admission_receipt.v2` (`QF-CRYPTO-01`, `QF-KEY-01`, `QF-RELEASE-01`).
     Requires BOTH Ed25519 AND NIST FIPS 204 ML-DSA-65 signatures to verify, BOTH SHA-256 and
     SHA-384 digests to match, SBOM digests to match, and anti_rollback_counter > min_accepted_counter.
+    When `delegation_cert` or `trusted_root_*` keys are supplied, enforces full Two-Tier Offline Root
+    Key Sovereignty (`QF-KEY-01`) and KRL revocation checks prior to trusting the release keys.
     """
     if not isinstance(signed_receipt, dict):
         raise ValueError("[QF-RECEIPT-V2] Receipt must be a JSON object")
@@ -567,6 +815,36 @@ def verify_hybrid_admission_receipt_v2(
         raise PermissionError(
             f"[QF-RECEIPT-V2] Key environment mismatch: expected {expected_key_environment!r}, got {payload.get('key_environment')!r}"
         )
+
+    # QF-KEY-01 (M6-B): Verify Offline Root Delegation Certificate + KRL Chain if Root trust is configured
+    if any(
+        x is not None
+        for x in (delegation_cert, krl, trusted_root_ed25519_public_key, trusted_root_mldsa65_public_key_pem)
+    ):
+        if (
+            delegation_cert is None
+            or krl is None
+            or trusted_root_ed25519_public_key is None
+            or trusted_root_mldsa65_public_key_pem is None
+        ):
+            raise PermissionError(
+                "[QF-KEY-01] Incomplete key sovereignty chain: delegation_cert, krl, "
+                "trusted_root_ed25519_public_key, and trusted_root_mldsa65_public_key_pem must all be supplied"
+            )
+        issued_at_unix = payload.get("issued_at_unix")
+        if not isinstance(issued_at_unix, int):
+            raise PermissionError("[QF-KEY-01] Receipt missing valid integer issued_at_unix")
+        delegated_ed_pub, delegated_pq_pem = verify_key_sovereignty_chain(
+            delegation_cert=delegation_cert,
+            krl=krl,
+            trusted_root_ed25519_public_key=trusted_root_ed25519_public_key,
+            trusted_root_mldsa65_public_key_pem=trusted_root_mldsa65_public_key_pem,
+            expected_key_environment=expected_key_environment,
+            evaluation_time_unix=issued_at_unix,
+            min_krl_sequence=min_krl_sequence,
+        )
+        trusted_ed25519_public_key = delegated_ed_pub
+        trusted_mldsa65_public_key_pem = delegated_pq_pem
 
     raw_bytes = canonical_json_bytes(payload)
     if hashlib.sha256(raw_bytes).hexdigest() != seal.get("payload_sha256"):
@@ -636,4 +914,5 @@ def verify_hybrid_admission_receipt_v2(
                 raise PermissionError(f"[QF-RECEIPT-V2] On-disk SHA-384 drift detected for '{rel_path}'")
 
     return True
+
 
