@@ -319,6 +319,8 @@ async def get_mesh_nodes():
 class EdgeTelemetryPayload(BaseModel):
     node_id: str
     pqc_signature: str
+    timestamp: int
+    nonce: str
     hardware_claim: Optional[str] = "Titan-M3"
     attestation_evidence: Optional[str] = None
     entropy_h: Optional[float] = 0.0
@@ -333,35 +335,37 @@ EdgeTelemetryPayload.model_rebuild()
 @app.post("/api/v1/telemetry/heartbeat")
 async def ingest_edge_heartbeat(payload: EdgeTelemetryPayload, request: Request) -> JSONResponse:
     """
-    Decoupled Asynchronous Edge Telemetry Receiver on Port 9001 / Port 443:
-    - Enforces mandatory pqc_signature authentication verified against pinned device keys
-    - Separates hardware_claim from hardware_verified attestation
-    - Derives transport_peer_ip strictly from network layer (never blindly trusts JSON IP)
-    - Records client-reported IP separately as reported_ip for diagnostic audit
+    Decoupled Asynchronous Edge Telemetry Receiver on Port 9001 / Port 443 (Phase 2.1):
+    - Enforces canonical signature binding (QF-EDGE-TRUST-v2)
+    - Enforces 60-second timestamp freshness window
+    - Atomically consumes (node_id, nonce) in SQLite WAL to prevent replay attacks
+    - Derives transport_peer_ip strictly with reverse-proxy trust boundary (Gate C)
+    - Separates caller hardware_claim from hardware_verified attestation
     - Executes durable synchronous write to PostgreSQL before returning 202 Accepted
     """
     import ipaddress
-    from src.edge_verification import verify_heartbeat_signature
+    from src.edge_verification import (
+        verify_heartbeat,
+        HeartbeatVerificationError,
+        extract_trusted_transport_ip,
+    )
 
-    # 1. Transport Peer IP Authentication (Anti-spoofing)
-    transport_ip = request.client.host if request.client else "127.0.0.1"
+    # 1. Transport Peer IP Authentication with Reverse-Proxy Boundary (Gate C)
+    transport_ip = extract_trusted_transport_ip(request)
 
-    # 2. Cryptographic Signature & Identity Verification Gate
-    sig = payload.pqc_signature.strip() if payload.pqc_signature else ""
-    if not sig:
-        raise HTTPException(status_code=401, detail="Authentication required: pqc_signature is empty or missing")
-
-    payload_dict = {
-        "entropy_h": payload.entropy_h,
-        "hardware_claim": payload.hardware_claim,
-        "pqc_algorithm": payload.pqc_algorithm,
-        "tailscale_ip": payload.tailscale_ip,
-    }
-    if not verify_heartbeat_signature(payload.node_id, sig, payload_dict):
-        raise HTTPException(
-            status_code=401,
-            detail=f"Unauthorized: Cryptographic signature verification failed for node '{payload.node_id}' against enrolled hardware root."
+    # 2. Cryptographic Signature, Freshness & Replay Verification Gate (Phase 2.1)
+    raw_body = await request.body()
+    try:
+        verify_heartbeat(
+            node_id=payload.node_id,
+            timestamp=payload.timestamp,
+            nonce=payload.nonce,
+            body=raw_body,
+            signature=payload.pqc_signature,
         )
+    except HeartbeatVerificationError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
+
 
     # Authoritative IP mapping for known nodes
     AUTHORIZED_PEER_IPS = {

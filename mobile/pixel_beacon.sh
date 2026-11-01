@@ -19,9 +19,14 @@ if [ -z "$SIGNATURE" ]; then
     echo "Warning: QF_PQC_SIGNATURE is required for authenticated telemetry heartbeat." >&2
 fi
 
+TIMESTAMP="${QF_TIMESTAMP:-$(date +%s)}"
+NONCE="${QF_NONCE:-$(cat /proc/sys/kernel/random/uuid 2>/dev/null || od -x /dev/urandom 2>/dev/null | head -1 | awk '{print $2$3$4$5}' || echo "nonce_${TIMESTAMP}")}"
+
 PAYLOAD=$(cat <<EOF
 {
     "node_id": "$NODE_ID",
+    "timestamp": $TIMESTAMP,
+    "nonce": "$NONCE",
     "hardware_claim": "$HARDWARE_CLAIM",
     "entropy_h": $ENTROPY_H,
     "pqc_signature": "$SIGNATURE",

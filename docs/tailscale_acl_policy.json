@@ -1,49 +1,65 @@
 {
   "hosts": {
     "yoga": "100.64.1.31",
-    "g6": "100.64.1.19",
     "pixel": "100.64.1.16"
   },
   "acls": [
     {
       "action": "accept",
-      "src": ["yoga"],
-      "dst": ["g6:22", "g6:3389", "g6:8090", "g6:9092"]
+      "src": ["pixel"],
+      "dst": [
+        "yoga:22",
+        "yoga:443",
+        "yoga:8000",
+        "yoga:8080",
+        "yoga:9000",
+        "yoga:9001",
+        "yoga:11434"
+      ]
     },
     {
       "action": "accept",
-      "src": ["pixel"],
-      "dst": ["yoga:11434"]
+      "src": ["yoga"],
+      "dst": [
+        "pixel:5555"
+      ]
     }
   ],
-  "ssh": [],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["quant", "autogroup:nonroot", "root"]
+    }
+  ],
   "tests": [
     {
       "src": "pixel",
       "accept": [
+        "yoga:22",
+        "yoga:443",
+        "yoga:8000",
+        "yoga:8080",
+        "yoga:9000",
+        "yoga:9001",
         "yoga:11434"
       ],
       "deny": [
-        "yoga:22", "yoga:80", "yoga:443", "yoga:5432", "yoga:8000", "yoga:8080", "yoga:9000",
-        "g6:22", "g6:3389", "g6:8090", "g6:9092"
+        "yoga:5432",
+        "yoga:5433",
+        "yoga:9444"
       ]
     },
     {
       "src": "yoga",
       "accept": [
-        "g6:22",
-        "g6:3389",
-        "g6:8090",
-        "g6:9092"
+        "pixel:5555"
       ],
       "deny": [
-        "pixel:22", "pixel:80", "pixel:443", "pixel:5555"
-      ]
-    },
-    {
-      "src": "g6",
-      "deny": [
-        "yoga:22", "yoga:8000", "yoga:8080", "yoga:9444"
+        "pixel:22",
+        "pixel:80",
+        "pixel:443"
       ]
     }
   ],

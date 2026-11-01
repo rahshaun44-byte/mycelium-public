@@ -72,18 +72,24 @@ def test_edge_heartbeat_empty_signature_rejected():
     """Verify heartbeat with empty pqc_signature is rejected with HTTP 401."""
     payload = {
         "node_id": "qfx-pixel",
+        "timestamp": int(time.time()),
+        "nonce": "test_nonce_empty_sig",
         "pqc_signature": "   ",
         "hardware_claim": "Titan-M3",
     }
     response = client.post("/api/v1/telemetry/heartbeat", json=payload)
     assert response.status_code == 401
-    assert "empty or missing" in response.json()["detail"]
+    assert "missing or empty" in response.json()["detail"].lower()
 
 
 def test_edge_heartbeat_invalid_signature_rejected(test_keys_env):
     """Verify heartbeat with invalid/corrupted cryptographic signature is rejected with HTTP 401."""
+    now = int(time.time())
+    nonce = "test_nonce_inv_sig"
     payload = {
         "node_id": "qfx-pixel",
+        "timestamp": now,
+        "nonce": nonce,
         "pqc_signature": "dGVzdF9pbnZhbGlkX3NpZw==",
         "hardware_claim": "Titan-M3",
         "entropy_h": 0.05,
@@ -95,17 +101,22 @@ def test_edge_heartbeat_invalid_signature_rejected(test_keys_env):
 
 def test_edge_heartbeat_valid_ecdsa_signature_accepted(test_keys_env):
     """Verify valid ECDSA signature for qfx-pixel returns 202 Accepted and records claim without auto-promotion."""
+    from src.edge_verification import sign_heartbeat_v2
     pixel_priv = test_keys_env["pixel_privkey"]
-    sig = sign_heartbeat_payload("qfx-pixel", pixel_priv, entropy_h=0.05, hardware_claim="Titan-M3")
-
+    now = int(time.time())
+    nonce = "test_nonce_ecdsa_valid"
     payload = {
         "node_id": "qfx-pixel",
-        "pqc_signature": sig,
+        "timestamp": now,
+        "nonce": nonce,
         "hardware_claim": "Titan-M3",
         "tailscale_ip": "100.64.1.16",
         "pqc_algorithm": "ML-KEM-768",
         "entropy_h": 0.05,
     }
+    sig, _, _ = sign_heartbeat_v2("qfx-pixel", pixel_priv, payload, timestamp=now, nonce=nonce)
+    payload["pqc_signature"] = sig
+
     response = client.post("/api/v1/telemetry/heartbeat", json=payload)
     assert response.status_code == 202
     data = response.json()
@@ -119,16 +130,21 @@ def test_edge_heartbeat_valid_ecdsa_signature_accepted(test_keys_env):
 
 def test_edge_heartbeat_valid_ed25519_signature_accepted(test_keys_env):
     """Verify valid Ed25519 signature for qfx-yoga on loopback succeeds and verifies hardware."""
+    from src.edge_verification import sign_heartbeat_v2
     yoga_priv = test_keys_env["yoga_privkey"]
-    sig = sign_heartbeat_payload("qfx-yoga", yoga_priv, entropy_h=0.0, hardware_claim="Pluton-TPM2")
-
+    now = int(time.time())
+    nonce = "test_nonce_ed25519_valid"
     payload = {
         "node_id": "qfx-yoga",
-        "pqc_signature": sig,
+        "timestamp": now,
+        "nonce": nonce,
         "hardware_claim": "Pluton-TPM2",
         "tailscale_ip": "100.64.1.31",
         "entropy_h": 0.0,
     }
+    sig, _, _ = sign_heartbeat_v2("qfx-yoga", yoga_priv, payload, timestamp=now, nonce=nonce)
+    payload["pqc_signature"] = sig
+
     response = client.post("/api/v1/telemetry/heartbeat", json=payload)
     assert response.status_code == 202
     data = response.json()
@@ -140,15 +156,20 @@ def test_edge_heartbeat_valid_ed25519_signature_accepted(test_keys_env):
 
 def test_edge_heartbeat_fallback_ip_handling(test_keys_env):
     """Verify non-standard reported IP string is safely recorded without throwing INET DB error."""
+    from src.edge_verification import sign_heartbeat_v2
     pixel_priv = test_keys_env["pixel_privkey"]
-    sig = sign_heartbeat_payload("qfx-pixel", pixel_priv, entropy_h=0.0, hardware_claim="Titan-M3")
-
+    now = int(time.time())
+    nonce = "test_nonce_fallback_ip"
     payload = {
         "node_id": "qfx-pixel",
-        "pqc_signature": sig,
+        "timestamp": now,
+        "nonce": nonce,
         "hardware_claim": "Titan-M3",
         "tailscale_ip": "not_an_ip",
     }
+    sig, _, _ = sign_heartbeat_v2("qfx-pixel", pixel_priv, payload, timestamp=now, nonce=nonce)
+    payload["pqc_signature"] = sig
+
     response = client.post("/api/v1/telemetry/heartbeat", json=payload)
     assert response.status_code == 202
     data = response.json()
@@ -158,16 +179,21 @@ def test_edge_heartbeat_fallback_ip_handling(test_keys_env):
 
 def test_edge_heartbeat_spoofed_peer_ip_quarantined(test_keys_env):
     """Verify heartbeat from an unauthorized network transport IP is quarantined."""
+    from src.edge_verification import sign_heartbeat_v2
     spoofed_client = TestClient(app, client=("198.51.100.42", 44321))
     pixel_priv = test_keys_env["pixel_privkey"]
-    sig = sign_heartbeat_payload("qfx-pixel", pixel_priv, entropy_h=0.0, hardware_claim="Titan-M3")
-
+    now = int(time.time())
+    nonce = "test_nonce_spoofed_peer"
     payload = {
         "node_id": "qfx-pixel",
-        "pqc_signature": sig,
+        "timestamp": now,
+        "nonce": nonce,
         "hardware_claim": "Titan-M3",
         "tailscale_ip": "100.64.1.16",
     }
+    sig, _, _ = sign_heartbeat_v2("qfx-pixel", pixel_priv, payload, timestamp=now, nonce=nonce)
+    payload["pqc_signature"] = sig
+
     response = spoofed_client.post("/api/v1/telemetry/heartbeat", json=payload)
     assert response.status_code == 202
     data = response.json()
@@ -180,16 +206,21 @@ def test_edge_heartbeat_spoofed_peer_ip_quarantined(test_keys_env):
 
 def test_edge_heartbeat_durable_commit_verified(test_keys_env):
     """Verify database write is synchronously durable upon return."""
+    from src.edge_verification import sign_heartbeat_v2
     pixel_priv = test_keys_env["pixel_privkey"]
-    sig = sign_heartbeat_payload("qfx-pixel", pixel_priv, entropy_h=0.07, hardware_claim="Titan-M3")
-
+    now = int(time.time())
+    nonce = "test_nonce_durable_commit"
     payload = {
         "node_id": "qfx-pixel",
-        "pqc_signature": sig,
+        "timestamp": now,
+        "nonce": nonce,
         "hardware_claim": "Titan-M3",
         "tailscale_ip": "100.64.1.16",
         "entropy_h": 0.07,
     }
+    sig, _, _ = sign_heartbeat_v2("qfx-pixel", pixel_priv, payload, timestamp=now, nonce=nonce)
+    payload["pqc_signature"] = sig
+
     response = client.post("/api/v1/telemetry/heartbeat", json=payload)
     assert response.status_code == 202
 
@@ -210,4 +241,5 @@ def test_edge_heartbeat_durable_commit_verified(test_keys_env):
             assert row[4] == 0.07
             assert str(row[5]) == "100.64.1.16"
     conn.close()
+
 
