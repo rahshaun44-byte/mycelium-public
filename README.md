@@ -1,7 +1,7 @@
 # Mycelium — QuantumFlex Engine, Coordination Architecture & pqc-immune-daemon
 
 [![License](https://img.shields.io/badge/License-Apache_2.0_|_MIT-blue.svg)](LICENSE)
-[![NLnet Grant](https://img.shields.io/badge/NLnet_Restack_Fund-Application_2026--11--4af-green.svg)](sovereign_missions/02_NLNET_SUBMISSION_RECEIPT_2026-11-4af.md)
+[![NLnet Grant](https://img.shields.io/badge/NLnet_Restack_Fund-Application_2026--11--4af-green.svg)](docs/audits/2026-10-31-nlnet-submission-2026-11-4af.txt)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Open Policy Agent](https://img.shields.io/badge/OPA-Rego_Policies_Passing-brightgreen.svg)](sentinel/policies/)
 [![Tests Passing](https://img.shields.io/badge/tests-551%20passed-success.svg)](tests/)
@@ -33,8 +33,8 @@ This repository hosts **Mycelium** and the **`pqc-immune-daemon`** project, an o
 | **Milestone 4** | CycloneDX 1.6 CBOM, SLSA Provenance & Packaging | 3 Weeks (~60h) | Automated CBOM generator, signed SLSA v1.0 Level 3 build provenance attestation, standalone offline verification tool, and packaging (.deb, apk, OCI). | Bit-for-bit reproducible builds verified; clean pass on 10-vector tamper matrix; independent offline verification verified. |
 
 Full application dossier and submission receipts:
-- [NLnet Grant Application Dossier](sovereign_missions/02_NLNET_PUBLIC_GOOD_GRANT_DOSSIER.md)
-- [Official Submission Receipt `2026-11-4af`](sovereign_missions/02_NLNET_SUBMISSION_RECEIPT_2026-11-4af.md)
+- [NLnet Grant Application Proposal (PDF)](NLNET_PROPOSAL_ATTACHMENT.pdf)
+- [Official Submission Receipt `2026-11-4af`](docs/audits/2026-10-31-nlnet-submission-2026-11-4af.txt)
 
 ---
 
