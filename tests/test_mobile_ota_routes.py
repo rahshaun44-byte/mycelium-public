@@ -29,7 +29,7 @@ class TestMobileOTARoutes(unittest.TestCase):
         cls.client = TestClient(app)
 
     def test_mobile_bootstrap_endpoint(self):
-        """Bootstrap endpoint proves service identity and qf-mobile-v1 schema."""
+        """Bootstrap endpoint proves service identity, verifiable signing key, and QF-LEGAL-001 governance."""
         resp = self.client.get("/mobile/bootstrap")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -37,6 +37,20 @@ class TestMobileOTARoutes(unittest.TestCase):
         self.assertEqual(data.get("schema"), "qf-mobile-v1")
         self.assertTrue(data.get("authenticated"))
         self.assertIn("signed-ota-distribution", data.get("capabilities", []))
+
+        # Cryptographic Identity & Verification Procedure Verification (Beyond boolean true)
+        srv_id = data.get("service_identity", {})
+        self.assertEqual(srv_id.get("key_type"), "Ed25519")
+        self.assertTrue(len(srv_id.get("public_key", "")) > 30)
+        self.assertEqual(len(srv_id.get("fingerprint_sha256", "")), 64)
+        self.assertIn("Ed25519", srv_id.get("verification_procedure", ""))
+
+        # Governance & Authorization Disclosures
+        gov = data.get("governance", {})
+        self.assertEqual(gov.get("policy_standard"), "QF-LEGAL-001")
+        self.assertIn("PRIVACY", gov.get("privacy_policy_url", ""))
+        self.assertIn("AUTHORIZED", gov.get("authorized_operations_policy_url", ""))
+        self.assertEqual(len(data.get("service_handshake_digest", "")), 64)
 
     def test_mobile_manifest_endpoint(self):
         """Manifest index lists signed mobile artifacts with valid sha256."""

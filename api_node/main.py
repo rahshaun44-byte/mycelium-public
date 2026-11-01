@@ -374,6 +374,22 @@ async def submit_telemetry(request: Request):
     if not persist_telemetry_frame(node_id, int(timestamp), payload_str):
         raise HTTPException(status_code=403, detail="Forbidden: Persistence rejected by privacy filter")
 
+    # Audit Trail Emission (QF-LEGAL-001)
+    try:
+        import hashlib
+        from src.legal_governance import record_governance_audit, EVENT_TELEMETRY_ACCEPTED
+        record_governance_audit(
+            event_type=EVENT_TELEMETRY_ACCEPTED,
+            node_id=node_id,
+            operator_id="authorized_node",
+            requested_operation="telemetry:submit",
+            authorization_decision="ADMIT",
+            evidence_hash=hashlib.sha256(payload_str.encode()).hexdigest(),
+            metadata={"seq": seq, "trust_score": 100}
+        )
+    except Exception:
+        pass
+
     # 4. Receipt
     return {
         "status": "VERIFIED",

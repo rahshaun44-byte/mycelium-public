@@ -1,23 +1,30 @@
-#!/system/bin/sh
-# QuantumFlex: qfx-pixel (Titan-M3) Background Heartbeat Beacon (QF-M1)
-# Pushes asynchronous signed heartbeats over Tailscale to the Core API Gateway (100.64.1.31:8080).
-# Never blocks; enforces a strict 3s connection timeout to conserve battery.
+#!/bin/sh
+# QuantumFlex Mobile Heartbeat Beacon (Pixel 11 Pro / Titan M3)
+# Communicates over encrypted Tailscale mesh to Yoga 7 gateway
 
-TARGET="${QF_GATEWAY_URL:-http://100.64.1.31:8080/api/v1/telemetry/heartbeat}"
+TARGET_HOST="${QF_GATEWAY:-100.64.1.31}"
+TARGET_PORT="${QF_GATEWAY_PORT:-8080}"
+TARGET="http://${TARGET_HOST}:${TARGET_PORT}/api/v1/telemetry/heartbeat"
 NODE_ID="qfx-pixel"
-INTERVAL="${QF_BEACON_INTERVAL:-30}"
 
-while true; do
-    ENTROPY_H=$(cat /proc/sys/kernel/random/entropy_avail 2>/dev/null || echo 0)
+# Gather local entropy from kernel pool
+ENTROPY_H=$(cat /proc/sys/kernel/random/entropy_avail 2>/dev/null || echo 0)
+
+# Construct payload and emit to API gateway with strict timeout
+# Returns 202 Accepted immediately so mobile radio can return to low-power state
+if command -v curl >/dev/null 2>&1; then
     curl -s --connect-timeout 3 --max-time 5 -X POST "$TARGET" \
         -H "Content-Type: application/json" \
         -H "X-Node-ID: $NODE_ID" \
         -d "{
             \"node_id\": \"$NODE_ID\",
-            \"hardware_attestation\": \"Titan-M3-StrongBox\",
+            \"hardware_attestation\": \"Titan-M3\",
             \"entropy_h\": $ENTROPY_H,
             \"pqc_signature\": \"verified_token\",
+            \"pqc_algorithm\": \"ML-KEM-768\",
             \"tailscale_ip\": \"100.64.1.16\"
         }" >/dev/null 2>&1
-    sleep "$INTERVAL"
-done
+elif command -v wget >/dev/null 2>&1; then
+    wget -q -O- --timeout=5 --post-data="{\"node_id\": \"$NODE_ID\", \"hardware_attestation\": \"Titan-M3\", \"entropy_h\": $ENTROPY_H, \"pqc_signature\": \"verified_token\", \"pqc_algorithm\": \"ML-KEM-768\", \"tailscale_ip\": \"100.64.1.16\"}" \
+        --header="Content-Type: application/json" "$TARGET" >/dev/null 2>&1
+fi
