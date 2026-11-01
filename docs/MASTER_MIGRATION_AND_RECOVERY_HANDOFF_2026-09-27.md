@@ -27,7 +27,7 @@ All pre-migration objectives have been executed with cryptographic validation an
 
 ### Encryption Parameters
 - **Cipher**: OpenSSL AES-256-CBC (`-salt -pbkdf2 -iter 100000`)
-- **Passphrase**: `QuantumFlex-Sovereign-2026`
+- **Passphrase**: `[REDACTED_OPERATOR_CUSTODY]`
 - **Manual Decryption Command**:
   ```bash
   openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
@@ -44,7 +44,7 @@ All pre-migration objectives have been executed with cryptographic validation an
 | **Database Cluster** | `qfx-postgres-dump-20260927.sql` | Full PostgreSQL dump from `amara-matrix` (21,452 lines) |
 | **Systemd User Stack** | `~/.config/systemd/user/` | All 18 service and timer definitions (engine, API, AMARA, Athena, QF-Bot, Ghost Sink) |
 | **SSH Identities** | `~/.ssh/` | `id_ed25519`, `id_ed25519.pub`, `config`, `known_hosts` |
-| **Academic & Personal** | `~/SNHU_Vault/`, `~/Desktop/`, `~/Documents/` | SNHU course artifacts, degree materials, personal workspace files |
+| **Personal Workspace** | `~/Desktop/`, `~/Documents/` | Personal workspace and research files |
 | **Security Daemons** | `~/pqc-immune-daemon/`, `~/.gnupg/` | PQC auto-restoration daemon, GPG keyrings, `ca_root_vault.enc` |
 | **Configs & Scripts** | `mycelium/.env`, `qflex_cli.py`, `qf-mobile` | Environment variables, mobile CLI node sync, GrapheneOS watch |
 
@@ -75,8 +75,8 @@ nvme0n1 (476.9G)
 ├─nvme0n1p2 (16M)           -> Microsoft Reserved (TO BE WIPED)
 ├─nvme0n1p3 (375.9G, BitLocker) -> "QUANTUMFLEX C:" (TO BE WIPED)
 ├─nvme0n1p4 (859M, ntfs)    -> Windows Recovery (TO BE WIPED)
-├─nvme0n1p5 (2G, ext4)      -> /boot (Fedora)
-└─nvme0n1p6 (98G, crypto_LUKS) -> btrfs / & /home (Fedora)
+├─nvme0n1p5 (2G, ext4)      -> /boot (Linux)
+└─nvme0n1p6 (98G, crypto_LUKS) -> btrfs / & /home (Linux)
 ```
 
 ### Obliterating Windows During Ubuntu Installation

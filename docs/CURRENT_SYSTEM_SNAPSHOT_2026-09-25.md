@@ -14,7 +14,7 @@ QuantumFlex/Mycelium is an implemented, running personal security, evidence, pol
 ## Evidence observed directly
 
 - Workspace `/home/quant/mycelium`, HEAD `bc5c9156c9e6466067c9d9121cedfb2908d75d0e`. Existing tracked modifications and untracked files were present before inspection and left intact. No fetch/pull performed; remote parity is unknown.
-- Host `fedora`, kernel `7.2.7-200.fc44.x86_64`, AMD Ryzen AI 5 340, 6 cores/12 threads, approximately 15,127 MiB RAM. At sampling, approximately 3,143 MiB RAM available and 7,638 of 8,191 MiB swap used. CPU boost sysfs value was `1`; older boost-disabled assertions are not current.
+- Host `qfx-yoga`, Ubuntu 26.04.1 LTS, AMD Ryzen AI 5 340, 6 cores/12 threads, approximately 15,127 MiB RAM. At sampling, approximately 3,143 MiB RAM available and 7,638 of 8,191 MiB swap used. CPU boost sysfs value was `1`; older boost-disabled assertions are not current.
 - User services active/running: `quantum-flex-engine-mycelium`, `opa-immune`, `immune-daemon`, `amara-dashboard`, `amara-matrix`, `api-node`, `athena-node`, `qf-bot`, `qf-monitor`, `qf-kafka-telemetry`, `qf-kafka-consumer`, `quantumflex-witness`, `quantumflex-ghost-sink`, `swarm-worker`.
 - `qflex-mcp` user unit inactive. System Ollama active; user Ollama unit inactive. Distinguish the two scopes.
 - Engine ExecStart: `/home/quant/mycelium/build_check/quantum_flex_engine`, PID 38101 at sampling, active since 22:34:31 EDT. Listener `127.0.0.1:9444`.

@@ -220,7 +220,7 @@ class GatekeeperEngine:
     def route_to_ghost_node(self, attestation: dict, reason: str):
         """Absorbs anomaly (h) into the Ghost Node entropy sink."""
         sink_payload = {
-            "node_uuid": "fedora-primary-alpha",
+            "node_uuid": "qfx-yoga-primary-alpha",
             "timestamp_epoch_nonce": str(int(time.time())),
             "pcr_integrity_pass": False,
             "nonce_freshness_pass": True,

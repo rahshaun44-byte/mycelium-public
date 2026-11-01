@@ -1,6 +1,8 @@
-FROM registry.fedoraproject.org/fedora-minimal:40 AS builder
+FROM ubuntu:24.04 AS builder
 
-RUN microdnf -y install rust cargo gcc && microdnf clean all
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    rustc cargo gcc libc6-dev ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
@@ -10,7 +12,7 @@ RUN mkdir src && echo "" > src/lib.rs && echo "fn main() {}" > src/main.rs \
 COPY src ./src
 RUN cargo build --release
 
-FROM registry.fedoraproject.org/fedora-minimal:40
+FROM ubuntu:24.04
 
 WORKDIR /app
 COPY --from=builder /build/target/release/quantumflex-ghost-sink /app/ghost-sink

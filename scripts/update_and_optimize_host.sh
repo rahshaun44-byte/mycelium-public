@@ -2,9 +2,9 @@
 # ==============================================================================
 # QuantumFlex: Master Host System Upgrade & Network Optimization Engine
 # ==============================================================================
-# Target: Fedora Linux 44 (Workstation Edition) on Lenovo Yoga 7i
+# Target: Ubuntu 26.04.1 LTS on Lenovo Yoga 7 2-in-1 14AKP10
 # Purpose: Applies kernel BBR & 16MB socket tuning, updates all system packages,
-#          attaches the eBPF/XDP pre-ingress shunt, and enforces zero-trust firewalld.
+#          attaches the eBPF/XDP pre-ingress shunt, and enforces zero-trust boundaries.
 # ==============================================================================
 
 set -euo pipefail
@@ -60,17 +60,27 @@ else
     log_warn "attach.sh not executable or not found."
 fi
 
-# 4. Enforce Firewalld Zero-Trust Boundaries
-log_info "Verifying firewalld zone boundaries..."
-firewall-cmd --permanent --zone=qf-tailscale --add-interface=tailscale0 >/dev/null 2>&1 || true
-firewall-cmd --permanent --zone=qf-tailscale --add-port=443/tcp --add-port=8443/tcp --add-port=8000/tcp --add-port=8080/tcp --add-port=9000/tcp >/dev/null 2>&1 || true
-firewall-cmd --permanent --zone=FedoraWorkstation --add-port=41641/udp >/dev/null 2>&1 || true
-firewall-cmd --reload >/dev/null
-log_success "Firewalld rules verified (WAN locked down; mesh ports open in qf-tailscale)."
+# 4. Enforce Zero-Trust Network Boundaries
+log_info "Verifying network firewall boundaries..."
+if command -v ufw >/dev/null 2>&1; then
+    ufw allow in on tailscale0 to any port 443 proto tcp >/dev/null 2>&1 || true
+    ufw allow in on tailscale0 to any port 8080 proto tcp >/dev/null 2>&1 || true
+    ufw allow in on tailscale0 to any port 9001 proto tcp >/dev/null 2>&1 || true
+    log_success "UFW firewall rules verified on tailscale0."
+elif command -v firewall-cmd >/dev/null 2>&1; then
+    firewall-cmd --permanent --zone=qf-tailscale --add-interface=tailscale0 >/dev/null 2>&1 || true
+    firewall-cmd --permanent --zone=qf-tailscale --add-port=443/tcp --add-port=8080/tcp --add-port=9001/tcp >/dev/null 2>&1 || true
+    firewall-cmd --reload >/dev/null 2>&1 || true
+    log_success "Firewalld rules verified on tailscale0."
+fi
 
 # 5. Execute Full System Package Upgrade
-log_info "Initiating system package upgrade via DNF..."
-dnf upgrade -y --refresh
+log_info "Initiating system package upgrade via APT..."
+if command -v apt-get >/dev/null 2>&1; then
+    DEBIAN_FRONTEND=noninteractive apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+elif command -v apt >/dev/null 2>&1; then
+    apt update -y && apt upgrade -y
+fi
 
 log_success "System packages updated successfully."
 

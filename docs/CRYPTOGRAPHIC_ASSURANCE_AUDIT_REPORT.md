@@ -233,7 +233,7 @@ Binary: `build/test_wire_fuzz_negative` & `scripts/test_wycheproof_x25519.py`
 
 ### Workstation network posture (Yoga)
 
-On the Fedora workstation, name-discovery responders (LLMNR, mDNS/Avahi,
+On the primary Ubuntu workstation (`qfx-yoga`), name-discovery responders (LLMNR, mDNS/Avahi,
 WSD) were disabled, application listeners were constrained to `127.0.0.1`,
 a single LAN default was pinned to USB Ethernet, and Tailscale remained
 the mesh overlay. Physical-NIC input filtering was not independently

@@ -123,7 +123,7 @@ pool (SP 800-90B/90C posture). Collect noise. Do not credit it.
 | --- | --- | --- |
 | **A — deployable** | Admission, signed provenance, OPA/Wasm, rootless Podman, fail-closed gates, append-only receipts, ML-KEM-768, isolated Ghost analysis, Q1 telemetry, replay vs ledger split, re-admission | No |
 | **B — measurable physical control** | \( \alpha = g(T,V,P,E,\text{queue},\text{error}) \), \(0 \le \alpha \le 1 \): telemetry that actually throttles or isolates | Commodity sensors; not implemented as a single CBF yet |
-| **C — research** | AQFP/RQFP, Bennett uncomputation on reversible substrates, TEG harvest, DNA/molecular storage, characterized noise sources | Future substrate. Not properties of Yoga/Fedora |
+| **C — research** | AQFP/RQFP, Bennett uncomputation on reversible substrates, TEG harvest, DNA/molecular storage, characterized noise sources | Future substrate. Not properties of Yoga/Ubuntu |
 
 Plane C ideas are design languages and substrate mappings. They are not
 proofs about the current node.
@@ -173,7 +173,7 @@ proofs about the current node.
 - Crediting adversarial or Ghost residue as KEM entropy.
 - Feeding \(\Delta x\) into \(f\) without \(A(\Delta x, k_t)\).
 - Stating bit flips are mathematically impossible under a temperature cap.
-- Treating Plane C substrates as properties of Fedora/Yoga.
+- Treating Plane C substrates as properties of Ubuntu/Yoga.
 - Re-enabling the retired sniffer and calling it the Ghost path.
 - Using FrodoKEM-976 as the live IPC KEM.
 - Claiming FIPS 140-3, CMVP, or QF-A4 extraction (still NULL).

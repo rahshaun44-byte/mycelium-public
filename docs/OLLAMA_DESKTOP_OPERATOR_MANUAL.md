@@ -4,7 +4,7 @@
 ```text
 ═════════════════════════════════════════════════════════════════════════════════
   CLASSIFICATION: UNCLASSIFIED // PROPRIETARY // AIRGAPPED LOCAL SILICON
-  HOST ENVIRONMENT: Lenovo Yoga 7 (AMD Ryzen AI 5 340, 14GB RAM, Fedora Linux)
+  HOST ENVIRONMENT: Lenovo Yoga 7 (AMD Ryzen AI 5 340, 14GB RAM, Ubuntu 26.04.1 LTS)
   LOCAL AI RUNTIME: Ollama Engine (:11434)  •  QF-Bot Multi-Agent Server (:9000)
   SECURITY INVARIANT: Zero Cloud Dependency  •  Strict Loopback (127.0.0.1) Only
 ═════════════════════════════════════════════════════════════════════════════════
@@ -26,7 +26,7 @@ $$\text{Inference}(\text{Prompt}) \rightarrow \text{Local RAM} \rightarrow \text
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    LENOVO YOGA 7 WORKSTATION (FEDORA LINUX)                 │
+│                    LENOVO YOGA 7 WORKSTATION (UBUNTU LINUX)                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  [ DESKTOP CLIENTS ]                                                        │

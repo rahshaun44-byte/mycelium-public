@@ -6,7 +6,7 @@
 
 ## I. Proof-of-Work Screen Capture Script (3-Minute Demo)
 
-Use the **already running** Fedora user units. Do **not** start a second `immune_daemon.py`, and do **not** run `tools/live_fire_immune_test.py` against this host: that harness is Windows-oriented (`LOCALAPPDATA` OPA), binds its own `:8181`, and asserts **ML-KEM-512 → FrodoKEM-640-AES** (experimental ladder), not production **ML-KEM-768 → FrodoKEM-976-AES**.
+Use the **already running** Ubuntu systemd user units. Do **not** start a second `immune_daemon.py`, and do **not** run `tools/live_fire_immune_test.py` against this host: that harness is Windows-oriented (`LOCALAPPDATA` OPA), binds its own `:8181`, and asserts **ML-KEM-512 → FrodoKEM-640-AES** (experimental ladder), not production **ML-KEM-768 → FrodoKEM-976-AES**.
 
 Decision-loop period is `POLL_INTERVAL_MS=500` (up to 500 ms to detect). `os.replace` is atomic; that is not a measured sub-0.5 ms SLA. Live `immune-daemon.service` does not set `WORKER_PID`, so SIGHUP / zero-drop is **not** demonstrated on this Yoga.
 

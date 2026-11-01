@@ -41,7 +41,6 @@ AGENTS = {
     "athena": {"name": "ATHENA", "avatar": "🧠", "color": CYAN, "desc": "Cognitive Vector Memory & Blueprint RAG Oracle"},
     "amara": {"name": "AMARA", "avatar": "⚡", "color": MAGENTA, "desc": "Biological System Monitor & Autonomous Engine"},
     "sentinel": {"name": "SENTINEL", "avatar": "▲", "color": RED, "desc": "Perimeter Defense & Invariant Gate"},
-    "cs320": {"name": "CS320", "avatar": "🎓", "color": GREEN, "desc": "SNHU Coursework, Java QA & Test Automation Coach"},
     "all": {"name": "ALL UNITS", "avatar": "⬡", "color": YELLOW, "desc": "Swarm Broadcaster & Auto-Router"},
 }
 
@@ -65,8 +64,6 @@ def query_ollama_fallback(message: str, target_bot: Optional[str] = None) -> Dic
         model = "athena:latest"
     elif target_bot in ["amara", "aria"]:
         model = "amara:latest"
-    elif target_bot in ["cs320", "tutor"]:
-        model = "cs320-tutor:latest"
     else:
         model = "qwen2.5-coder:7b"
     url = f"{OLLAMA_URL}/api/generate"

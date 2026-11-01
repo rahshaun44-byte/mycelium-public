@@ -26,7 +26,7 @@ This guide provides an external evaluator with instructions to independently ins
 
 ## 2. Environment Prerequisites
 
-Evaluators can reproduce all checks in an isolated Fedora 40/41/42 or Debian/Ubuntu container or VM with:
+Evaluators can reproduce all checks in an isolated Ubuntu 24.04/26.04 or Debian container or VM with:
 - **Compiler**: GCC 14+ or Clang 18+ (C++20 support)
 - **Crypto Engine**: OpenSSL 3.5.0+ (with native ML-KEM-768 support)
 - **Policy Engine**: Open Policy Agent (`opa`) CLI v0.68.0+

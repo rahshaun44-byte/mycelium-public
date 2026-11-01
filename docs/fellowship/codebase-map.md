@@ -138,4 +138,4 @@ Repo/runtime drift:
 - **Malformed header.** `sentinel/policies/wasm_gatekeeper.py` line 1 `import threading` sits above the shebang.
 - **Hardcoded node ID.** `include/quantum-flex/replication_layer.hpp:38` (TODO).
 - **Unsafe tool.** `tools/rotate_credentials.py` rewrites `.env` with Windows paths. Do not run it.
-- **Off-topic code.** Windows `.ps1` launchers, `school-bot/`, `commercialization/`, `mobile/` — out of scope for gate work.
+- **Off-topic code.** Windows `.ps1` launchers, `commercialization/` — out of scope for gate work.

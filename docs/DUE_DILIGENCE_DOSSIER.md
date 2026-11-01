@@ -191,11 +191,11 @@ curl -s http://100.64.1.17:8080/api/invariant | jq
 
 **Live Ingestion Journal (`qf-kafka-consumer.service`):**
 ```text
-Sep 10 02:48:18 fedora python3: Successfully joined group qf-amara-athena-group with generation 1
-Sep 10 02:48:18 fedora python3: Setting newly assigned partitions {TopicPartition(topic='qf-telemetry', partition=0)}
-Sep 10 02:48:20 fedora python3: [INGESTED] Pulse from fedora anchored in AMARA and embedded in Athena.
-Sep 10 02:48:35 fedora python3: [INGESTED] Pulse from fedora anchored in AMARA and embedded in Athena.
-Sep 10 02:48:50 fedora python3: [INGESTED] Pulse from fedora anchored in AMARA and embedded in Athena.
+Sep 10 02:48:18 qfx-yoga python3: Successfully joined group qf-amara-athena-group with generation 1
+Sep 10 02:48:18 qfx-yoga python3: Setting newly assigned partitions {TopicPartition(topic='qf-telemetry', partition=0)}
+Sep 10 02:48:20 qfx-yoga python3: [INGESTED] Pulse from qfx-yoga anchored in AMARA and embedded in Athena.
+Sep 10 02:48:35 qfx-yoga python3: [INGESTED] Pulse from qfx-yoga anchored in AMARA and embedded in Athena.
+Sep 10 02:48:50 qfx-yoga python3: [INGESTED] Pulse from qfx-yoga anchored in AMARA and embedded in Athena.
 ```
 
 **1. AMARA PostgreSQL Structured Persistence (`telemetry_log`):**
@@ -204,28 +204,28 @@ SELECT id, node_id, cpu_load_1m, ram_used_pct, timestamp, status, note
 FROM telemetry_log ORDER BY id DESC LIMIT 4;
 ```
 ```text
-  id  | node_id | cpu_load_1m | ram_used_pct |         timestamp          |  status  |                       note                       
-------+---------+-------------+--------------+----------------------------+----------+--------------------------------------------------
- 5862 | fedora  |  0.92333984 |        62.82 | 2026-09-10 06:49:05.573017 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 48.0°C | Gate: ADMIT
- 5861 | fedora  |   0.8925781 |        62.84 | 2026-09-10 06:48:50.562148 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 47.0°C | Gate: ADMIT
- 5859 | fedora  |   0.7758789 |         62.8 | 2026-09-10 06:48:35.554979 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 47.0°C | Gate: ADMIT
- 5858 | fedora  |   0.9975586 |        73.25 | 2026-09-10 06:48:20.547512 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 48.0°C | Gate: ADMIT
+  id  | node_id  | cpu_load_1m | ram_used_pct |         timestamp          |  status  |                       note                       
+------+----------+-------------+--------------+----------------------------+----------+--------------------------------------------------
+ 5862 | qfx-yoga |  0.92333984 |        62.82 | 2026-09-10 06:49:05.573017 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 48.0°C | Gate: ADMIT
+ 5861 | qfx-yoga |   0.8925781 |        62.84 | 2026-09-10 06:48:50.562148 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 47.0°C | Gate: ADMIT
+ 5859 | qfx-yoga |   0.7758789 |         62.8 | 2026-09-10 06:48:35.554979 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 47.0°C | Gate: ADMIT
+ 5858 | qfx-yoga |   0.9975586 |        73.25 | 2026-09-10 06:48:20.547512 | PULSE_OK | PQC KEM: ML-KEM-768 | Temp: 48.0°C | Gate: ADMIT
 ```
 
 **2. Athena Neural Semantic Query (Local RAG Synthesis via `athena:latest`):**
 ```bash
 curl -s -X POST http://127.0.0.1:8001/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "What is the latest telemetry pulse status, temperature, and PQC KEM for host fedora?"}'
+  -d '{"question": "What is the latest telemetry pulse status, temperature, and PQC KEM for host qfx-yoga?"}'
 ```
 ```json
 {
-  "answer": "The latest telemetry pulse status for host fedora is \"ADMIT\". The temperature is 47.0°C, and the PQC KEM is \"ML-KEM-768\".",
+  "answer": "The latest telemetry pulse status for host qfx-yoga is \"ADMIT\". The temperature is 47.0°C, and the PQC KEM is \"ML-KEM-768\".",
   "sources": [
     "qf-telemetry-stream",
     "qf-telemetry-test"
   ],
-  "context": "Host fedora telemetry pulse: RAM 62.8%, Temp 47.0°C, KEM ML-KEM-768, Gate: ADMIT\n---\nHost fedora telemetry pulse: RAM 62.84%, Temp 47.0°C, KEM ML-KEM-768, Gate: ADMIT\n---\nHost fedora telemetry pulse: RAM 62.82%, Temp 48.0°C, KEM ML-KEM-768, Gate: ADMIT",
+  "context": "Host qfx-yoga telemetry pulse: RAM 62.8%, Temp 47.0°C, KEM ML-KEM-768, Gate: ADMIT\n---\nHost qfx-yoga telemetry pulse: RAM 62.84%, Temp 47.0°C, KEM ML-KEM-768, Gate: ADMIT\n---\nHost qfx-yoga telemetry pulse: RAM 62.82%, Temp 48.0°C, KEM ML-KEM-768, Gate: ADMIT",
   "model": "athena:latest",
   "vectors": 166,
   "timestamp": "2026-09-10T02:49:21.993269"
@@ -303,7 +303,7 @@ QuantumFlex Runtime Admission Gate (QF-A6: 10-Case Matrix)
   3. **Hardware-Demarcated Mobile Command Plane:** Unified zero-dependency operator CLI (`mobile/qflex_cli.py`) enforces strict role segregation:
      - `shard-custodian`: Hardware Google Titan M2 enclave, Shamir shard custody, out-of-band quorum authorization.
      - `observer`: Default unauthenticated role; privileged mutations (`approve`, `discard`) fail-closed (`PRIVILEGED_ACTIONS=DENY`).
-  4. **Zero-Trust Network Mesh:** Services strictly bind to loopback `127.0.0.1:9000`. Tailnet reachability is mediated via **Tailscale Serve** MagicDNS HTTPS (`https://fedora.example-tailnet.ts.net/`) and tailnet TCP forwarders (`100.64.1.17:9000`), terminating TLS and proxying internally with zero open sockets exposed to local Wi-Fi LANs (`192.168.0.x`).
+  4. **Zero-Trust Network Mesh:** Services strictly bind to loopback `127.0.0.1:9000`. Tailnet reachability is mediated via **Tailscale Serve** MagicDNS HTTPS (`https://qfx-yoga.tailnet.ts.net/`) and tailnet TCP forwarders (`100.64.1.31:9001`), terminating TLS and proxying internally with zero open sockets exposed to local Wi-Fi LANs (`192.168.0.x`).
 
 **1. Kafka Consumer Zero-Loss & Auth Suite (`tests/test_kafka_consumer.py`):**
 ```text

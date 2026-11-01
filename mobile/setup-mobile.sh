@@ -11,7 +11,7 @@ set -euo pipefail
 # 1. HARD STOP: Refuse execution on the host engine
 CURRENT_HOST="$(hostname 2>/dev/null || echo "")"
 CURRENT_USER="${USER:-$(whoami 2>/dev/null || echo "")}"
-if [ "$CURRENT_HOST" = "qfx-yoga" ] || [ "$CURRENT_HOST" = "fedora" ] || [ "$CURRENT_USER" = "quant" ]; then
+if [ "$CURRENT_HOST" = "qfx-yoga" ] || [ "$CURRENT_USER" = "quant" ]; then
     echo "[!] HARD STOP: Refusing to execute on master host ($CURRENT_USER@$CURRENT_HOST)." >&2
     echo "[!] This script is strictly for mobile clients (Pixel 11 Pro)." >&2
     exit 1

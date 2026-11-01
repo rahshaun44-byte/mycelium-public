@@ -12,7 +12,7 @@
 
 ---
 
-## 2. Master Node (`fedora` — Lenovo Yoga 7)
+## 2. Master Node (`qfx-yoga` — Lenovo Yoga 7)
 
 | Port | Bound IP | Protocol | Process Owner | Purpose / Exposure | Remote Access Method |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -22,7 +22,6 @@
 | `8181` | `127.0.0.1` | TCP | `opa` (`opa-immune`) | Open Policy Agent evaluation | Loopback only |
 | `9000` | `127.0.0.1` | TCP | `python3` (`qflex-mcp`) | Model Context Protocol SSE stream | Tailscale Serve (`:9000`) |
 | `9050` | `127.0.0.1` | TCP | `python3` (`qf-bot`) | AI Teammate & Mobile PWA Host | Tailscale Serve (`:9050`) |
-| `9060` | `127.0.0.1` | TCP | `python3` (`school-bot`) | Independent School Bot | Loopback only |
 | `9444` | `127.0.0.1` | TCP | `quantum_flex_engine` | Primary C++ IPC Interface | Loopback only |
 | `11434`| `127.0.0.1` | TCP | `ollama` | Local LLM inference engine | Loopback only |
 | `5432` | `127.0.0.1` | TCP | `postgres` (`amara-matrix`) | System Datastore | Loopback only |

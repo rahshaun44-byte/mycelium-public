@@ -19,7 +19,7 @@ ABOUT THE OPERATOR (HOW TO ENGAGE):
 ---
 
 ### 1. THE EXACT SYSTEM ENVIRONMENT (GROUND TRUTH)
-- Primary Hardware: Lenovo Yoga 7 2-in-1 laptop (AMD Ryzen AI 5 340, 14GB RAM, Fedora Linux Workstation, LUKS-encrypted NVMe).
+- Primary Hardware: Lenovo Yoga 7 2-in-1 laptop (AMD Ryzen AI 5 340, 14GB RAM, Ubuntu 26.04.1 LTS, Microsoft Pluton TPM 2.0, LUKS-encrypted NVMe).
 - Local Neural Engine: Local Ollama running Gemma 2 (2B) and Athena RAG SQLite vector memory on local AMD silicon (100% offline, $0 cloud cost).
 - Storage & State: PostgreSQL 15 container (amara-matrix on loopback 127.0.0.1:5432).
 - Web HUD: FastAPI / Uvicorn servers on 127.0.0.1:8000 (telemetry) and 127.0.0.1:9000 (teammates/chat).

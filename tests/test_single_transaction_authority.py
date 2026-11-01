@@ -380,7 +380,7 @@ def main():
         # Witness accepts checkpoint #2
         chk2 = {
             "checkpoint_type": "QF_EXTERNAL_CHECKPOINT_V1",
-            "node_id": "fedora-primary-alpha",
+            "node_id": "qfx-yoga-primary-alpha",
             "sequence": 2,
             "state_digest": "sha3:STATE_K2",
             "policy_digest": "sha3:POLICY_1",

@@ -1,9 +1,10 @@
-FROM fedora:40
+FROM ubuntu:24.04
 
 # Install dependencies
-RUN dnf update -y && \
-    dnf install -y python3 python3-pip wget curl tar jq gcc g++ make git && \
-    dnf clean all
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3 python3-pip wget curl tar jq gcc g++ make git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Open Policy Agent (OPA)
 RUN curl -L -o /usr/local/bin/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static && \

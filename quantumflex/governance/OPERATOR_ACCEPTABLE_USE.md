@@ -21,8 +21,8 @@ $$\text{Mission Success} = \text{Security} + \text{Peace} + \text{Financial Inde
 
 1. **The Zero Cloud Spend Invariant ($0.00):**  
    Operators and agents must never route prompt data or operational contexts to paid cloud LLM endpoints. All local neural inference must route exclusively to the local Ollama daemon on `127.0.0.1:11434`.
-2. **Academic Rigor & Socratic Integrity (SNHU CS 320 / CS 210):**  
-   Autonomous tools must act as tutors, boundary condition checkers, and test automation coaches. Code generation must strictly uphold SNHU academic honesty standards and preserve step-by-step human comprehension.
+2. **Pedagogical & Algorithmic Rigor:**  
+   Autonomous tools must act as tutors, boundary condition checkers, and test automation coaches. Code generation must strictly preserve step-by-step human comprehension and formal correctness.
 3. **Web3 & Circle USDC Settlement Safety:**  
    - All USDC transactions must strictly use 6-decimal precision (`1_000_000n` per 1 USDC). 18-decimal scaling is strictly prohibited and denied by constitutional policy (`QF-AUTH-01`).
    - Every mutating transaction must derive a deterministic UUID v4 idempotency key from proof block hashes (`sha256(blockHash)`).

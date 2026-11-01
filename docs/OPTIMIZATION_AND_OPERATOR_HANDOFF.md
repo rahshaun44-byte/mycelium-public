@@ -2,7 +2,7 @@
 
 **Verified Date:** 2026-09-15  
 **Target Silicon:** Lenovo Yoga 7 2-in-1 — AMD Ryzen AI 5 340 (Zen 4/5, 8 cores / 16 threads, AVX-512, VAES, GFNI, SHA-NI)  
-**Host Environment:** Fedora Linux 44 (Rawhide / 7.2.5 kernel), User `quant` (uid 1000)  
+**Host Environment:** Ubuntu 26.04.1 LTS, User `quant` (uid 1000)  
 **Repository Source of Truth:** `/home/quant/mycelium`  
 **Active Architecture:** Multi-Strata Sovereign Operating System (Phases 1–5 Operational)
 
@@ -167,4 +167,4 @@ cd android && JAVA_HOME=/home/quant/jdk-21.0.4+7 ANDROID_HOME=/home/quant/androi
 * [knowledge_vault/05_DEEP_WORK_DISCIPLINE.md](file:///home/quant/mycelium/knowledge_vault/05_DEEP_WORK_DISCIPLINE.md): Master Deep Work Codex & comic host truths.
 * [sentinel/xdp/qf_ingress.c](file:///home/quant/mycelium/sentinel/xdp/qf_ingress.c): eBPF/XDP pre-ingress filter source code.
 * [mcp_layer/qf_bot/ui/operator_cockpit.html](file:///home/quant/mycelium/mcp_layer/qf_bot/ui/operator_cockpit.html): Responsive operator flight deck & checklists.
-* [scripts/fedora_yoga7i_setup.sh](file:///home/quant/mycelium/scripts/fedora_yoga7i_setup.sh): Yoga 7i hardware, network, and firewall provisioning script.
+* [scripts/ubuntu_yoga7i_setup.sh](file:///home/quant/mycelium/scripts/ubuntu_yoga7i_setup.sh): Yoga 7i hardware, network, and firewall provisioning script.

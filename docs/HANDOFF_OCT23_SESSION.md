@@ -91,5 +91,5 @@
   - Use `forge script ... --account deployer --broadcast`
 - Execute 1 live micro-settlement transaction using testnet faucet USDC to prove end-to-end execution before touching mainnet.
 
-### Step 3: Academic Priority Invariant
-- Academic coursework (SNHU CS 320 / CS 210) takes precedence. All QuantumFlex components are in a hardened, non-decaying state with 441 green tests. Work can be resumed at any time without fear of regressions.
+### Step 3: Engineering Rigor & Verification Invariant
+- All QuantumFlex components are in a hardened, non-decaying state with passing tests. Work can be resumed at any time without fear of regressions.

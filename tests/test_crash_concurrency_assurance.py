@@ -249,7 +249,7 @@ class HardenedAdmissionGate:
         If the sink is offline, record telemetry degradation without granting authority.
         """
         payload = {
-            "node_uuid": "fedora-primary-alpha",
+            "node_uuid": "qfx-yoga-primary-alpha",
             "timestamp_epoch_nonce": str(int(time.time())),
             "pcr_integrity_pass": False,
             "nonce_freshness_pass": True,

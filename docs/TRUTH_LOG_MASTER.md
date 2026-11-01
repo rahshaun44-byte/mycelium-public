@@ -109,7 +109,7 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 
 - **Date of Verification**: 2026-09-09
 - **Network Topology & Verified Devices**:
-  1. **Master Node (`fedora` / Lenovo Yoga 7)**: `192.168.100.11` / `100.64.1.17` — AMD Ryzen AI 5 340, 15 GB RAM, Fedora Linux 44. Runs control plane, PQC engine, OPA policy engine, and `qf-kafka-telemetry.service`.
+  1. **Master Node (`qfx-yoga` / Lenovo Yoga 7)**: `192.168.100.11` / `100.64.1.31` — AMD Ryzen AI 5 340, 15 GB RAM, Ubuntu 26.04.1 LTS. Runs control plane, PQC engine, OPA policy engine, and `qf-kafka-telemetry.service`.
   3. **Mobile Node 1 (Pixel 11 Pro)**: `100.64.1.18` — Titan M2 hardware root of trust, Shamir shard custodian, OOB signer.
 
 - **Verified Invariants & Streaming Telemetry**:
@@ -124,7 +124,7 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 
 **Assessment Date**: 2026-09-16  
 **Evaluated Tree**: `2f559ec69064df5806e0288fef239e1076173227` (Modified Working Tree)  
-**Host Architecture**: Fedora 44 (Lenovo Yoga 7), unprivileged user `quant` (UID 1000)  
+**Host Architecture**: Ubuntu 26.04.1 LTS (Lenovo Yoga 7), unprivileged user `quant` (UID 1000)  
 
 ### 10.1 Equation of Truth
 
@@ -145,7 +145,7 @@ Evaluated live via Open Policy Agent (`sentinel/policies/reserve_invariant.rego`
 | Plane | Description | Host Ground Truth |
 | :--- | :--- | :--- |
 | **Plane A: Engine KEM** | In-process C++ hybrid/native ML-KEM-768 (`0x12`/`0x13`/`0x14`), frame reassembly, wire decapsulation. | Exercised: 1,000 ML-KEM roundtrips, mutated ciphertext checks, fuzzing negative suite passed. |
-| **Plane B: Host OpenSSL / Frodo** | Fedora host OpenSSL provider (`openssl list -kem-algorithms`). | **NOT** the security boundary of the engine; host NULL is normal, expected, and preferred for the Yoga. |
+| **Plane B: Host OpenSSL / Frodo** | Ubuntu host OpenSSL provider (`openssl list -kem-algorithms`). | **NOT** the security boundary of the engine; host NULL is normal, expected, and preferred for the Yoga. |
 | **Plane C: Fail-Closed Policy** | Strict profile denial, missing API keys, unreachable OPA $\rightarrow$ halt or 401. | Enforced: OPA downtime returns `DENY`; missing/unconfigured API keys strictly return `HTTP 401`. |
 
 ### 10.4 Risk Register & Remediations (Post-Stress)

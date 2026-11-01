@@ -1,7 +1,7 @@
 # ⚖️ LEGAL COMPLIANCE AUDIT — QUANTUM FLEX
 
 **Date:** 2026-03-25 (original draft) | **Reviewed:** 2026-09-11  
-**Status:** ACTIVE — personal research deployment on Fedora (`quant`); **not** a token, marketplace, or paying-customer launch  
+**Status:** ACTIVE — personal research deployment on Ubuntu (`quant`); **not** a token, marketplace, or paying-customer launch  
 **Entity (live docs):** FINALLYFUNGUS LLC (PA Entity ID: 13706513) DBA QuantumFlex — **not** an unincorporated sole proprietorship  
 **Root Architect:** Rahshaun Chambers  
 
