@@ -43,14 +43,20 @@ def get_candidate_hosts() -> List[Tuple[str, int]]:
     if socket.gethostname() == YOGA_HOSTNAME or os.environ.get("USER") == "quant":
         return [
             ("127.0.0.1", 9000),
+            ("127.0.0.1", 9001),
             (YOGA_TAILSCALE_IP, 9000),
+            (YOGA_TAILSCALE_IP, 9001),
             (YOGA_MAGICDNS, 9000),
+            (YOGA_MAGICDNS, 9001),
         ]
     # On mobile devices, Tailscale mesh IP is primary, then MagicDNS
     return [
         (YOGA_TAILSCALE_IP, 9000),
+        (YOGA_TAILSCALE_IP, 9001),
         (YOGA_MAGICDNS, 9000),
+        (YOGA_MAGICDNS, 9001),
         ("127.0.0.1", 9000),
+        ("127.0.0.1", 9001),
     ]
 
 
@@ -147,7 +153,7 @@ def resolve_node_identity() -> NodeIdentity:
             tailscale_ip=tail_ip,
             transport=transport,
             privileged=True,
-            details="Hardware Titan M2 Enclave | Shamir Share Custodian #5 | OOB Signer"
+            details="Hardware Titan M3 Enclave | Shamir Share Custodian #5 | OOB Signer"
         )
 
     # 2. Host Node Check (qfx-yoga)
@@ -411,7 +417,7 @@ def cmd_custody(identity: NodeIdentity, base_url: str):
     if identity.role == "shard-custodian":
         print(_c(CLR_BOLD + CLR_GREEN, "  [+] NODE AUTHORIZED AS CUSTODIAL HARDWARE ANCHOR"))
         print(f"  Target Device     : {identity.model}")
-        print(f"  Enclave Mechanism : Titan M2 Hardware Security Module")
+        print(f"  Enclave Mechanism : Titan M3 Hardware Security Module")
         print(f"  Custody Shard     : Share #5 (3-of-5 threshold quorum participant)")
         print(f"  Out-of-Band State : ARMED (Ready for zero-trust authorization)")
         print(f"  Circuit Breaker   : ACCESSIBLE (Emergency freeze authorization available)")

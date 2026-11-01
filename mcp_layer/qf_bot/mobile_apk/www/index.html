@@ -1947,10 +1947,39 @@ if (viewsContainer) {
   }, { passive: true });
 }
 
+async function emitHeartbeat() {
+  try {
+    const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.QFDeviceKey;
+    const nodeId = 'qfx-pixel';
+    const hwClaim = 'Titan-M3';
+    let signature = '';
+    if (plugin) {
+      const msg = `heartbeat:${nodeId}:0.0:${hwClaim}`;
+      const res = await plugin.sign({ message: msg });
+      signature = res.signature;
+    }
+    if (!signature) return;
+
+    await qfFetch(`${hostNode}/api/v1/telemetry/heartbeat`, {
+      method: 'POST',
+      headers: { ...OPERATOR_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        node_id: nodeId,
+        hardware_claim: hwClaim,
+        entropy_h: 0.0,
+        pqc_signature: signature,
+        pqc_algorithm: 'ML-KEM-768',
+        tailscale_ip: '100.64.1.16'
+      })
+    });
+  } catch (e) {}
+}
+
 // Initial bootstrap
 window.addEventListener('DOMContentLoaded', () => {
   autoDetectBestHost();
   checkDeviceRole();
+  emitHeartbeat();
   loadServices();
   loadSecurityTelemetry();
   loadMeshNodes();
@@ -1959,11 +1988,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Periodic background poller
 setInterval(() => {
+  emitHeartbeat();
   if (currentTabIndex === 1) loadServices();
   if (currentTabIndex === 2) loadSecurityTelemetry();
   if (currentTabIndex === 5) loadSwarmData();
   if (currentTabIndex === 6) loadMeshNodes();
-}, 8000);
+}, 15000);
 
 </script>
 </body>
