@@ -44,6 +44,7 @@ APK_MANIFEST = ROOT_DIR / "mcp_layer" / "qf_bot" / "mobile_apk" / "android" / "a
 APK_SIG = ROOT_DIR / "mcp_layer" / "qf_bot" / "mobile_apk" / "android" / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk.sig"
 
 HUD_HTML = ROOT_DIR / "mcp_layer" / "qf_bot" / "ui" / "QuantumFlex-Mobile.html"
+BEACON_PATH = ROOT_DIR / "mobile" / "pixel_beacon.sh"
 
 REMOTE_DIR = "/sdcard/Download/QuantumFlex"
 
@@ -207,6 +208,7 @@ def stage_and_verify_files_on_device(serial: str):
         (SETUP_SIG, f"{REMOTE_DIR}/setup-mobile.sh.sig"),
         (TRUST_ANCHOR, f"{REMOTE_DIR}/release_signing_key.pub"),
         (HUD_HTML, f"{REMOTE_DIR}/QuantumFlex-Mobile.html"),
+        (BEACON_PATH, f"{REMOTE_DIR}/pixel_beacon.sh"),
     ]
 
     for local_f, remote_f in files_to_push:
@@ -232,7 +234,7 @@ def stage_and_verify_files_on_device(serial: str):
         print(_c(CLR_GREEN, f"  [PASS] {local_f.name:<28} : {remote_sha[:16]}... (matches)"))
 
     # Mark shell scripts executable
-    run_adb(["shell", f"chmod 0755 {REMOTE_DIR}/setup-mobile.sh {REMOTE_DIR}/qflex_cli.py"], serial=serial)
+    run_adb(["shell", f"chmod 0755 {REMOTE_DIR}/setup-mobile.sh {REMOTE_DIR}/qflex_cli.py {REMOTE_DIR}/pixel_beacon.sh"], serial=serial)
     print(_c(CLR_GREEN, f"[+] Successfully staged and hash-verified files in {REMOTE_DIR}\n"))
 
 def install_apk_on_device(serial: str):
