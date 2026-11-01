@@ -166,7 +166,8 @@ def inspect_adb_device(serial: str) -> Dict[str, Any]:
     if "Pixel 11" in model or "grizzly" in name:
         info["qf_node"] = "pixel-11-pro"
         info["qf_role"] = "shard-custodian"
-        info["authority"] = "Titan M2 Hardware Security Module (OOB Signer)"
+        strongbox_model = info.get("ro.strongbox.model") or "Titan-M3"
+        info["authority"] = f"{strongbox_model} Hardware Security Module (OOB Signer)"
     else:
         info["qf_node"] = "unknown"
         info["qf_role"] = "observer"

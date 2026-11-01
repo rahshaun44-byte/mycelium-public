@@ -1,3 +1,4 @@
+from typing import Optional, Any, Dict, List
 import hmac
 from fastapi import HTTPException, FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -380,6 +381,59 @@ async def submit_telemetry(request: Request):
         "node_id": node_id,
         "seq": seq
     }
+
+
+class EdgeTelemetryPayload(BaseModel):
+    node_id: str
+    pqc_signature: Optional[str] = "verified_token"
+    hardware_attestation: Optional[str] = "Titan-M3"
+    entropy_h: Optional[float] = 0.0
+    pqc_algorithm: Optional[str] = "ML-KEM-768"
+    tailscale_ip: Optional[str] = None
+
+
+EdgeTelemetryPayload.model_rebuild()
+
+
+@app.post("/api/v1/telemetry/heartbeat")
+async def ingest_edge_heartbeat(payload: EdgeTelemetryPayload, request: Request) -> JSONResponse:
+    """
+    Decoupled Asynchronous Edge Telemetry Receiver:
+    Accepts heartbeats asynchronously without blocking the down-mesh caller or the UI dashboard.
+    Returns 202 Accepted immediately so mobile edge nodes conserve battery and never hang.
+    """
+    raw_ip = payload.tailscale_ip or (request.client.host if request.client else "127.0.0.1")
+    try:
+        import ipaddress
+        ipaddress.ip_address(raw_ip)
+        client_ip = raw_ip
+    except ValueError:
+        client_ip = "127.0.0.1"
+    now_epoch = int(time.time())
+
+    def _record_heartbeat():
+        try:
+            from src.db_credentials import DatabaseRole, open_role_connection
+            conn = open_role_connection(role=DatabaseRole.WRITER, dbname=os.environ.get("DB_NAME", "telemetry"))
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO node_registry (node_id, tailscale_ip, hardware_root_trust, pqc_algorithm, last_seen_epoch, status, entropy_delta_h)
+                        VALUES (%s, %s, %s, %s, %s, 'ACTIVE', %s)
+                        ON CONFLICT (node_id) DO UPDATE SET
+                            tailscale_ip = EXCLUDED.tailscale_ip,
+                            hardware_root_trust = EXCLUDED.hardware_root_trust,
+                            pqc_algorithm = EXCLUDED.pqc_algorithm,
+                            last_seen_epoch = EXCLUDED.last_seen_epoch,
+                            status = 'ACTIVE',
+                            entropy_delta_h = EXCLUDED.entropy_delta_h;
+                    """, (payload.node_id, client_ip, payload.hardware_attestation, payload.pqc_algorithm, now_epoch, payload.entropy_h))
+            conn.close()
+        except Exception as e:
+            print(f"[!] Failed to upsert node_registry for {payload.node_id}: {e}")
+
+    asyncio.create_task(asyncio.to_thread(_record_heartbeat))
+    return JSONResponse(status_code=202, content={"status": "ACCEPTED", "node_id": payload.node_id, "epoch": now_epoch})
 
 
 class ArcSettlementRequest(BaseModel):

@@ -172,6 +172,36 @@ async def chat_endpoint(req: ChatRequest, request: Request):
 async def get_mesh_nodes():
     """Returns live telemetry from Tailscale for verified nodes: Lenovo Yoga 7, Pixel 11 Pro, and HP ProBook G6."""
     nodes = []
+    # 1. Asynchronous State Hydration from local PostgreSQL node_registry (Decoupled Ingress)
+    db_nodes = {}
+    try:
+        from src.db_credentials import DatabaseRole, open_role_connection
+        conn = open_role_connection(role=DatabaseRole.VERIFIER, dbname=os.environ.get("DB_NAME", "telemetry"))
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT node_id, tailscale_ip, hardware_root_trust, pqc_algorithm, last_seen_epoch, status,
+                    CASE 
+                        WHEN status = 'RETIRED_MAINTENANCE' THEN 'RETIRED_MAINTENANCE'
+                        WHEN (EXTRACT(EPOCH FROM NOW())::BIGINT - last_seen_epoch) < 90 THEN 'ACTIVE'
+                        WHEN (EXTRACT(EPOCH FROM NOW())::BIGINT - last_seen_epoch) < 300 THEN 'HOLD_ACTIVE'
+                        ELSE 'OFFLINE'
+                    END AS calculated_state
+                    FROM node_registry;
+                """)
+                for nid, tip, hwt, algo, epoch, st, calc_st in cur.fetchall():
+                    db_nodes[nid] = {
+                        "tailscale_ip": str(tip),
+                        "hardware_root_trust": hwt,
+                        "pqc_algorithm": algo,
+                        "last_seen_epoch": epoch,
+                        "status": st,
+                        "calculated_state": calc_st,
+                    }
+        conn.close()
+    except Exception:
+        pass
+
     try:
         res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=2.0)
         if res.returncode == 0:
@@ -200,32 +230,36 @@ async def get_mesh_nodes():
                 active = peer.get("Active", False)
 
                 if "pixel" in hostname.lower() or "pixel" in dnsname.lower():
-                    # If duplicate registrations exist on tailnet, prioritize online peer
                     existing_pixel_idx = next((i for i, n in enumerate(nodes) if n["id"] == "qfx-pixel"), None)
                     if existing_pixel_idx is not None:
                         if not (is_online or active):
                             continue
                         nodes.pop(existing_pixel_idx)
 
-                    pixel_latency = "12ms"
-                    try:
-                        pr = subprocess.run(["ping", "-c", "1", "-W", "1", primary_ip], capture_output=True, text=True, timeout=0.8)
-                        if pr.returncode == 0:
-                            for line in pr.stdout.splitlines():
-                                if "time=" in line:
-                                    pixel_latency = f"{float(line.split('time=')[-1].split()[0]):.1f}ms"
-                                    break
-                    except Exception:
-                        pass
+                    # Non-blocking state evaluation from node_registry projection table
+                    pixel_calc = db_nodes.get("qfx-pixel", {}).get("calculated_state")
+                    if pixel_calc == "ACTIVE":
+                        pixel_status = "ONLINE"
+                        pixel_latency = "Heartbeat Active (<90s)"
+                    elif pixel_calc == "HOLD_ACTIVE":
+                        pixel_status = "HOLD_ACTIVE"
+                        pixel_latency = "Deep Sleep / Mesh Hold"
+                    elif is_online or active:
+                        pixel_status = "ONLINE"
+                        pixel_latency = "WireGuard Direct"
+                    else:
+                        pixel_status = "OFFLINE"
+                        pixel_latency = "Asynchronous Sleep"
+
                     nodes.append({
                         "id": "qfx-pixel",
                         "name": "Pixel 11 Pro",
                         "ip": primary_ip,
                         "serial": "[REDACTED]",
                         "role": "Tactical HUD & Mobile Sentinel (Current Device)",
-                        "status": "ONLINE" if (is_online or active) else "OFFLINE",
+                        "status": pixel_status,
                         "latency": pixel_latency,
-                        "hardware_trust": "Titan M2 HSM / WireGuard P2P Direct",
+                        "hardware_trust": "Titan-M3 StrongBox HSM / WireGuard P2P Direct",
                         "solvency": "AUTHENTICATED (Chief Architect)",
                         "pqc_cipher": "ML-KEM-768 Session"
                     })
@@ -264,8 +298,8 @@ async def get_mesh_nodes():
                 "serial": "[REDACTED]",
                 "role": "Tactical HUD & Mobile Sentinel (Current Device)",
                 "status": "ONLINE",
-                "latency": "15ms",
-                "hardware_trust": "Titan M2 HSM / WireGuard P2P Direct",
+                "latency": "WireGuard P2P",
+                "hardware_trust": "Titan-M3 StrongBox HSM / WireGuard P2P Direct",
                 "solvency": "AUTHENTICATED (Chief Architect)",
                 "pqc_cipher": "ML-KEM-768 Session"
             }
@@ -545,7 +579,7 @@ async def approve_draft(draft_id: str, request: Request):
     if not auth["can_mutate"]:
         raise HTTPException(
             status_code=403,
-            detail=f"SECURITY LOCKOUT: Device '{auth['model']}' cannot sign or approve drafts. Authorizations require the Titan M2 hardware anchor on Pixel 11 Pro."
+            detail=f"SECURITY LOCKOUT: Device '{auth['model']}' cannot sign or approve drafts. Authorizations require the Titan-M3 hardware anchor on Pixel 11 Pro."
         )
 
     # Authorized by the verified device signature above.

@@ -5,7 +5,7 @@
   "serialNumber": "urn:uuid:42a1b976-qfx-alpha-node-cbom-template-20260911",
   "version": 3,
   "metadata": {
-    "timestamp": "2026-09-12T03:39:17Z",
+    "timestamp": "2026-11-01T20:17:03Z",
     "tools": [
       {
         "vendor": "QuantumFlex Security",
@@ -27,7 +27,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0d72789e10c0c50f055228b795598f327ebd3d7e186943b81ee0ba4400ccb75a"
+          "content": "92930ed9813c29fef1658d0f76e360e7b64220d4457392e4b6a9f3b45d5dcfd7"
         }
       ],
       "properties": [
@@ -45,7 +45,7 @@
         },
         {
           "name": "qfx:openssl_version",
-          "value": "OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3.5.8 25 Aug 2026)"
+          "value": "OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)"
         }
       ]
     }
@@ -180,7 +180,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "008f19269a92d4c09868c458909a7b4f53d35d9dcd360d04d89c4316c54195ed"
+          "content": "1582c5ccf2a9d2cbeaff03d174e983b54d82609c6c0d6fbb9c6b680292a1e337"
         }
       ]
     },
@@ -193,7 +193,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "d054167a5639ab8518fbd96a489a8d4763f8ebec70309bc7cfb777a25e15fdb8"
+          "content": "30db509798b601fe87e922786b8c824b2d8fb1fc1b2e3a3d568c84a15941ecd1"
         }
       ]
     }
