@@ -21,7 +21,7 @@ for env_path in [Path(".env"), base_dir / ".env"]:
                 os.environ.setdefault(k.strip(), v.strip())
         break
 
-KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "100.64.1.19:9092")
+KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "127.0.0.1:9092")
 KAFKA_TOPIC = os.environ.get("KAFKA_TOPIC", "qf-telemetry")
 KAFKA_GROUP = "qf-amara-athena-group"
 ATHENA_INGEST_URL = "http://127.0.0.1:8001/ingest"

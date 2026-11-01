@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:4c23b003-17a3-4203-b006-ccb3fb0fb253",
+  "serialNumber": "urn:uuid:15108f7d-3e6d-4add-9b7b-ec206db145ea",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-28T10:17:06Z",
+    "timestamp": "2026-11-01T19:23:40Z",
     "tools": [
       {
         "vendor": "Rahshaun Chambers",
@@ -63,7 +63,7 @@
       "type": "crypto-asset",
       "name": "ML-KEM-768",
       "version": "NIST FIPS 203",
-      "description": "Discovered cryptographic primitive across 49 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 54 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -102,7 +102,7 @@
       "type": "crypto-asset",
       "name": "ML-KEM-1024",
       "version": "NIST FIPS 203",
-      "description": "Discovered cryptographic primitive across 15 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 13 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -119,16 +119,16 @@
             "line": 1
           },
           {
+            "location": "docs/SYSTEM_BRIEFING_DECK.html",
+            "line": 1
+          },
+          {
             "location": "tools/test_verified_core.cpp",
             "line": 1
           },
           {
             "location": "tools/run_pqc_flight_tests.py",
             "line": 1
-          },
-          {
-            "location": "formal/QuantumFlex_Core.fst",
-            "line": 5
           },
           {
             "location": "sentinel/policies/membrane_health.rego",
@@ -289,7 +289,7 @@
       "type": "crypto-asset",
       "name": "ML-DSA-65",
       "version": "NIST FIPS 204",
-      "description": "Discovered cryptographic primitive across 27 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 33 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -302,6 +302,14 @@
       "evidence": {
         "occurrences": [
           {
+            "location": "scripts/generate_research_dossier.py",
+            "line": 1
+          },
+          {
+            "location": "scripts/benchmark_500page_dossier.py",
+            "line": 1
+          },
+          {
             "location": "scripts/generate_cbom.py",
             "line": 3
           },
@@ -312,14 +320,6 @@
           {
             "location": "scripts/simulate_anomaly_injection.py",
             "line": 1
-          },
-          {
-            "location": "amara/dashboard.py",
-            "line": 1
-          },
-          {
-            "location": "docs/cbom_alpha_node_template.json",
-            "line": 3
           }
         ]
       }
@@ -390,6 +390,29 @@
           {
             "location": "sentinel/policies/membrane_health.rego",
             "line": 4
+          }
+        ]
+      }
+    },
+    {
+      "type": "crypto-asset",
+      "name": "RSA-2048",
+      "version": "NIST SP 800-56B",
+      "description": "Discovered cryptographic primitive across 1 file(s). Status: DEPRECATED_OMB_M26_15.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "algorithm": "RSA-2048",
+          "primitive": "CLASSICAL_ASYMMETRIC",
+          "classicalSecurityLevel": 112,
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "scripts/generate_research_dossier.py",
+            "line": 1
           }
         ]
       }
@@ -472,7 +495,7 @@
       "type": "crypto-asset",
       "name": "Ed25519",
       "version": "RFC 8032",
-      "description": "Discovered cryptographic primitive across 64 file(s). Status: TRANSITIONAL_HYBRID_ONLY.",
+      "description": "Discovered cryptographic primitive across 70 file(s). Status: TRANSITIONAL_HYBRID_ONLY.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -542,7 +565,7 @@
       "type": "crypto-asset",
       "name": "SHA-256",
       "version": "NIST FIPS 180-4",
-      "description": "Discovered cryptographic primitive across 95 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 113 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -581,7 +604,7 @@
       "type": "crypto-asset",
       "name": "SHA-384",
       "version": "NIST FIPS 180-4",
-      "description": "Discovered cryptographic primitive across 2 file(s). Status: APPROVED.",
+      "description": "Discovered cryptographic primitive across 5 file(s). Status: APPROVED.",
       "cryptoProperties": {
         "assetType": "algorithm",
         "algorithmProperties": {
@@ -598,8 +621,20 @@
             "line": 1
           },
           {
+            "location": "tests/test_admission_receipt.py",
+            "line": 1
+          },
+          {
+            "location": "src/admission_receipt.py",
+            "line": 43
+          },
+          {
             "location": "pqc-immune-daemon/membrane_health.rego",
             "line": 1
+          },
+          {
+            "location": "sovereign_missions/sovereign_bounty_and_grant_tracker.json",
+            "line": 3
           }
         ]
       }

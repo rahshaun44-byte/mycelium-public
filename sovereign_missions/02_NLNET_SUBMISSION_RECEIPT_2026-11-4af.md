@@ -7,7 +7,7 @@
 **Applicant Entity:** Individual (Natural Person / Option A)  
 **Applicant Name:** Rahshaun Chambers  
 **Applicant Email:** `rahshaun44-byte@users.noreply.github.com`  
-**Applicant Phone:** `[phone redacted]`  
+**Applicant Phone:** `[Redacted for Public Repository / On File with NLnet]`  
 **Country:** US  
 **Repository Website:** `https://github.com/rahshaun44-byte/mycelium`  
 **Recorded Timestamp:** 2026-10-31  

@@ -3,9 +3,10 @@
 Quantum Flex Kafka Telemetry Forwarder
 ======================================
 Streams live operational metrics, PQC invariant states, and biological vitals
-from the Yoga 7 master host to the g6pro Kafka broker (HP ProBook 450 G6, KRaft).
+from the Yoga 7 master host to the local spooler or active Kafka broker.
+When g6pro is in standby/maintenance, pulses safely spool locally to JSONL.
 
-Target Broker: 100.64.1.19:9092 (g6pro, Tailscale mesh)
+Target Broker: 127.0.0.1:9092 (Local Spooler / Broker Fallback)
 Target Topic:  qf-telemetry
 """
 
@@ -48,8 +49,10 @@ signal.signal(signal.SIGTERM, handle_shutdown)
 signal.signal(signal.SIGINT, handle_shutdown)
 
 # Configuration with validation
-BROKER_HOST = os.getenv("QF_KAFKA_BROKER", "100.64.1.19:9092")
+BROKER_HOST = os.getenv("QF_KAFKA_BROKER", "127.0.0.1:9092")
 TOPIC_NAME = os.getenv("QF_KAFKA_TOPIC", "qf-telemetry")
+SPOOL_DIR = Path(os.path.expanduser("~/.local/share/quantum-flex-mycelium"))
+SPOOL_FILE = SPOOL_DIR / "telemetry_spool.jsonl"
 
 try:
     raw_interval = os.getenv("QF_TELEMETRY_INTERVAL", "15")
@@ -122,6 +125,14 @@ def responsive_sleep(seconds: float):
     while not shutdown_requested and time.monotonic() < end_time:
         time.sleep(min(0.25, end_time - time.monotonic()))
 
+def _spool_locally(payload: dict):
+    try:
+        SPOOL_DIR.mkdir(parents=True, exist_ok=True)
+        with open(SPOOL_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload) + "\n")
+    except Exception as err:
+        logger.error("Failed to write to local spool file: %s", err)
+
 def main():
     if not KAFKA_AVAILABLE:
         logger.error("kafka-python-ng is not installed in the active environment.")
@@ -131,20 +142,19 @@ def main():
     logger.info("Configured Broker: %s | Topic: %s | Interval: %ds", BROKER_HOST, TOPIC_NAME, POLL_INTERVAL)
 
     producer = None
-    backoff = 2.0
-    while producer is None and not shutdown_requested:
-        try:
-            producer = KafkaProducer(
-                bootstrap_servers=[BROKER_HOST],
-                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-                request_timeout_ms=5000,
-                retries=3
-            )
-            logger.info("Successfully connected to Kafka broker %s", BROKER_HOST)
-        except Exception as e:
-            logger.warning("Kafka broker not reachable (%s). Retrying in %.1fs...", e, backoff)
-            responsive_sleep(backoff)
-            backoff = min(backoff * 1.5, 30.0)
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=[BROKER_HOST],
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            request_timeout_ms=1500,
+            retries=1
+        )
+        logger.info("Successfully connected to Kafka broker %s", BROKER_HOST)
+    except Exception as e:
+        logger.warning(
+            "Kafka broker (%s) unreachable (%s). Initializing local Yoga spooling -> %s",
+            BROKER_HOST, e, SPOOL_FILE
+        )
 
     sequence_id = 0
     consecutive_failures = 0
@@ -165,33 +175,55 @@ def main():
                 "data": vitals
             }
 
-            try:
-                future = producer.send(TOPIC_NAME, payload)
-                record = future.get(timeout=5)
+            if producer is not None:
+                try:
+                    future = producer.send(TOPIC_NAME, payload)
+                    record = future.get(timeout=3)
 
-                if consecutive_failures > 0:
-                    logger.info("Kafka connection recovered after %d consecutive failure(s).", consecutive_failures)
-                    consecutive_failures = 0
+                    if consecutive_failures > 0:
+                        logger.info("Kafka connection recovered after %d consecutive failure(s).", consecutive_failures)
+                        consecutive_failures = 0
 
+                    logger.info(
+                        "Published telemetry seq=%d (RAM: %s%%, Temp: %s°C, KEM: %s) -> partition %s offset %s",
+                        sequence_id,
+                        vitals.get("ram_used_pct"),
+                        vitals.get("temp_c", "N/A"),
+                        vitals.get("configured_kem"),
+                        record.partition,
+                        record.offset
+                    )
+                except Exception as e:
+                    consecutive_failures += 1
+                    total_failures += 1
+                    logger.error(
+                        "Failed to publish to broker seq=%d (falling back to local spool): %s",
+                        sequence_id, e
+                    )
+                    _spool_locally(payload)
+                    producer = None
+            else:
+                _spool_locally(payload)
                 logger.info(
-                    "Published telemetry seq=%d (RAM: %s%%, Temp: %s°C, KEM: %s) -> partition %s offset %s",
+                    "Spooled telemetry seq=%d (RAM: %s%%, Temp: %s°C, KEM: %s) -> %s",
                     sequence_id,
                     vitals.get("ram_used_pct"),
                     vitals.get("temp_c", "N/A"),
                     vitals.get("configured_kem"),
-                    record.partition,
-                    record.offset
+                    SPOOL_FILE.name
                 )
-            except Exception as e:
-                consecutive_failures += 1
-                total_failures += 1
-                logger.error(
-                    "Failed to publish telemetry packet seq=%d (consecutive: %d, total: %d): %s",
-                    sequence_id,
-                    consecutive_failures,
-                    total_failures,
-                    e
-                )
+                # Periodically probe broker every 20 pulses (~5m) to see if Kafka was started
+                if sequence_id % 20 == 0:
+                    try:
+                        producer = KafkaProducer(
+                            bootstrap_servers=[BROKER_HOST],
+                            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                            request_timeout_ms=1500,
+                            retries=1
+                        )
+                        logger.info("Kafka broker %s reconnected. Resuming live stream.", BROKER_HOST)
+                    except Exception:
+                        pass
 
             responsive_sleep(POLL_INTERVAL)
 

@@ -738,3 +738,33 @@ Authoritative update from Chief Architect Rocky:
    - Arc Network Ground Truth: EVM Osaka baseline; `PUSH0` verified working; `evm_version = "paris"` retained in `foundry.toml` for universal portability; USDC duality (18-decimal native gas / 6-decimal ERC-20); 20 gwei gas floor enforced; CCTP domain 26.
    - Keystore Invariant: Deployer key encrypted in `~/.foundry/keystores/deployer`, eliminating raw `--private-key` flags in terminal commands.
 
+### 19.15 Hardware Retirement & Dual-Node Realignment: G6 Pro Retirement, Telemetry Spooling, NLnet Application 2026-11-4af & Foundry PoC Invariants (2026-11-01, Chief Architect Rocky / Antigravity)
+
+1. **HP ProBook 450 G6 Retirement & Purpose Split**:
+   - **Hardware Status**: Target Node 1 (`g6pro`, `100.64.1.19`) suffered operating system loss/wipe. In accordance with operator directive, it is temporarily retired from active network routing and Kafka broker duties pending future OS reinstallation.
+   - **Telemetry Duty Reallocation**: `scripts/qf_kafka_telemetry_forwarder.py` and `api_node/kafka_consumer.py` reconfigured with default broker `127.0.0.1:9092`. The forwarder now features an automated fallback to local JSONL spooling at `~/.local/share/quantum-flex-mycelium/telemetry_spool.jsonl`, maintaining the 15-second pulse cadence with zero connection churn or backoff spam.
+   - **Sovereign Custody Recalibration**: Shamir 3-of-5 threshold state recalibrated. Share 2 (previously on G6) is flagged as `RETIRED_MAINTENANCE`. Active threshold quorum ($k=3$) is anchored across `qfx-yoga` (Share 1), `qfx-pixel` (Share 5, Titan M2), and the unmounted physical USB Vault (Shares 3 & 4).
+   - **Service & CLI Alignment**: `mobile/qflex_cli.py`, `mcp_layer/qf_bot/teammates.py`, and `mcp_layer/qf_bot/bot_server.py` updated to reflect `RETIRED_MAINTENANCE` status, bypassing ping latency timeouts and adding port 9001 handshake resolution.
+
+2. **Perimeter Defense & Guest Wi-Fi Hardening (Yoga 7 + Pixel 11 Pro)**:
+   - **Interface Isolation**: Master host connected via `wlp3s0` (`10.110.212.153/24`) on untrusted guest Wi-Fi. UFW verified `ENABLED=yes` with `DEFAULT_INPUT_POLICY="DROP"`.
+   - **Zero Port Ingress**: 0 TCP ports exposed to LAN/public interfaces. All operational and API endpoints bound strictly to loopback (`127.0.0.1`) and Tailscale WireGuard (`100.64.1.31`).
+   - **Active Daemons**: Confirmed 17/17 active units running under systemd, including `active-defense.service` (LIF SNN), `immune-daemon.service` (PQC crypto-agility), `swarm-worker.service`, and `sentinel-drive.timer`.
+
+3. **Pillar 2 (NLnet Public-Good Grant) Formal Record**:
+   - **Submission Code**: `2026-11-4af` under the `Restack_Fund` (€40,000 / 20 weeks).
+   - **Project Name**: `pqc-immune-daemon: Formally Verified Post-Quantum Edge Security Membrane & Descriptor-Bound Runtime`.
+   - **Immutable Records**: Verbatim submission archived at `docs/audits/2026-10-31-nlnet-submission-2026-11-4af.txt` and machine receipt generated at `sovereign_missions/02_NLNET_SUBMISSION_RECEIPT_2026-11-4af.json`. Universal Invariant $R \ge O$ strictly reflects $0.00 until milestone disbursement.
+
+4. **Pillar 1 (Foundry Bug Bounty PoC Suite)**:
+   - Implemented and verified mathematical attack models in `~/Documents/qf/test/solidity/PoC_EscrowAndDecimalInvariants.t.sol` using Foundry (`solc 0.8.24`, `evm_version = "paris"`):
+     - `test_PoC_QuorumTOCTOUBypass`: Validated quorum threshold mutation without approval revocation (gas: 284,510).
+     - `test_PoC_USDC6DecimalRoundingInflationAttack`: Validated 6-decimal USDC deposit scaling vs 18-decimal shares truncation attack (gas: 681,962).
+   - Execution time: 2.97ms, zero cloud calls ($0.00 spend). Standardized disclosure dossier template locked at `sovereign_missions/01_BUG_BOUNTY_PROOF_DOSSIER_TEMPLATE.md`.
+
+5. **Public GitHub Repository Release & NLnet Commons Cleanup**:
+   - **Repository Website**: Public at `https://github.com/rahshaun44-byte/mycelium`.
+   - **Privacy Hygiene**: Redacted personal telephone number from public receipt documents; verified zero unencrypted secrets or private keys tracked in git.
+   - **Community Standards**: Added [`CONTRIBUTING.md`](file:///home/quant/mycelium/CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](file:///home/quant/mycelium/CODE_OF_CONDUCT.md) (Contributor Covenant v2.1). Updated [`SECURITY.md`](file:///home/quant/mycelium/SECURITY.md) to integrate GitHub Private Vulnerability Reporting.
+   - **README Elevation**: Updated [`README.md`](file:///home/quant/mycelium/README.md) to prominently feature the NLnet Restack Fund grant project (`2026-11-4af`), 4 funded milestone deliverables, and reproducible verification instructions.
+   - **Test & Policy Verification**: Verified 100% pass rate across all 551 unit tests (`pytest`), 64 OPA Rego policy tests (`opa test`), and CBOM compliance audit (`tools/qf_audit.py`).

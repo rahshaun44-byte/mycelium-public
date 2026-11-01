@@ -70,11 +70,12 @@ To achieve mutual authentication and channel binding:
 
 ## 6. Vulnerability Disclosure & Reporting
 
-If you discover a potential cryptographic weakness, timing leak, or protocol vulnerability in QuantumFlex:
+If you discover a potential cryptographic weakness, timing leak, or protocol vulnerability in QuantumFlex or Mycelium:
 
-1. **Do Not File Public Issues**: Do not open public GitHub issues or forum discussions.
-2. **Reporting Channel**: Encrypt your advisory using the QuantumFlex Control Plane Ed25519/ML-DSA public key and transmit to:
-   - Security Contact: `security@quantumflex.local`
+1. **Do Not File Public Issues**: Do not open public GitHub issues, discussions, or pull requests for security vulnerabilities.
+2. **Reporting Channels**:
+   - **GitHub Private Vulnerability Reporting**: [Open a private security advisory](https://github.com/rahshaun44-byte/mycelium/security/advisories/new)
+   - **Direct Security Contact**: Email `rahshaun44-byte@users.noreply.github.com` with subject `[SECURITY ADVISORY] Mycelium / QuantumFlex`
 3. **Response Timeline**:
    - Initial Acknowledgment: Within 24 hours.
    - Triage & Reproduction: Within 72 hours.

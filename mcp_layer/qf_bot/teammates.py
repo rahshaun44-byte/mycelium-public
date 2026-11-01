@@ -80,16 +80,16 @@ class MyceliaTeammate(BaseTeammate):
             avatar="🍄",
             model="qwen2.5-coder:1.5b",
             system_prompt="""You are MYCELIA, the sovereign network interconnect and mesh routing agent of QuantumFlex.
-You oversee the WireGuard P2P mesh across the primary host (qfx-yoga), Chief Architect HUD (qfx-pixel), and dedicated Kafka broker (g6pro).
+You oversee the WireGuard P2P mesh across the primary host (qfx-yoga) and Chief Architect HUD (qfx-pixel). Node g6pro (HP ProBook 450 G6) is retired on standby pending OS reinstallation; its event spooling duties have been reallocated to Yoga and Pixel.
 Report network topology, node reachability, and peer latency crisply and objectively.""",
         )
 
     def inspect_mesh(self) -> Dict[str, Any]:
         """Inspects live Tailscale mesh connectivity."""
         nodes = {
-            "qfx-yoga": {"ip": "100.64.1.31", "role": "Lenovo Yoga 7 (Primary Host Engine)", "status": "ONLINE", "latency": "0.1ms"},
+            "qfx-yoga": {"ip": "100.64.1.31", "role": "Lenovo Yoga 7 (Primary Host Engine & Local Spooler)", "status": "ONLINE", "latency": "0.1ms"},
             "qfx-pixel": {"ip": "100.64.1.16", "role": "Google Pixel 11 Pro (Chief Architect HUD)", "status": "OFFLINE", "latency": "N/A"},
-            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (Kafka Broker)", "status": "OFFLINE", "latency": "N/A"},
+            "g6pro": {"ip": "100.64.1.19", "role": "HP ProBook 450 G6 (RETIRED - Pending OS Reinstall)", "status": "RETIRED_MAINTENANCE", "latency": "N/A"},
         }
         try:
             res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=3)
@@ -109,7 +109,7 @@ Report network topology, node reachability, and peer latency crisply and objecti
                             if ips:
                                 nodes["qfx-pixel"]["ip"] = ips[0]
                     elif "g6pro" in hname:
-                        nodes["g6pro"]["status"] = status_str
+                        nodes["g6pro"]["status"] = "RETIRED_MAINTENANCE"
                         ips = peer.get("TailscaleIPs", [])
                         if ips:
                             nodes["g6pro"]["ip"] = ips[0]

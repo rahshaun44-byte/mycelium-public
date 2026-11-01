@@ -230,25 +230,15 @@ async def get_mesh_nodes():
                         "pqc_cipher": "ML-KEM-768 Session"
                     })
                 elif "g6" in hostname.lower() or "g6" in dnsname.lower():
-                    g6_latency = "193ms" if active else "Idle"
-                    try:
-                        pr = subprocess.run(["ping", "-c", "1", "-W", "1", primary_ip], capture_output=True, text=True, timeout=0.8)
-                        if pr.returncode == 0:
-                            for line in pr.stdout.splitlines():
-                                if "time=" in line:
-                                    g6_latency = f"{float(line.split('time=')[-1].split()[0]):.1f}ms"
-                                    break
-                    except Exception:
-                        pass
                     nodes.append({
                         "id": "g6pro",
                         "name": "HP ProBook 450 G6",
                         "ip": primary_ip,
-                        "role": "Auxiliary Compute Node (Parked)",
-                        "status": "ONLINE" if is_online else "OFFLINE",
-                        "latency": g6_latency,
-                        "hardware_trust": "Unattested / Non-essential",
-                        "solvency": "OBSERVATION ONLY",
+                        "role": "Auxiliary Compute Node (RETIRED - Pending OS Reinstall)",
+                        "status": "RETIRED_MAINTENANCE",
+                        "latency": "N/A",
+                        "hardware_trust": "Standby / Quorum Reallocated to Pixel & Yoga",
+                        "solvency": "DUTIES REALLOCATED TO YOGA/PIXEL",
                         "pqc_cipher": "Standard WireGuard"
                     })
     except Exception as e:

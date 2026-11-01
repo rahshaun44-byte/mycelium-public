@@ -1,12 +1,12 @@
 [Unit]
-Description=Quantum Flex Kafka Telemetry Forwarder (Yoga 7 -> g6pro)
+Description=Quantum Flex Kafka Telemetry Forwarder (Yoga 7 -> Local Spool / Broker)
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/home/quant/mycelium
 Environment=PYTHONUNBUFFERED=1
-Environment=QF_KAFKA_BROKER=100.64.1.19:9092
+Environment=QF_KAFKA_BROKER=127.0.0.1:9092
 Environment=QF_KAFKA_TOPIC=qf-telemetry
 Environment=QF_TELEMETRY_INTERVAL=15
 ExecStart=/home/quant/.venv/qflex/bin/python3 -u scripts/qf_kafka_telemetry_forwarder.py

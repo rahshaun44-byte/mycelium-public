@@ -12,13 +12,14 @@ import sys
 import ssl
 import time
 import json
+import os
 import socket
 from kafka import KafkaConsumer
 
 CA_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/ca.crt"
 CERT_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/client.crt"
 KEY_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/client.key"
-KAFKA_BROKER = "100.64.1.19:9092"
+KAFKA_BROKER = os.getenv("QF_KAFKA_BROKER", "127.0.0.1:9092")
 TOPIC = "qf-telemetry"
 
 def get_ssl_context():

@@ -102,12 +102,12 @@ def prune_truth_log():
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
 
-        # Only operational log tables are pruned; sentinel_ledger and invariant_audit_ledger
-        # are append-only audit records and are strictly excluded from deletion.
+        # Only operational log tables are pruned; telemetry_log, sentinel_ledger,
+        # and invariant_audit_ledger are append-only audit records and are strictly excluded from deletion.
         cur.execute("""
             SELECT relname, relkind 
             FROM pg_class 
-            WHERE relname IN ('memory_logs', 'telemetry_log')
+            WHERE relname IN ('memory_logs')
         """)
         targets = cur.fetchall()
 

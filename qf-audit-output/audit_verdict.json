@@ -129,6 +129,11 @@
         "status": "COMPLIANT"
       },
       {
+        "algorithm": "RSA-2048",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
+      },
+      {
         "algorithm": "SHA-256",
         "reason": "Approved by algorithm policy; module validation not assessed",
         "status": "COMPLIANT"
@@ -167,7 +172,7 @@
       "ML-KEM-768": "FrodoKEM-976-AES",
       "X25519": "NONE"
     },
-    "meta_timestamp": "2026-10-28T10:17:06Z",
+    "meta_timestamp": "2026-11-01T19:23:40Z",
     "ml_kem_verified_safe": true,
     "node_status": "TOXIC",
     "quantum_safe_kem": [
@@ -197,6 +202,11 @@
         "algorithm": "ECDSA-P256",
         "reason": "Unknown/deprecated algorithm",
         "status": "TOXIC"
+      },
+      {
+        "algorithm": "RSA-2048",
+        "reason": "Unknown/deprecated algorithm",
+        "status": "TOXIC"
       }
     ],
     "valid_profiles": [
@@ -206,7 +216,7 @@
     ],
     "verdict": {
       "deny_reasons": [],
-      "evaluated_at": "2026-10-28T10:17:06Z",
+      "evaluated_at": "2026-11-01T19:23:40Z",
       "findings": [
         {
           "algorithm": "AES-256-GCM",
@@ -269,6 +279,11 @@
           "status": "COMPLIANT"
         },
         {
+          "algorithm": "RSA-2048",
+          "reason": "Unknown/deprecated algorithm",
+          "status": "TOXIC"
+        },
+        {
           "algorithm": "SHA-256",
           "reason": "Approved by algorithm policy; module validation not assessed",
           "status": "COMPLIANT"
@@ -296,8 +311,8 @@
       ],
       "node_status": "TOXIC",
       "recommended_fallback": "NONE",
-      "total_components": 17,
-      "toxic_count": 1,
+      "total_components": 18,
+      "toxic_count": 2,
       "verification_state": "VERIFIED"
     },
     "verification_state": "VERIFIED"

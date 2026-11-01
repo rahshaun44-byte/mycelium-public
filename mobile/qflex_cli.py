@@ -43,14 +43,20 @@ def get_candidate_hosts() -> List[Tuple[str, int]]:
     if socket.gethostname() == YOGA_HOSTNAME or os.environ.get("USER") == "quant":
         return [
             ("127.0.0.1", 9000),
+            ("127.0.0.1", 9001),
             (YOGA_TAILSCALE_IP, 9000),
+            (YOGA_TAILSCALE_IP, 9001),
             (YOGA_MAGICDNS, 9000),
+            (YOGA_MAGICDNS, 9001),
         ]
     # On mobile devices, Tailscale mesh IP is primary, then MagicDNS
     return [
         (YOGA_TAILSCALE_IP, 9000),
+        (YOGA_TAILSCALE_IP, 9001),
         (YOGA_MAGICDNS, 9000),
+        (YOGA_MAGICDNS, 9001),
         ("127.0.0.1", 9000),
+        ("127.0.0.1", 9001),
     ]
 
 
@@ -420,17 +426,17 @@ def cmd_custody(identity: NodeIdentity, base_url: str):
         print(f"  Host Architecture : {identity.model}")
         print(f"  Hardware Security : Microsoft Pluton TPM 2.0")
         print(f"  Local Custody     : Holds Share 1")
-        print(f"  Required Quorum   : Requires 2 remote shares (g6pro, Pixel 11 Pro, or USB vault)")
+        print(f"  Required Quorum   : Requires 2 remote shares (qfx-pixel + USB vault; g6pro retired/standby)")
     else:
         print(_c(CLR_RED, "  [!] NODE IS IN READ-ONLY OBSERVER ROLE"))
         print(f"  Custody Access    : STRICTLY DENIED")
 
     print()
     print(_c(CLR_BOLD, "  Master Shamir 3-of-5 Custody Distribution:"))
-    print("    • Share 1      : Lenovo Yoga 7 2-in-1 14AKP10 (qfx-yoga)")
-    print("    • Share 2      : HP ProBook 450 G6 (g6pro)")
-    print("    • Shares 3 & 4 : Unmounted Physical USB Vault")
-    print("    • Share 5      : Google Pixel 11 Pro (qfx-pixel)")
+    print("    • Share 1      : Lenovo Yoga 7 2-in-1 14AKP10 (qfx-yoga) [ACTIVE HOST ENGINE]")
+    print("    • Share 2      : HP ProBook 450 G6 (g6pro) [RETIRED / PENDING OS REINSTALL]")
+    print("    • Shares 3 & 4 : Unmounted Physical USB Vault [STANDBY HARDWARE]")
+    print("    • Share 5      : Google Pixel 11 Pro (qfx-pixel) [ACTIVE MOBILE QUORUM]")
     print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
     print()
 

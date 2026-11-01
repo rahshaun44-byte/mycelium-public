@@ -249,6 +249,7 @@ def run_comprehensive_suite() -> None:
     # Simulate lease expiration following worker crash
     with store._get_connection() as conn:
         conn.execute("UPDATE intake_tickets SET claim_expires_at_epoch = ? WHERE ticket_id = ?", (time.time() - 1.0, crash_ticket_id))
+        conn.commit()
 
     # Worker 2 restarts and scans pending/abandoned queue
     print("  Worker 2 restarting: executing crash recovery scanner...")
@@ -377,7 +378,8 @@ def run_comprehensive_suite() -> None:
     # SUITE 9: ZERO OUTBOUND TRANSMISSION AUDIT
     # =========================================================================
     print("\n[+] SUITE 9: ZERO OUTBOUND TRANSMISSION AUDIT")
-    all_tickets = store._get_connection().execute("SELECT * FROM intake_tickets").fetchall()
+    with store._get_connection() as conn:
+        all_tickets = conn.execute("SELECT * FROM intake_tickets").fetchall()
     for t in all_tickets:
         assert t["customer_receipt_delivered"] == 0, f"Ticket {t['ticket_id']} violated zero-outbound rule!"
         assert t["operator_alert_delivered"] == 0, f"Ticket {t['ticket_id']} sent outbound alert!"
