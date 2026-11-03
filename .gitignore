@@ -146,4 +146,6 @@ household_private/
 /AUDIT_BUNDLE_REPORT.txt
 /*.ps1
 /*.cmd
+/quarantine/
+/toxic_dump/
 
