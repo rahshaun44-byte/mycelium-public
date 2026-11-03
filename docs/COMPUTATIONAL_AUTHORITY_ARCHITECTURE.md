@@ -147,3 +147,4 @@ Proven on IBM Quantum Heron r2 silicon (`ibm_kingston`):
 2. **FinCEN Non-Custodial Stance:** All smart contract settlement logic is non-custodial software. Rocky maintains sole private key self-custody; QuantumFlex never custodies customer funds.
 3. **FTC Scientific Honesty:** Empirical physical quantum testbed results are rigorously demarcated from mathematical verification gates and commercial certifications. Zero secret entropy is credited to the engine.
 4. **Living Root of Trust ($Y = f(x - h) + k$):** Operational obscurity, zero cloud spend, and sovereign human governance.
+
