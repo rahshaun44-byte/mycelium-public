@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from datetime import datetime, timezone
+import functools
 import hashlib
 import json
 import os
@@ -42,6 +43,19 @@ from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 
 
 DEFAULT_BACKEND_POOL = ["ibm_kingston", "ibm_fez", "ibm_marrakesh"]
+DEFAULT_POLICY_PATH = Path(DEFAULT_LEDGER_PATH).parent / "policies" / "quantum_admission.rego"
+DEFAULT_CALLER = "Quantum_Flex_Async_Manager"
+OPA_TIMEOUT_SEC = 10.0
+
+
+def not_evaluated_authorization(reason: str) -> Dict[str, Any]:
+    """Honest authorization record for paths where no policy engine was consulted."""
+    return {
+        "decision": "NOT_EVALUATED",
+        "verification_state": "NO_POLICY_EVALUATION",
+        "reason": reason,
+        "evaluator": None,
+    }
 
 
 class MockIBMJob:
@@ -112,12 +126,73 @@ class AsyncLedgerManager:
         ledger_path: Path | str = DEFAULT_LEDGER_PATH,
         dry_run: bool = True,
         backend_pool: Optional[List[str]] = None,
+        policy_path: Path | str = DEFAULT_POLICY_PATH,
+        opa_bin: str = "opa",
+        caller: str = DEFAULT_CALLER,
     ):
         self.ledger = EvidenceLedger(filepath=ledger_path)
         self.dry_run = dry_run
         self.backend_pool = backend_pool or list(DEFAULT_BACKEND_POOL)
+        self.policy_path = Path(policy_path)
+        self.opa_bin = opa_bin
+        self.caller = caller
         self._commit_lock = asyncio.Lock()
         self._service: Optional[QiskitRuntimeService] = None
+
+    async def evaluate_admission(self, backend_name: str, circuit: QuantumCircuit, shots: int) -> Dict[str, Any]:
+        """
+        Evaluate quantum_admission.rego via the local OPA binary.
+        Fail-closed: any error (missing binary, missing policy, timeout, bad output) yields DENY.
+        """
+        policy_input = {
+            "caller": self.caller,
+            "shots": shots,
+            "qubits": circuit.num_qubits,
+            "depth": circuit.depth(),
+            "backend": backend_name,
+        }
+        base = {
+            "policy_file": str(self.policy_path),
+            "evaluator": f"opa eval ({self.opa_bin})",
+            "input": policy_input,
+        }
+
+        def _deny(reason: str) -> Dict[str, Any]:
+            return {**base, "decision": "DENY", "verification_state": "OPA_EVALUATION_FAILED", "reasons": [reason]}
+
+        if not self.policy_path.is_file():
+            return _deny(f"Policy file not found: {self.policy_path}")
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                self.opa_bin, "eval", "--format", "json", "--stdin-input",
+                "-d", str(self.policy_path), "data.quantum.admission",
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(json.dumps(policy_input).encode("utf-8")), timeout=OPA_TIMEOUT_SEC
+            )
+        except FileNotFoundError:
+            return _deny(f"OPA binary not found: {self.opa_bin}")
+        except asyncio.TimeoutError:
+            proc.kill()
+            return _deny(f"OPA evaluation timed out after {OPA_TIMEOUT_SEC}s")
+
+        if proc.returncode != 0:
+            return _deny(f"OPA exited {proc.returncode}: {stderr.decode(errors='replace').strip()[:200]}")
+        try:
+            value = json.loads(stdout)["result"][0]["expressions"][0]["value"]
+        except (ValueError, KeyError, IndexError, TypeError) as e:
+            return _deny(f"Unparseable OPA output: {e}")
+
+        allowed = value.get("allow") is True
+        return {
+            **base,
+            "decision": "ALLOW" if allowed else "DENY",
+            "verification_state": "OPA_POLICY_EVALUATED",
+            "reasons": sorted(value.get("reasons", [])),
+        }
 
     def _get_runtime_service(self) -> QiskitRuntimeService:
         """Lazily initialize IBM Quantum runtime service using QuantumWorker credentials."""
@@ -169,9 +244,8 @@ class AsyncLedgerManager:
                 print(f"    -> Backend error: {s}")
 
         if not valid_backends:
-            fallback = pool[0]
-            print(f"[!] Warning: No verified active backend. Falling back to default: {fallback}")
-            return fallback
+            # Fail-closed: never dispatch to a backend whose operational status was not confirmed.
+            raise RuntimeError(f"No operational backend confirmed in pool {pool}; refusing to dispatch.")
 
         # Sort by pending jobs ascending
         valid_backends.sort(key=lambda x: x["pending_jobs"])
@@ -182,18 +256,24 @@ class AsyncLedgerManager:
     async def monitor_and_commit_job(
         self,
         job_id: str,
-        backend_name: str,
+        backend_name: Optional[str],
         circuit_info: Dict[str, Any],
         experiment_name: str = "Async_Quantum_Workload",
         shots: int = 256,
         poll_interval_sec: float = 5.0,
         mock_job: Optional[MockIBMJob] = None,
+        authorization: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Poll an individual quantum job until completion and commit result to evidence ledger.
         Uses asyncio.Lock to ensure thread-safe, non-forking hash chaining.
+
+        For physical jobs, the backend recorded in the ledger is the one reported by IBM for the
+        job itself. If `backend_name` is given and disagrees, the commit is refused (fail-closed).
         """
-        print(f"[*] Tracking Job {job_id} on [{backend_name}]...")
+        if authorization is None:
+            authorization = not_evaluated_authorization("No admission decision supplied to commit path")
+        print(f"[*] Tracking Job {job_id} on [{backend_name or 'backend from job'}]...")
         start_time = time.time()
 
         while True:
@@ -217,14 +297,24 @@ class AsyncLedgerManager:
         if status_name != "DONE":
             raise RuntimeError(f"Job {job_id} terminated with failure status: {status_name}")
 
-        # Extract counts
+        # Extract counts and resolve the backend that actually executed the job
         if mock_job:
             result = mock_job.result()
             counts = list(result[0].data.values())[0].get_counts()
+            actual_backend = backend_name or mock_job._backend_name
         else:
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, job.result)
             counts = list(result[0].data.values())[0].get_counts()
+            job_backend = await loop.run_in_executor(None, job.backend)
+            actual_backend = getattr(job_backend, "name", None)
+            if not actual_backend:
+                raise RuntimeError(f"Job {job_id}: IBM did not report an executing backend; refusing to commit.")
+            if backend_name and actual_backend != backend_name:
+                raise RuntimeError(
+                    f"Job {job_id}: backend mismatch (expected {backend_name}, IBM reports {actual_backend}); "
+                    "refusing to commit mislabeled evidence."
+                )
 
         total_shots = sum(counts.values())
         result_sha256 = compute_hash(counts)
@@ -255,16 +345,11 @@ class AsyncLedgerManager:
                     "entry_index": entry_index,
                     "timestamp_utc": datetime.now(timezone.utc).isoformat(),
                     "experiment_name": experiment_name,
-                    "requested_by": "Quantum_Flex_Async_Manager",
-                    "authorization": {
-                        "decision": "ALLOW",
-                        "verification_state": "ASYNC_LEDGER_POLICY_VERIFIED",
-                        "policy_file": "quantum_admission.rego",
-                        "evaluator": "async_pool_manager"
-                    },
+                    "requested_by": self.caller,
+                    "authorization": authorization,
                     "target_type": "LOCAL_VALIDATION" if (self.dry_run or mock_job) else "REAL_QPU",
                     "provider": "Local Qiskit Reference Engine" if (self.dry_run or mock_job) else "IBM Quantum Platform",
-                    "backend_name": backend_name,
+                    "backend_name": actual_backend,
                     "job_id": job_id,
                     "shots": total_shots,
                     "counts": counts,
@@ -325,8 +410,17 @@ class AsyncLedgerManager:
                 shots=shots,
                 poll_interval_sec=0.5,
                 mock_job=mock_job,
+                authorization=not_evaluated_authorization("Dry-run simulation; no QPU admission required"),
             )
         else:
+            # Fail-closed admission gate: no physical submission without an explicit OPA ALLOW.
+            authorization = await self.evaluate_admission(backend_name, circuit, shots)
+            if authorization["decision"] != "ALLOW":
+                raise PermissionError(
+                    f"Admission DENIED for {circuit.name or 'unnamed_circuit'} on {backend_name}: "
+                    f"{authorization.get('reasons')}"
+                )
+
             loop = asyncio.get_running_loop()
             service = self._get_runtime_service()
             backend = await loop.run_in_executor(None, service.backend, backend_name)
@@ -336,7 +430,8 @@ class AsyncLedgerManager:
             isa_circuit = await loop.run_in_executor(None, pm.run, circuit)
             
             sampler = Sampler(mode=backend)
-            job = await loop.run_in_executor(None, sampler.run, [isa_circuit], shots)
+            # SamplerV2.run(pubs, *, shots=...) -- shots is keyword-only, so bind it explicitly.
+            job = await loop.run_in_executor(None, functools.partial(sampler.run, [isa_circuit], shots=shots))
             job_id = job.job_id()
             print(f"[+] Physical QPU Job Submitted: {job_id} on {backend_name}")
             
@@ -347,7 +442,33 @@ class AsyncLedgerManager:
                 experiment_name=experiment_name,
                 shots=shots,
                 poll_interval_sec=10.0,
+                authorization=authorization,
             )
+
+    async def retrieve_and_commit(
+        self,
+        job_id: str,
+        expected_backend: Optional[str] = None,
+        shots: int = 256,
+        poll_interval_sec: float = 2.0,
+    ) -> Dict[str, Any]:
+        """
+        Retrieve an existing physical IBM job and commit it. The backend is taken from IBM's job
+        record; `expected_backend`, if given, must match. Circuit details are not reconstructed,
+        so they are recorded as unknown rather than guessed.
+        """
+        if self.dry_run:
+            raise RuntimeError("retrieve_and_commit requires a non-dry-run manager (physical job lookup).")
+        circuit_info = {"name": "retrieved_job", "retrieved": True, "num_qubits": None, "circuit_sha256": None}
+        return await self.monitor_and_commit_job(
+            job_id=job_id,
+            backend_name=expected_backend,
+            circuit_info=circuit_info,
+            experiment_name="Async_Retrieved_Hardware_Run",
+            shots=shots,
+            poll_interval_sec=poll_interval_sec,
+            authorization=not_evaluated_authorization("Retrieved pre-existing job; admission occurred outside this manager"),
+        )
 
     async def dispatch_batch(
         self,
@@ -416,7 +537,7 @@ async def main_async():
     parser = argparse.ArgumentParser(description="QuantumFlex Async Multi-Backend Ledger Manager")
     parser.add_argument("--live", action="store_true", help="Submit actual jobs to IBM Quantum hardware (requires confirmation)")
     parser.add_argument("--retrieve", type=str, default=None, help="Retrieve and commit an existing physical job ID")
-    parser.add_argument("--backend", type=str, default="ibm_kingston", help="Primary backend for retrieval (default: ibm_kingston)")
+    parser.add_argument("--backend", type=str, default=None, help="Expected backend for --retrieve; commit is refused if IBM reports a different one (default: accept IBM's reported backend)")
     parser.add_argument("--ledger-path", type=str, default=str(DEFAULT_LEDGER_PATH), help="Path to evidence_ledger.jsonl")
     parser.add_argument("--verify-ledger", action="store_true", help="Verify cryptographic hash chain of the ledger file")
     parser.add_argument("--shots", type=int, default=256, help="Shots per circuit (default: 256)")
@@ -441,15 +562,11 @@ async def main_async():
     )
 
     if args.retrieve:
-        print(f"[*] Asynchronously retrieving existing job: {args.retrieve} from {args.backend}")
-        circ_info = {"name": "retrieved_job", "num_qubits": 3, "retrieved": True}
-        entry = await manager.monitor_and_commit_job(
+        print(f"[*] Asynchronously retrieving existing job: {args.retrieve} (expected backend: {args.backend or 'any'})")
+        entry = await manager.retrieve_and_commit(
             job_id=args.retrieve,
-            backend_name=args.backend,
-            circuit_info=circ_info,
-            experiment_name="Async_Retrieved_Hardware_Run",
+            expected_backend=args.backend,
             shots=args.shots,
-            poll_interval_sec=2.0,
         )
         print(f"[+] Successfully committed retrieved job {args.retrieve} to ledger entry #{entry['entry_index']}.")
     else:

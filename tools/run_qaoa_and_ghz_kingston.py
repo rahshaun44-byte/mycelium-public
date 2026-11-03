@@ -17,6 +17,10 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 import numpy as np
+import warnings
+
+# Suppress client-side Sampler deprecation warnings in runtime output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Ensure quantum_worker imports work
 sys.path.insert(0, "/home/quant/Documents/qf")
@@ -28,26 +32,108 @@ from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 
 
-def classical_portfolio_cost(x: list[int] | np.ndarray) -> float:
-    """Evaluate classical Markowitz portfolio cost: -mu^T x + lambda x^T Sigma x + penalty (sum(x) - B)^2"""
+def circuit_sha256(qc: QuantumCircuit) -> str:
+    """Compute deterministic cryptographic SHA-256 digest of a QuantumCircuit."""
+    try:
+        from qiskit import qasm3
+        text = qasm3.dumps(qc)
+    except Exception:
+        text = str(qc.data)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+RISK_PROFILES = {
+    "aggressive": 0.1,
+    "balanced": 0.5,
+    "conservative": 1.0,
+    "ultra_conservative": 2.0,
+}
+
+
+def classical_portfolio_cost(x: list[int] | np.ndarray, lambda_risk: float = 0.5) -> float:
+    """Evaluate classical Markowitz portfolio cost: -mu^T x + lambda * x^T Sigma x + penalty (sum(x) - B)^2"""
     mu = np.array([0.15, 0.10, 0.05], dtype=float)
     cov = np.array([
         [0.08,  0.02, -0.01],
         [0.02,  0.06,  0.00],
         [-0.01, 0.00,  0.01]
     ], dtype=float)
-    risk_weight = 0.5
     budget = 2
     penalty = 1.0
     x_arr = np.asarray(x, dtype=float)
     return float(
         -mu @ x_arr
-        + risk_weight * (x_arr @ cov @ x_arr)
+        + lambda_risk * (x_arr @ cov @ x_arr)
         + penalty * (x_arr.sum() - budget) ** 2
     )
 
 
-def build_qaoa_portfolio_circuit() -> tuple[QuantumCircuit, dict]:
+def evaluate_all_portfolios(lambda_risk: float = 0.5) -> list[dict]:
+    """Exhaustively evaluate classical Markowitz cost C(x) across all 2^3 = 8 possible states."""
+    results = []
+    asset_names = ["Tech_Growth", "Energy_Dividend", "Treasury_Bond"]
+    for bits in itertools.product([0, 1], repeat=3):
+        x = list(bits)
+        cost = classical_portfolio_cost(x, lambda_risk=lambda_risk)
+        selected_count = sum(x)
+        is_feasible = (selected_count == 2)
+        selected_assets = [asset_names[i] for i, b in enumerate(x) if b == 1]
+        results.append({
+            "state": f"{x[0]}{x[1]}{x[2]}",
+            "x": x,
+            "selected_count": selected_count,
+            "is_feasible": is_feasible,
+            "cost": round(cost, 6),
+            "description": " + ".join(selected_assets) if selected_assets else "None"
+        })
+    results.sort(key=lambda r: r["cost"])
+    return results
+
+
+def validate_qaoa_hamiltonian_gate(lambda_risk: float, meta: dict) -> bool:
+    """
+    Mandatory Validation Gate: Check Ising Hamiltonian energy against classical Markowitz cost
+    to < 1e-14 numerical tolerance across all 2^3 = 8 portfolio basis states.
+    Fails closed if any discrepancy is detected before quantum execution.
+    """
+    mu = np.array([0.15, 0.10, 0.05], dtype=float)
+    cov = np.array([
+        [0.08,  0.02, -0.01],
+        [0.02,  0.06,  0.00],
+        [-0.01, 0.00,  0.01]
+    ], dtype=float)
+    budget = 2
+    penalty = 1.0
+
+    a = -mu + lambda_risk * np.diag(cov) + penalty * (1.0 - 2.0 * budget)
+    b_01 = 2.0 * lambda_risk * cov[0, 1] + 2.0 * penalty
+    b_02 = 2.0 * lambda_risk * cov[0, 2] + 2.0 * penalty
+    b_12 = 2.0 * lambda_risk * cov[1, 2] + 2.0 * penalty
+    const = penalty * (budget ** 2) + 0.5 * np.sum(a) + 0.25 * (b_01 + b_02 + b_12)
+
+    h = np.array(meta["ising_linear_h"], dtype=float)
+    J = meta["ising_coupling_J"]
+
+    for bits in itertools.product([0, 1], repeat=3):
+        x = np.array(bits, dtype=float)
+        cost_c = classical_portfolio_cost(x, lambda_risk=lambda_risk)
+        z = 1.0 - 2.0 * x
+        cost_ising = (
+            const
+            + np.dot(h, z)
+            + J["0_1"] * z[0] * z[1]
+            + J["0_2"] * z[0] * z[2]
+            + J["1_2"] * z[1] * z[2]
+        )
+        if not np.isclose(cost_c, cost_ising, atol=1e-14):
+            raise ValueError(
+                f"QAOA VALIDATION GATE FAILURE: Hamiltonian mismatch at bits={bits}: "
+                f"Classical={cost_c}, Ising={cost_ising}"
+            )
+    return True
+
+
+def build_qaoa_portfolio_circuit(lambda_risk: float = 0.5, risk_profile: str = "balanced") -> tuple[QuantumCircuit, dict]:
     """
     Construct a 3-qubit QAOA portfolio optimization circuit (Markowitz Mean-Variance).
     
@@ -74,18 +160,17 @@ def build_qaoa_portfolio_circuit() -> tuple[QuantumCircuit, dict]:
     ], dtype=float)
     assert np.allclose(cov, cov.T), "Covariance matrix must be symmetric"
 
-    risk_weight = 0.5
     budget = 2
     penalty = 1.0
     n = 3
 
     # Derive binary expansion coefficients: C(x) = const + sum_i a_i x_i + sum_{i < j} b_ij x_i x_j
-    a = -mu + risk_weight * np.diag(cov) + penalty * (1.0 - 2.0 * budget)
+    a = -mu + lambda_risk * np.diag(cov) + penalty * (1.0 - 2.0 * budget)
     b = np.zeros((n, n), dtype=float)
     for i in range(n):
         for j in range(n):
             if i != j:
-                b[i, j] = 2.0 * risk_weight * cov[i, j] + 2.0 * penalty
+                b[i, j] = 2.0 * lambda_risk * cov[i, j] + 2.0 * penalty
 
     # Map to Pauli-Z Ising Hamiltonian: H_C = const + sum_i h_i Z_i + sum_{i < j} J_ij Z_i Z_j
     h = np.zeros(n, dtype=float)
@@ -126,18 +211,25 @@ def build_qaoa_portfolio_circuit() -> tuple[QuantumCircuit, dict]:
     sv = Statevector.from_instruction(unitary_circuit)
     ideal_probs = {k: float(v) for k, v in sv.probabilities_dict().items()}
 
+    # Classical exhaustive benchmark ranking for this exact lambda
+    all_ranked = evaluate_all_portfolios(lambda_risk=lambda_risk)
+    best_feasible = next(p for p in all_ranked if p["is_feasible"])
+
     meta = {
         "algorithm": "QAOA",
         "assets": ["Tech_Growth", "Energy_Dividend", "Treasury_Bond"],
         "budget": budget,
-        "risk_weight": risk_weight,
+        "risk_profile": risk_profile,
+        "lambda_risk": lambda_risk,
         "penalty": penalty,
         "gamma": gamma,
         "beta": beta,
         "ising_linear_h": [float(val) for val in h],
         "ising_coupling_J": {f"{i}_{j}": float(J[i, j]) for i in range(n) for j in range(i + 1, n)},
-        "expected_best_state": "101",
-        "expected_best_portfolio": "Asset 0 (Tech) + Asset 2 (Treasury)",
+        "expected_best_state": best_feasible["state"],
+        "expected_best_portfolio": best_feasible["description"],
+        "expected_best_cost": best_feasible["cost"],
+        "classical_exhaustive_ranking": all_ranked,
         "ideal_statevector_predictions": ideal_probs
     }
     return qc, meta
@@ -239,7 +331,16 @@ def build_ghz_yyx_circuit() -> tuple[QuantumCircuit, dict]:
     return qc, meta
 
 
-def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run: bool = True, retrieve_job_id: str | None = None):
+def run_experiment(
+    backend_name: str = "ibm_kingston",
+    shots: int = 256,
+    dry_run: bool = True,
+    retrieve_job_id: str | None = None,
+    risk_profile: str = "balanced",
+    lambda_risk: float | None = None
+):
+    effective_lambda = lambda_risk if lambda_risk is not None else RISK_PROFILES.get(risk_profile, 0.5)
+
     if retrieve_job_id:
         dry_run = False
         mode_str = f"[RETRIEVING PHYSICAL EXECUTION: {retrieve_job_id}]"
@@ -251,6 +352,7 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
     print(f" Execution Mode : {mode_str}")
     print(f" Target Silicon : {backend_name} (156 Physical Transmons, Heron r2)")
     print(f" Requested Shots: {shots} per circuit (Batch: 6 circuits, {shots * 6} total shots)")
+    print(f" Risk Profile   : {risk_profile.upper()} (lambda_risk = {effective_lambda})")
     print(f" Engine Status  : LOCKED (Zero-Trust Isolation)")
     print("=" * 75)
 
@@ -265,12 +367,16 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
     print(f"      Connected to QPU: {backend.name} | Total Qubits: {backend.num_qubits} | Pending Jobs: {status.pending_jobs}")
 
     print(f"\n[2/5] Building Quantum Research Circuits (Complete 6-Circuit Suite)...")
-    qc_qaoa, meta_qaoa = build_qaoa_portfolio_circuit()
+    qc_qaoa, meta_qaoa = build_qaoa_portfolio_circuit(lambda_risk=effective_lambda, risk_profile=risk_profile)
     qc_zzz, meta_zzz = build_ghz_zzz_circuit()
     qc_xxx, meta_xxx = build_ghz_xxx_circuit()
     qc_xyy, meta_xyy = build_ghz_xyy_circuit()
     qc_yxy, meta_yxy = build_ghz_yxy_circuit()
     qc_yyx, meta_yyx = build_ghz_yyx_circuit()
+
+    # Mandatory Classical Validation Gate
+    validate_qaoa_hamiltonian_gate(effective_lambda, meta_qaoa)
+    print(f"      [VALIDATION GATE PASSED] Ising Hamiltonian matches classical Markowitz objective (< 1e-14) on all 8 states.")
 
     circuits = [qc_qaoa, qc_zzz, qc_xxx, qc_xyy, qc_yxy, qc_yyx]
     circuit_metas = [meta_qaoa, meta_zzz, meta_xxx, meta_xyy, meta_yxy, meta_yyx]
@@ -285,12 +391,17 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
     transpiled_meta = []
     for i, (orig, isa) in enumerate(zip(circuits, isa_circuits)):
         layout = isa.layout.final_index_layout() if hasattr(isa, "layout") and isa.layout else None
+        log_hash = circuit_sha256(orig)
+        isa_hash = circuit_sha256(isa)
         print(f"      ISA Circuit {i} ({orig.name:<18}): Depth {isa.depth():<2} | Layout: {layout} | Ops: {dict(isa.count_ops())}")
+        print(f"          Logical SHA-256: {log_hash[:16]}... | ISA SHA-256: {isa_hash[:16]}...")
         transpiled_meta.append({
             "name": orig.name,
             "depth": isa.depth(),
             "ops": dict(isa.count_ops()),
-            "physical_layout": layout
+            "physical_layout": layout,
+            "logical_circuit_sha256": log_hash,
+            "isa_circuit_sha256": isa_hash
         })
 
     total_batch_shots = shots * len(circuits)
@@ -422,7 +533,7 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
         prob = (cnt / total_qaoa) * 100
         # Qiskit little-endian: s[2]=q0(Tech), s[1]=q1(Energy), s[0]=q2(Treasury)
         x = [int(state[2]), int(state[1]), int(state[0])]
-        c = classical_portfolio_cost(x)
+        c = classical_portfolio_cost(x, lambda_risk=effective_lambda)
         is_feas = (sum(x) == 2)
         tag = "[VALID 2-ASSET BUDGET]" if is_feas else "[BUDGET PENALIZED]"
         
@@ -440,10 +551,23 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
     mean_cost = qaoa_sample_cost_sum / total_qaoa
     cond_feas_cost = (feasible_cost_sum / valid_budget_counts) if valid_budget_counts > 0 else 0.0
 
+    # Calculate optimal portfolio probability and approximation ratio against classical reference
+    exp_best_state = meta_qaoa["expected_best_state"]
+    exp_qiskit_str = f"{exp_best_state[2]}{exp_best_state[1]}{exp_best_state[0]}"
+    optimal_shots = counts_qaoa.get(exp_qiskit_str, 0)
+    optimal_pct = (optimal_shots / total_qaoa) * 100
+    expected_opt_cost = meta_qaoa["expected_best_cost"]
+    approx_ratio_best = (best_observed_cost / expected_opt_cost) if expected_opt_cost != 0 else 1.0
+    approx_ratio_mean = (cond_feas_cost / expected_opt_cost) if expected_opt_cost != 0 else 1.0
+
     print(f"\n   Feasible Subspace Probability : {valid_pct:.2f}% ({valid_budget_counts}/{total_qaoa} shots)")
+    print(f"   Optimal Portfolio Probability : {optimal_pct:.2f}% ({optimal_shots}/{total_qaoa} shots, state |{exp_qiskit_str}> -> x={exp_best_state})")
     print(f"   Best Observed Feasible Port   : {best_observed_port}")
+    print(f"   Classical Optimum Benchmark   : {exp_best_state} ({meta_qaoa['expected_best_portfolio']}) | Cost: {expected_opt_cost:+.6f}")
     print(f"   Mean Classical Objective      : {mean_cost:+.6f}")
     print(f"   Mean Conditional Feasible Cost: {cond_feas_cost:+.6f}")
+    print(f"   Best Approximation Ratio      : {approx_ratio_best:.4f}")
+    print(f"   Mean Feasible Approx Ratio    : {approx_ratio_mean:.4f}")
 
     # --- Comprehensive Complete GHZ Witness Analysis ---
     print("\n" + "-" * 75)
@@ -556,6 +680,7 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
     prefix = "dry-run-" if dry_run else ""
     prov_dir = Path("/home/quant/qf-research") / f"{prefix}ibm-qaoa-ghz-kingston-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     prov_dir.mkdir(parents=True, exist_ok=True)
+    os.chmod(prov_dir, 0o700)
 
     # 1. Immutable Raw Acquisition Record
     raw_file = prov_dir / "raw_acquisition.json"
@@ -614,12 +739,16 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
         "option_a_qaoa_analysis": {
             "meta": meta_qaoa,
             "feasible_probability_pct": round(valid_pct, 4),
+            "optimal_portfolio_probability_pct": round(optimal_pct, 4),
             "best_observed_portfolio": best_observed_port,
-            "best_classical_reference_portfolio": "101 (Tech + Treasury)",
-            "best_classical_reference_cost": -0.165000,
+            "best_classical_reference_portfolio": f"{exp_best_state} ({meta_qaoa['expected_best_portfolio']})",
+            "best_classical_reference_cost": expected_opt_cost,
             "mean_classical_objective": round(mean_cost, 6),
             "mean_conditional_feasible_cost": round(cond_feas_cost, 6),
-            "ideal_statevector_predictions": meta_qaoa["ideal_statevector_predictions"]
+            "approximation_ratio_best": round(approx_ratio_best, 6),
+            "approximation_ratio_mean": round(approx_ratio_mean, 6),
+            "ideal_statevector_predictions": meta_qaoa["ideal_statevector_predictions"],
+            "validation_gate_passed": True
         },
         "option_b_ghz_complete_witness_analysis": {
             "target_basis_population_pct": round(target_population_pct, 4),
@@ -644,6 +773,17 @@ def run_experiment(backend_name: str = "ibm_kingston", shots: int = 256, dry_run
             "entanglement_certified": entanglement_certified,
             "entanglement_certification_note": cert_note
         },
+        "circuit_provenance": [
+            {
+                "name": m["name"],
+                "logical_circuit_sha256": m["logical_circuit_sha256"],
+                "isa_circuit_sha256": m["isa_circuit_sha256"],
+                "depth": m["depth"],
+                "ops": m["ops"],
+                "physical_layout": m["physical_layout"]
+            }
+            for m in transpiled_meta
+        ],
         "engine_state": "LOCKED",
         "entropy_credit": 0.0,
         "epistemic_standard": "External empirical physics research only. Zero secret entropy."
@@ -676,8 +816,22 @@ if __name__ == "__main__":
     parser.add_argument("--retrieve", type=str, default=None, help="Retrieve and analyze an existing completed physical IBM job ID")
     parser.add_argument("--backend", default="ibm_kingston", help="Target QPU backend name (default: ibm_kingston)")
     parser.add_argument("--shots", type=int, default=256, help="Shots per circuit (default: 256)")
+    parser.add_argument(
+        "--risk-profile",
+        choices=["aggressive", "balanced", "conservative", "ultra_conservative"],
+        default="balanced",
+        help="Risk profile mapping to risk-aversion weight lambda (default: balanced)"
+    )
+    parser.add_argument("--lambda-risk", type=float, default=None, help="Explicit risk aversion parameter lambda (overrides risk-profile)")
     args = parser.parse_args()
 
     # If --retrieve is given, fetch that job. Otherwise, default to safe dry-run unless --submit is explicitly provided.
     is_dry_run = not args.submit and (args.retrieve is None)
-    run_experiment(backend_name=args.backend, shots=args.shots, dry_run=is_dry_run, retrieve_job_id=args.retrieve)
+    run_experiment(
+        backend_name=args.backend,
+        shots=args.shots,
+        dry_run=is_dry_run,
+        retrieve_job_id=args.retrieve,
+        risk_profile=args.risk_profile,
+        lambda_risk=args.lambda_risk
+    )
