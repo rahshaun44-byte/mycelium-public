@@ -225,6 +225,11 @@ def run_option1(
     if actual_shots == 0:
         raise ValueError("No measurement outcomes returned from QPU")
 
+    sample_key = next(iter(counts.keys()))
+    if len(sample_key) != num_qubits:
+        print(f"[*] Detected {len(sample_key)}-qubit register from retrieved job (configured: {num_qubits} qubits). Adapting.")
+        num_qubits = len(sample_key)
+
     full_shannon = calculate_full_shannon_entropy(counts)
     max_possible_entropy = math.log2(2 ** num_qubits)
 

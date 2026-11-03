@@ -18,8 +18,8 @@ jobs:
           version: 1.20.1
       - name: Run Tests & AST Mutation
         run: |
-          opa test -v .
-          python3 scripts/ast_mutation_engine.py membrane_health.rego
+          opa test -v sentinel/policies/
+          python3 scripts/mutation_ratchet.py
       - name: Generate Policy Evidence
         run: python3 scripts/generate_policy_evidence.py
       - name: Upload Evidence A
@@ -41,8 +41,8 @@ jobs:
           version: 1.20.1
       - name: Run Tests & AST Mutation
         run: |
-          opa test -v .
-          python3 scripts/ast_mutation_engine.py membrane_health.rego
+          opa test -v sentinel/policies/
+          python3 scripts/mutation_ratchet.py
       - name: Generate Policy Evidence
         run: python3 scripts/generate_policy_evidence.py
       - name: Upload Evidence B
@@ -75,7 +75,7 @@ jobs:
       - name: Build Payload Archive
         run: |
           mkdir -p bundle
-          cp membrane_health.rego membrane_health_test.rego release/MANIFEST.json bundle/
+          cp sentinel/policies/membrane_health.rego sentinel/policies/membrane_health_test.rego release/MANIFEST.json bundle/
           tar -czf quantumflex-bundle.tar.gz -C bundle .
           
       - name: Generate Release Attestation

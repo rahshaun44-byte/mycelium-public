@@ -3,11 +3,11 @@
   "bundle_name": "quantumflex-policy-bundle",
   "files": {
     "membrane_health.rego": {
-      "sha256": "b3622ab6155284b8d99282ee8efff4e72b234119bc9cfa3daa3fc47ddc2f8b05",
+      "sha256": "1582c5ccf2a9d2cbeaff03d174e983b54d82609c6c0d6fbb9c6b680292a1e337",
       "purpose": "OPA policy decision rules & fallback map"
     },
     "membrane_health_test.rego": {
-      "sha256": "106de15115e5b7b870fb40eebd5fbbc41d524cf15134ccc99c183865a13f9848",
+      "sha256": "a7909803b17c507d7bb63c70d66f23caeebb7477d95c296638e1390b8424873d",
       "purpose": "Rego unit test assertions & fault injection scenarios"
     }
   }
