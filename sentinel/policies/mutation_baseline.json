@@ -1,8 +1,9 @@
 {
   "bootgate.rego": {"max_survived": 0},
+  "epistemic_admission.rego": {"max_survived": 0},
   "gatekeeper_attestation.rego": {"max_survived": 0},
   "legal_governance.rego": {"max_survived": 0},
-  "membrane_health.rego": {"max_survived": 20},
+  "membrane_health.rego": {"max_survived": 6},
   "operating_constitution.rego": {"max_survived": 0},
   "reserve_invariant.rego": {"max_survived": 39}
 }
