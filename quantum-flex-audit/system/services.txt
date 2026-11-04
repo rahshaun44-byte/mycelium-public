@@ -1,0 +1,143 @@
+===== SYSTEM IDENTITY =====
+  Static hostname: quant-Yoga-7-2-in-1-14AKP10
+        Icon name: computer-convertible
+          Chassis: convertible
+Chassis Asset Tag: No Asset Tag
+       Machine ID: f72a59d578f34179907ceed1cf395071
+          Boot ID: 5e206bff01c144e7b0b1a4a122beff85
+ Operating System: Ubuntu 26.04.1 LTS
+           Kernel: Linux 7.0.0-38-generic
+     Architecture: x86-64
+  Hardware Vendor: Lenovo
+   Hardware Model: Yoga 7 2-in-1 14AKP10
+     Hardware SKU: LENOVO_MT_83JR_BU_idea_FM_Yoga 7 2-in-1 14AKP10
+ Firmware Version: QXCN23WW
+    Firmware Date: Tue 2026-04-07
+     Firmware Age: 6month 4w
+Wed Nov  4 12:02:43 AM UTC 2026
+
+===== ACTIVE SERVICES =====
+  UNIT                                                             LOAD   ACTIVE SUB     DESCRIPTION
+  active-defense.service                                           loaded active running Quantum Flex Active Defense Daemon
+  amara-dashboard.service                                          loaded active running A.M.A.R.A. Sync Dashboard
+  amara-matrix.service                                             loaded active running Amara Matrix PostgreSQL Container
+  api-node.service                                                 loaded active running Quantum Flex Core API Gateway Node
+  at-spi-dbus-bus.service                                          loaded active running Accessibility services bus
+  athena-node.service                                              loaded active running A.T.H.E.N.A. RAG Cognitive Node — Quantum Flex
+  dbus.service                                                     loaded active running D-Bus User Message Bus
+  dconf.service                                                    loaded active running User preferences database
+  evolution-addressbook-factory.service                            loaded active running Evolution address book service
+  evolution-calendar-factory.service                               loaded active running Evolution calendar service
+  evolution-source-registry.service                                loaded active running Evolution source registry
+  filter-chain.service                                             loaded active running PipeWire filter chain daemon
+  gcr-ssh-agent.service                                            loaded active running GCR ssh-agent wrapper
+  glib-pacrunner.service                                           loaded active running GLib proxy auto-configuration service
+  gnome-keyring-daemon.service                                     loaded active running GNOME Keyring daemon
+  gnome-session-manager@ubuntu.service                             loaded active running GNOME Session Manager (session: ubuntu)
+  gnome-session-monitor.service                                    loaded active running Monitor Session leader for GNOME Session
+  gnome-terminal-server.service                                    loaded active running GNOME Terminal Server
+  gvfs-afc-volume-monitor.service                                  loaded active running Virtual filesystem service - Apple File Conduit monitor
+  gvfs-daemon.service                                              loaded active running Virtual filesystem service
+  gvfs-goa-volume-monitor.service                                  loaded active running Virtual filesystem service - GNOME Online Accounts monitor
+  gvfs-gphoto2-volume-monitor.service                              loaded active running Virtual filesystem service - digital camera monitor
+  gvfs-metadata.service                                            loaded active running Virtual filesystem metadata service
+  gvfs-mtp-volume-monitor.service                                  loaded active running Virtual filesystem service - Media Transfer Protocol monitor
+  gvfs-udisks2-volume-monitor.service                              loaded active running Virtual filesystem service - disk device monitor
+  immune-daemon.service                                            loaded active running Quantum Flex PQC Crypto-Agility Immune Daemon
+  localsearch-3.service                                            loaded active running LocalSearch indexer
+  mpris-proxy.service                                              loaded active running Bluetooth mpris proxy
+  opa-immune.service                                               loaded active running Open Policy Agent (PQC Immune Gating & QF Boot Gate)
+  org.freedesktop.IBus.session.GNOME.service                       loaded active running IBus Daemon for GNOME
+  org.gnome.SettingsDaemon.A11ySettings.service                    loaded active running GNOME accessibility service
+  org.gnome.SettingsDaemon.Color.service                           loaded active running GNOME color management service
+  org.gnome.SettingsDaemon.Datetime.service                        loaded active running GNOME date & time service
+  org.gnome.SettingsDaemon.Housekeeping.service                    loaded active running GNOME maintenance of expirable data service
+  org.gnome.SettingsDaemon.Keyboard.service                        loaded active running GNOME keyboard configuration service
+  org.gnome.SettingsDaemon.MediaKeys.service                       loaded active running GNOME keyboard shortcuts service
+  org.gnome.SettingsDaemon.Power.service                           loaded active running GNOME power management service
+  org.gnome.SettingsDaemon.PrintNotifications.service              loaded active running GNOME printer notifications service
+  org.gnome.SettingsDaemon.Rfkill.service                          loaded active running GNOME RFKill support service
+  org.gnome.SettingsDaemon.ScreensaverProxy.service                loaded active running GNOME FreeDesktop screensaver service
+  org.gnome.SettingsDaemon.Sharing.service                         loaded active running GNOME file sharing service
+  org.gnome.SettingsDaemon.Smartcard.service                       loaded active running GNOME smartcard service
+  org.gnome.SettingsDaemon.Sound.service                           loaded active running GNOME sound sample caching service
+  org.gnome.SettingsDaemon.UsbProtection.service                   loaded active running GNOME USB protection service
+  org.gnome.SettingsDaemon.Wwan.service                            loaded active running GNOME WWan support service
+  org.gnome.SettingsDaemon.XSettings.service                       loaded active running GNOME XSettings service
+  org.gnome.Shell@ubuntu.service                                   loaded active running GNOME Shell
+  pipewire-pulse.service                                           loaded active running PipeWire PulseAudio
+  pipewire.service                                                 loaded active running PipeWire Multimedia Service
+  qf-bot.service                                                   loaded active running QuantumFlex local cockpit
+  qf-kafka-telemetry.service                                       loaded active running Quantum Flex Kafka Telemetry Forwarder (Yoga 7 -> Local Spool / Broker)
+  qf-lid-guard.service                                             loaded active running QuantumFlex Lid Sleep Inhibitor Guard
+  qf-monitor.service                                               loaded active running A.M.A.R.A. Biological Monitor — Quantum Flex iowait Daemon
+  qflex-mcp.service                                                loaded active running Quantum Flex Model Context Protocol (MCP) Server
+  quantum-flex-engine-mycelium.service                             loaded active running Quantum Flex: Mycelium Evidence Engine (isolated, 127.0.0.1:9444)
+  snap.snapd-desktop-integration.snapd-desktop-integration.service loaded active running Service for snap application snapd-desktop-integration.snapd-desktop-integration
+  ssh-agent.service                                                loaded active running OpenSSH Agent
+  swarm-worker.service                                             loaded active running Quantum Flex Swarm Worker Daemon
+  wireplumber.service                                              loaded active running Multimedia Service Session Manager
+  xdg-desktop-portal-gnome.service                                 loaded active running Portal service (GNOME implementation)
+  xdg-desktop-portal-gtk.service                                   loaded active running Portal service (GTK/GNOME implementation)
+  xdg-desktop-portal.service                                       loaded active running Portal service
+  xdg-document-portal.service                                      loaded active running flatpak document portal service
+  xdg-permission-store.service                                     loaded active running sandboxed app permission store
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+64 loaded units listed.
+
+===== ENGINE STATUS =====
+● quantum-flex-engine-mycelium.service - Quantum Flex: Mycelium Evidence Engine (isolated, 127.0.0.1:9444)
+     Loaded: loaded (/home/quant/.config/systemd/user/quantum-flex-engine-mycelium.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-11-03 18:55:40 EST; 7min ago
+ Invocation: 8b4e3436b00f44b08fc2206b86415a94
+   Main PID: 275709 (quantum_flex_en)
+      Tasks: 2 (limit: 17440)
+     Memory: 3.1M (peak: 3.8M)
+        CPU: 293ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/quantum-flex-engine-mycelium.service
+             └─275709 /home/quant/mycelium/build_check/quantum_flex_engine
+
+Nov 03 18:55:40 quant-Yoga-7-2-in-1-14AKP10 systemd[1922]: Started quantum-flex-engine-mycelium.service - Quantum Flex: Mycelium Evidence Engine (isolated, 127.0.0.1:9444).
+
+===== API STATUS =====
+● api-node.service - Quantum Flex Core API Gateway Node
+     Loaded: loaded (/home/quant/.config/systemd/user/api-node.service; enabled; preset: enabled)
+    Drop-In: /home/quant/.config/systemd/user/api-node.service.d
+             └─90-dedicated-database.conf
+     Active: active (running) since Tue 2026-11-03 18:56:15 EST; 6min ago
+ Invocation: 40c6e898381446f7af53c1ce610c7576
+   Main PID: 276017 (uvicorn)
+      Tasks: 1 (limit: 17440)
+     Memory: 61.5M (peak: 64.5M)
+        CPU: 929ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/api-node.service
+             └─276017 /home/quant/.venv/bin/python3 /home/quant/mycelium/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080
+
+Nov 03 18:56:15 quant-Yoga-7-2-in-1-14AKP10 systemd[1922]: Started api-node.service - Quantum Flex Core API Gateway Node.
+
+===== TELEMETRY STATUS =====
+● qf-kafka-telemetry.service - Quantum Flex Kafka Telemetry Forwarder (Yoga 7 -> Local Spool / Broker)
+     Loaded: loaded (/home/quant/.config/systemd/user/qf-kafka-telemetry.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-11-03 18:56:15 EST; 6min ago
+ Invocation: 5f0e4abffedc4447a902e3597dbf1999
+   Main PID: 276018 (python3)
+      Tasks: 1 (limit: 17440)
+     Memory: 17.8M (peak: 18.5M)
+        CPU: 288ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/qf-kafka-telemetry.service
+             └─276018 /home/quant/mycelium/venv/bin/python3 -u scripts/qf_kafka_telemetry_forwarder.py
+
+Nov 03 19:01:00 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:00,756 [ERROR] [QF-KAFKA-FORWARDER] <BrokerConnection node_id=bootstrap-0 host=127.0.0.1:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: 111 ECONNREFUSED
+Nov 03 19:01:00 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:00,806 [INFO] [QF-KAFKA-FORWARDER] <BrokerConnection node_id=bootstrap-0 host=127.0.0.1:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to 127.0.0.1:9092 [('127.0.0.1', 9092) IPv4]
+Nov 03 19:01:00 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:00,806 [ERROR] [QF-KAFKA-FORWARDER] Connect attempt to <BrokerConnection node_id=bootstrap-0 host=127.0.0.1:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]> returned error 111. Disconnecting.
+Nov 03 19:01:00 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:00,806 [ERROR] [QF-KAFKA-FORWARDER] <BrokerConnection node_id=bootstrap-0 host=127.0.0.1:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: 111 ECONNREFUSED
+Nov 03 19:01:15 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:15,808 [INFO] [QF-KAFKA-FORWARDER] Spooled telemetry seq=21 (RAM: 63.93%, Temp: 43.0°C, KEM: ML-KEM-768) -> telemetry_spool.jsonl
+Nov 03 19:01:30 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:30,810 [INFO] [QF-KAFKA-FORWARDER] Spooled telemetry seq=22 (RAM: 63.73%, Temp: 43.0°C, KEM: ML-KEM-768) -> telemetry_spool.jsonl
+Nov 03 19:01:45 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:01:45,812 [INFO] [QF-KAFKA-FORWARDER] Spooled telemetry seq=23 (RAM: 63.45%, Temp: 43.0°C, KEM: ML-KEM-768) -> telemetry_spool.jsonl
+Nov 03 19:02:00 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:02:00,814 [INFO] [QF-KAFKA-FORWARDER] Spooled telemetry seq=24 (RAM: 63.36%, Temp: 43.0°C, KEM: ML-KEM-768) -> telemetry_spool.jsonl
+Nov 03 19:02:15 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:02:15,816 [INFO] [QF-KAFKA-FORWARDER] Spooled telemetry seq=25 (RAM: 63.71%, Temp: 43.0°C, KEM: ML-KEM-768) -> telemetry_spool.jsonl
+Nov 03 19:02:30 quant-Yoga-7-2-in-1-14AKP10 python3[276018]: 2026-11-03 19:02:30,818 [INFO] [QF-KAFKA-FORWARDER] Spooled telemetry seq=26 (RAM: 63.73%, Temp: 43.0°C, KEM: ML-KEM-768) -> telemetry_spool.jsonl

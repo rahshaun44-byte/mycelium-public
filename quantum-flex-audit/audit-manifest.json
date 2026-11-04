@@ -1,0 +1,19 @@
+{
+  "audit_type": "INDEPENDENT_REPRODUCIBLE_CRYPTOGRAPHIC_AUDIT",
+  "timestamp_utc": "2026-11-04T00:03:59Z",
+  "host": "quant-Yoga-7-2-in-1-14AKP10",
+  "os": "Linux 7.0.0-38-generic",
+  "evidence_files": {
+    "hardware/pixel-strongbox-attestation.txt": "a522c4a13fab5178807a06511a6379d87e44f2c8b07888dbece1a232c6892f05",
+    "hardware/tpm-attestation.txt": "8378e7941796235d7da1dd1f1554dbc51c03f8162f4eb8190465076034a8e862",
+    "system/network.txt": "32361e168ca9ba52f9fe6d3dfb05166eb163b5cc0756710a370ee72280f6dbca",
+    "system/services.txt": "2512d716067003630db5834a319941ca22605f833a9db190cabba6bc8b76a8d1",
+    "system/sockets.txt": "f0344a03c6372ae75e4db2fd8c195141175de1666954f831ce62262db6567ef2",
+    "quarantine/authority-inventory.txt": "fa77f98c1eec427600cc533c7b417fd9951d58abe5aa0e1cdbd503063e0de6e9",
+    "quarantine/ledger-hash.txt": "79ba5fe94dd82925af6453b7dfea8e84dc42016c029105292ed7fe586a3ab8c8",
+    "quarantine/mtls-inventory.txt": "3bd940966cef162d38c43781837b5e5b5bfa588759acf7a929691dd12c37c37e",
+    "cryptography/certificate-fingerprints.txt": "73b1f4d70618f1f8a14eaa0358d0420049dbe6d07ad405f946f87119a3d4a3dd",
+    "cryptography/mtls-verification.txt": "6401ea32f9ab027c4a5cc6367595a877edba9d8ebbe767615fd7ee099822aadb",
+    "cryptography/root-certificate.txt": "45887a9dba17f338a523eeac0b623090ef73945597ce2e963158ddf580f48dc3"
+  }
+}

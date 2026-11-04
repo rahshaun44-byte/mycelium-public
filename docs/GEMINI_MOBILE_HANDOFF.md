@@ -2,7 +2,7 @@
 
 > **Note (Google AI Pro Tier)**: **Gemini 4 Argon** is available for paid Google AI Pro and Ultra plan subscribers. It provides deep multi-step reasoning, zero conversational hedging, and high-fidelity code/protocol synthesis. In the Gemini mobile app or web, ensure you are logged into your Pro profile to engage Gemini 4 Argon.
 
-Copy everything inside the box below and paste it directly into the **Gemini app** on your **Google Pixel 11 Pro** (or in Chrome at [gemini.google.com](https://gemini.google.com)). 
+Copy everything inside the box below and paste it directly into the **Gemini app** on your **Google Pixel 11 Pro** (or in Chrome at [gemini.google.com](https://gemini.google.com)).
 
 You can use it via **Text** or tap the **Gemini Live (Voice / Headphone icon)** to talk with Gemini 4 Argon out loud while walking or relaxing.
 
@@ -48,7 +48,7 @@ Acknowledge this prompt by greeting me warmly as the Operator of QuantumFlex, an
 
 ---
 
-## How to Start Your Mobile Training in 3 Steps:
+## How to Start Your Mobile Training in 3 Steps
 
 1. **Copy the Prompt:** Copy the text block above.
 2. **Open Gemini on Your Phone:** Open the Google Gemini app on your Pixel 11 Pro (ensure your Google AI Pro profile is active, with Gemini 4 Argon selected).

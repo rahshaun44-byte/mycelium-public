@@ -1,0 +1,115 @@
+===== TPM DEVICES =====
+crw-rw---- 1 tss root  10,   224 Nov  3 11:31 /dev/tpm0
+crw-rw---- 1 tss tss  252, 65536 Nov  3 11:31 /dev/tpmrm0
+
+===== FIXED PROPERTIES =====
+TPM2_PT_FAMILY_INDICATOR:
+  raw: 0x322E3000
+  value: "2.0"
+TPM2_PT_LEVEL:
+  raw: 0
+TPM2_PT_REVISION:
+  raw: 0x9F
+  value: 1.59
+TPM2_PT_DAY_OF_YEAR:
+  raw: 0xAA
+TPM2_PT_YEAR:
+  raw: 0x7E4
+TPM2_PT_MANUFACTURER:
+  raw: 0x4D534654
+  value: "MSFT"
+TPM2_PT_VENDOR_STRING_1:
+  raw: 0x506C7574
+  value: "Plut"
+TPM2_PT_VENDOR_STRING_2:
+  raw: 0x6F6E2E54
+  value: "on.T"
+TPM2_PT_VENDOR_STRING_3:
+  raw: 0x504D2E41
+  value: "PM.A"
+TPM2_PT_VENDOR_STRING_4:
+  raw: 0x0
+  value: ""
+TPM2_PT_VENDOR_TPM_TYPE:
+  raw: 0x1
+TPM2_PT_FIRMWARE_VERSION_1:
+  raw: 0xA0006
+TPM2_PT_FIRMWARE_VERSION_2:
+  raw: 0x4
+TPM2_PT_INPUT_BUFFER:
+  raw: 0x400
+TPM2_PT_HR_TRANSIENT_MIN:
+  raw: 0x3
+TPM2_PT_HR_PERSISTENT_MIN:
+  raw: 0x2
+TPM2_PT_HR_LOADED_MIN:
+  raw: 0x3
+TPM2_PT_ACTIVE_SESSIONS_MAX:
+  raw: 0x40
+TPM2_PT_PCR_COUNT:
+  raw: 0x18
+TPM2_PT_PCR_SELECT_MIN:
+  raw: 0x3
+TPM2_PT_CONTEXT_GAP_MAX:
+  raw: 0xFFFF
+TPM2_PT_NV_COUNTERS_MAX:
+  raw: 0x0
+TPM2_PT_NV_INDEX_MAX:
+  raw: 0x800
+TPM2_PT_MEMORY:
+  raw: 0x6
+TPM2_PT_CLOCK_UPDATE:
+  raw: 0x400000
+TPM2_PT_CONTEXT_HASH:
+  raw: 0xC
+TPM2_PT_CONTEXT_SYM:
+  raw: 0x6
+TPM2_PT_CONTEXT_SYM_SIZE:
+  raw: 0x100
+TPM2_PT_ORDERLY_COUNT:
+  raw: 0xFF
+TPM2_PT_MAX_COMMAND_SIZE:
+  raw: 0xF80
+TPM2_PT_MAX_RESPONSE_SIZE:
+  raw: 0xF80
+TPM2_PT_MAX_DIGEST:
+  raw: 0x30
+TPM2_PT_MAX_OBJECT_CONTEXT:
+  raw: 0x500
+TPM2_PT_MAX_SESSION_CONTEXT:
+  raw: 0x144
+TPM2_PT_PS_FAMILY_INDICATOR:
+  raw: 0x1
+TPM2_PT_PS_LEVEL:
+  raw: 0x0
+TPM2_PT_PS_REVISION:
+  raw: 0x105
+TPM2_PT_PS_DAY_OF_YEAR:
+  raw: 0x0
+TPM2_PT_PS_YEAR:
+  raw: 0x0
+TPM2_PT_SPLIT_MAX:
+  raw: 0x80
+TPM2_PT_TOTAL_COMMANDS:
+  raw: 0x73
+TPM2_PT_LIBRARY_COMMANDS:
+  raw: 0x72
+TPM2_PT_VENDOR_COMMANDS:
+  raw: 0x1
+TPM2_PT_NV_BUFFER_MAX:
+  raw: 0x400
+TPM2_PT_MODES:
+  raw: 0x1
+  value: TPMA_MODES_FIPS_140_2
+
+===== PERSISTENT HANDLES =====
+- 0x81000001
+- 0x81000002
+- 0x81000009
+- 0x81010001
+- 0x81800000
+- 0x81800001
+
+===== C++ ENGINE CODE ANALYSIS =====
+Engine load_state() verifies host Pluton TPM 2.0 presence and state root.
+Signing uses software Ed25519/ML-DSA-65 keys in ~/.local/share/quantum-flex-mycelium/ with 0600 permissions.

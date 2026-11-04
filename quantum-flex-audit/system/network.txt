@@ -1,0 +1,9 @@
+===== TAILSCALE STATUS =====
+100.64.1.31    quant-yoga-7-2-in-1-14akp10  rahshaun44-byte@  linux    -                    
+100.64.1.16  pixel-11-pro-1               rahshaun44-byte@  android  idle, tx 572 rx 444  
+
+===== TAILSCALE IP =====
+100.64.1.31
+
+===== OLLAMA STATUS =====
+HTTP 200

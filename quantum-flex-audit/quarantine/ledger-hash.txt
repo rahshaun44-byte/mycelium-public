@@ -1,0 +1,8 @@
+8d74ac38276d26271c130ad978541142a1ded80d4ce1acb8594d08c98239eadd  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat
+d366f9c50a693c79dca3c6e1fdb203ab052b2ad6ecc631ed5e947ceddef87f6a  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.archive-legacy-authority-20261015T114424Z
+372ed8f0eae3d6754f90da9ae6fdbbf81eefc1dcdb2e385fa9a90f50d810b609  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.archive-legacy-authority-20261024T093521Z
+8d74ac38276d26271c130ad978541142a1ded80d4ce1acb8594d08c98239eadd  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.archive-legacy-authority-20261103T235445Z
+e2f3c9632510ba8a745fa42f749a94223b480a9d49ead3fc3f2b32a109ee75f5  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.archive-pre-genesis-20261011-154816
+f39e3afe4e991d04e6519a2bbb182083aaa86d791b07312f300568372419e5aa  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.bak.20260925-002537
+31c93403aefb216a3295580d3fc2aaa146fbbcff072ee02e17e4d48aa4d068ef  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.bak.20260925-002647
+e2f3c9632510ba8a745fa42f749a94223b480a9d49ead3fc3f2b32a109ee75f5  /home/quant/.local/share/quantum-flex-mycelium/ledger.dat.bak.20261010-103957

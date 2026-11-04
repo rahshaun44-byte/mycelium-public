@@ -1,0 +1,15 @@
+===== ADB DEVICE PROPS =====
+17
+Pixel 11 Pro
+grizzly
+
+===== STRONGBOX ENROLLED PUBLIC KEY =====
+Public-Key: (256 bit)
+pub:
+    04:a4:95:a5:d8:05:80:19:88:98:06:ac:dc:35:c3:
+    fc:63:07:8d:1d:c7:6d:f5:e6:f1:1b:41:4c:bb:f5:
+    30:c9:c4:43:07:37:91:47:b5:1d:99:44:18:4a:f6:
+    7a:c8:dd:81:53:53:85:8e:53:bd:10:e8:47:d3:2c:
+    82:fd:2c:c3:04
+ASN1 OID: prime256v1
+NIST CURVE: P-256

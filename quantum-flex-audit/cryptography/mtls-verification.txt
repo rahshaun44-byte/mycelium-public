@@ -1,0 +1,29 @@
+===== TEST 1: LIVE HANDSHAKE WITH NEW ACTIVE CLIENT CERT =====
+Connecting to 127.0.0.1
+Can't use SSL_get_servername
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Ciphersuite: TLS_AES_256_GCM_SHA384
+Requested Signature Algorithms: id-ml-dsa-65:id-ml-dsa-87:id-ml-dsa-44:ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:ed25519:ed448:ecdsa_brainpoolP256r1_sha256:ecdsa_brainpoolP384r1_sha384:ecdsa_brainpoolP512r1_sha512:rsa_pss_pss_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha512:RSA-PSS+SHA256:RSA-PSS+SHA384:RSA-PSS+SHA512:RSA+SHA256:RSA+SHA384:RSA+SHA512
+Peer certificate: C=US, O=QuantumFlexMycelium, CN=localhost
+Hash used: SHA256
+Signature type: rsa_pss_rsae_sha256
+Verification: OK
+Negotiated TLS1.3 group: X25519MLKEM768
+DONE
+EXIT_CODE: 0
+
+===== TEST 2: HANDSHAKE REJECTION WITH QUARANTINED OLD CLIENT CERT =====
+Connecting to 127.0.0.1
+Can't use SSL_get_servername
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Ciphersuite: TLS_AES_256_GCM_SHA384
+Requested Signature Algorithms: id-ml-dsa-65:id-ml-dsa-87:id-ml-dsa-44:ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:ed25519:ed448:ecdsa_brainpoolP256r1_sha256:ecdsa_brainpoolP384r1_sha384:ecdsa_brainpoolP512r1_sha512:rsa_pss_pss_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha512:RSA-PSS+SHA256:RSA-PSS+SHA384:RSA-PSS+SHA512:RSA+SHA256:RSA+SHA384:RSA+SHA512
+Peer certificate: C=US, O=QuantumFlexMycelium, CN=localhost
+Hash used: SHA256
+Signature type: rsa_pss_rsae_sha256
+Verification: OK
+Negotiated TLS1.3 group: X25519MLKEM768
+40C76392ED7D0000:error:0A000418:SSL routines:ssl3_read_bytes:tlsv1 alert unknown ca:../ssl/record/rec_layer_s3.c:918:SSL alert number 48
+EXIT_CODE: 1 (REJECTED by server with alert 48: unknown ca)

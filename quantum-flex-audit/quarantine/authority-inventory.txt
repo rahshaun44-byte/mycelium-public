@@ -1,0 +1,3 @@
+b2b6e3efa86fc1203d4fc702ae7bf8a07a9bd4375fb846f8952550bdf9c0b33d  /home/quant/.local/state/quantum-flex-mycelium/tombstone-epoch1/authority-legacy-archive-20261024T093521Z.json
+af2e21bfd0bb4e68888e42b879fd9dfa8589d90d0e826171ae961c2ed10f2cdc  /home/quant/.local/state/quantum-flex-mycelium/tombstone-epoch1/authority-legacy-archive-20261015T114424Z.json
+f13f1934975c61cde7849d26e0427f7ff51a7f501bee2279a639f286db2fbe1b  /home/quant/.local/state/quantum-flex-mycelium/tombstone-epoch1/authority-genesis-20261015T121219Z.json
