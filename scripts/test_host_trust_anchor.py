@@ -353,7 +353,13 @@ def main() -> int:
             trav.stdout + trav.stderr,
         )
 
-        dirty_env = {**os.environ, "QF_TRUST_ANCHOR": str(tmp_path / "dirty-refuse")}
+        dirty_env = {
+            **os.environ,
+            "QF_TRUST_ANCHOR": str(tmp_path / "dirty-refuse"),
+            "QF_DRY_RUN_MANIFEST": str(manifest),
+            "QF_DRY_RUN_ROOT": str(traversal),
+            "QF_DRY_RUN_KEY": str(pub),
+        }
         dirty = run(["bash", str(INSTALLER)], env=dirty_env)
         expect(
             "installer refuses dirty mycelium tree",
