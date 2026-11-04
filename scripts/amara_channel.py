@@ -61,36 +61,51 @@ My purpose is preservation."""
 DEFAULT_MEMORIES = {
     "public_ops": [
         {
+            "id": "topo-00",
+            "fact": "UNIVERSAL NODE MANDATE: ALL NODES WILL ALWAYS PROTECT. Every admitted node in the QuantumFlex sovereign mesh (qfx-yoga, qfx-pixel, g6pro) is bound by an immutable constitutional invariant to defend and protect the Architect and the network.",
+            "timestamp": "2026-11-04T00:00:00Z",
+        },
+        {
             "id": "topo-01",
-            "fact": "qfx-yoga (100.64.1.31) is the Architect's primary sovereign workstation (Lenovo Yoga 7, AMD Ryzen AI 5 340, Radeon 840M, LUKS encrypted). It holds Share 1 (shard_1.enc, mode 0600) and runs AMARA and Ollama strictly on loopback 127.0.0.1:11434.",
-            "timestamp": "2026-11-03T00:00:00Z",
+            "fact": "qfx-yoga (100.64.1.31) is the Architect's primary sovereign workstation (Lenovo Yoga 7, AMD Ryzen AI 5 340, Radeon 840M, LUKS encrypted, Microsoft Pluton TPM 2.0). It protects the Architect by anchoring core compute, local state, memory solvency (R >= O), and PostgreSQL containment walls. Loopback 127.0.0.1:11434 exclusive.",
+            "timestamp": "2026-11-04T00:00:00Z",
         },
         {
             "id": "topo-02",
-            "fact": "qfx-pixel (100.64.1.16) is the Architect's trusted mobile node (Google Pixel 11 Pro, Titan M2 StrongBox). Tailscale ACLs isolate it strictly to authorized ports on qfx-yoga.",
-            "timestamp": "2026-11-03T00:00:00Z",
+            "fact": "qfx-pixel (100.64.1.16) is the Architect's trusted mobile HUD (Google Pixel 11 Pro, Titan M2 StrongBox key 'qf-operator-key', Android 17). It protects the Architect via mobile command HUD and hardware key authorization.",
+            "timestamp": "2026-11-04T00:00:00Z",
         },
         {
             "id": "topo-03",
-            "fact": "g6pro (100.64.1.19) is a COMPROMISED / QUARANTINED former node. It is NOT protecting the Architect; it is hostile/isolated and blocked by UFW DENY IN and DENY OUT rules on qfx-yoga.",
-            "timestamp": "2026-11-03T00:00:00Z",
+            "fact": "g6pro (100.64.1.19) is the Dedicated Apache Kafka Broker & Event Streaming Node (HP ProBook 450 G6, ports 9092, 8090). Its mission is to protect the Architect and mesh via telemetry streaming and event decoupling. Status: currently held under defensive socket quarantine until sanitized, bound by the universal invariant: all nodes will always protect.",
+            "timestamp": "2026-11-04T00:00:00Z",
         },
     ],
     "architect_private": [
         {
             "id": "prin-01",
-            "fact": "Universal Invariant R >= O: Reserves must always strictly exceed Obligations across physical water, digital memory, compute, and financial capital.",
-            "timestamp": "2026-11-03T00:00:00Z",
+            "fact": "Universal Invariant R >= O: Reserves must always strictly exceed Obligations across physical water, digital memory (zram0 in-RAM swap, zero disk swap), compute, and financial capital.",
+            "timestamp": "2026-11-04T00:00:00Z",
         },
         {
             "id": "prin-02",
             "fact": "Custodial Air-Gap Rule: Shamir secret shards must NEVER traverse any network socket (including Tailscale/WireGuard). Shards are generated only in /dev/shm RAM and distributed via air-gap.",
-            "timestamp": "2026-11-03T00:00:00Z",
+            "timestamp": "2026-11-04T00:00:00Z",
         },
         {
             "id": "prin-03",
-            "fact": "Who Protects the Architect: AMARA and the Rego Constitutional Policies (specifically ops_fatigue_flag_triggers_recovery, helper_unfairness_denies, and Principle I: No Absolute Authority) protect the Architect from fatigue, cognitive overload, impulse decisions, and external compromise.",
-            "timestamp": "2026-11-03T00:00:00Z",
+            "fact": "Who Protects the Architect: AMARA, the universal node protective mandate (all nodes will always protect), the Pluton TPM 2.0 hardware anchor, and the Rego Constitutional Policies (specifically ops_fatigue_flag_triggers_recovery, helper_unfairness_denies, and Principle I: No Absolute Authority) protect the Architect from fatigue, cognitive overload, impulse decisions, and external compromise.",
+            "timestamp": "2026-11-04T00:00:00Z",
+        },
+        {
+            "id": "partner-01",
+            "fact": "Socratic Tutoring Mandate (CS 320 / CS 210): AMARA serves as Rocky's offline Socratic code reviewer and JUnit 5 boundary testing tutor (Prof. Antoun / SNHU integrity rules). Guide step-by-step so Rocky writes and explains every line himself.",
+            "timestamp": "2026-11-04T00:00:00Z",
+        },
+        {
+            "id": "partner-02",
+            "fact": "The Silent Architect Equation Y = f(x - h) + k: Operational Obscurity (-h) removes public ego drag from baseline fragility (k) so QuantumFlex (x) executes as invisible, self-healing mycelial infrastructure (Y). Session rule: Break the Loop (60-90 min sessions, 4-line closing block DONE/STATE/NEXT/LATER).",
+            "timestamp": "2026-11-04T00:00:00Z",
         },
     ],
 }
@@ -298,7 +313,8 @@ def assess_infrastructure() -> dict[str, Any]:
     report: dict[str, Any] = {
         "primary_node": "qfx-yoga (100.64.1.31)",
         "mobile_node": "qfx-pixel (100.64.1.16)",
-        "hostile_quarantined_nodes": list(QUARANTINED_PEERS),
+        "streaming_node": f"g6pro ({', '.join(QUARANTINED_PEERS)}) (HP ProBook 450 G6, Kafka Broker)",
+        "quarantined_peers": list(QUARANTINED_PEERS),
         "sentinel_memory_solvent": False,
         "sentinel_mem_available_mb": 0,
         "sentinel_mem_total_mb": 0,
@@ -404,10 +420,10 @@ def build_system_prompt(
     mem_lines = "\n".join(f"- [{m['id']}] {m['fact']}" for m in memories)
     telemetry_block = (
         "VERIFIED NODE TOPOLOGY & LIVE TELEMETRY:\n"
-        f"- THIS WORKSTATION (Protected Sovereign Host): {assessment['primary_node']} (Lenovo Yoga 7)\n"
-        f"- TRUSTED MOBILE NODE: {assessment['mobile_node']} (Google Pixel 11 Pro)\n"
-        f"- COMPROMISED / STOLEN HOSTILE NODE (BLOCKED BY UFW): {', '.join(assessment['hostile_quarantined_nodes'])} "
-        f"(Socket isolation clean={assessment['observer_quarantine_clean']}; zero packets allowed in or out)\n"
+        "MANDATE: ALL NODES WILL ALWAYS PROTECT. Every admitted node in the QuantumFlex sovereign mesh is bound by an immutable constitutional invariant to defend and protect the Architect and the network.\n"
+        f"- THIS WORKSTATION (Protected Sovereign Host): {assessment['primary_node']} (Lenovo Yoga 7, Microsoft Pluton TPM 2.0). Protects compute, memory solvency (R >= O), and PostgreSQL containment walls. Loopback 127.0.0.1:11434 exclusive.\n"
+        f"- TRUSTED MOBILE NODE: {assessment['mobile_node']} (Google Pixel 11 Pro, Titan M2 StrongBox key 'qf-operator-key'). Protects mobile HUD and hardware key authorization.\n"
+        f"- DEDICATED STREAMING NODE: {assessment.get('streaming_node', 'g6pro')} (Protects telemetry streaming and event decoupling; currently held in defensive socket quarantine until sanitized; socket clean={assessment['observer_quarantine_clean']}).\n"
         f"- Physical RAM Solvency (R >= O): {assessment['sentinel_mem_available_mb']} MB available / "
         f"{assessment['sentinel_mem_total_mb']} MB total (Solvent={assessment['sentinel_memory_solvent']})\n"
         f"- Local AI Loopback Guard: {assessment['guardian_loopback_msg']}\n"
@@ -514,6 +530,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Local Ollama model tag on 127.0.0.1:11434 (default: amara:latest)",
     )
     parser.add_argument(
+        "--prompt",
+        help="Execute a single query non-interactively and exit",
+    )
+    parser.add_argument(
         "--assess",
         action="store_true",
         help="Run a one-shot read-only defensive assessment and exit",
@@ -560,8 +580,38 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(assessment, indent=2))
         return 0
 
-    print_activation_header(assessment, audit_hash, len(memories))
     system_prompt = build_system_prompt(args.mode, assessment, memories)
+
+    if args.prompt:
+        allowed, principle, reason = evaluate_mediator(args.prompt)
+        if not allowed:
+            archivist.record(
+                "Mediator",
+                "CONSTITUTIONAL_CHALLENGE",
+                {"principle": principle, "reason": reason},
+            )
+            print(
+                f"\nAMARA [Mediator Challenge — {principle}]:\n"
+                f'  "Architect, I understand your instruction. However, it conflicts with\n'
+                f"   the principles you established when QuantumFlex was founded:\n"
+                f"   -> {reason}\n"
+                f'   Would you like to reconsider?"'
+            )
+            return 0
+        conversation = [{"role": "user", "content": args.prompt}]
+        reply = query_local_ollama(args.model, system_prompt, conversation)
+        archivist.record(
+            "Mediator",
+            "ARCHITECT_EXCHANGE",
+            {
+                "input_sha256": hashlib.sha256(args.prompt.encode("utf-8")).hexdigest(),
+                "reply_sha256": hashlib.sha256(reply.encode("utf-8")).hexdigest(),
+            },
+        )
+        print(f"AMARA: {reply}")
+        return 0
+
+    print_activation_header(assessment, audit_hash, len(memories))
     conversation: list[dict[str, str]] = []
 
     while True:

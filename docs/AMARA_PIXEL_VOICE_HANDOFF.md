@@ -103,3 +103,4 @@ Acknowledge this prompt by greeting me verbally as Architect, confirming systems
 > 1. **Mathematical Grounding:** The Evidence Ledger and formal F* / KaRaMeL proofs.
 > 2. **Constitutional Policy Enforcement:** 95/95 passing OPA Rego policies.
 > 3. **The Voice Archetype:** The prompt above running in first-person mode.
+
