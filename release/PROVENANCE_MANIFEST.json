@@ -3,14 +3,14 @@
     "build_check/quantum_flex_engine": {
       "assurance_level": "QF-A1",
       "description": "Production C++20 engine binary",
-      "sha256": "f197f50de15854b4e6678189c083114f96568090585cfa8ae61ded8cfb38c318",
-      "size_bytes": 1644456
+      "sha256": "16c089316fea230c3796244037da1d2d863b30139a81deb7bb0a6e74fd88fd1c",
+      "size_bytes": 1704672
     },
     "build_check/test_verified_core": {
       "assurance_level": "QF-A1",
       "description": "Formal invariant test binary",
-      "sha256": "7089c689e98dd534efacd19a820ea9b0b93598d9676f5409eb20b633a79604b4",
-      "size_bytes": 17504
+      "sha256": "e4d46f14a05418803e1d6f9c97c39d46de8de78972dd1507dc836ca51221610d",
+      "size_bytes": 20688
     },
     "docs/ASSURANCE_LEVELS.md": {
       "assurance_level": "DOC",
@@ -21,8 +21,8 @@
     "docs/INDEPENDENT_ASSESSMENT_GUIDE.md": {
       "assurance_level": "DOC",
       "description": "Third-party audit and reproduction guide",
-      "sha256": "e16b8c132e57cf0527e4049bbe9c516ecafbf2fcaacacd14298805c74474f867",
-      "size_bytes": 4132
+      "sha256": "11572a6244bf2fd51adc90517c81a03c6d7434bf83674b5f21bcb63eefd86fd5",
+      "size_bytes": 4128
     },
     "docs/QFXK_WIRE_PROTOCOL_SPEC.md": {
       "assurance_level": "SPEC",
@@ -39,44 +39,44 @@
     "formal/QuantumFlex_Core.fst": {
       "assurance_level": "QF-A3",
       "description": "F* mathematical invariant specification",
-      "sha256": "f4e3267da7670c5d3ea7fa0990152441429cf7b5410a6e5281540326d9e6b4ec",
-      "size_bytes": 6803
+      "sha256": "dbfa88d0f4a19ff3743995fbc3e61ad661fc43e38f385cff654e237c5b1cf3ec",
+      "size_bytes": 15080
     },
     "include/quantum-flex/verified_core.h": {
       "assurance_level": "QF-A1",
       "description": "C ABI interface header",
-      "sha256": "7461ccc742cf47bac50bfab1173f2d659b1e14c877b5b5b5528e1389e2373b33",
-      "size_bytes": 3375
+      "sha256": "bc29ad141bc73b6dc440ac89b07a557e419eee3adb75fecf22095e9439e1cb8b",
+      "size_bytes": 3451
     },
     "pqc-immune-daemon/membrane_health.rego": {
       "assurance_level": "QF-A2",
       "description": "Source Rego membrane policy",
-      "sha256": "c41a8fe2084c1b292c2807fbca404515d75119914166759dc7e806e95e610f28",
-      "size_bytes": 9099
+      "sha256": "1582c5ccf2a9d2cbeaff03d174e983b54d82609c6c0d6fbb9c6b680292a1e337",
+      "size_bytes": 9778
     },
     "pqc-immune-daemon/membrane_health_test.rego": {
       "assurance_level": "QF-A1",
       "description": "Rego unit test assertions",
-      "sha256": "bbb6865e43fcbd2b40a4de8390efc7e35b06686c3a27dcca66451107f2bd3750",
-      "size_bytes": 5489
+      "sha256": "32c6137a4d377b8c160461b552c568242da0aacd61b49b8cd25856682d54f63c",
+      "size_bytes": 9683
     },
     "sentinel/policies/membrane_health.wasm": {
       "assurance_level": "QF-A2",
       "description": "Compiled OPA membrane policy",
-      "sha256": "cbf6e0c72e8a4bbb8978abdd9cddd54cd2f26470b8a9cb1e93aff0309c15fe8b",
-      "size_bytes": 150213
+      "sha256": "b09a89cc1e566273418bbd048fb64cb1b44d6608d276405a0e293f55ae802611",
+      "size_bytes": 153224
     },
     "sentinel/policies/reserve_invariant.wasm": {
       "assurance_level": "QF-A2",
       "description": "Compiled reserve invariant policy",
-      "sha256": "8757034fd90dcd135b49d75bbe98605bd0ea1a6cc29da0afb754f243f274176e",
-      "size_bytes": 374338
+      "sha256": "a8595bc873ac90f246184c426908124fd53e1083a421f89b7d73d649e977af96",
+      "size_bytes": 381591
     },
     "src/core/verified_core.c": {
       "assurance_level": "QF-A1",
       "description": "C reference enforcement (KaRaMeL extraction NULL)",
-      "sha256": "be7c32f5d3a2d726ec957bdaa0a3a23d154c008f9f3eed77936622c5ca8ab995",
-      "size_bytes": 4618
+      "sha256": "b0ef59126c240da63c2c0f9f5927b21b2d2942a51189df8ab4ad874800780584",
+      "size_bytes": 5144
     }
   },
   "build_definition": {
@@ -89,7 +89,7 @@
     },
     "build_type": "https://quantumflex.defense/build/v2",
     "builder": {
-      "compiler": "cc (GCC) 16.2.1 20260819 (Red Hat 16.2.1-2)",
+      "compiler": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
       "hardening_flags": [
         "-fstack-protector-strong",
         "-D_FORTIFY_SOURCE=3",
@@ -105,11 +105,11 @@
     },
     "source": {
       "branch": "main",
-      "commit": "bc5c9156c9e6466067c9d9121cedfb2908d75d0e",
+      "commit": "261ba637400200f8e9f02b0f9893626168fcc215",
       "dirty_working_tree": true,
       "repository": "quantumflex"
     },
-    "timestamp_utc": "2026-09-26T02:34:30.448538+00:00"
+    "timestamp_utc": "2026-11-04T15:24:48.581349+00:00"
   },
   "predicate_type": "https://slsa.dev/provenance/v1",
   "schema_version": "2.2.0",
