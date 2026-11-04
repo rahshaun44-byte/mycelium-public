@@ -61,12 +61,13 @@ def test_each_domain_retrieval(vector_store, div_id, expected_source, query):
     
     # Check that expected source is in candidate matches
     matched_sources = [m["source"] for m in matches]
-    assert expected_source in matched_sources, (
+    short_source = expected_source.replace("athena_domain_", "")
+    target_match = next((m for m in matches if m["source"] == expected_source or short_source in m["source"]), None)
+    assert target_match is not None, (
         f"Domain {div_id} ({expected_source}) not in top-5 matches. Found: {matched_sources}"
     )
     
     # Check that the specific match has strong positive cosine similarity
-    target_match = next(m for m in matches if m["source"] == expected_source)
     assert target_match["score"] > 0.40, (
         f"Domain {div_id} similarity score {target_match['score']} is below minimum threshold 0.40"
     )

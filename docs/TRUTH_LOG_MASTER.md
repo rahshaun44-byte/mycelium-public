@@ -824,3 +824,54 @@ Authoritative update from Chief Architect Rocky:
    - Live device connection confirmed via ADB (`PIXEL-SERIAL-REDACTED`, product `grizzly`, model `Pixel_11_Pro`) and Tailscale WireGuard (`100.64.1.16`).
    - Pushed operational bundle to `/sdcard/Download/QuantumFlex/` (`qflex_cli.py`, `setup-mobile.sh`, `QuantumFlex-Mobile.html`, `pixel_beacon.sh`, signatures).
    - Titan M2/M3 StrongBox key custody confirmed; bidirectional mobile heartbeat verified with HTTP 200/202 responses.
+
+---
+
+### 19.17 QF-ATHENA-FOUNDATION-02: Epistemic Integrity & Scientific Reproducibility Engine
+
+- **Timestamp**: 2026-11-04T15:58:00-05:00
+- **Architectural Directive**: QF-ATHENA-FOUNDATION-02 (Authorized by Chief Architect Rocky)
+- **Status**: CERTIFIED & FULLY INTEGRATED (All 10 Acceptance Criteria Passed)
+- **Governing Invariants**:
+  $$\boxed{\text{Intelligence} \neq \text{Authority}}$$
+  $$\boxed{\text{Intelligence} \neq \text{Evidence} \neq \text{Verification} \neq \text{Truth}}$$
+  $$\boxed{A_{\text{scientific}} = I_{\text{intelligence}} + V_{\text{verification}} + P_{\text{provenance}}}$$
+  $$\boxed{\text{Machine Verification (M4)} \neq \text{Empirical Physical Truth (E5)}}$$
+  $$\boxed{\text{Zero Cloud Spend Invariant: } \$0.00}$$
+
+#### Delivered Components:
+1. **Architectural Specification & Schema Migration**:
+   - Authored formal specification [`docs/architecture/QF-ATHENA-FOUNDATION-02-SPEC.md`](file:///home/quant/mycelium/docs/architecture/QF-ATHENA-FOUNDATION-02-SPEC.md) covering all 10 core architectural dimensions.
+   - Non-destructively migrated [`sentinel/intelligence/athena_vectors.db`](file:///home/quant/mycelium/sentinel/intelligence/athena_vectors.db) via [`sentinel/intelligence/migrations/002_epistemic_foundation.sql`](file:///home/quant/mycelium/sentinel/intelligence/migrations/002_epistemic_foundation.sql).
+   - Created normalized relational schema: `documents`, `claims`, `evidence_spans`, `verification_records`, and `decontamination_records` with foreign keys and index constraints.
+
+2. **Cryptographic Merkle Provenance Engine**:
+   - Implemented [`sentinel/intelligence/merkle_provenance.py`](file:///home/quant/mycelium/sentinel/intelligence/merkle_provenance.py) supporting RFC 6962 domain separation prefixes (`0x00` leaf, `0x01` internal node).
+   - Generates compact $O(\log n)$ inclusion proofs $\pi_i$ and verifies leaf integrity against pinned roots without reloading complete documents.
+   - Computes byte-exact citation spans `[byte_start, byte_end]` matching assertions to source document leaves.
+
+3. **Symbolic CAS & Machine Proof Verifier**:
+   - Implemented [`sentinel/intelligence/proof_verifier.py`](file:///home/quant/mycelium/sentinel/intelligence/proof_verifier.py) coupling neural derivations with SymPy CAS 1.14.0 and Lean 4 / Coq provers.
+   - Enforces zero-tolerance for unproven gaps: any proof script containing `sorry` or `admit` is strictly classified as `M1` (Conjecture Only).
+   - Validates analytical identity checks (`simplify(lhs - rhs) == 0`), trigonometric identities, and differential forms.
+   - Strictly enforces the *Machine Verification $\neq$ Empirical Truth Invariant*: machine proof establishes formal syntactic consistency ($\Gamma \vdash \phi$) but cannot elevate a claim to empirical `E5` without physical measurement provenance.
+
+4. **Literature Decontamination Gate**:
+   - Implemented [`sentinel/intelligence/decontamination.py`](file:///home/quant/mycelium/sentinel/intelligence/decontamination.py) protecting local knowledge retrieval against evaluation benchmark leakage (GSM8K, MATH, HumanEval, ARC, MMLU).
+   - Screens text using 13-gram exact match windows, MinHash deterministic signatures, and token Jaccard similarity.
+   - Automatically quarantines contaminated documents (`QUARANTINED_BENCHMARK_LEAK` if overlap $>0.10$ or exact 13-gram collision).
+
+5. **Reproducible Experiment Manifest Generator**:
+   - Defined JSON Schema draft 2020-12 at [`docs/schemas/experiment_manifest.schema.json`](file:///home/quant/mycelium/docs/schemas/experiment_manifest.schema.json).
+   - Implemented [`sentinel/intelligence/experiment_manifest.py`](file:///home/quant/mycelium/sentinel/intelligence/experiment_manifest.py) capturing OS, kernel, CPU model, compiler, math libraries (`numpy 2.5.3`, `scipy 1.18.1`, `qiskit 2.5.2`, `sympy 1.14.0`, `mpmath 1.3.0`), PRNG seed, floating-point precision mode, and canonical SHA-256 execution digest.
+   - Cross-platform comparison detects environment divergences or floating-point discrepancies.
+
+6. **OPA Epistemic Gate Policy (`epistemic_admission.rego`)**:
+   - Authored policy [`sentinel/policies/epistemic_admission.rego`](file:///home/quant/mycelium/sentinel/policies/epistemic_admission.rego) and test suite [`sentinel/policies/epistemic_admission_test.rego`](file:///home/quant/mycelium/sentinel/policies/epistemic_admission_test.rego).
+   - Validated via `opa test`: **8/8 named epistemic rules passed**, bringing the total OPA policy suite to **88/88 passed**.
+   - Requires verified machine proofs for M4/M5, physical replicated measurements with Merkle proofs for E4/E5, bounded semantic entropy (<0.40) for E1–E3, and fail-closed rejection of quarantined literature.
+
+7. **Independent Acceptance Test Verification**:
+   - Authored [`tests/test_athena_foundation_02_epistemic.py`](file:///home/quant/mycelium/tests/test_athena_foundation_02_epistemic.py) verifying all 10 criteria (`TC-F2-01` through `TC-F2-10`): **10/10 PASSED**.
+   - Executed full test suite: **56/56 Python tests passed** in 10.54s across 25 knowledge divisions, scientific inquiry endpoints, and Foundation-02 modules.
+

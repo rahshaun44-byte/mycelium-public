@@ -17,7 +17,7 @@ import sqlite3
 import urllib.request
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 # Safe console rendering for Windows
 if sys.platform == "win32":
@@ -57,6 +57,7 @@ class AthenaVectorStore:
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
+        self.apply_migrations()
 
     def _init_db(self):
         conn = sqlite3.connect(self.db_path)
@@ -73,6 +74,227 @@ class AthenaVectorStore:
                     );
                 """)
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_chunks_source ON neural_chunks(source);")
+        finally:
+            conn.close()
+
+    def apply_migrations(self):
+        """Applies SQL schema migrations non-destructively."""
+        migrations_dir = Path(__file__).resolve().parent / "migrations"
+        if not migrations_dir.exists():
+            return
+        sql_files = sorted(migrations_dir.glob("*.sql"))
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                for sql_file in sql_files:
+                    sql_text = sql_file.read_text(encoding="utf-8")
+                    conn.executescript(sql_text)
+        finally:
+            conn.close()
+
+    def get_or_create_document(self, source: str, content: str = "", metadata: dict = None) -> int:
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM documents WHERE source = ?", (source,))
+                row = cur.fetchone()
+                if row:
+                    return row[0]
+                meta_json = json.dumps(metadata or {}, sort_keys=True)
+                cur.execute(
+                    "INSERT INTO documents (source, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+                    (source, content, meta_json, datetime.now().isoformat())
+                )
+                return cur.lastrowid
+        finally:
+            conn.close()
+
+    def add_claim(
+        self,
+        claim_id: str,
+        document_id: int,
+        claim_text: str,
+        byte_offset_start: int,
+        byte_offset_end: int,
+        source_sha256: str,
+        claim_sha256: str,
+        epistemic_tier: str,
+    ) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO claims (
+                        claim_id, document_id, claim_text, byte_offset_start,
+                        byte_offset_end, source_sha256, claim_sha256, epistemic_tier, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        claim_id, document_id, claim_text, byte_offset_start,
+                        byte_offset_end, source_sha256, claim_sha256, epistemic_tier,
+                        datetime.now().isoformat()
+                    )
+                )
+            return True
+        finally:
+            conn.close()
+
+    def get_claim(self, claim_id: str) -> Optional[Dict[str, Any]]:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM claims WHERE claim_id = ?", (claim_id,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
+    def get_claims_by_source(self, source_sha256: str) -> List[Dict[str, Any]]:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM claims WHERE source_sha256 = ?", (source_sha256,))
+            return [dict(r) for r in cur.fetchall()]
+        finally:
+            conn.close()
+
+    def add_evidence_span(
+        self,
+        span_id: str,
+        claim_id: str,
+        doc_uri: str,
+        source_type: str,
+        merkle_root: str,
+        leaf_index: int,
+        leaf_hash: str,
+        inclusion_proof: List[Dict[str, Any]],
+    ) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO evidence_spans (
+                        span_id, claim_id, doc_uri, source_type,
+                        merkle_root, leaf_index, leaf_hash, inclusion_proof_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        span_id, claim_id, doc_uri, source_type,
+                        merkle_root, leaf_index, leaf_hash,
+                        json.dumps(inclusion_proof)
+                    )
+                )
+            return True
+        finally:
+            conn.close()
+
+    def get_evidence_spans(self, claim_id: str) -> List[Dict[str, Any]]:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM evidence_spans WHERE claim_id = ?", (claim_id,))
+            rows = cur.fetchall()
+            results = []
+            for r in rows:
+                d = dict(r)
+                d["inclusion_proof"] = json.loads(d.pop("inclusion_proof_json"))
+                results.append(d)
+            return results
+        finally:
+            conn.close()
+
+    def add_verification_record(
+        self,
+        record_id: str,
+        claim_id: str,
+        verifier_kernel: str,
+        kernel_version: str,
+        status: str,
+        assumptions: List[str],
+        proof_script: str,
+        execution_time_ms: float,
+    ) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO verification_records (
+                        record_id, claim_id, verifier_kernel, kernel_version,
+                        status, assumptions_json, proof_script, execution_time_ms, verified_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        record_id, claim_id, verifier_kernel, kernel_version,
+                        status, json.dumps(assumptions), proof_script,
+                        execution_time_ms, datetime.now().isoformat()
+                    )
+                )
+            return True
+        finally:
+            conn.close()
+
+    def get_verification_records(self, claim_id: str) -> List[Dict[str, Any]]:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM verification_records WHERE claim_id = ?", (claim_id,))
+            rows = cur.fetchall()
+            results = []
+            for r in rows:
+                d = dict(r)
+                d["assumptions"] = json.loads(d.pop("assumptions_json"))
+                results.append(d)
+            return results
+        finally:
+            conn.close()
+
+    def add_decontamination_record(
+        self,
+        paper_id: str,
+        source_uri: str,
+        content_sha256: str,
+        minhash_signature: str,
+        benchmark_leakage_score: float,
+        quarantine_status: str,
+    ) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO decontamination_records (
+                        paper_id, source_uri, content_sha256, minhash_signature,
+                        benchmark_leakage_score, quarantine_status, audited_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        paper_id, source_uri, content_sha256, minhash_signature,
+                        benchmark_leakage_score, quarantine_status, datetime.now().isoformat()
+                    )
+                )
+            return True
+        finally:
+            conn.close()
+
+    def get_decontamination_record(self, paper_id_or_sha256: str) -> Optional[Dict[str, Any]]:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT * FROM decontamination_records WHERE paper_id = ? OR content_sha256 = ?",
+                (paper_id_or_sha256, paper_id_or_sha256)
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
         finally:
             conn.close()
 

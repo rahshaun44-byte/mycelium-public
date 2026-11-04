@@ -32,7 +32,7 @@ Where:
 
 ## 2. Representation Learning and Embeddings
 
-Athena converts textual and scientific assertions into geometric vector representations.
+Athena converts textual and scientific assertions into geometric vector representations using Transformer-based embedding architectures.
 
 ### Mathematical Formulation
 An embedding function maps unstructured semantic information into a fixed $d$-dimensional unit hypersphere:
