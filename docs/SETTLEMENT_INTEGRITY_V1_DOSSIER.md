@@ -85,3 +85,4 @@ Ran 3 test suites: 29 tests passed, 0 failed, 0 skipped (29 total tests)
    - **Mode B (Future Roadmapped):** Bilateral customer-to-provider escrow settlement. Must remain pure non-custodial software where customer funds are never pooled into company accounts. Pre-launch US payments regulatory counsel review is mandatory.
 2. **Administrative Custody Migration:**
    - The initial contract deployer (`0xAA1`) will be migrated via `transferOwnership` to a 2-of-3 Gnosis Safe multisig co-anchored by the Yoga host engine and Pixel 11 Pro StrongBox hardware key with a 48-hour timelock on key rotation.
+

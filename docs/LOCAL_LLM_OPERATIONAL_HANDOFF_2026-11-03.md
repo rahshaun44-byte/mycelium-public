@@ -218,3 +218,4 @@ cd /home/quant/Documents/qf && git status
 - Secret and key files (`~/.config/`, `~/projects/beta/secrets/`): `chmod 600`
 - Sensitive data directories (`~/qf-research/`, `~/.agents/`): `chmod 700`
 - Zero private keys, seed phrases, or credentials in Git commits or console logs.
+
