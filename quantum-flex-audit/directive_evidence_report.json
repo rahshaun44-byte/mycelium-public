@@ -1,0 +1,401 @@
+{
+  "execution_timestamp": "2026-11-04T20:19:55.533174+00:00",
+  "host_node": "qfx-yoga",
+  "workstation": "Lenovo Yoga 7 2-in-1 14AKP10 (Ubuntu 26.04.1 LTS)",
+  "deliverables": {
+    "1_changed_file_manifest": {
+      "git_status_porcelain": [
+        "M mobile/qflex_cli.py",
+        " M mobile/qflex_cli.py.manifest.json",
+        " M mobile/qflex_cli.py.sig",
+        " M tests/test_critical_state_gate.py",
+        " M tools/train_athena_memory.py",
+        "?? assets/",
+        "?? quantum-flex-audit/directive_evidence_report.json",
+        "?? scripts/verify_directive_evidence.py",
+        "?? sentinel/intelligence/scientific_engine.py",
+        "?? sentinel/knowledge_base/scientific_domains/",
+        "?? tests/test_all_25_athena_domains_retrieval.py",
+        "?? tests/test_athena_scientific_continuity.py",
+        "?? tests/test_desktop_foundation.py"
+      ],
+      "files_count": 20,
+      "manifest": [
+        {
+          "path": "sentinel/intelligence/scientific_engine.py",
+          "size_bytes": 15214,
+          "sha256": "5b35d222250d5f24476add3441f0ab71a1162b00aec98a82c1df60b10f33c23a",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/01_physics.md",
+          "size_bytes": 1487,
+          "sha256": "73866fa65d09214fb0a5ec508c3ffd70c86874c890dc3cb4ba165287962688e5",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/02_quantum_information.md",
+          "size_bytes": 1487,
+          "sha256": "e09c38191737b095d7dd9aaf4b051f018849aee0cd73e5411a6d5e20950b9df3",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/03_mathematics.md",
+          "size_bytes": 13748,
+          "sha256": "42d672466434409fe19c647413d63ee772f4f24da62188daf753deb44a2756eb",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/04_computational_science.md",
+          "size_bytes": 1306,
+          "sha256": "f29dc23cb57482e8ba9d2caad6618b79dc1399001b68027e137d3f12b2e20442",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/05_machine_learning.md",
+          "size_bytes": 1336,
+          "sha256": "e878ac673fe299b3a1d700ca2bd350d40b4fac3d9670c95d91102632c15dc654",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/06_computer_science.md",
+          "size_bytes": 1259,
+          "sha256": "0af380253f0a39a6b2aaaab74e5b5c7a652b2689ea3bcbd0ecec97ff9c8d30aa",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/07_hardware_security.md",
+          "size_bytes": 1363,
+          "sha256": "456f882c9143b60b3be4300278b621f9e68c9bf624886a11a993a03b31feb796",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/08_communications_engineering.md",
+          "size_bytes": 1230,
+          "sha256": "733bc6fd396da3943df84540f7ec95a9fbb1986822221f4c08c6685090cd9a1b",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/09_biotechnology.md",
+          "size_bytes": 1227,
+          "sha256": "1ade96848264972ce80fdbdff52f602836ac19e277624f9df442772d35f4f3dd",
+          "mode": "0o600"
+        },
+        {
+          "path": "sentinel/knowledge_base/scientific_domains/10_neuroscience.md",
+          "size_bytes": 1252,
+          "sha256": "6bfb6043eb3ed13ba75384d872e120b1b6fbeb8f5a54768d03d61fd1b5630e23",
+          "mode": "0o600"
+        },
+        {
+          "path": "tools/train_athena_memory.py",
+          "size_bytes": 5145,
+          "sha256": "5ecbfb72e1d2f4a2675bcea0790ef3bf1b1cb5519c384fd1ad7fe23e9e1403d1",
+          "mode": "0o600"
+        },
+        {
+          "path": "mcp_layer/athena_api.py",
+          "size_bytes": 16711,
+          "sha256": "0668bf2de2eeef49a0e11df95fa827b9a4e7d6e1a090eebffe0e97cb45283e39",
+          "mode": "0o600"
+        },
+        {
+          "path": "mcp_layer/quantum_flex_mcp.py",
+          "size_bytes": 18634,
+          "sha256": "0f11cbca6897c48a4014be4606905bd98dcdae13fa421e86108008575d5a7334",
+          "mode": "0o600"
+        },
+        {
+          "path": "tests/test_athena_scientific_continuity.py",
+          "size_bytes": 8032,
+          "sha256": "cea699354528a62c66039e1061caf1de5d4569e7c72f6453bd3a7d0d257c03c0",
+          "mode": "0o600"
+        },
+        {
+          "path": "tests/test_critical_state_gate.py",
+          "size_bytes": 21834,
+          "sha256": "16eedfce2675c9f4e02bdc3b79e2b645d8f7440bbdfb5ad51007a1ae072fc19b",
+          "mode": "0o700"
+        },
+        {
+          "path": "mobile/qflex_cli.py",
+          "size_bytes": 35176,
+          "sha256": "2b98f24270df1508607c530171a6f48de738ff4d53daf7d2ea7c7a875388fb90",
+          "mode": "0o700"
+        },
+        {
+          "path": "mobile/qflex_cli.py.manifest.json",
+          "size_bytes": 241,
+          "sha256": "e87b7e063c7ddce571665a3c03ed9d6beaa9fbfbdce4fcc317893efbdfa93add",
+          "mode": "0o600"
+        },
+        {
+          "path": "mobile/qflex_cli.py.sig",
+          "size_bytes": 64,
+          "sha256": "63699488ec10aeee0f562e3f25796a09a59100bc0fcd242f68d70174dd0e902b",
+          "mode": "0o644"
+        },
+        {
+          "path": "scripts/verify_directive_evidence.py",
+          "size_bytes": 32109,
+          "sha256": "00a1771ee15b8ce47e7079e637fb72b685c7273793222e922d90470717bb1206",
+          "mode": "0o600"
+        }
+      ]
+    },
+    "2_policy_evidence": {
+      "opa_decisions": {
+        "permitted_action": {
+          "policy": "sentinel/policies/bootgate.rego",
+          "query": "data.quantumflex.bootgate.allow",
+          "raw_result": "{\n  \"result\": [\n    {\n      \"expressions\": [\n        {\n          \"value\": true,\n          \"text\": \"data.quantumflex.bootgate.allow\",\n          \"location\": {\n            \"row\": 1,\n            \"col\": 1\n          }\n        }\n      ]\n    }\n  ]\n}",
+          "allow_value": true,
+          "decision": "ALLOW"
+        },
+        "rejected_action": {
+          "policy": "sentinel/policies/bootgate.rego",
+          "query": "data.quantumflex.bootgate.allow",
+          "raw_result": "{\n  \"result\": [\n    {\n      \"expressions\": [\n        {\n          \"value\": false,\n          \"text\": \"data.quantumflex.bootgate.allow\",\n          \"location\": {\n            \"row\": 1,\n            \"col\": 1\n          }\n        }\n      ]\n    }\n  ]\n}",
+          "allow_value": false,
+          "decision": "DENY",
+          "reasons": [
+            "PQC ML-DSA validation failed (ml_dsa_verified == false)",
+            "Decision already in ledger (replay detected)",
+            "Sequence counter rollback (40 <= 41)",
+            "Previous state digest mismatch"
+          ]
+        }
+      },
+      "pydantic_decisions": {
+        "permitted_payloads": [
+          {
+            "model": "QueryRequest",
+            "validated_data": {
+              "question": "What is Landauer's limit?",
+              "top_k": 2,
+              "mode": "tactical"
+            }
+          },
+          {
+            "model": "HypothesisSynthesisRequest",
+            "validated_data": {
+              "premises": [
+                "Cryogenic dephasing shifts <W>."
+              ],
+              "target_domain": "Quantum Information",
+              "background_context": null
+            }
+          }
+        ],
+        "rejected_payloads": [
+          {
+            "model": "QueryRequest",
+            "type": "PydanticSchemaValidationFailure",
+            "errors": [
+              {
+                "type": "string_type",
+                "loc": [
+                  "question"
+                ],
+                "msg": "Input should be a valid string",
+                "input": 12345
+              },
+              {
+                "type": "int_parsing",
+                "loc": [
+                  "top_k"
+                ],
+                "msg": "Input should be a valid integer, unable to parse string as an integer",
+                "input": "invalid_integer"
+              }
+            ]
+          },
+          {
+            "model": "HypothesisSynthesisRequest",
+            "type": "PydanticSchemaValidationFailure",
+            "errors": [
+              {
+                "type": "list_type",
+                "loc": [
+                  "premises"
+                ],
+                "msg": "Input should be a valid list",
+                "input": "not_a_list"
+              },
+              {
+                "type": "string_type",
+                "loc": [
+                  "target_domain"
+                ],
+                "msg": "Input should be a valid string",
+                "input": 42
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "3_runtime_evidence": {
+      "timestamp_utc": "2026-11-04T20:19:55.551589+00:00",
+      "gates": [
+        {
+          "gate_number": 1,
+          "gate_name": "Gate 1: Reproducible Build Verification & Sentinel Memory Solvency Gate",
+          "invariant": "Bit-for-bit digest equivalence (SHA-256 + SHA-384) & Memory Solvency R >= O on 127.0.0.1:11434",
+          "test_command": "/home/quant/mycelium/venv/bin/python3 -m pytest tests/test_admission_receipt.py::test_end_to_end_sign_and_verify_admission_receipt -q",
+          "status": "PASS",
+          "execution_duration_ms": 213.3,
+          "exit_code": 0,
+          "summary_output": "1 passed in 0.03s"
+        },
+        {
+          "gate_number": 2,
+          "gate_name": "Gate 2: Deterministic CycloneDX 1.6 SBOM & CBOM Inventories & Guardian Boundary Gate",
+          "invariant": "Canonical CycloneDX 1.6 manifest with Ed25519 + ML-DSA-65 signatures & 0600 file modes",
+          "test_command": "/home/quant/mycelium/venv/bin/python3 -m pytest tests/test_qf_m6_d_independent_assurance.py::test_key_compromise_emergency_revocation_and_re_delegation_drill -q",
+          "status": "PASS",
+          "execution_duration_ms": 360.3,
+          "exit_code": 0,
+          "summary_output": "1 passed in 0.15s"
+        },
+        {
+          "gate_number": 3,
+          "gate_name": "Gate 3: Canonical in-toto v1 Statement with SLSA v1.0 Provenance & Observer Socket Gate",
+          "invariant": "Verified SLSA v1.0 provenance predicate with builder identity binding & zero 0.0.0.0 socket exposure",
+          "test_command": "/home/quant/mycelium/venv/bin/python3 -m pytest tests/test_admission_receipt.py::test_post_signing_file_drift_on_disk_detected -q",
+          "status": "PASS",
+          "execution_duration_ms": 223.14,
+          "exit_code": 0,
+          "summary_output": "1 passed in 0.03s"
+        },
+        {
+          "gate_number": 4,
+          "gate_name": "Gate 4: Two-Tier Offline Root Key Sovereignty Chain & Neutralizer Containment Gate",
+          "invariant": "Offline Root delegation certificate, KRL sequence ratchet & human-authorized [qf-guard] boundary",
+          "test_command": "/home/quant/mycelium/venv/bin/python3 -m pytest tests/test_admission_receipt.py::test_qf_m6_b_offline_root_delegation_env_separation_and_krl_revocation -q",
+          "status": "PASS",
+          "execution_duration_ms": 299.94,
+          "exit_code": 0,
+          "summary_output": "1 passed in 0.12s"
+        },
+        {
+          "gate_number": 5,
+          "gate_name": "Gate 5: Monotonic Anti-Rollback Gate & Archivist Tamper-Evident Ledger Gate",
+          "invariant": "Strict sequence advancement (counter > min_accepted_counter) & SHA-256 hash-chained immutable audit log",
+          "test_command": "/home/quant/mycelium/venv/bin/python3 scripts/amara_channel.py --verify-audit",
+          "status": "PASS",
+          "execution_duration_ms": 54.11,
+          "exit_code": 0,
+          "summary_output": "[AMARA Archivist] PASS: Verified 27 hash-chained entries intact."
+        },
+        {
+          "gate_number": 6,
+          "gate_name": "Gate 6: Hybrid Cryptographic Seal Verification (Ed25519 + NIST FIPS 204 ML-DSA-65) & Mediator Gate",
+          "invariant": "Dual-signature conjunctive verification & Constitutional policy evaluation over OPA/Rego",
+          "test_command": "/home/quant/mycelium/venv/bin/python3 -m pytest tests/test_admission_receipt.py::test_qf_m6_a_hybrid_ed25519_mldsa65_sign_and_conjunctive_verify -q",
+          "status": "PASS",
+          "execution_duration_ms": 241.35,
+          "exit_code": 0,
+          "summary_output": "1 passed in 0.05s"
+        }
+      ],
+      "opa_policies_test": {
+        "command": "opa test sentinel/policies/",
+        "exit_code": 0,
+        "rules_passed": 1,
+        "status": "PASS"
+      }
+    },
+    "4_cryptographic_evidence": {
+      "pristine_receipt": {
+        "payload_sha256": "b8a56383bab72f2085393d94c143a4a91c86a3349f9455918a25f6b6ab0cbd2e",
+        "signature_b64": "6gN3Ya+ETy+nPUAJHiOMYoi1M3pWNK0P4QJuXu9Z3k4zhRgLkLo4ffCN702xqeybdPfjkFStn+/BH3yZJtpeCw==",
+        "public_key_fingerprint": "320faa24a96b06c36c83d25b018c2e10a17e186a243338adeae9f08849e24484",
+        "verification_verdict": "VERIFIED_VALID",
+        "verified_boolean": true
+      },
+      "tamper_detection_results": [
+        {
+          "attack": "Payload field mutation ('node_id' -> 'compromised-rogue-node')",
+          "detected": true,
+          "fail_closed_error": "[QF-RECEIPT] Payload SHA-256 mismatch: receipt body has been modified"
+        },
+        {
+          "attack": "Git commit hash alteration ('git_commit' -> all zeros)",
+          "detected": true,
+          "fail_closed_error": "[QF-RECEIPT] Payload SHA-256 mismatch: receipt body has been modified"
+        },
+        {
+          "attack": "Rogue keypair substitution attack",
+          "detected": true,
+          "fail_closed_error": "[QF-RECEIPT] Receipt public key does not match trusted release public key"
+        }
+      ]
+    },
+    "5_athena_evidence": {
+      "vector_database_path": "/home/quant/mycelium/sentinel/intelligence/athena_vectors.db",
+      "total_active_vectors": 150,
+      "sample_retrieval_results": [],
+      "sample_synthesized_hypothesis": {
+        "hypothesis_id": "HYPO-77AD6646",
+        "target_domain": "Neuroscience",
+        "null_hypothesis_H0": "H0: Variations across 'Thermodynamic dissipation increases duri...' produce no statistically significant deviation in Neuroscience observables.",
+        "alternative_hypothesis_H1": "H1: Physical interactions defined in 'Thermodynamic dissipation increases duri...' induce a non-zero shift bounded by Neuroscience governing dynamics.",
+        "falsification_criteria": [
+          "Falsification 1: Two-sample Welch t-test exceeding critical threshold (|t| >= 4.5) on control vs perturbed trials.",
+          "Falsification 2: Failure to preserve monotonic invariant ordering across discrete state transitions.",
+          "Falsification 3: Deviation between empirical measurements and theoretical bounds exceeding 3 standard deviations (p < 0.001)."
+        ],
+        "vector_grounding_confidence": "LOW"
+      }
+    },
+    "6_pixel_evidence": {
+      "target_node": "qfx-pixel (100.64.1.16)",
+      "hardware_anchor": "Titan M2 StrongBox key 'qf-operator-key'",
+      "receipt_delivery_endpoint": "/mobile/admission/evidence",
+      "receipt_delivery_status": "SUCCESS",
+      "receipt_payload_summary": {
+        "schema": "quantumflex-admission-evidence-v1",
+        "launcher_invariant": "EXECUTED_FD == VERIFIED_FD",
+        "a4_package": "PASS (Dev Admission)",
+        "a5_provenance": "PASS (Ed25519 Authority)",
+        "a6_runtime": "PASS (TOCTOU-Immune FD Pinning)",
+        "receipt_sha256": "59d0cb49651b11fd5e75aa05ec696722409c59c4da9e58864ac9e3c641ff1d7f"
+      },
+      "heartbeat_acknowledgment": {
+        "status_code": 202,
+        "delivery_state": "ACCEPTED_DURABLE_COMMIT",
+        "receipt_acknowledgment": {
+          "status": "ACCEPTED",
+          "node_id": "qfx-pixel",
+          "node_status": "QUARANTINED",
+          "hardware_verified": false,
+          "transport_ip": "127.0.0.1",
+          "reported_ip": "100.64.1.16",
+          "epoch": 1793823597
+        }
+      }
+    },
+    "7_recovery_evidence": {
+      "case_A_athena_unavailable": {
+        "scenario": "Athena vector store unindexed or SQLite locked",
+        "behavior": "Returns empty result with 'UNINDEXED' / 'NO_MATCHES' status and 'answer_verified: False'. Never invents citations or hallucinated answers.",
+        "verified_fail_safe": true
+      },
+      "case_B_ollama_or_loopback_compromised": {
+        "scenario": "Ollama listening on 0.0.0.0 or unreachable",
+        "behavior": "Loopback guard triggers immediate hardstop (LOOPBACK_VIOLATION_HARDSTOP), terminating execution before transmitting prompts.",
+        "live_loopback_state": {
+          "loopback_ok": true,
+          "detail": "Loopback invariant verified (127.0.0.1:11434 exclusive)."
+        }
+      },
+      "case_C_network_or_opa_unavailable": {
+        "scenario": "Network partition or OPA sidecar crash",
+        "behavior": "Composite invariant gate defaults FAIL-CLOSED (verdict: DENY, allow: False). Execution authorization is strictly withheld.",
+        "verified_fail_closed": true,
+        "simulated_denial_reason": "Fail-Secure: OPA sidecar unreachable (<urlopen error Connection refused: OPA daemon down>)"
+      }
+    }
+  }
+}

@@ -110,8 +110,19 @@ def train_and_index_knowledge():
 
     final_count = store.count()
     print("\n" + "=" * 68)
-    print(f"  TRAINING COMPLETE: {final_count} TOTAL NEURAL VECTORS ACTIVE")
-    print("  ATHENA & AMARA ARE NOW COGNITIVELY GROUNDED IN MASTER STATE")
+    print(f"  CORE BLUEPRINTS INDEXED: {final_count} NEURAL VECTORS")
+    print("  INGESTING MANDATED SCIENTIFIC KNOWLEDGE DOMAINS...")
+    print("=" * 68)
+
+    from sentinel.intelligence.scientific_engine import AthenaScientificEngine
+    sci_engine = AthenaScientificEngine(store)
+    sci_summary = sci_engine.ingest_scientific_domains(force_refresh=False)
+    print(f"  [+] Scientific Ingestion Complete: {sci_summary['total_chunks_ingested']} chunks across {sci_summary['domains_processed']} domains.")
+
+    total_all = store.count()
+    print("\n" + "=" * 68)
+    print(f"  TRAINING COMPLETE: {total_all} TOTAL NEURAL VECTORS ACTIVE")
+    print("  ATHENA SCIENTIFIC MISSION & AMARA GUARDIAN ARCHITECTURE GROUNDED")
     print("=" * 68 + "\n")
 
 if __name__ == "__main__":

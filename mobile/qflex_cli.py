@@ -42,21 +42,21 @@ def get_candidate_hosts() -> List[Tuple[str, int]]:
     # If running directly on the master host, loopback is immediate
     if socket.gethostname() == YOGA_HOSTNAME or os.environ.get("USER") == "quant":
         return [
-            ("127.0.0.1", 9000),
             ("127.0.0.1", 9001),
-            (YOGA_TAILSCALE_IP, 9000),
+            ("127.0.0.1", 9000),
             (YOGA_TAILSCALE_IP, 9001),
-            (YOGA_MAGICDNS, 9000),
+            (YOGA_TAILSCALE_IP, 9000),
             (YOGA_MAGICDNS, 9001),
+            (YOGA_MAGICDNS, 9000),
         ]
-    # On mobile devices, Tailscale mesh IP is primary, then MagicDNS
+    # On mobile devices, Tailscale mesh IP on port 9001 is primary, then MagicDNS
     return [
-        (YOGA_TAILSCALE_IP, 9000),
         (YOGA_TAILSCALE_IP, 9001),
-        (YOGA_MAGICDNS, 9000),
         (YOGA_MAGICDNS, 9001),
-        ("127.0.0.1", 9000),
+        (YOGA_TAILSCALE_IP, 9000),
+        (YOGA_MAGICDNS, 9000),
         ("127.0.0.1", 9001),
+        ("127.0.0.1", 9000),
     ]
 
 
@@ -432,18 +432,38 @@ def cmd_custody(identity: NodeIdentity, base_url: str):
         print(f"  Custody Access    : STRICTLY DENIED")
 
     print()
-    print(_c(CLR_BOLD, "  Master Shamir 3-of-5 Custody Distribution:"))
-    print("    • Share 1      : Lenovo Yoga 7 2-in-1 14AKP10 (qfx-yoga)")
-    print("    • Share 2      : HP ProBook 450 G6 (g6pro)")
-    print("    • Shares 3 & 4 : Unmounted Physical USB Vault")
-    print("    • Share 5      : Google Pixel 11 Pro (qfx-pixel)")
+    print(_c(CLR_BOLD, "  Master Shamir 3-of-5 Custody Distribution (Two-Node Mesh Topology):"))
+    print("    • Share 1      : Lenovo Yoga 7 2-in-1 14AKP10 (qfx-yoga - Master Engine)")
+    print("    • Shares 2 & 3 : Unmounted Physical USB Vault (Cold Storage)")
+    print("    • Shares 4 & 5 : Google Pixel 11 Pro (qfx-pixel - Chief Architect HUD)")
     print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
     print()
 
+def cmd_amara(base_url: str, identity: NodeIdentity, prompt: str):
+    """Direct line to AMARA: Guardian Intelligence & Constitutional Advisor."""
+    print(f"\n[*] Transmitting directive to {_c(CLR_BOLD + CLR_CYAN, 'AMARA CORE')} from {_c(CLR_BOLD, identity.node_id)}...")
+    ok, res = _api_post(
+        base_url,
+        "/api/chat",
+        {"target_bot": "amara", "message": prompt, "sender_node": identity.node_id},
+        timeout=TIMEOUT_CHAT
+    )
+
+    if not ok:
+        print(_c(CLR_RED, f"[!] Error communicating with AMARA: {res}"))
+        return
+
+    print("\n" + _c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
+    print(_c(CLR_BOLD + CLR_WHITE, "  AMARA  •  GUARDIAN INTELLIGENCE & CONSTITUTIONAL ADVISOR"))
+    print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════"))
+    reply = res.get("response") or res.get("reply") or res.get("answer") or str(res)
+    print(reply)
+    print(_c(CLR_BOLD + CLR_CYAN, "═══════════════════════════════════════════════════════════════\n"))
+
 def cmd_chat(base_url: str, identity: NodeIdentity, agent: str, prompt: str):
-    """Dispatches a query to an AI teammate (Mycelia, Sentinel, Aria, Athena)."""
+    """Dispatches a query to an AI teammate (Amara, Mycelia, Sentinel, Aria, Athena, Partner)."""
     agent = agent.lower().strip()
-    valid_agents = ["mycelia", "sentinel", "aria", "athena"]
+    valid_agents = ["amara", "mycelia", "sentinel", "aria", "athena", "partner", "antigravity"]
     if agent not in valid_agents:
         print(_c(CLR_RED, f"[!] Unknown teammate '{agent}'. Choose from: {', '.join(valid_agents)}"))
         return
@@ -452,7 +472,7 @@ def cmd_chat(base_url: str, identity: NodeIdentity, agent: str, prompt: str):
     ok, res = _api_post(
         base_url,
         "/api/chat",
-        {"agent": agent, "message": prompt, "sender_node": identity.node_id},
+        {"target_bot": agent, "message": prompt, "sender_node": identity.node_id},
         timeout=TIMEOUT_CHAT
     )
 
@@ -598,7 +618,8 @@ Usage:
   qf node                                 - Identity resolution & authority diagnostic
   qf doctor                               - Network, trust anchor, and service diagnostic
 
-  qf chat <mycelia|sentinel|aria|athena> "<prompt>"
+  qf amara "<prompt>"                     - Direct communication with AMARA (Guardian Intelligence)
+  qf chat <amara|mycelia|sentinel|aria|athena> "<prompt>"
                                           - Interrogate multi-agent neural swarm
 
   qf drafts                               - Inspect staged actions pending authorization
@@ -653,9 +674,15 @@ def main():
             print("Usage: qf discard <draft_id>")
             sys.exit(1)
         cmd_discard(base_url, identity, sys.argv[2])
+    elif cmd in ("amara", "guardian", "advisor"):
+        if len(sys.argv) < 3:
+            print("Usage: qf amara \"<prompt>\"")
+            sys.exit(1)
+        prompt = " ".join(sys.argv[2:])
+        cmd_amara(base_url, identity, prompt)
     elif cmd in ("chat", "ask", "tell"):
         if len(sys.argv) < 4:
-            print("Usage: qf chat <mycelia|sentinel|aria|athena> \"<prompt>\"")
+            print("Usage: qf chat <amara|mycelia|sentinel|aria|athena> \"<prompt>\"")
             sys.exit(1)
         agent = sys.argv[2]
         prompt = " ".join(sys.argv[3:])

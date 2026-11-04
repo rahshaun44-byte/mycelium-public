@@ -473,5 +473,11 @@ def run_tests():
         shutil.rmtree(test_dir, ignore_errors=True)
 
 
+def test_critical_state_host_admission_matrix():
+    """Validates the full 12-case host admission boundary matrix."""
+    run_tests()
+
+
 if __name__ == "__main__":
     run_tests()
+
