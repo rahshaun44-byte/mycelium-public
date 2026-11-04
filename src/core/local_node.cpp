@@ -310,9 +310,10 @@ namespace quantumflex::node {
         }
 
         // Verified Core Invariant: Validate transition to ACTIVE
-        if (qf_core_eval_transition(QF_STATE_LOCKED, QF_STATE_ACTIVE, QF_CRED_SHAMIR_THRESHOLD) != QF_VERDICT_ALLOW) {
+        const auto transition = qf_core_step_fsm(QF_STATE_RECOVERY, QF_VERDICT_COMPLIANT, QF_CRED_OPERATOR_ATTESTATION, 0);
+        if (!transition.permitted || transition.next_state != QF_STATE_ACTIVE) {
             quarantine_node(QuarantineReason::RuntimeIntegrityFailure);
-            throw std::runtime_error("FATAL: Verified core invariant breach on LOCKED -> ACTIVE.");
+            throw std::runtime_error("FATAL: Verified core invariant breach on RECOVERY -> ACTIVE.");
         }
 
         // 4. Collapse Superposition
