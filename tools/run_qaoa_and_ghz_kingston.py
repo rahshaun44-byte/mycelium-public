@@ -815,7 +815,7 @@ if __name__ == "__main__":
     parser.add_argument("--submit", action="store_true", help="Submit actual cryogenic job to IBM QPU (requires confirmation)")
     parser.add_argument("--retrieve", type=str, default=None, help="Retrieve and analyze an existing completed physical IBM job ID")
     parser.add_argument("--backend", default="ibm_kingston", help="Target QPU backend name (default: ibm_kingston)")
-    parser.add_argument("--shots", type=int, default=256, help="Shots per circuit (default: 256)")
+    parser.add_argument("--shots", type=int, default=1024, help="Shots per circuit (default: 1024 for NIST SP 800-90B certification)")
     parser.add_argument(
         "--risk-profile",
         choices=["aggressive", "balanced", "conservative", "ultra_conservative"],
