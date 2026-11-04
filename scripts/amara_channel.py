@@ -463,7 +463,7 @@ def query_local_ollama(
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=60.0) as resp:
+            with urllib.request.urlopen(req, timeout=180.0) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 content = data.get("message", {}).get("content", "").strip()
                 if content:
@@ -472,8 +472,8 @@ def query_local_ollama(
             if exc.code == 404 and candidate_model != FALLBACK_MODEL:
                 continue
             break
-        except Exception:
-            break
+        except Exception as exc:
+            continue
 
     return (
         "[Local Ollama engine on 127.0.0.1:11434 is currently offline or loading. "
