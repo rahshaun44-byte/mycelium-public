@@ -149,3 +149,9 @@ household_private/
 /quarantine/
 /toxic_dump/
 
+# AMARA local memory and audit logs
+sentinel/amara_audit.jsonl
+sentinel/amara_memory_vault.json
+sentinel/memory_architect_private.json
+sentinel/memory_public_ops.json
+
