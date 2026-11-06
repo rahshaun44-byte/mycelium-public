@@ -13,6 +13,7 @@ from src.db_credentials import (
     DEFAULT_ENV_PATH,
     DatabaseRole,
     open_role_connection,
+    resolve_context_identity_hmac_key,
     resolve_role_credentials,
 )
 
@@ -58,27 +59,64 @@ def test_superuser_or_shared_login_rejected(tmp_path, monkeypatch):
 
 
 def test_valid_isolated_credentials_resolve_cleanly(tmp_path, monkeypatch):
-    """Valid 0600 env file resolves distinct writer and verifier credentials."""
-    for key in ("QF_WRITER_DB_USER", "QF_WRITER_DB_PASS", "QF_VERIFIER_DB_USER", "QF_VERIFIER_DB_PASS"):
+    """Valid 0600 env file resolves distinct writer, verifier, and context roles."""
+    for key in (
+        "QF_WRITER_DB_USER",
+        "QF_WRITER_DB_PASS",
+        "QF_VERIFIER_DB_USER",
+        "QF_VERIFIER_DB_PASS",
+        "QF_CONTEXT_DB_USER",
+        "QF_CONTEXT_DB_PASS",
+        "QF_CONTEXT_IDENTITY_HMAC_KEY",
+    ):
         monkeypatch.delenv(key, raising=False)
 
     env_file = tmp_path / "db_roles.env"
+    identity_key = bytes(range(32)).hex()
     env_file.write_text(
         "QF_DB_HOST=127.0.0.1\nQF_DB_PORT=5432\n"
-        "QF_WRITER_DB_USER=qf_writer\nQF_WRITER_DB_PASS=w_pass_123\n"
-        "QF_VERIFIER_DB_USER=qf_verifier\nQF_VERIFIER_DB_PASS=v_pass_456\n",
+        "QF_WRITER_DB_USER=qf_writer\nQF_WRITER_DB_PASS=w\n"
+        "QF_VERIFIER_DB_USER=qf_verifier\nQF_VERIFIER_DB_PASS=v\n"
+        "QF_CONTEXT_DB_USER=qf_context\nQF_CONTEXT_DB_PASS=c\n"
+        f"QF_CONTEXT_IDENTITY_HMAC_KEY={identity_key}\n",
         encoding="utf-8",
     )
     env_file.chmod(0o600)
 
     w_cfg = resolve_role_credentials(DatabaseRole.WRITER, dbname="telemetry", env_path=env_file)
     v_cfg = resolve_role_credentials(DatabaseRole.VERIFIER, dbname="telemetry", env_path=env_file)
+    c_cfg = resolve_role_credentials(DatabaseRole.CONTEXT, dbname="telemetry", env_path=env_file)
 
     assert w_cfg["user"] == "qf_writer"
-    assert w_cfg["password"] == "w_pass_123"
+    assert w_cfg["password"] == "w"
     assert v_cfg["user"] == "qf_verifier"
-    assert v_cfg["password"] == "v_pass_456"
-    assert w_cfg["user"] != v_cfg["user"]
+    assert v_cfg["password"] == "v"
+    assert c_cfg["user"] == "qf_context"
+    assert c_cfg["password"] == "c"
+    assert len({w_cfg["user"], v_cfg["user"], c_cfg["user"]}) == 3
+    assert resolve_context_identity_hmac_key(env_path=env_file) == bytes(range(32))
+
+
+def test_context_identity_key_requires_a_32_byte_hex_secret(tmp_path, monkeypatch):
+    monkeypatch.delenv("QF_CONTEXT_IDENTITY_HMAC_KEY", raising=False)
+    env_file = tmp_path / "db_roles.env"
+    env_file.write_text("QF_CONTEXT_IDENTITY_HMAC_KEY=too-short\n", encoding="utf-8")
+    env_file.chmod(0o600)
+
+    with pytest.raises(PermissionError, match="Missing or malformed"):
+        resolve_context_identity_hmac_key(env_path=env_file)
+
+
+def test_context_provisioning_restores_device_audit_grants_after_acl_lockdown():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "apply_db_acl_separation.sh").read_text(encoding="utf-8")
+    lockdown = script.index('apply_role_acl_sql "${SQL_FILE}"')
+    authorization = script.index('apply_plain_sql "${AUTH_SQL_FILE}"')
+    context = script.index("\n        apply_context_sql \\\n")
+
+    assert lockdown < authorization < context
+    assert "-v qf_context_identity_hmac_key" not in script
+    assert 'printf "\\\\set qf_context_identity_hmac_key' in script
 
 
 @pytest.mark.skipif(
@@ -239,4 +277,3 @@ def test_missing_credentials_fails_closed(tmp_path, monkeypatch):
 
     with pytest.raises(PermissionError, match="Missing password"):
         resolve_role_credentials(DatabaseRole.WRITER, env_path=empty_env)
-

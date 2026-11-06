@@ -2,6 +2,7 @@
 
 Set QF_TEST_BUILD_DIR to a built tree. No running services are used.
 """
+import json
 import os
 from pathlib import Path
 import socket
@@ -10,6 +11,10 @@ import struct
 import subprocess
 import time
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from scripts.qf_ipc_auth import authenticate
 
 
 def test_native_mlkem_ipc(tmp_path):
@@ -27,19 +32,42 @@ def test_native_mlkem_ipc(tmp_path):
                 '-out', name + '.csr', '-subj', '/CN=' + name)
         openssl('x509', '-req', '-in', name + '.csr', '-CA', 'ca.crt', '-CAkey', 'ca.key',
                 '-CAcreateserial', '-out', name + '.crt', '-days', '1', '-extfile', 'leaf.ext')
+    device_keys = tmp_path / 'device_keys'
+    device_keys.mkdir()
+    signing_key = Ed25519PrivateKey.generate()
+    signing_key_path = tmp_path / 'test-client-signing.pem'
+    signing_key_path.write_bytes(signing_key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    public_key = signing_key.public_key().public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    )
+    (device_keys / 'registry.json').write_text(json.dumps({
+        'nodes': [{
+            'node_id': 'test-client',
+            'status': 'authorized',
+            'algorithms': {'identity_signing': 'Ed25519'},
+            'public_keys': {'ed25519_hex': public_key.hex()},
+        }]
+    }))
     with socket.socket() as reservation:
         reservation.bind(('127.0.0.1', 0))
         port = reservation.getsockname()[1]
     env = os.environ.copy()
     env.update(QF_DATA_DIR=str(tmp_path), QF_POSTGRES_CONNINFO='', QF_BIND_ADDRESS='127.0.0.1', QF_BIND_PORT=str(port),
                QF_SERVER_CERT=str(tmp_path / 'server.crt'), QF_SERVER_KEY=str(tmp_path / 'server.key'),
-               QF_ROOT_CA=str(tmp_path / 'ca.crt'), QF_ED_PRIVATE_KEY=str(tmp_path / 'missing-ed'),
+               QF_ROOT_CA=str(tmp_path / 'ca.crt'), QF_DEVICE_KEYS_DIR=str(device_keys),
+               QF_ED_PRIVATE_KEY=str(tmp_path / 'missing-ed'),
                QF_PQC_PRIVATE_KEY=str(tmp_path / 'missing-pqc'), QF_KEM_PROPERTIES='provider=default')
     context = ssl.create_default_context(cafile=str(tmp_path / 'ca.crt'))
     context.load_cert_chain(str(tmp_path / 'client.crt'), str(tmp_path / 'client.key'))
     def exchange(kind, payload):
         with socket.create_connection(('127.0.0.1', port), timeout=3) as raw:
             with context.wrap_socket(raw, server_hostname='server') as conn:
+                authenticate(conn, signing_key_path, 'test-client')
                 conn.sendall(struct.pack('!2sBBIII', b'QF', 1, kind, 0, len(payload), 0) + payload)
                 def read_exact(count):
                     data = b''

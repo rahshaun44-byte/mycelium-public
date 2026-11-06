@@ -11,6 +11,7 @@ Exercises TOE behavior under failure conditions:
 """
 
 import os
+import json
 from pathlib import Path
 import socket
 import ssl
@@ -18,10 +19,18 @@ import subprocess
 import time
 import pytest
 from fastapi.testclient import TestClient
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import api_node.main as api_node_main
 import mcp_layer.athena_api as athena_api
 import mcp_layer.qf_bot.bot_server as bot_server
+from scripts.qf_ipc_auth import (
+    authenticate,
+    parse_challenge,
+    read_line,
+    signed_auth_request,
+)
 from sentinel.invariant_gate import query_opa_invariant
 from sentinel.policies.wasm_gatekeeper import (
     get_membrane_wasm_gatekeeper,
@@ -277,6 +286,35 @@ def isolated_engine(tmp_path):
     openssl("x509", "-req", "-in", "unauth_client.csr", "-CA", "ca.crt", "-CAkey", "ca.key",
             "-CAcreateserial", "-out", "unauth_client.crt", "-days", "1", "-extfile", "leaf.ext")
 
+    # 5. Separate Ed25519 device identity trusted by the engine.
+    device_keys = tmp_path / "device_keys"
+    device_keys.mkdir()
+    signing_key = Ed25519PrivateKey.generate()
+    signing_key_path = tmp_path / "test-operator-private.pem"
+    signing_key_path.write_bytes(signing_key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    public_key_hex = signing_key.public_key().public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    ).hex()
+    (device_keys / "registry.json").write_text(json.dumps({
+        "nodes": [{
+            "node_id": "test-operator",
+            "status": "authorized",
+            "algorithms": {"identity_signing": "Ed25519"},
+            "public_keys": {"ed25519_hex": public_key_hex},
+        }]
+    }))
+    (device_keys / "test-operator.pem").write_bytes(
+        signing_key.public_key().public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+
     # Find open port
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -291,11 +329,18 @@ def isolated_engine(tmp_path):
         QF_SERVER_CERT=str(tmp_path / "server.crt"),
         QF_SERVER_KEY=str(tmp_path / "server.key"),
         QF_ROOT_CA=str(tmp_path / "ca.crt"),
+        QF_DEVICE_KEYS_DIR=str(device_keys),
         QF_ED_PRIVATE_KEY=str(tmp_path / "missing-ed"),
         QF_PQC_PRIVATE_KEY=str(tmp_path / "missing-pqc"),
         QF_KEM_PROPERTIES="provider=default",
     )
 
+    (tmp_path / "ledger.dat").write_text(
+        "STATE_ROOT|isolated-test\n"
+        "TIMESTAMP|0\n"
+        "LEDGER_SIGNATURE|UNINITIALIZED\n"
+        "STATUS|UNINITIALIZED\n"
+    )
     proc = subprocess.Popen([str(engine_bin)], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Wait for socket to be ready
@@ -318,6 +363,9 @@ def isolated_engine(tmp_path):
         "admin_key": str(tmp_path / "admin_client.key"),
         "unauth_crt": str(tmp_path / "unauth_client.crt"),
         "unauth_key": str(tmp_path / "unauth_client.key"),
+        "auth_private_key": str(signing_key_path),
+        "auth_client_id": "test-operator",
+        "device_keys": str(device_keys),
     }
 
     proc.terminate()
@@ -333,7 +381,7 @@ def isolated_engine(tmp_path):
 
 
 def test_ipc_unauthorized_mutation_rejected(isolated_engine):
-    """Verify that SET_HARVESTER_KEY is rejected when caller CN is not authorized."""
+    """Verify a TLS client with a valid Ed25519 identity still lacks operator authority."""
     cfg = isolated_engine
     port = cfg["port"]
     
@@ -342,10 +390,155 @@ def test_ipc_unauthorized_mutation_rejected(isolated_engine):
 
     with socket.create_connection(("127.0.0.1", port), timeout=5) as raw_sock:
         with context.wrap_socket(raw_sock, server_hostname="127.0.0.1") as tls_sock:
+            authenticate(tls_sock, cfg["auth_private_key"], cfg["auth_client_id"])
             tls_sock.sendall(b"SET_HARVESTER_KEY|0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n")
             resp = tls_sock.recv(1024).decode("utf-8", errors="replace")
-            assert resp.startswith("ERR|"), f"Expected ERR| response, got: {resp.strip()}"
+            assert resp.strip() == "ERR|UNAUTHORIZED_HARVESTER_MUTATION", f"Unexpected response: {resp.strip()}"
             assert "HARVESTER_KEY_SET" not in resp
+
+
+def test_ipc_valid_ed25519_challenge_authenticates_and_status_succeeds(isolated_engine):
+    cfg = isolated_engine
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            authenticate(tls_sock, cfg["auth_private_key"], cfg["auth_client_id"])
+            tls_sock.sendall(b"STATUS\n")
+            assert read_line(tls_sock) == b"ACK|ACTIVE"
+
+
+def test_ipc_revoked_registry_identity_is_rejected_even_with_cached_public_key(isolated_engine):
+    cfg = isolated_engine
+    registry_path = Path(cfg["device_keys"]) / "registry.json"
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry["nodes"][0]["status"] = "revoked"
+    registry["nodes"].append(
+        {
+            **registry["nodes"][0],
+            "status": "authorized",
+        }
+    )
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            challenge = parse_challenge(tls_sock)
+            private_key = serialization.load_pem_private_key(
+                Path(cfg["auth_private_key"]).read_bytes(), None
+            )
+            tls_sock.sendall(
+                signed_auth_request(private_key, cfg["auth_client_id"], challenge)
+            )
+            assert read_line(tls_sock) == (
+                b"ERR|AUTHENTICATION_FAILED|INVALID_SIGNATURE_OR_UNKNOWN_CLIENT"
+            )
+            assert tls_sock.recv(1024) == b"", "Revoked client received application output"
+
+
+def test_ipc_invalid_signature_is_explicitly_denied_before_command(isolated_engine):
+    cfg = isolated_engine
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            challenge = parse_challenge(tls_sock)
+            private_key = serialization.load_pem_private_key(
+                Path(cfg["auth_private_key"]).read_bytes(), password=None
+            )
+            request = signed_auth_request(private_key, cfg["auth_client_id"], challenge)
+            # Corrupt only the signature while retaining a valid request envelope.
+            envelope = request[:-1]
+            parsed = json.loads(envelope)
+            parsed["signature"] = "00" * 64
+            tls_sock.sendall(
+                json.dumps(parsed, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+            )
+            assert read_line(tls_sock).startswith(b"ERR|AUTHENTICATION_FAILED|")
+
+            try:
+                tls_sock.sendall(b"STATUS\n")
+                trailing = tls_sock.recv(1024)
+            except (OSError, ssl.SSLError):
+                trailing = b""
+            assert not trailing, "Rejected client received an application response"
+
+
+def test_ipc_unsigned_legacy_command_is_rejected_as_authentication(isolated_engine):
+    cfg = isolated_engine
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            parse_challenge(tls_sock)
+            tls_sock.sendall(b"STATUS\n")
+            denial = read_line(tls_sock)
+            assert denial == b"ERR|AUTHENTICATION_FAILED|INVALID_AUTH_REQUEST"
+            assert tls_sock.recv(1024) == b"", "Unsigned command received application output"
+
+
+def test_ipc_valid_signature_from_unregistered_client_is_rejected(isolated_engine):
+    cfg = isolated_engine
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+    private_key = serialization.load_pem_private_key(
+        Path(cfg["auth_private_key"]).read_bytes(), None
+    )
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            challenge = parse_challenge(tls_sock)
+            tls_sock.sendall(signed_auth_request(private_key, "unregistered-client", challenge))
+            assert read_line(tls_sock) == b"ERR|AUTHENTICATION_FAILED|INVALID_SIGNATURE_OR_UNKNOWN_CLIENT"
+
+
+def test_ipc_replayed_challenge_proof_is_rejected(isolated_engine):
+    cfg = isolated_engine
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            first_challenge = parse_challenge(tls_sock)
+            key = serialization.load_pem_private_key(Path(cfg["auth_private_key"]).read_bytes(), password=None)
+            replay = signed_auth_request(key, cfg["auth_client_id"], first_challenge)
+            tls_sock.sendall(replay)
+            assert read_line(tls_sock) == b"ACK|AUTHENTICATED|v1"
+            tls_sock.sendall(b"STATUS\n")
+            assert read_line(tls_sock) == b"ACK|ACTIVE"
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            second_challenge = parse_challenge(tls_sock)
+            assert second_challenge["nonce"] != first_challenge["nonce"]
+            tls_sock.sendall(replay)
+            assert read_line(tls_sock) == b"ERR|AUTHENTICATION_FAILED|CHALLENGE_MISMATCH"
+
+
+def test_ipc_expired_client_timestamp_is_rejected(isolated_engine):
+    cfg = isolated_engine
+    context = ssl.create_default_context(cafile=cfg["ca_crt"])
+    context.load_cert_chain(cfg["admin_crt"], cfg["admin_key"])
+
+    with socket.create_connection(("127.0.0.1", cfg["port"]), timeout=5) as raw:
+        with context.wrap_socket(raw, server_hostname="127.0.0.1") as tls_sock:
+            challenge = parse_challenge(tls_sock)
+            private_key = serialization.load_pem_private_key(
+                Path(cfg["auth_private_key"]).read_bytes(), password=None
+            )
+            stale_request = signed_auth_request(
+                private_key,
+                cfg["auth_client_id"],
+                challenge,
+                client_timestamp=int(time.time()) - 61,
+            )
+            tls_sock.sendall(stale_request)
+            assert read_line(tls_sock) == b"ERR|AUTHENTICATION_FAILED|CLIENT_TIMESTAMP_EXPIRED"
 
 
 def test_ipc_slowloris_stall_enforces_deadline(isolated_engine):
@@ -387,6 +580,7 @@ def test_ipc_fragmented_magic_bytes_succeeds(isolated_engine):
 
     with socket.create_connection(("127.0.0.1", port), timeout=5) as raw_sock:
         with context.wrap_socket(raw_sock, server_hostname="127.0.0.1") as tls_sock:
+            authenticate(tls_sock, cfg["auth_private_key"], cfg["auth_client_id"])
             # Fragment the magic bytes: write 'Q' first
             tls_sock.sendall(header[:1])
             time.sleep(0.05)
@@ -452,6 +646,7 @@ def test_engine_cold_restart_boots_active(isolated_engine):
 
         with socket.create_connection(("127.0.0.1", port), timeout=5) as raw_sock:
             with context.wrap_socket(raw_sock, server_hostname="127.0.0.1") as tls_sock:
+                authenticate(tls_sock, cfg["auth_private_key"], cfg["auth_client_id"])
                 tls_sock.sendall(b"STATUS\n")
                 resp = tls_sock.recv(1024).decode("utf-8", errors="replace")
                 assert resp.strip() == "ACK|ACTIVE", f"Expected ACK|ACTIVE in Epoch-1, got: {resp.strip()}"

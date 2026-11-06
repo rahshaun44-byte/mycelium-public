@@ -14,7 +14,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cctype>
 #include <exception>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -23,6 +29,10 @@
 #include <vector>
 
 #include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rand.h>
+#include <nlohmann/json.hpp>
 
 namespace {
     // RAII guard to guarantee memory zeroization even if exceptions unwind the stack
@@ -95,6 +105,231 @@ namespace {
             }
         }
         return shards;
+    }
+
+    auto ssl_write_all(SSL* ssl, const std::string& message) -> bool {
+        std::size_t written = 0;
+        while (written < message.size()) {
+            const int result = SSL_write(
+                ssl,
+                message.data() + written,
+                static_cast<int>(message.size() - written));
+            if (result <= 0) {
+                return false;
+            }
+            written += static_cast<std::size_t>(result);
+        }
+        return true;
+    }
+
+    auto ssl_read_line(SSL* ssl, std::string& line, std::size_t max_bytes) -> bool {
+        line.clear();
+        while (line.size() < max_bytes) {
+            char byte = '\0';
+            const int result = SSL_read(ssl, &byte, 1);
+            if (result <= 0) {
+                return false;
+            }
+            if (byte == '\n') {
+                return true;
+            }
+            if (byte == '\r' || byte == '\0') {
+                return false;
+            }
+            line.push_back(byte);
+        }
+        return false;
+    }
+
+    auto current_unix_time() -> std::int64_t {
+        return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+
+    auto is_safe_client_id(const std::string& client_id) -> bool {
+        return !client_id.empty() && client_id.size() <= 64 &&
+               client_id != "." && client_id != ".." &&
+               std::all_of(client_id.begin(), client_id.end(), [](unsigned char ch) {
+                   return std::isalnum(ch) != 0 || ch == '.' || ch == '_' || ch == '-';
+               });
+    }
+
+    auto load_trusted_ed25519_key(
+        const std::string& key_directory,
+        const std::string& client_id) -> EVP_PKEY* {
+        std::ifstream registry_file(key_directory + "/registry.json");
+        if (!registry_file.is_open()) {
+            return nullptr;
+        }
+        try {
+            const auto registry = nlohmann::json::parse(registry_file);
+            if (!registry.is_object() || !registry.contains("nodes") || !registry["nodes"].is_array()) {
+                return nullptr;
+            }
+            const nlohmann::json* matched_node = nullptr;
+            for (const auto& node : registry["nodes"]) {
+                if (!node.is_object() || !node.contains("node_id") ||
+                    !node["node_id"].is_string() || node["node_id"] != client_id) {
+                    continue;
+                }
+                if (matched_node != nullptr) {
+                    return nullptr;
+                }
+                matched_node = &node;
+            }
+            if (matched_node == nullptr ||
+                !matched_node->contains("status") ||
+                (*matched_node)["status"] != "authorized" ||
+                !matched_node->contains("algorithms") ||
+                !(*matched_node)["algorithms"].is_object() ||
+                !(*matched_node)["algorithms"].contains("identity_signing") ||
+                (*matched_node)["algorithms"]["identity_signing"] != "Ed25519" ||
+                !matched_node->contains("public_keys") ||
+                !(*matched_node)["public_keys"].is_object() ||
+                !(*matched_node)["public_keys"].contains("ed25519_hex") ||
+                !(*matched_node)["public_keys"]["ed25519_hex"].is_string()) {
+                return nullptr;
+            }
+            const std::string public_key_hex =
+                (*matched_node)["public_keys"]["ed25519_hex"].get<std::string>();
+            if (public_key_hex.size() != 64) {
+                return nullptr;
+            }
+            const std::string public_key_bytes = hex_decode(public_key_hex);
+            if (public_key_bytes.size() != 32) {
+                return nullptr;
+            }
+            return EVP_PKEY_new_raw_public_key(
+                EVP_PKEY_ED25519,
+                nullptr,
+                reinterpret_cast<const unsigned char*>(public_key_bytes.data()),
+                public_key_bytes.size());
+        } catch (const std::exception&) {
+            return nullptr;
+        }
+        return nullptr;
+    }
+
+    auto verify_ed25519_signature(
+        const std::string& key_directory,
+        const std::string& client_id,
+        const std::string& message,
+        const std::string& signature_hex) -> bool {
+        if (signature_hex.size() != 128) {
+            return false;
+        }
+        const std::string signature = hex_decode(signature_hex);
+        if (signature.size() != 64) {
+            return false;
+        }
+
+        EVP_PKEY* public_key = load_trusted_ed25519_key(key_directory, client_id);
+        if (public_key == nullptr || EVP_PKEY_base_id(public_key) != EVP_PKEY_ED25519) {
+            EVP_PKEY_free(public_key);
+            return false;
+        }
+
+        EVP_MD_CTX* context = EVP_MD_CTX_new();
+        const bool valid = context != nullptr &&
+            EVP_DigestVerifyInit(context, nullptr, nullptr, nullptr, public_key) == 1 &&
+            EVP_DigestVerify(
+                context,
+                reinterpret_cast<const unsigned char*>(signature.data()),
+                signature.size(),
+                reinterpret_cast<const unsigned char*>(message.data()),
+                message.size()) == 1;
+        EVP_MD_CTX_free(context);
+        EVP_PKEY_free(public_key);
+        return valid;
+    }
+
+    auto authenticate_ipc_client(SSL* ssl, std::string& client_id, std::string& failure) -> bool {
+        constexpr std::size_t NONCE_SIZE = 32;
+        constexpr std::size_t MAX_AUTH_LINE = 4096;
+        std::array<unsigned char, NONCE_SIZE> nonce_bytes{};
+        if (RAND_bytes(nonce_bytes.data(), static_cast<int>(nonce_bytes.size())) != 1) {
+            failure = "RANDOM_GENERATION_FAILED";
+            return false;
+        }
+
+        std::ostringstream nonce_stream;
+        for (const unsigned char byte : nonce_bytes) {
+            nonce_stream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
+        }
+        const std::string nonce = nonce_stream.str();
+        const std::int64_t server_timestamp = current_unix_time();
+        if (!ssl_write_all(ssl, "QF_AUTH_CHALLENGE|v1|" + std::to_string(server_timestamp) + "|" + nonce + "\n")) {
+            failure = "CHALLENGE_DELIVERY_FAILED";
+            return false;
+        }
+
+        std::string auth_line;
+        if (!ssl_read_line(ssl, auth_line, MAX_AUTH_LINE)) {
+            failure = "MISSING_OR_MALFORMED_AUTH_REQUEST";
+            return false;
+        }
+
+        try {
+            const auto envelope = nlohmann::json::parse(auth_line);
+            if (!envelope.is_object() || envelope.size() != 2 ||
+                !envelope.contains("message") || !envelope.contains("signature") ||
+                !envelope["message"].is_object() || !envelope["signature"].is_string()) {
+                failure = "INVALID_AUTH_ENVELOPE";
+                return false;
+            }
+            const auto& message = envelope["message"];
+            if (message.size() != 5 ||
+                !message.contains("client_id") || !message["client_id"].is_string() ||
+                !message.contains("client_timestamp") || !message["client_timestamp"].is_number_integer() ||
+                !message.contains("nonce") || !message["nonce"].is_string() ||
+                !message.contains("protocol") || !message["protocol"].is_string() ||
+                !message.contains("server_timestamp") || !message["server_timestamp"].is_number_integer()) {
+                failure = "INVALID_AUTH_MESSAGE";
+                return false;
+            }
+
+            client_id = message["client_id"].get<std::string>();
+            if (!is_safe_client_id(client_id) || message["protocol"] != "qf-ipc-auth-v1") {
+                failure = "INVALID_CLIENT_OR_PROTOCOL";
+                return false;
+            }
+            if (message["nonce"].get<std::string>() != nonce ||
+                message["server_timestamp"].get<std::int64_t>() != server_timestamp) {
+                failure = "CHALLENGE_MISMATCH";
+                return false;
+            }
+            const auto client_timestamp = message["client_timestamp"].get<std::int64_t>();
+            if (std::llabs(current_unix_time() - client_timestamp) > 60) {
+                failure = "CLIENT_TIMESTAMP_EXPIRED";
+                return false;
+            }
+
+            const char* configured_key_dir = std::getenv("QF_DEVICE_KEYS_DIR");
+            const char* data_dir = std::getenv("QF_DATA_DIR");
+            if (configured_key_dir == nullptr || *configured_key_dir == '\0') {
+                if (data_dir == nullptr || *data_dir == '\0') {
+                    failure = "TRUSTED_KEY_DIRECTORY_UNCONFIGURED";
+                    return false;
+                }
+                static thread_local std::string default_key_dir;
+                default_key_dir = std::string(data_dir) + "/device_keys";
+                configured_key_dir = default_key_dir.c_str();
+            }
+            const std::string canonical_message =
+                message.dump(-1, ' ', false, nlohmann::json::error_handler_t::strict);
+            if (!verify_ed25519_signature(
+                    configured_key_dir,
+                    client_id,
+                    canonical_message,
+                    envelope["signature"].get<std::string>())) {
+                failure = "INVALID_SIGNATURE_OR_UNKNOWN_CLIENT";
+                return false;
+            }
+        } catch (const std::exception&) {
+            failure = "INVALID_AUTH_REQUEST";
+            return false;
+        }
+        return true;
     }
 
     void ssl_write_str(SSL* ssl, const std::string& msg) {
@@ -362,10 +597,36 @@ namespace quantumflex::ipc {
 
         if (SSL_accept(ssl) <= 0) {
             std::cerr << "[!] mTLS Handshake Failed. Rejecting connection.\n";
+            std::cerr << "AUTH_AUDIT|" << current_unix_time()
+                      << "|unknown|DENY|MTLS_HANDSHAKE_FAILED\n";
             ERR_print_errors_fp(stderr);
             if (sentinel_) {
                 sentinel_->record_drop();
             }
+            SSL_free(ssl);
+            close(client_fd);
+            return true;
+        }
+
+        std::string authenticated_client_id;
+        std::string auth_failure;
+        if (!authenticate_ipc_client(ssl, authenticated_client_id, auth_failure)) {
+            if (sentinel_) {
+                sentinel_->record_drop();
+            }
+            std::cerr << "AUTH_AUDIT|" << current_unix_time() << "|"
+                      << (authenticated_client_id.empty() ? "unknown" : authenticated_client_id)
+                      << "|DENY|" << auth_failure << '\n';
+            ssl_write_all(ssl, "ERR|AUTHENTICATION_FAILED|" + auth_failure + "\n");
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+            close(client_fd);
+            return true;
+        }
+        std::cerr << "AUTH_AUDIT|" << current_unix_time() << "|"
+                  << authenticated_client_id << "|ALLOW|ED25519_CHALLENGE_RESPONSE\n";
+        if (!ssl_write_all(ssl, "ACK|AUTHENTICATED|v1\n")) {
+            SSL_shutdown(ssl);
             SSL_free(ssl);
             close(client_fd);
             return true;

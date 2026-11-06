@@ -53,8 +53,8 @@ END
 $$;
 
 -- Apply passwords injected via psql -v variables
-ALTER ROLE qf_writer WITH PASSWORD :qf_writer_password;
-ALTER ROLE qf_verifier WITH PASSWORD :qf_verifier_password;
+ALTER ROLE qf_writer WITH PASSWORD :'qf_writer_password';
+ALTER ROLE qf_verifier WITH PASSWORD :'qf_verifier_password';
 
 -- Force read-only transactions at the PostgreSQL session engine level for qf_verifier
 ALTER ROLE qf_verifier SET default_transaction_read_only = on;
