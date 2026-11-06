@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import fcntl
 import hashlib
 import json
 import os
@@ -135,7 +136,7 @@ CONSTITUTIONAL_TRIGGERS = [
 
 
 class Archivist:
-    """Maintains an append-only, SHA-256 hash-chained audit log."""
+    """Maintains a verified, append-only SHA-256 hash-chained audit log."""
 
     def __init__(self, log_path: pathlib.Path = AUDIT_LOG_PATH) -> None:
         self.log_path = log_path
@@ -162,37 +163,105 @@ class Archivist:
             return "0" * 64
 
     def record(self, capability: str, event_type: str, details: dict[str, Any]) -> str:
-        prev_hash = self._last_hash()
-        timestamp = dt.datetime.now(dt.timezone.utc).isoformat()
-        payload = {
-            "timestamp": timestamp,
-            "capability": capability,
-            "event_type": event_type,
-            "details": details,
-            "prev_sha256": prev_hash,
-        }
-        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-        entry_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-        payload["entry_sha256"] = entry_hash
-        with self.log_path.open("a", encoding="utf-8") as fh:
+        with self.log_path.open("a+", encoding="utf-8") as fh:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+            valid, _, reason = self._verify_chain_unlocked()
+            if not valid:
+                raise RuntimeError(f"Refusing to append to invalid audit log: {reason}")
+
+            prev_hash = self._last_hash()
+            timestamp = dt.datetime.now(dt.timezone.utc).isoformat()
+            payload = {
+                "timestamp": timestamp,
+                "capability": capability,
+                "event_type": event_type,
+                "details": details,
+                "prev_sha256": prev_hash,
+            }
+            canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            entry_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+            payload["entry_sha256"] = entry_hash
+            fh.seek(0, os.SEEK_END)
             fh.write(json.dumps(payload, sort_keys=True) + "\n")
-        os.chmod(self.log_path, 0o600)
-        return entry_hash
+            fh.flush()
+            os.fsync(fh.fileno())
+            os.chmod(self.log_path, 0o600)
+            return entry_hash
 
     def verify_chain(self) -> tuple[bool, int, str]:
-        if not self.log_path.exists() or self.log_path.stat().st_size == 0:
+        try:
+            fh = self.log_path.open("r", encoding="utf-8")
+        except FileNotFoundError:
             return True, 0, "Audit log initialized (0 entries)."
+        except OSError as exc:
+            return False, 0, f"Unable to read audit log: {exc}"
+
+        with fh:
+            try:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_SH)
+                return self._verify_chain_stream(fh)
+            except UnicodeDecodeError:
+                return False, 0, "Audit log contains invalid UTF-8."
+            except OSError as exc:
+                return False, 0, f"Unable to read audit log: {exc}"
+
+    def _verify_chain_unlocked(self) -> tuple[bool, int, str]:
+        try:
+            with self.log_path.open("r", encoding="utf-8") as fh:
+                return self._verify_chain_stream(fh)
+        except FileNotFoundError:
+            return True, 0, "Audit log initialized (0 entries)."
+        except UnicodeDecodeError:
+            return False, 0, "Audit log contains invalid UTF-8."
+        except OSError as exc:
+            return False, 0, f"Unable to read audit log: {exc}"
+
+    def _verify_chain_stream(self, fh) -> tuple[bool, int, str]:
         expected_prev = "0" * 64
         count = 0
+        expected_fields = {
+            "timestamp",
+            "capability",
+            "event_type",
+            "details",
+            "prev_sha256",
+            "entry_sha256",
+        }
         with self.log_path.open("r", encoding="utf-8") as fh:
             for idx, line in enumerate(fh, start=1):
                 raw = line.strip()
                 if not raw:
                     continue
                 count += 1
-                record = json.loads(raw)
+                try:
+                    record = json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    return False, idx, f"Malformed JSON at entry #{idx}: {exc.msg}."
+                if not isinstance(record, dict):
+                    return False, idx, f"Invalid record type at entry #{idx}."
+                if set(record) != expected_fields:
+                    return False, idx, f"Invalid record schema at entry #{idx}."
+                if (
+                    not isinstance(record["timestamp"], str)
+                    or not isinstance(record["capability"], str)
+                    or not isinstance(record["event_type"], str)
+                    or not isinstance(record["details"], dict)
+                ):
+                    return False, idx, f"Invalid record field types at entry #{idx}."
                 claimed_hash = record.pop("entry_sha256", "")
-                if record.get("prev_sha256") != expected_prev:
+                if (
+                    not isinstance(claimed_hash, str)
+                    or len(claimed_hash) != 64
+                    or any(char not in "0123456789abcdef" for char in claimed_hash)
+                ):
+                    return False, idx, f"Invalid entry_sha256 format at entry #{idx}."
+                if (
+                    not isinstance(record.get("prev_sha256"), str)
+                    or len(record["prev_sha256"]) != 64
+                    or any(char not in "0123456789abcdef" for char in record["prev_sha256"])
+                ):
+                    return False, idx, f"Invalid prev_sha256 format at entry #{idx}."
+                if record["prev_sha256"] != expected_prev:
                     return False, idx, f"Broken prev_sha256 link at entry #{idx}."
                 canonical = json.dumps(record, sort_keys=True, separators=(",", ":"))
                 computed = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -546,13 +615,22 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     archivist = Archivist()
-    memory_vault = MemoryVault()
 
     if args.verify_audit:
         ok, _, msg = archivist.verify_chain()
         status = "PASS" if ok else "FAIL"
         print(f"[AMARA Archivist] {status}: {msg}")
         return 0 if ok else 1
+
+    ok, _, msg = archivist.verify_chain()
+    if not ok:
+        print(
+            f"[AMARA Archivist] FAIL: refusing to start with invalid audit log: {msg}",
+            file=sys.stderr,
+        )
+        return 1
+
+    memory_vault = MemoryVault()
 
     # Always enforce the loopback socket invariant before any action
     loop_ok, loop_msg = enforce_loopback_hardstop()

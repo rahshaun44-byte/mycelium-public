@@ -36,6 +36,8 @@ AMARA prioritizes containment, state preservation, and solvency ($R \ge O$: Rese
 ### Principle IV — Accountability Is Universal
 Every assessment, constitutional challenge, and privileged recommendation is recorded in an append-only, SHA-256 hash-chained audit log (`/home/quant/mycelium/sentinel/amara_audit.jsonl` with `0600` permissions) that is independently verifiable by the Architect at any time.
 
+The Archivist verifies the complete chain and record schema before every append, serializes concurrent writers, and synchronizes successful appends to disk. If verification fails, normal AMARA startup and further writes stop; historical entries are never silently rehashed or repaired. The current source ledger is integrity-unverified at entry 41. Its separately preserved recovery bundle is a new integrity-checked envelope, not proof that the historical entries are authentic.
+
 ---
 
 ## 2. Six Defensive Capabilities (Phase 1 Read-Only Boundary)
@@ -46,7 +48,7 @@ Every assessment, constitutional challenge, and privileged recommendation is rec
 | **Guardian** | Protects identities, file permission boundaries (`0700`/`0600`), and loopback socket invariants (`INADDR_LOOPBACK`). | Read-Only (`stat`, `ss -tulpn`) | Zero read access to shard payloads (`~/qfx-shards-genesis/shard_*.enc` or `/dev/shm`). |
 | **Observer** | Detects anomalous sockets, unauthorized LAN listeners (`0.0.0.0`), and traffic from quarantined peers (`100.64.1.19`). | Read-Only (`ss -tupn`, Tailscale peer state) | Flags anomalies to the Architect; cannot silently drop connections. |
 | **Neutralizer** | Formulates precise containment playbooks (UFW rules, process termination, peer revocation). | Advisory Only | All mutating commands require explicit Architect execution via `[qf-guard]`. |
-| **Archivist** | Maintains a tamper-evident, SHA-256 hash-chained ledger of assessments and constitutional decisions. | Append-Only (`amara_audit.jsonl`) | Cannot truncate, rewrite, or delete historical audit entries. |
+| **Archivist** | Maintains a schema-checked, SHA-256 hash-chained ledger of assessments and constitutional decisions; refuses writes if existing history fails verification. | Verified Append-Only (`amara_audit.jsonl`) | Cannot truncate, rewrite, rehash, or delete historical audit entries. |
 | **Mediator** | Evaluates instructions against the Four Constitutional Principles and the Universal Invariant ($R \ge O$). | Policy Evaluation | Challenges instructions that violate air-gap custody, loopback isolation, or reserve solvency. |
 
 ---
