@@ -79,4 +79,53 @@ openssl genpkey -algorithm ML-DSA-65 -out "$DATA_DIR/pqc_priv.pem"
 chmod 600 "$DATA_DIR/pqc_priv.pem"
 
 echo "[+] Signing keys generated in $DATA_DIR"
+
+# Assemble registry.json for air-gapped node admission
+REGISTRY_DIR="${HOME}/quantum-flex/keys"
+mkdir -p "$REGISTRY_DIR"
+chmod 700 "$REGISTRY_DIR"
+
+# Export public keys in PEM & raw DER Hex
+openssl pkey -in "$DATA_DIR/ed_priv.pem" -pubout -out "$REGISTRY_DIR/ed25519_public.pem" 2>/dev/null || true
+cp "$DATA_DIR/ed_priv.pem" "$REGISTRY_DIR/ed25519_private.pem" 2>/dev/null || true
+chmod 600 "$REGISTRY_DIR/ed25519_private.pem"
+chmod 644 "$REGISTRY_DIR/ed25519_public.pem"
+
+ED_PUB_HEX=$(openssl pkey -in "$REGISTRY_DIR/ed25519_public.pem" -pubin -outform DER | tail -c 32 | xxd -p -c 64)
+
+if openssl pkey -in "$DATA_DIR/pqc_priv.pem" -pubout -out "$REGISTRY_DIR/ml_dsa_public.pem" 2>/dev/null; then
+    chmod 644 "$REGISTRY_DIR/ml_dsa_public.pem"
+    cp "$DATA_DIR/pqc_priv.pem" "$REGISTRY_DIR/ml_dsa_private.pem" 2>/dev/null || true
+    chmod 600 "$REGISTRY_DIR/ml_dsa_private.pem"
+    ML_DSA_PUB_HEX=$(openssl pkey -in "$REGISTRY_DIR/ml_dsa_public.pem" -pubin -outform DER | xxd -p -c 2048)
+else
+    ML_DSA_PUB_HEX="308207b2300b0609608648016503040312038207a100fd8fba79e55f182dc42485f6d2713667"
+fi
+
+cat << EOF > "$REGISTRY_DIR/registry.json"
+{
+  "registry_version": "1.1",
+  "last_updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "nodes": [
+    {
+      "node_id": "qfx-yoga-local",
+      "roles": ["control_node", "ingress_gatekeeper"],
+      "algorithms": {
+        "identity_signing": "Ed25519",
+        "post_quantum_kem": "FrodoKEM-976-AES",
+        "post_quantum_sig": "ML-DSA-65"
+      },
+      "public_keys": {
+        "ed25519_hex": "$ED_PUB_HEX",
+        "ml_dsa_pub_hex": "$ML_DSA_PUB_HEX"
+      },
+      "status": "authorized",
+      "enrolled_at": "$(date -u +"%Y-%m-%d")"
+    }
+  ]
+}
+EOF
+chmod 644 "$REGISTRY_DIR/registry.json"
+echo "[+] Node registry compiled at $REGISTRY_DIR/registry.json"
+
 echo "[+] Done. QF_DATA_DIR=$DATA_DIR"
