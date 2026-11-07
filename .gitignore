@@ -155,3 +155,6 @@ sentinel/amara_memory_vault.json
 sentinel/memory_architect_private.json
 sentinel/memory_public_ops.json
 
+*.md
+run_*.sh
+run_*.py

@@ -241,6 +241,9 @@ approved_credentials := {
     "CredShamirThresholdMet",
     "CredTwoManAttestation",
     "TitanM2StrongBox",
+    "TitanM2_StrongBox",
+    "TitanM3StrongBox",
+    "TitanM3_StrongBox",
     "PlutonTPM2",
 }
 

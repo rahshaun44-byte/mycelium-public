@@ -64,6 +64,9 @@ APPROVED_CREDENTIALS = frozenset({
     "CredShamirThresholdMet",
     "CredTwoManAttestation",
     "TitanM2StrongBox",
+    "TitanM2_StrongBox",
+    "TitanM3StrongBox",
+    "TitanM3_StrongBox",
     "PlutonTPM2",
 })
 

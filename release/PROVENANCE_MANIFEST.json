@@ -3,8 +3,8 @@
     "build_check/quantum_flex_engine": {
       "assurance_level": "QF-A1",
       "description": "Production C++20 engine binary",
-      "sha256": "16c089316fea230c3796244037da1d2d863b30139a81deb7bb0a6e74fd88fd1c",
-      "size_bytes": 1704672
+      "sha256": "8a0ca690a005e5f9c764da1d7d335ba6ad3335951b834a612528588939d41ad8",
+      "size_bytes": 2259040
     },
     "build_check/test_verified_core": {
       "assurance_level": "QF-A1",
@@ -105,11 +105,11 @@
     },
     "source": {
       "branch": "main",
-      "commit": "261ba637400200f8e9f02b0f9893626168fcc215",
+      "commit": "936b5a082f11bdaaadce7c324fb27b24e2f5c24d",
       "dirty_working_tree": true,
       "repository": "quantumflex"
     },
-    "timestamp_utc": "2026-11-04T15:24:48.581349+00:00"
+    "timestamp_utc": "2026-11-07T08:05:58.379161+00:00"
   },
   "predicate_type": "https://slsa.dev/provenance/v1",
   "schema_version": "2.2.0",
