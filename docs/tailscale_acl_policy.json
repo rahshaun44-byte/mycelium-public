@@ -66,12 +66,11 @@
       "action": "accept",
       "src": [
         "autogroup:member",
-        "pixel",
         "tag:mobile"
       ],
       "dst": [
-        "yoga",
         "tag:host",
+        "autogroup:member",
         "autogroup:self"
       ],
       "users": [

@@ -8,29 +8,29 @@
 // https://login.tailscale.com/admin/acls -> Edit as JSON
 // =========================================================================
 {
-	// Tag ownership definitions (enables tag-based authorization & exit-nodes)
+	// 1. Tag ownership definitions (enables tag-based authorization & exit-nodes)
 	"tagOwners": {
 		"tag:host":      ["rahshaun44-byte@github", "autogroup:admin"],
 		"tag:mobile":    ["rahshaun44-byte@github", "autogroup:admin"],
 		"tag:exit-node": ["rahshaun44-byte@github", "autogroup:admin"],
 	},
 
-	// Sovereign Node Hardware Identity Mappings
+	// 2. Sovereign Node Hardware Identity Mappings
 	"hosts": {
 		"yoga":  "100.64.1.31",   // Lenovo Yoga 7 (Primary Host Engine, Local AI & DB)
 		"pixel": "100.64.1.16",  // Google Pixel 11 Pro (Mobile Cockpit HUD & StrongBox Custodian)
 	},
 
-	// Automatic route/exit-node approval
+	// 3. Automatic route & exit-node approval (Zero-click admin approval)
 	"autoApprovers": {
 		"exitNode": ["tag:exit-node"],
 	},
 
-	// Access control rules (Least-Privilege & Fail-Closed)
+	// 4. Access control rules (Least-Privilege & Fail-Closed)
 	"acls": [
-		// 1. Pixel 11 Pro -> Yoga 7: QuantumFlex Mobile Cockpit, Web HUD, APIs & Operator SSH
-		// Allows Tailscale HTTPS Serve (443), Cockpit API (9001), QF-Bot (9000), Dashboard (8000), Gateway (8080), Command Center (8082), Ollama (11434), and SSH (22)
-		// FAILS CLOSED against all unlisted ports (e.g. 5432, 5433, 8181, 9444 are strictly isolated)
+		// Pixel 11 Pro -> Yoga 7: Tactical Cockpit, Web HUD, APIs & Operator SSH
+		// Opens: Tailscale HTTPS Serve (443), Cockpit API (9001), QF-Bot (9000), Dashboard (8000), Gateway (8080), Command Center (8082), Ollama (11434), and SSH (22)
+		// FAILS CLOSED against all unlisted ports: 5432, 5433, 8181, 9444 are completely invisible
 		{
 			"action": "accept",
 			"src": [
@@ -49,7 +49,7 @@
 			],
 		},
 
-		// 2. Yoga 7 -> Pixel 11 Pro: Wireless ADB debugging & cryptographic synchronization
+		// Yoga 7 -> Pixel 11 Pro: Wireless ADB debugging & cryptographic sync
 		{
 			"action": "accept",
 			"src": [
@@ -61,7 +61,7 @@
 			],
 		},
 
-		// 3. Exit Node Routing: Securely routes mobile traffic through Yoga 7 when public Wi-Fi protection is engaged
+		// Exit Node Routing: Encrypts public Wi-Fi/5G traffic from mobile through Yoga 7
 		{
 			"action": "accept",
 			"src": [
@@ -74,18 +74,18 @@
 		},
 	],
 
-	// Tailscale SSH policy: Grants Chief Architect terminal access across sovereign nodes
+	// 5. Tailscale SSH policy
+	// Tailscale SSH requires users/groups/tags in 'src' and 'dst' (host aliases from "hosts" are disallowed here)
 	"ssh": [
 		{
 			"action": "accept",
 			"src": [
 				"autogroup:member",
-				"pixel",
 				"tag:mobile",
 			],
 			"dst": [
-				"yoga",
 				"tag:host",
+				"autogroup:member",
 				"autogroup:self",
 			],
 			"users": [
@@ -96,7 +96,7 @@
 		},
 	],
 
-	// Enforce strict policy tests on save (prevents policy misconfigurations)
+	// 6. Enforce strict policy tests on save (prevents accidental misconfigurations)
 	"tests": [
 		{
 			"src": "pixel",
@@ -130,7 +130,7 @@
 		},
 	],
 
-	// Capabilities and Node Attributes
+	// 7. Node attributes
 	"nodeAttrs": [
 		{
 			"target": ["autogroup:member"],
