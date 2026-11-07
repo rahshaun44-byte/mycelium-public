@@ -19,13 +19,22 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "mcp_layer"))
 sys.path.insert(0, str(ROOT_DIR))
 
-from qf_bot.bot_server import APK_FILE, app
+try:
+    from qf_bot.bot_server import APK_FILE, app
+    HAS_QF_BOT = True
+except ImportError:
+    HAS_QF_BOT = False
+    APK_FILE = Path("/dev/null")
+    app = None
 
 
+@unittest.skipUnless(HAS_QF_BOT, "qf_bot service module in sovereign-isolated mcp_layer is not present in public CI tree")
 class TestMobileOTARoutes(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not HAS_QF_BOT or app is None:
+            raise unittest.SkipTest("qf_bot module not available")
         cls.client = TestClient(app)
 
     def test_mobile_bootstrap_endpoint_does_not_claim_anonymous_client_is_authenticated(self):
