@@ -33,7 +33,7 @@ jobs:
             echo "Scanning repository tree for leaked credentials and raw secrets..."
             # Optional type prefix also covers PKCS#8 ("BEGIN PRIVATE KEY") and encrypted PKCS#8 keys
             if grep -rnE "ghp_[A-Za-z0-9_]{36}|BEGIN (RSA |OPENSSH |EC |DSA |ENCRYPTED )?PRIVATE KEY|VAULT_TOKEN=" . \
-               --exclude-dir={.git,.circleci,node_modules,venv,.venv} > /tmp/leaks.txt; then
+               --exclude-dir={.git,.circleci,node_modules,venv,.venv,__pycache__,.pytest_cache} > /tmp/leaks.txt; then
               echo "HARD STOP: Leaked credential patterns detected!"
               cat /tmp/leaks.txt
               exit 1

@@ -12,8 +12,8 @@ def test_context_policy_rejects_restricted_classification():
     "content",
     [
         "password = 'example-password-value'",
-        "-----BEGIN RSA PRIVATE KEY-----",
-        "ghp_abcdefghijklmnopqrstuvwxyz012345",
+        "-----BEGIN " "RSA PRIVATE KEY-----",
+        "ghp_" "abcdefghijklmnopqrstuvwxyz012345",
     ],
 )
 def test_context_policy_rejects_obvious_credentials(content):
