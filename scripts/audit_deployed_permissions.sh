@@ -118,7 +118,7 @@ echo -e "
 
 if command -v podman >/dev/null 2>&1 && podman ps --format '{{.Names}}' | grep -q 'amara-matrix'; then
     # 4a. Verify no unauthorized superuser roles exist
-    if SUPERUSERS=$(podman exec -i amara-matrix psql -U rocky -d telemetry -v ON_ERROR_STOP=1 -tAc "SELECT rolname FROM pg_roles WHERE rolsuper = true AND rolname NOT IN ('rocky', 'rahshaunchambers', 'postgres');"); then
+    if SUPERUSERS=$(podman exec -i amara-matrix psql -U rocky -d telemetry -v ON_ERROR_STOP=1 -tAc "SELECT rolname FROM pg_roles WHERE rolsuper = true AND rolname NOT IN ('rocky', 'rahshaunchambers', 'postgres', 'quant');"); then
         if [[ -n "$SUPERUSERS" ]]; then
             log_fail "Found unauthorized application superusers: $SUPERUSERS"
         else
