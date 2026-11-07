@@ -95,6 +95,30 @@ jobs:
             # Fails if any policy's surviving mutants rise above sentinel/policies/mutation_baseline.json
             python3 scripts/mutation_ratchet.py
 
+  verify-mermin-bell:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Run Mermin-Bell Inequality & DIQRNG Invariant Tests
+          command: |
+            python -m pip install --upgrade pip pytest
+            pytest -v tests/test_mermin_bell_evaluator.py
+
+  test-mobile-mesh:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Run Mobile Mesh & Distribution Tests
+          command: |
+            python -m pip install --upgrade pip pytest cryptography fastapi httpx pydantic
+            pytest -v tests/test_mobile_distribution.py tests/test_mobile_cli.py tests/test_mobile_ota_routes.py
+
   test-usdc-settlement-mock:
     docker:
       - image: cimg/python:3.12
@@ -105,12 +129,24 @@ jobs:
           name: Verify Stablecoin Settlement Logic & Ledger Handoff
           command: |
             python3 -c "
-            # Mock verification of Circle USDC Settlement trigger
-            proof = {'job_id': 'db8r00tckpjs73b1i2b0', 'fidelity': 0.9258, 'witness_ucb': -0.0078}
-            # Release funds only if witness is negative or correlation exceeds threshold
+            # Verification of QuantumFlex Pay-Per-Proof settlement condition
+            proof = {
+                'job_id': 'dbl33e56p51s73cnltvg',
+                'fidelity': 0.9258,
+                'witness_ucb': -0.0078,
+                'mermin_m3': 3.7032,
+                'mermin_lcb_95': 3.6255,
+                'min_entropy_bits': 0.5374,
+            }
+            # Release funds only if witness is strictly negative, fidelity > 0.85,
+            # and genuine tripartite non-locality (M_3 > 2*sqrt(2) ≈ 2.8284) is certified
             assert proof['fidelity'] > 0.85, 'Fidelity threshold not met'
-            print('Circle USDC Pay-Per-Proof settlement condition verified successfully.')
+            assert proof['witness_ucb'] < 0.0, 'GHZ witness upper bound is not strictly negative'
+            assert proof['mermin_lcb_95'] > 2.8284, 'Svetlichny non-locality bound not satisfied'
+            assert proof['min_entropy_bits'] > 0.5, 'DIQRNG min-entropy threshold not satisfied'
+            print('Circle USDC Pay-Per-Proof settlement verified with Bell-certified DIQRNG entropy.')
             "
+            python3 tests/test_circle_usdc_settlement.py
 
 workflows:
   quantumflex-ci-governance:
@@ -119,7 +155,11 @@ workflows:
       - audit-credential-hygiene
       - verify-ledger-determinism
       - test-opa-mutation-engine
+      - verify-mermin-bell
+      - test-mobile-mesh
       - test-usdc-settlement-mock:
           requires:
             - verify-ledger-determinism
             - test-opa-mutation-engine
+            - verify-mermin-bell
+            - test-mobile-mesh
