@@ -156,5 +156,8 @@ sentinel/memory_architect_private.json
 sentinel/memory_public_ops.json
 
 *.md
+!README.md
+!TRUTH_LOG.md
+!docs/*.md
 run_*.sh
 run_*.py

@@ -5,7 +5,7 @@ import hashlib
 from datetime import datetime, timezone
 
 DOC_DIR = os.path.expanduser("~/mycelium/docs")
-DOC_PATH = os.path.join(DOC_DIR, "TRUTH-LOG-2026-11-05-REFRACTORY-BFT.md")
+DOC_PATH = os.path.join(DOC_DIR, "TRUTH-LOG-2026-11-07-MERMIN-BELL-MOBILE-MESH.md")
 DB_PATH = os.path.expanduser("~/quantum-flex/data/ledger.db")
 
 SPEC_CONTENT = """# QUANTUMFLEX TRUTH LOG & ARCHITECTURAL SPECIFICATION
@@ -27,13 +27,14 @@ QuantumFlex resolves Byzantine fault tolerance (BFT) and TOCTOU race conditions 
 
 def commit_truth_log():
     os.makedirs(DOC_DIR, exist_ok=True)
-    with open(DOC_PATH, "w", encoding="utf-8") as f:
-        f.write(SPEC_CONTENT)
+    if not os.path.exists(DOC_PATH):
+        with open(DOC_PATH, "w", encoding="utf-8") as f:
+            f.write(SPEC_CONTENT)
     
     with open(DOC_PATH, "rb") as f:
         doc_sha256 = hashlib.sha256(f.read()).hexdigest()
-    print(f"[+] Specification written to: {DOC_PATH}")
-    print(f"[+] Document SHA-256 Digest:  {doc_sha256}")
+    print(f"[+] Specification referenced: {DOC_PATH}")
+    print(f"[+] Document SHA-256 Digest:   {doc_sha256}")
 
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -56,7 +57,7 @@ def commit_truth_log():
     prev_hash = last_row[1] if last_row else ("0" * 64)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    event_data = f"TRUTH_LOG_COMMIT:QF-TL-2026-11-05-001:SHA256={doc_sha256}"
+    event_data = f"TRUTH_LOG_COMMIT:QF-TL-2026-11-07-002:SHA256={doc_sha256}"
 
     record_payload = f"{next_id}|{timestamp}|{event_data}|{prev_hash}"
     current_hash = hashlib.sha256(record_payload.encode("utf-8")).hexdigest()
