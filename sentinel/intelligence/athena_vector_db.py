@@ -74,6 +74,22 @@ class AthenaVectorStore:
                     );
                 """)
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_chunks_source ON neural_chunks(source);")
+                conn.execute("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS neural_chunks_fts USING fts5(
+                        content,
+                        source,
+                        tokenize='unicode61'
+                    );
+                """)
+                # Self-healing synchronization of FTS table
+                cur = conn.cursor()
+                cur.execute("SELECT COUNT(*) FROM neural_chunks_fts")
+                fts_c = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM neural_chunks")
+                nc_c = cur.fetchone()[0]
+                if fts_c != nc_c:
+                    conn.execute("DELETE FROM neural_chunks_fts")
+                    conn.execute("INSERT INTO neural_chunks_fts (rowid, content, source) SELECT id, content, source FROM neural_chunks")
         finally:
             conn.close()
 
@@ -303,6 +319,7 @@ class AthenaVectorStore:
         conn = sqlite3.connect(self.db_path)
         try:
             with conn:
+                conn.execute("DELETE FROM neural_chunks_fts WHERE rowid IN (SELECT id FROM neural_chunks WHERE source = ?)", (source,))
                 cur = conn.execute("DELETE FROM neural_chunks WHERE source = ?", (source,))
                 return cur.rowcount
         finally:
@@ -321,9 +338,15 @@ class AthenaVectorStore:
         conn = sqlite3.connect(self.db_path)
         try:
             with conn:
-                conn.execute(
+                cur = conn.cursor()
+                cur.execute(
                     "INSERT INTO neural_chunks (source, content, metadata, embedding, created_at) VALUES (?, ?, ?, ?, ?)",
                     (source, content, json.dumps(metadata, sort_keys=True), json.dumps(embedding), datetime.now().isoformat())
+                )
+                chunk_id = cur.lastrowid
+                conn.execute(
+                    "INSERT INTO neural_chunks_fts (rowid, content, source) VALUES (?, ?, ?)",
+                    (chunk_id, content, source)
                 )
             return True
         finally:
@@ -371,6 +394,24 @@ class AthenaVectorStore:
             cur = conn.cursor()
             cur.execute("SELECT id, source, content, metadata, embedding FROM neural_chunks")
             rows = cur.fetchall()
+
+            # Lexical search via SQLite FTS5
+            lexical_ranks = {}
+            import re
+            tokens = re.findall(r'[\w\d]+', query)
+            if tokens:
+                non_trivial = [t for t in tokens if len(t) > 2][:8]
+                if non_trivial:
+                    fts_query = ' OR '.join([f'"{t}"' for t in non_trivial])
+                    try:
+                        cur.execute(
+                            "SELECT rowid, bm25(neural_chunks_fts) FROM neural_chunks_fts WHERE neural_chunks_fts MATCH ? ORDER BY bm25(neural_chunks_fts) LIMIT 50",
+                            (fts_query,)
+                        )
+                        for l_rank, (rowid, _bm) in enumerate(cur.fetchall(), start=1):
+                            lexical_ranks[rowid] = l_rank
+                    except Exception:
+                        pass
         finally:
             conn.close()
 
@@ -406,20 +447,27 @@ class AthenaVectorStore:
             dot = np.dot(matrix, q_vec)
             norms = np.linalg.norm(matrix, axis=1) * np.linalg.norm(q_vec)
             norms[norms == 0.0] = 1e-9
-            scores = dot / norms
+            cos_scores = dot / norms
 
-            top_indices = np.argsort(scores)[::-1][:top_k]
-            scored = []
-            for idx in top_indices:
+            dense_order = np.argsort(cos_scores)[::-1]
+            scored_candidates = []
+            for d_rank, idx in enumerate(dense_order, start=1):
                 r_id, source, content, meta = filtered_rows[idx]
-                scored.append({
+                cos_sim = float(cos_scores[idx])
+                l_rank = lexical_ranks.get(r_id)
+                # Reciprocal Rank Fusion (RRF) with lexical boost for exact keyword/hash hits
+                rrf_score = (1.0 / (60.0 + d_rank)) + ((1.5 / (60.0 + l_rank)) if l_rank else 0.0)
+                scored_candidates.append({
                     "id": r_id,
                     "source": source,
                     "content": content,
                     "metadata": meta,
-                    "score": float(scores[idx]),
+                    "score": cos_sim,
+                    "rrf_score": rrf_score,
                 })
-            return scored
+
+            scored_candidates.sort(key=lambda x: x["rrf_score"], reverse=True)
+            return scored_candidates[:top_k]
 
         scored = []
         for r_id, source, content, meta_raw, emb_raw in rows:
@@ -430,17 +478,20 @@ class AthenaVectorStore:
                 if allowed_roles is not None and doc_role not in allowed_roles:
                     continue
                 score = cosine_similarity(query_emb, emb)
+                l_rank = lexical_ranks.get(r_id)
+                rrf_score = (1.0 / 61.0) + ((1.5 / (60.0 + l_rank)) if l_rank else 0.0)
                 scored.append({
                     "id": r_id,
                     "source": source,
                     "content": content,
                     "metadata": meta,
-                    "score": score
+                    "score": score,
+                    "rrf_score": rrf_score,
                 })
             except Exception:
                 continue
 
-        scored.sort(key=lambda x: x["score"], reverse=True)
+        scored.sort(key=lambda x: x.get("rrf_score", x["score"]), reverse=True)
         return scored[:top_k]
 
     def count(self) -> int:
@@ -457,6 +508,7 @@ class AthenaVectorStore:
         try:
             with conn:
                 conn.execute("DELETE FROM neural_chunks")
+                conn.execute("DELETE FROM neural_chunks_fts")
         finally:
             conn.close()
 
