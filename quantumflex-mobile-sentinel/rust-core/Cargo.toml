@@ -1,0 +1,11 @@
+[package]
+name = "qflex-edge"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "qflex_edge"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jni = "0.21"
