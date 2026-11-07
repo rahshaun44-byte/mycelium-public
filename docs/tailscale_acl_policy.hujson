@@ -8,7 +8,7 @@
 // https://login.tailscale.com/admin/acls -> Edit as JSON
 // =========================================================================
 {
-	// 1. Tag ownership definitions (enables tag-based authorization & exit-nodes)
+	// 1. Tag ownership definitions (for device tagging & exit nodes)
 	"tagOwners": {
 		"tag:host":      ["rahshaun44-byte@github", "autogroup:admin"],
 		"tag:mobile":    ["rahshaun44-byte@github", "autogroup:admin"],
@@ -75,7 +75,7 @@
 	],
 
 	// 5. Tailscale SSH policy
-	// Tailscale SSH requires users/groups/tags in 'src' and 'dst' (host aliases from "hosts" are disallowed here)
+	// Tailscale SSH destination can ONLY be tags (e.g. tag:host) or autogroup:self
 	"ssh": [
 		{
 			"action": "accept",
@@ -85,7 +85,6 @@
 			],
 			"dst": [
 				"tag:host",
-				"autogroup:member",
 				"autogroup:self",
 			],
 			"users": [

@@ -70,7 +70,6 @@
       ],
       "dst": [
         "tag:host",
-        "autogroup:member",
         "autogroup:self"
       ],
       "users": [
