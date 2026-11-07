@@ -1,17 +1,40 @@
 {
+  "tagOwners": {
+    "tag:host": [
+      "rahshaun44-byte@github",
+      "autogroup:admin"
+    ],
+    "tag:mobile": [
+      "rahshaun44-byte@github",
+      "autogroup:admin"
+    ],
+    "tag:exit-node": [
+      "rahshaun44-byte@github",
+      "autogroup:admin"
+    ]
+  },
   "hosts": {
     "yoga": "100.64.1.31",
     "pixel": "100.64.1.16"
   },
+  "autoApprovers": {
+    "exitNode": [
+      "tag:exit-node"
+    ]
+  },
   "acls": [
     {
       "action": "accept",
-      "src": ["pixel"],
+      "src": [
+        "pixel",
+        "tag:mobile"
+      ],
       "dst": [
         "yoga:22",
         "yoga:443",
         "yoga:8000",
         "yoga:8080",
+        "yoga:8082",
         "yoga:9000",
         "yoga:9001",
         "yoga:11434"
@@ -19,18 +42,43 @@
     },
     {
       "action": "accept",
-      "src": ["yoga"],
+      "src": [
+        "yoga",
+        "tag:host"
+      ],
       "dst": [
         "pixel:5555"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "autogroup:member",
+        "pixel"
+      ],
+      "dst": [
+        "autogroup:internet:*"
       ]
     }
   ],
   "ssh": [
     {
       "action": "accept",
-      "src": ["autogroup:member"],
-      "dst": ["autogroup:self"],
-      "users": ["quant", "autogroup:nonroot", "root"]
+      "src": [
+        "autogroup:member",
+        "pixel",
+        "tag:mobile"
+      ],
+      "dst": [
+        "yoga",
+        "tag:host",
+        "autogroup:self"
+      ],
+      "users": [
+        "quant",
+        "autogroup:nonroot",
+        "root"
+      ]
     }
   ],
   "tests": [
@@ -41,6 +89,7 @@
         "yoga:443",
         "yoga:8000",
         "yoga:8080",
+        "yoga:8082",
         "yoga:9000",
         "yoga:9001",
         "yoga:11434"
@@ -48,6 +97,7 @@
       "deny": [
         "yoga:5432",
         "yoga:5433",
+        "yoga:8181",
         "yoga:9444"
       ]
     },
@@ -65,8 +115,12 @@
   ],
   "nodeAttrs": [
     {
-      "target": ["autogroup:member"],
-      "attr": ["funnel"]
+      "target": [
+        "autogroup:member"
+      ],
+      "attr": [
+        "funnel"
+      ]
     }
   ]
 }
