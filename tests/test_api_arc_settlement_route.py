@@ -6,9 +6,70 @@ Integration Tests for Circle Arc L1 Settlement Route on API Gateway (:8080).
 from fastapi.testclient import TestClient
 import pytest
 
+from api_node import main as api_node_main
 from api_node.main import app
 
-client = TestClient(app)
+API_KEY = "test-api-node-key"
+client = TestClient(app, headers={"x-api-key": API_KEY})
+
+
+@pytest.fixture(autouse=True)
+def api_node_key(monkeypatch):
+    monkeypatch.setenv("API_NODE_KEY", API_KEY)
+
+
+def test_health_status_remains_available_without_api_key():
+    response = TestClient(app).get("/status")
+    assert response.status_code == 200
+    assert response.json()["api_node"] == "ONLINE"
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "payload"),
+    [
+        ("post", "/query", {"question": "test"}),
+        ("get", "/api/invariant", None),
+        ("post", "/api/invariant/evaluate", {}),
+        ("post", "/api/v1/settlement/arc", {}),
+    ],
+)
+def test_sensitive_routes_require_api_key(method, path, payload):
+    unauthenticated_client = TestClient(app)
+    if method == "get":
+        response = unauthenticated_client.get(path)
+    else:
+        response = unauthenticated_client.post(path, json=payload)
+    assert response.status_code == 401
+
+
+def test_sensitive_routes_fail_closed_when_key_is_unconfigured(monkeypatch):
+    monkeypatch.delenv("API_NODE_KEY", raising=False)
+    monkeypatch.delenv("DASHBOARD_API_KEY", raising=False)
+
+    client_with_supplied_key = TestClient(app, headers={"x-api-key": API_KEY})
+    response = client_with_supplied_key.get("/api/invariant")
+    assert response.status_code == 401
+
+
+def test_existing_dashboard_key_fallback_remains_compatible(monkeypatch):
+    monkeypatch.delenv("API_NODE_KEY", raising=False)
+    monkeypatch.setenv("DASHBOARD_API_KEY", API_KEY)
+    monkeypatch.setattr(
+        api_node_main,
+        "evaluate_all_invariants",
+        lambda evaluator: {"all_allowed": True, "overall_verdict": "ALLOW"},
+    )
+
+    client_with_dashboard_key = TestClient(app, headers={"x-api-key": API_KEY})
+    response = client_with_dashboard_key.get("/api/invariant")
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+
+def test_sensitive_routes_reject_invalid_api_key():
+    client_with_invalid_key = TestClient(app, headers={"x-api-key": "wrong-key"})
+    response = client_with_invalid_key.get("/api/invariant")
+    assert response.status_code == 401
 
 
 def test_arc_settlement_route_nominal_dry_run():

@@ -23,6 +23,12 @@ import tarfile
 import tempfile
 import time
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from qf_ipc_auth import AuthenticationError, authenticate
+
 REPO = Path(__file__).resolve().parents[1]
 DATA_DIR = Path.home() / ".local/share/quantum-flex-mycelium"
 STATE_DIR = Path.home() / ".local/state/quantum-flex-mycelium"
@@ -32,6 +38,7 @@ LEDGER_DAT = DATA_DIR / "ledger.dat"
 MTLS_DIR = DATA_DIR / "mtls"
 ED_KEY = DATA_DIR / "ed_priv.pem"
 PQC_KEY = DATA_DIR / "pqc_priv.pem"
+PROBE_CLIENT_ID = "qfx-spore-probe"
 
 EXPECTED_ENGINE_SHA256 = "601f3e0207a45ad0dd1ebf39afae7242d38d19437eed4951b3b39b6acafba9d1"
 EXPECTED_GENESIS_LEDGER_SHA256 = "1d479c6ac6df98ab502d0efe536fc8edbdce63d0e13294c33e38f63d259407b9"
@@ -44,6 +51,24 @@ def file_sha256(path: Path) -> str:
         while chunk := f.read(65536):
             h.update(chunk)
     return h.hexdigest()
+
+
+def create_probe_identity(device_keys_dir: Path, private_key_path: Path) -> None:
+    key = Ed25519PrivateKey.generate()
+    device_keys_dir.mkdir(parents=True, exist_ok=True)
+    private_key_path.parent.mkdir(parents=True, exist_ok=True)
+    private_key_path.write_bytes(key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    private_key_path.chmod(0o600)
+    public_key_path = device_keys_dir / f"{PROBE_CLIENT_ID}.pem"
+    public_key_path.write_bytes(key.public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    ))
+    public_key_path.chmod(0o644)
 
 
 SPROUT_SCRIPT_TEMPLATE = """#!/usr/bin/env bash
@@ -65,6 +90,7 @@ export QF_BIND_PORT="${PORT}"
 export QF_SERVER_CERT="${SPORE_DIR}/data/mtls/server.crt"
 export QF_SERVER_KEY="${SPORE_DIR}/data/mtls/server.key"
 export QF_ROOT_CA="${SPORE_DIR}/data/mtls/ca.crt"
+export QF_DEVICE_KEYS_DIR="${SPORE_DIR}/data/device_keys"
 export QF_ED_PRIVATE_KEY="${SPORE_DIR}/data/ed_priv.pem"
 export QF_PQC_PRIVATE_KEY="${SPORE_DIR}/data/pqc_priv.pem"
 
@@ -99,12 +125,16 @@ def sporulate(output_archive: Path, include_node_keys: bool = True) -> Path:
         data_dir = tmppath / "data"
         meta_dir = tmppath / "meta"
         mtls_out = data_dir / "mtls"
+        device_keys_out = data_dir / "device_keys"
+        scripts_out = tmppath / "scripts"
 
         bin_dir.mkdir(parents=True)
         lib_dir.mkdir(parents=True)
         data_dir.mkdir(parents=True)
         meta_dir.mkdir(parents=True)
         mtls_out.mkdir(parents=True)
+        device_keys_out.mkdir(parents=True)
+        scripts_out.mkdir(parents=True)
 
         # 1. Binary & Shared Libraries
         shutil.copy2(ENGINE_BIN, bin_dir / "quantum_flex_engine")
@@ -131,6 +161,11 @@ def sporulate(output_archive: Path, include_node_keys: bool = True) -> Path:
                 shutil.copy2(ED_KEY, data_dir / "ed_priv.pem")
             if PQC_KEY.is_file():
                 shutil.copy2(PQC_KEY, data_dir / "pqc_priv.pem")
+            shutil.copy2(
+                Path.home() / "quantum-flex/keys/ed25519_public.pem",
+                device_keys_out / "qfx-yoga-local.pem",
+            )
+        shutil.copy2(REPO / "scripts/qf_ipc_auth.py", scripts_out / "qf_ipc_auth.py")
 
         # 5. Sprout script
         sprout_path = tmppath / "sprout"
@@ -162,8 +197,16 @@ def sporulate(output_archive: Path, include_node_keys: bool = True) -> Path:
     return output_archive
 
 
-def probe_mtls(host: str, port: int, ca_file: Path, client_cert: Path, client_key: Path, timeout: float = 3.0) -> dict:
-    """Probes the sprouted node via mTLS socket."""
+def probe_mtls(
+    host: str,
+    port: int,
+    ca_file: Path,
+    client_cert: Path,
+    client_key: Path,
+    signing_key_path: Path,
+    timeout: float = 3.0,
+) -> dict:
+    """Proves both mTLS transport and the enrolled Ed25519 device identity."""
     ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=str(ca_file))
     ctx.load_cert_chain(certfile=str(client_cert), keyfile=str(client_key))
     ctx.check_hostname = False
@@ -172,9 +215,10 @@ def probe_mtls(host: str, port: int, ca_file: Path, client_cert: Path, client_ke
     s.settimeout(timeout)
     with ctx.wrap_socket(s, server_side=False) as ss:
         ss.connect((host, port))
+        authenticate(ss, signing_key_path, PROBE_CLIENT_ID)
         cert = ss.getpeercert()
         return {
-            "status": "connected",
+            "status": "authenticated",
             "peer_subject": dict(x[0] for x in cert.get("subject", [])),
             "cipher": ss.cipher(),
             "version": ss.version()
@@ -199,6 +243,8 @@ def pop_out_test(spore_tar: Path, test_port: int = 19444) -> bool:
         ca_file = data_dir / "mtls/ca.crt"
         client_cert = data_dir / "mtls/client.crt"
         client_key = data_dir / "mtls/client.key"
+        probe_signing_key = test_path / "probe-auth-private.pem"
+        create_probe_identity(data_dir / "device_keys", probe_signing_key)
 
         if not engine_bin.is_file():
             raise RuntimeError("Corrupt spore: engine binary missing")
@@ -211,6 +257,7 @@ def pop_out_test(spore_tar: Path, test_port: int = 19444) -> bool:
         env["QF_SERVER_CERT"] = str(data_dir / "mtls/server.crt")
         env["QF_SERVER_KEY"] = str(data_dir / "mtls/server.key")
         env["QF_ROOT_CA"] = str(ca_file)
+        env["QF_DEVICE_KEYS_DIR"] = str(data_dir / "device_keys")
         env["QF_ED_PRIVATE_KEY"] = str(data_dir / "ed_priv.pem")
         env["QF_PQC_PRIVATE_KEY"] = str(data_dir / "pqc_priv.pem")
 
@@ -236,10 +283,26 @@ def pop_out_test(spore_tar: Path, test_port: int = 19444) -> bool:
                     print(f"[!] Engine exited prematurely with code {proc.returncode}")
                     break
                 try:
-                    probe_result = probe_mtls("127.0.0.1", test_port, ca_file, client_cert, client_key, timeout=1.0)
+                    probe_result = probe_mtls(
+                        "127.0.0.1",
+                        test_port,
+                        ca_file,
+                        client_cert,
+                        client_key,
+                        probe_signing_key,
+                        timeout=1.0,
+                    )
                     connected = True
                     break
-                except (ConnectionRefusedError, socket.timeout, ssl.SSLError, OSError):
+                except AuthenticationError as exc:
+                    print(f"[!] Ed25519 admission rejected: {exc}")
+                    return False
+                except (ConnectionRefusedError, socket.timeout):
+                    continue
+                except ConnectionError as exc:
+                    print(f"[!] IPC authentication exchange failed: {exc}")
+                    return False
+                except (ssl.SSLError, OSError):
                     continue
 
             if not connected:
@@ -304,6 +367,8 @@ def remote_pop_out_test(spore_tar: Path, host: str, port: int = 19444) -> bool:
     remote_python_script = f'''
 import os, sys, time, signal, socket, ssl, subprocess, tempfile, tarfile
 from pathlib import Path
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 spore_tar = Path("{remote_tmp}")
 try:
@@ -315,6 +380,20 @@ try:
         engine_bin = spore_root / "bin/quantum_flex_engine"
         data_dir = spore_root / "data"
         lib_dir = spore_root / "lib"
+        probe_signing_key = tmppath / "probe-auth-private.pem"
+        probe_key = Ed25519PrivateKey.generate()
+        probe_signing_key.write_bytes(probe_key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        ))
+        probe_signing_key.chmod(0o600)
+        device_keys_dir = data_dir / "device_keys"
+        device_keys_dir.mkdir(parents=True, exist_ok=True)
+        (device_keys_dir / "qfx-spore-probe.pem").write_bytes(probe_key.public_key().public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        ))
 
         env = os.environ.copy()
         env["LD_LIBRARY_PATH"] = f"{{lib_dir}}:{{env.get('LD_LIBRARY_PATH', '')}}"
@@ -324,6 +403,7 @@ try:
         env["QF_SERVER_CERT"] = str(data_dir / "mtls/server.crt")
         env["QF_SERVER_KEY"] = str(data_dir / "mtls/server.key")
         env["QF_ROOT_CA"] = str(data_dir / "mtls/ca.crt")
+        env["QF_DEVICE_KEYS_DIR"] = str(data_dir / "device_keys")
         env["QF_ED_PRIVATE_KEY"] = str(data_dir / "ed_priv.pem")
         env["QF_PQC_PRIVATE_KEY"] = str(data_dir / "pqc_priv.pem")
 
@@ -338,6 +418,8 @@ try:
             if proc.poll() is not None:
                 break
             try:
+                sys.path.insert(0, str(spore_root / "scripts"))
+                from qf_ipc_auth import AuthenticationError, authenticate
                 ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=str(data_dir / "mtls/ca.crt"))
                 ctx.load_cert_chain(certfile=str(data_dir / "mtls/client.crt"), keyfile=str(data_dir / "mtls/client.key"))
                 ctx.check_hostname = False
@@ -345,10 +427,19 @@ try:
                 s.settimeout(1.0)
                 with ctx.wrap_socket(s, server_side=False) as ss:
                     ss.connect(("127.0.0.1", {port}))
+                    authenticate(ss, probe_signing_key, "qfx-spore-probe")
                     print("[+] Remote node sprouted and verified via mTLS! Peer:", dict(x[0] for x in ss.getpeercert()["subject"]))
                     connected = True
                     break
-            except Exception:
+            except AuthenticationError as exc:
+                print("[!] Remote Ed25519 admission rejected:", exc)
+                sys.exit(1)
+            except (ConnectionRefusedError, socket.timeout):
+                continue
+            except ConnectionError as exc:
+                print("[!] Remote IPC authentication exchange failed:", exc)
+                sys.exit(1)
+            except (ssl.SSLError, OSError):
                 continue
 
         if not connected:
@@ -426,4 +517,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

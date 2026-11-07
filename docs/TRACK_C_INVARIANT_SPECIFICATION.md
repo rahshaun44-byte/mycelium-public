@@ -92,11 +92,16 @@ python qflex.py status
 
 ### Mobile / REST API (`:8080`):
 ```bash
+# Load DASHBOARD_API_KEY from the protected API Node service configuration.
+: "${DASHBOARD_API_KEY:?DASHBOARD_API_KEY must be configured}"
+
 # Check composite status
-curl -s http://127.0.0.1:8080/api/invariant | jq .
+curl -s -H "x-api-key: ${DASHBOARD_API_KEY}" \
+  http://127.0.0.1:8080/api/invariant | jq .
 
 # Submit physical sensor reading
 curl -s -X POST http://127.0.0.1:8080/api/invariant/evaluate \
+  -H "x-api-key: ${DASHBOARD_API_KEY}" \
   -H "Content-Type: application/json" \
   -H "X-Operator-ID: mobile_operator" \
   -d '{"domain": "physical", "resource_type": "WATER_GALLONS", "reserve_measured": 500, "units_claimed": 350, "requested_delta": 50}' | jq .

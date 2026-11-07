@@ -67,6 +67,7 @@ Quantum Flex is a multi-stratum, defense-in-depth biological computing and telem
 4. **Autonomous Swarm ("The Claw")**:
    - **`controller.py`**: Decomposes natural language directives into atomic tasks stored in the PostgreSQL `task_queue`.
    - **`swarm_worker.py`**: Worker daemon polling `task_queue` with `FOR UPDATE SKIP LOCKED` to ensure zero race conditions.
+   - **Task continuity**: PostgreSQL remains authoritative; `mcp_layer/task_checkpoint.py` atomically mirrors sanitized hashes/state into private local files and reconciles them on recovery. Run `/home/quant/mycelium/venv/bin/python3 /home/quant/mycelium/scripts/task_checkpoint.py self-test` to verify persistence and fresh-process recovery without service restarts. See `docs/AMARA_ATHENA_CONTINUITY.md`.
 
 ---
 

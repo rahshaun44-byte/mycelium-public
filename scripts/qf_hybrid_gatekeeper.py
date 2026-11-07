@@ -24,6 +24,7 @@ import zlib
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from qf_ipc_auth import authenticate
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -301,7 +302,15 @@ def recv_frame(sock) -> bytes:
     payload = recv_exact(sock, chunk_len) if chunk_len > 0 else b""
     return hdr + payload
 
-def perform_live_handshake(host: str, port: int, ca_file: str, cert_file: str, key_file: str) -> bool:
+def perform_live_handshake(
+    host: str,
+    port: int,
+    ca_file: str,
+    cert_file: str,
+    key_file: str,
+    signing_key_file: str,
+    client_id: str,
+) -> bool:
     print(f"[*] Initiating mTLS connection to {host}:{port}...")
     t0 = time.perf_counter()
 
@@ -318,6 +327,8 @@ def perform_live_handshake(host: str, port: int, ca_file: str, cert_file: str, k
         tls_sock.connect((host, port))
         t_conn = time.perf_counter()
         print(f"[+] mTLS socket connected in {(t_conn - t0)*1000:.2f}ms")
+        authenticate(tls_sock, signing_key_file, client_id)
+        print("[+] Ed25519 challenge-response authenticated.")
 
         # Step 1: Request Server Hybrid Public Key
         req_frame = serialize_frame(MSG_KEM_PK, 0, 1, b"")
@@ -385,6 +396,15 @@ def main() -> int:
     parser.add_argument("--ca", help="CA certificate PEM")
     parser.add_argument("--cert", help="Client certificate PEM")
     parser.add_argument("--key", help="Client private key PEM")
+    parser.add_argument(
+        "--signing-key",
+        default=os.environ.get(
+            "QF_IPC_SIGNING_KEY",
+            str(Path.home() / "quantum-flex/keys/ed25519_private.pem"),
+        ),
+        help="Ed25519 IPC signing key PEM",
+    )
+    parser.add_argument("--client-id", default=os.environ.get("QF_IPC_CLIENT_ID", "qfx-yoga-local"))
     args = parser.parse_args()
 
     if args.test_unit:
@@ -392,12 +412,20 @@ def main() -> int:
         return 0
 
     if args.ca and args.cert and args.key:
-        success = perform_live_handshake(args.host, args.port, args.ca, args.cert, args.key)
+        success = perform_live_handshake(
+            args.host,
+            args.port,
+            args.ca,
+            args.cert,
+            args.key,
+            args.signing_key,
+            args.client_id,
+        )
         return 0 if success else 1
 
     print("Usage:")
     print("  python scripts/qf_hybrid_gatekeeper.py --test-unit")
-    print("  python scripts/qf_hybrid_gatekeeper.py --ca <ca.crt> --cert <client.crt> --key <client.key> [--host 127.0.0.1] [--port 9443]")
+    print("  python scripts/qf_hybrid_gatekeeper.py --ca <ca.crt> --cert <client.crt> --key <client.key> [--signing-key <ed25519.pem>] [--client-id qfx-yoga-local] [--host 127.0.0.1] [--port 9443]")
     return 0
 
 

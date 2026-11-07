@@ -169,7 +169,9 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 * **Policy Invariant Check (Cross-Mesh Validation):**
 
 ```bash
-curl -s http://100.64.1.17:8080/api/invariant | jq
+: "${DASHBOARD_API_KEY:?Load DASHBOARD_API_KEY from the protected API Node configuration}"
+curl -s -H "x-api-key: ${DASHBOARD_API_KEY}" \
+  http://100.64.1.17:8080/api/invariant | jq
 ```
 ```json
 {

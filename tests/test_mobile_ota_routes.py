@@ -28,14 +28,16 @@ class TestMobileOTARoutes(unittest.TestCase):
     def setUpClass(cls):
         cls.client = TestClient(app)
 
-    def test_mobile_bootstrap_endpoint(self):
-        """Bootstrap endpoint proves service identity, verifiable signing key, and QF-LEGAL-001 governance."""
+    def test_mobile_bootstrap_endpoint_does_not_claim_anonymous_client_is_authenticated(self):
+        """Bootstrap reports caller authentication separately from service identity."""
         resp = self.client.get("/mobile/bootstrap")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertEqual(data.get("service"), "quantumflex-qf-bot")
         self.assertEqual(data.get("schema"), "qf-mobile-v1")
-        self.assertTrue(data.get("authenticated"))
+        self.assertFalse(data.get("authenticated"))
+        self.assertFalse(data.get("authorized"))
+        self.assertEqual(data.get("authentication_method"), "none")
         self.assertIn("signed-ota-distribution", data.get("capabilities", []))
 
         # Cryptographic Identity & Verification Procedure Verification (Beyond boolean true)

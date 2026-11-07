@@ -14,6 +14,11 @@ import argparse
 import ssl
 import socket
 import sys
+import os
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from qf_ipc_auth import AuthenticationError, authenticate
 
 MAX_INPUT_BYTES = 65536
 ACK_CODES = {'ACK|HARVESTER_KEY_SET', 'ACK|EVIDENCE_ACCEPTED',
@@ -29,9 +34,23 @@ ERROR_CODES = {'ERR|UNAUTHORIZED_HARVESTER_MUTATION', 'ERR|HARVESTER_KEY_REJECTE
                'ERR|NODE_UNINITIALIZED_CALL_INIT', 'ERR|NODE_LOCKED', 'ERR|INVALID_STATE'}
 
 
-def transmit(payload, host, port, cert, key, ca, expected) -> int:
+def transmit(
+    payload,
+    host,
+    port,
+    cert,
+    key,
+    ca,
+    expected,
+    signing_key=None,
+    client_id="qfx-yoga-local",
+) -> int:
     """Send a checked bytes-like request; the caller owns payload memory wiping."""
     try:
+        signing_key = signing_key or os.environ.get(
+            "QF_IPC_SIGNING_KEY",
+            str(Path.home() / "quantum-flex/keys/ed25519_private.pem"),
+        )
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.minimum_version = ssl.TLSVersion.TLSv1_3
         context.load_verify_locations(cafile=ca)
@@ -39,6 +58,8 @@ def transmit(payload, host, port, cert, key, ca, expected) -> int:
 
         with socket.create_connection((host, port), timeout=10) as sock:
             with context.wrap_socket(sock, server_hostname=host) as tls_sock:
+                tls_sock.settimeout(10)
+                authenticate(tls_sock, signing_key, client_id)
                 tls_sock.sendall(memoryview(payload))
                 response_bytes = bytearray()
                 while len(response_bytes) <= 4096:
@@ -63,6 +84,9 @@ def transmit(payload, host, port, cert, key, ca, expected) -> int:
             return 1
         print(response)
         return 0
+    except AuthenticationError as exc:
+        print(f"[!] IPC authentication failed: {exc}", file=sys.stderr)
+        return 1
     except (OSError, UnicodeError):
         print('[!] IPC transport failed.', file=sys.stderr)
         return 1
@@ -75,6 +99,15 @@ def main() -> int:
     parser.add_argument("--cert", required=True, help="Client certificate PEM")
     parser.add_argument("--key", required=True, help="Client private key PEM")
     parser.add_argument("--ca", required=True, help="Root CA PEM used to verify the server")
+    parser.add_argument(
+        "--signing-key",
+        default=os.environ.get(
+            "QF_IPC_SIGNING_KEY",
+            str(Path.home() / "quantum-flex/keys/ed25519_private.pem"),
+        ),
+        help="Ed25519 IPC signing key PEM",
+    )
+    parser.add_argument("--client-id", default=os.environ.get("QF_IPC_CLIENT_ID", "qfx-yoga-local"))
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--stdin', action='store_true', help='Read one protocol line from protected stdin')
     source.add_argument('--interactive-unlock', action='store_true', help=argparse.SUPPRESS)
@@ -110,7 +143,17 @@ def main() -> int:
             elif payload.startswith(b'INIT|'):
                 expected = 'ACK|GENESIS_SECURED'
 
-        return transmit(payload, args.host, args.port, args.cert, args.key, args.ca, expected)
+        return transmit(
+            payload,
+            args.host,
+            args.port,
+            args.cert,
+            args.key,
+            args.ca,
+            expected,
+            args.signing_key,
+            args.client_id,
+        )
     except (OSError, UnicodeError):
         print('[!] IPC transport failed.', file=sys.stderr)
         return 1

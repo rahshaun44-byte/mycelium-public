@@ -14,11 +14,16 @@ import time
 import json
 import os
 import socket
+from pathlib import Path
 from kafka import KafkaConsumer
+
+from qf_ipc_auth import authenticate
 
 CA_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/ca.crt"
 CERT_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/client.crt"
 KEY_PATH = "/home/quant/.local/share/quantum-flex-mycelium/mtls/client.key"
+SIGNING_KEY_PATH = Path.home() / "quantum-flex/keys/ed25519_private.pem"
+CLIENT_ID = os.getenv("QF_IPC_CLIENT_ID", "qfx-yoga-local")
 KAFKA_BROKER = os.getenv("QF_KAFKA_BROKER", "127.0.0.1:9092")
 TOPIC = "qf-telemetry"
 
@@ -36,8 +41,9 @@ def send_wire_payload(raw_bytes: bytes, timeout=2.0) -> bytes:
     ctx = get_ssl_context()
     with socket.create_connection(("127.0.0.1", 9444), timeout=timeout) as raw_sock:
         with ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1") as s:
-            s.write(raw_bytes)
             s.settimeout(timeout)
+            authenticate(s, SIGNING_KEY_PATH, CLIENT_ID)
+            s.write(raw_bytes)
             try:
                 return s.read(4096)
             except (socket.timeout, TimeoutError):
@@ -115,4 +121,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

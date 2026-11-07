@@ -1,6 +1,6 @@
 from typing import Optional, Any, Dict, List
 import hmac
-from fastapi import HTTPException, FastAPI, Request
+from fastapi import Depends, HTTPException, FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -124,7 +124,7 @@ async def system_status():
     }
 
 
-@app.post("/query")
+@app.post("/query", dependencies=[Depends(verify_api_node_auth)])
 async def query_athena(request: Request):
     """Route a RAG query to the Athena node."""
     data = await request.json()
@@ -210,7 +210,7 @@ async def webhook_ingest(request: Request):
         return {"status": "fatal", "error": str(e)}
 
 
-@app.get("/api/invariant")
+@app.get("/api/invariant", dependencies=[Depends(verify_api_node_auth)])
 async def get_invariant_status():
     """Returns real-time Universal Invariant Gate status (R >= O) for Digital and Physical Strata."""
     if not evaluate_all_invariants:
@@ -225,7 +225,7 @@ async def get_invariant_status():
         return {"status": "error", "message": str(e)}
 
 
-@app.post("/api/invariant/evaluate")
+@app.post("/api/invariant/evaluate", dependencies=[Depends(verify_api_node_auth)])
 async def evaluate_custom_invariant(request: Request):
     """
     Submits a custom or physical telemetry vector to the OPA Invariant Gate.
@@ -575,7 +575,7 @@ class ArcSettlementRequest(BaseModel):
 COMMITTED_SETTLEMENT_IDEMPOTENCY_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
 
-@app.post("/api/v1/settlement/arc")
+@app.post("/api/v1/settlement/arc", dependencies=[Depends(verify_api_node_auth)])
 async def execute_arc_usdc_settlement(payload: ArcSettlementRequest) -> JSONResponse:
     """
     Executes a micro-settlement on Circle Arc L1 using native USDC gas,
@@ -637,4 +637,3 @@ if __name__ == "__main__":
     api_port = int(os.environ.get("API_NODE_PORT", 8080))
     api_host = os.environ.get("API_NODE_HOST", "127.0.0.1")
     uvicorn.run(app, host=api_host, port=api_port)
-

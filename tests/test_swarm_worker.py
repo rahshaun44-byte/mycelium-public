@@ -124,6 +124,7 @@ def test_process_claimed_task_releases_on_complete_failure(monkeypatch):
 
 
 def test_release_claimed_task_only_touches_running_rows(monkeypatch):
+    monkeypatch.setattr(swarm_worker, "checkpoint_task", lambda task_id: None)
     cur = _FakeCursor()
     conn = _FakeConn(cur)
     monkeypatch.setattr(swarm_worker, "get_db", lambda: conn)
@@ -135,4 +136,18 @@ def test_release_claimed_task_only_touches_running_rows(monkeypatch):
     assert "status = 'RUNNING'" in sql
     assert params[1] == 99
     assert "password" not in params[0].lower()
+    assert conn.committed is True
+
+
+def test_poll_claim_persists_local_checkpoint(monkeypatch):
+    cur = _FakeCursor(row={"id": 88, "task_payload": {"action": "test"}})
+    conn = _FakeConn(cur)
+    saved = []
+    monkeypatch.setattr(swarm_worker, "get_db", lambda: conn)
+    monkeypatch.setattr(swarm_worker, "checkpoint_task", lambda task_id: saved.append(task_id))
+
+    task = swarm_worker.poll_task()
+
+    assert task["id"] == 88
+    assert saved == [88]
     assert conn.committed is True
