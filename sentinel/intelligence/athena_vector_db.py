@@ -329,6 +329,33 @@ class AthenaVectorStore:
         finally:
             conn.close()
 
+    def get_source_sha256(self, source: str) -> Optional[str]:
+        """Retrieves the doc_sha256 for a given source document if present in metadata."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT metadata FROM neural_chunks WHERE source = ? LIMIT 1", (source,))
+            row = cur.fetchone()
+            if row and row[0]:
+                try:
+                    meta = json.loads(row[0])
+                    return meta.get("doc_sha256")
+                except Exception:
+                    return None
+            return None
+        finally:
+            conn.close()
+
+    def get_all_sources(self) -> List[str]:
+        """Returns all distinct source document names currently indexed."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT DISTINCT source FROM neural_chunks")
+            return [r[0] for r in cur.fetchall()]
+        finally:
+            conn.close()
+
     def similarity_search(
         self,
         query: str,
@@ -346,6 +373,53 @@ class AthenaVectorStore:
             rows = cur.fetchall()
         finally:
             conn.close()
+
+        if not rows:
+            return []
+
+        try:
+            import numpy as np
+            has_np = True
+        except ImportError:
+            has_np = False
+
+        if has_np:
+            filtered_rows = []
+            emb_list = []
+            for r_id, source, content, meta_raw, emb_raw in rows:
+                try:
+                    meta = json.loads(meta_raw) if meta_raw else {}
+                    doc_role = meta.get("access_role", "sovereign_internal")
+                    if allowed_roles is not None and doc_role not in allowed_roles:
+                        continue
+                    emb = json.loads(emb_raw)
+                    filtered_rows.append((r_id, source, content, meta))
+                    emb_list.append(emb)
+                except Exception:
+                    continue
+
+            if not filtered_rows:
+                return []
+
+            matrix = np.array(emb_list, dtype=np.float32)
+            q_vec = np.array(query_emb, dtype=np.float32)
+            dot = np.dot(matrix, q_vec)
+            norms = np.linalg.norm(matrix, axis=1) * np.linalg.norm(q_vec)
+            norms[norms == 0.0] = 1e-9
+            scores = dot / norms
+
+            top_indices = np.argsort(scores)[::-1][:top_k]
+            scored = []
+            for idx in top_indices:
+                r_id, source, content, meta = filtered_rows[idx]
+                scored.append({
+                    "id": r_id,
+                    "source": source,
+                    "content": content,
+                    "metadata": meta,
+                    "score": float(scores[idx]),
+                })
+            return scored
 
         scored = []
         for r_id, source, content, meta_raw, emb_raw in rows:

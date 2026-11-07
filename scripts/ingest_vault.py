@@ -78,6 +78,7 @@ def chunk_document(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[Tuple[in
 
 
 def main():
+    force_rebuild = "--clean" in sys.argv or "--force" in sys.argv
     vault_dir = ROOT_DIR / "knowledge_vault"
     if not vault_dir.exists():
         print(f"[-] Knowledge vault not found at: {vault_dir}")
@@ -90,18 +91,41 @@ def main():
         print(f"[-] No .md or .txt files found in {vault_dir}")
         return 1
 
-    # Purge any orphaned or duplicate chunks before clean idempotent pass
-    store.clear()
+    if force_rebuild:
+        print("[!] Force clean rebuild requested. Purging vector store...")
+        store.clear()
+    else:
+        # Purge any deleted files that no longer exist on disk
+        on_disk_names = {p.name for p in files}
+        indexed_sources = store.get_all_sources()
+        for src in indexed_sources:
+            if src not in on_disk_names:
+                deleted_count = store.delete_by_source(src)
+                print(f"  [x] Pruned orphaned source: {src} ({deleted_count} chunks)")
 
-    print(f"[*] Ingesting {len(files)} files into Athena Vector Store (Clean Idempotent Pass)...")
+    mode_str = "Clean Rebuild" if force_rebuild else "Delta Incremental Pass"
+    print(f"[*] Ingesting {len(files)} files into Athena Vector Store ({mode_str})...")
     t_start = time.perf_counter()
     total_chars = 0
-    total_chunks = 0
+    new_chunks = 0
+    skipped_files = 0
+    updated_files = 0
 
     for p in files:
         try:
             text = p.read_text(encoding="utf-8")
             doc_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+            # Zero-cost delta check: skip if file hash matches indexed hash
+            if not force_rebuild:
+                existing_sha = store.get_source_sha256(p.name)
+                if existing_sha == doc_sha256:
+                    skipped_files += 1
+                    continue
+
+            # File is new or changed: clear prior chunks for this document
+            store.delete_by_source(p.name)
+
             access_role = detect_access_role(text)
             chunks = chunk_document(text)
             file_ok = 0
@@ -120,8 +144,9 @@ def main():
                 if store.add_document(content=chunk_text, source=p.name, metadata=meta):
                     file_ok += 1
                     total_chars += len(chunk_text)
-                    total_chunks += 1
+                    new_chunks += 1
 
+            updated_files += 1
             print(
                 f"  [+] Ingested: {p.name:<45} | "
                 f"Chunks: {file_ok}/{len(chunks)} | "
@@ -137,10 +162,15 @@ def main():
 
     print("-" * 80)
     print(f"[*] Ingestion Complete: {store.count()} verified vector chunks across {len(files)} documents.")
-    print(
-        f"[*] Empirical Throughput: {total_chars:,} chars ({equiv_pages:.1f} standard pages) "
-        f"in {elapsed:.2f}s -> {pages_per_min:.1f} pages/minute"
-    )
+    if skipped_files > 0:
+        print(f"[*] Delta Optimization: {skipped_files} unchanged files skipped (0 wasted CPU/RAM cycles).")
+    if updated_files > 0:
+        print(
+            f"[*] Empirical Throughput: {total_chars:,} chars ({equiv_pages:.1f} standard pages) "
+            f"in {elapsed:.2f}s -> {pages_per_min:.1f} pages/minute"
+        )
+    else:
+        print(f"[*] Vault fully up to date in {elapsed:.4f}s (zero new embeddings needed).")
     return 0
 
 
