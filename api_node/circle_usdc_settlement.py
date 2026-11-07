@@ -4,6 +4,8 @@ Live transfers remain blocked until authenticated evidence, signing, and
 transaction reconciliation are implemented and commissioned.
 """
 
+from __future__ import annotations
+
 import json
 import hashlib
 import math
@@ -13,7 +15,7 @@ from pathlib import Path
 import sqlite3
 import threading
 import time
-from typing import Dict, Any, Optional, Final, Tuple
+from typing import Dict, Any, Optional, Final, Tuple, Callable
 import uuid
 
 CONFIG_FILE = Path.home() / ".config" / "qf" / "circle.env"
