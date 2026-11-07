@@ -68,12 +68,12 @@ class TestMobileCLI(unittest.TestCase):
         """On master host, loopback is checked first; on mobile, Tailscale IP is checked first."""
         with patch("qflex_cli.socket.gethostname", return_value=qflex_cli.YOGA_HOSTNAME):
             candidates = qflex_cli.get_candidate_hosts()
-            self.assertEqual(candidates[0], ("127.0.0.1", 9000))
+            self.assertEqual(candidates[0], ("127.0.0.1", 9001))
 
         with patch("qflex_cli.socket.gethostname", return_value="android-client"), \
              patch.dict("os.environ", {"USER": "u0_a123"}, clear=True):
             candidates = qflex_cli.get_candidate_hosts()
-            self.assertEqual(candidates[0], ("100.64.1.31", 9000))
+            self.assertEqual(candidates[0], ("100.64.1.31", 9001))
 
     def test_node_dict_schema(self):
         """Node identity to_dict() returns expected keys."""

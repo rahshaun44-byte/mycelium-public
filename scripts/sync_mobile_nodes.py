@@ -77,6 +77,27 @@ def run_adb(cmd: List[str], serial: Optional[str] = None, timeout: float = 15.0)
 
 def probe_tailscale_node(ip: str, timeout_ms: int = 1500) -> Tuple[str, Optional[float]]:
     """Active live reachability check. Never guesses or relies on stale state."""
+    # 1. First probe via Tailscale Wireguard / DERP ping (supports Android nodes)
+    try:
+        tp = subprocess.run(
+            ["tailscale", "ping", "--c", "1", "--timeout", f"{timeout_ms}ms", ip],
+            capture_output=True, text=True, timeout=(timeout_ms / 1000.0) + 1.0
+        )
+        if "pong from" in tp.stdout:
+            for line in tp.stdout.splitlines():
+                if "pong from" in line and " in " in line:
+                    parts = line.split(" in ")
+                    if len(parts) >= 2:
+                        rtt_str = parts[1].replace("ms", "").strip()
+                        try:
+                            return "ONLINE", float(rtt_str)
+                        except ValueError:
+                            return "ONLINE", None
+            return "ONLINE", None
+    except Exception:
+        pass
+
+    # 2. Fallback to standard ICMP ping
     try:
         p = subprocess.run(
             ["ping", "-c", "2", "-W", str(timeout_ms / 1000.0), ip],
