@@ -13,7 +13,7 @@ from pathlib import Path
 import sqlite3
 import threading
 import time
-from typing import Dict, Any, Optional, Final
+from typing import Dict, Any, Optional, Final, Tuple
 import uuid
 
 CONFIG_FILE = Path.home() / ".config" / "qf" / "circle.env"
