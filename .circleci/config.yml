@@ -116,7 +116,7 @@ jobs:
       - run:
           name: Run Mobile Mesh & Distribution Tests
           command: |
-            python -m pip install --upgrade pip pytest cryptography fastapi httpx pydantic
+            python -m pip install --upgrade pip pytest cryptography fastapi httpx pydantic psycopg2-binary python-dotenv
             pytest -v tests/test_mobile_distribution.py tests/test_mobile_cli.py tests/test_mobile_ota_routes.py
 
   test-usdc-settlement-mock:
