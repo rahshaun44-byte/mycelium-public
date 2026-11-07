@@ -65,12 +65,25 @@
     {
       "action": "accept",
       "src": [
-        "autogroup:member",
-        "tag:mobile"
+        "autogroup:member"
       ],
       "dst": [
         "tag:host",
         "autogroup:self"
+      ],
+      "users": [
+        "quant",
+        "autogroup:nonroot",
+        "root"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "tag:mobile"
+      ],
+      "dst": [
+        "tag:host"
       ],
       "users": [
         "quant",

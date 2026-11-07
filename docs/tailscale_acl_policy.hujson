@@ -75,17 +75,30 @@
 	],
 
 	// 5. Tailscale SSH policy
-	// Tailscale SSH destination can ONLY be tags (e.g. tag:host) or autogroup:self
+	// Separates user self-SSH from tagged device SSH (autogroup:self requires autogroup:member src only)
 	"ssh": [
 		{
 			"action": "accept",
 			"src": [
 				"autogroup:member",
-				"tag:mobile",
 			],
 			"dst": [
 				"tag:host",
 				"autogroup:self",
+			],
+			"users": [
+				"quant",
+				"autogroup:nonroot",
+				"root",
+			],
+		},
+		{
+			"action": "accept",
+			"src": [
+				"tag:mobile",
+			],
+			"dst": [
+				"tag:host",
 			],
 			"users": [
 				"quant",
