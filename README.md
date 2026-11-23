@@ -1,16 +1,15 @@
 # Mycelium — QuantumFlex Engine, Coordination Architecture & pqc-immune-daemon
 
 [![License](https://img.shields.io/badge/License-Apache_2.0_|_MIT-blue.svg)](LICENSE)
-[![NLnet Grant](https://img.shields.io/badge/NLnet_Restack_Fund-Application_2026--11--4af-green.svg)](docs/audits/2026-10-31-nlnet-submission-2026-11-4af.txt)
+[![NLnet](https://img.shields.io/badge/NLnet_Restack_Fund-application_pending-lightgrey.svg)](docs/audits/2026-10-31-nlnet-submission-2026-11-4af.txt)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Open Policy Agent](https://img.shields.io/badge/OPA-Rego_Policies_Passing-brightgreen.svg)](sentinel/policies/)
-[![Tests Passing](https://img.shields.io/badge/tests-551%20passed-success.svg)](tests/)
 
 > **Status:** Open-source research prototype published for study, peer review, and public-good development under the **NLnet Foundation / NGI Zero Restack Fund** (Grant Application `2026-11-4af`). All experimental post-quantum key establishment modules (legacy hand-written FrodoKEM-976) are quarantined. Canonical cryptographic runtime definitions reside in [`quantumflex`](https://github.com/rahshaun44-byte/quantumflex). See [`STATUS.md`](STATUS.md) and [`HANDOFF.md`](HANDOFF.md).
 
 ---
 
-## 🇪🇺 NLnet Public-Good Grant Project (`2026-11-4af`)
+## NLnet grant application (`2026-11-4af`, pending)
 
 ### `pqc-immune-daemon`: Formally Verified Post-Quantum Edge Security Membrane & Descriptor-Bound Runtime
 
@@ -23,7 +22,7 @@ This repository hosts **Mycelium** and the **`pqc-immune-daemon`** project, an o
 3. **In-Process OPA WebAssembly Membrane**: Sub-millisecond ($<0.50\text{ms}$) declarative policy enforcement running entirely in-process without exposed network sockets.
 4. **Automated Cryptographic Inventory (CBOM) & SLSA v1.0 Provenance**: Standalone CycloneDX 1.6 Cryptographic Bill of Materials mapping NIST post-quantum algorithm levels (FIPS 203 / 204 / 205).
 
-### Grant Deliverables & Milestone Roadmap (€40,000 / 20 Weeks)
+### Proposed milestones, as submitted in the application (€40,000 / 20 weeks)
 
 | Milestone | Deliverable | Effort | Description | Acceptance Criteria |
 | :--- | :--- | :--- | :--- | :--- |
@@ -42,7 +41,7 @@ Full application dossier and submission receipts:
 
 This repository requires **$0.00 cloud spend** and zero proprietary dependencies to build and verify.
 
-### 1. Run the Regression Suite (551+ Tests)
+### 1. Run the regression suite
 
 ```bash
 # Set up virtual environment
