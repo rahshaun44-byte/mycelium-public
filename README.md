@@ -117,5 +117,5 @@ Outputs CycloneDX v1.5/1.6 CBOM and OPA compliance verdict in `qf-audit-output/`
 
 - **Contributing**: Please review [`CONTRIBUTING.md`](CONTRIBUTING.md) for environment setup, code style, and test requirements.
 - **Code of Conduct**: This project adheres to the Contributor Covenant v2.1. See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
-- **Security Policy**: Follow instructions in [`SECURITY.md`](SECURITY.md) to report vulnerabilities privately via [GitHub Security Advisories](https://github.com/rahshaun44-byte/mycelium/security/advisories/new).
+- **Security Policy**: Follow instructions in [`SECURITY.md`](SECURITY.md) to report vulnerabilities privately via [GitHub Security Advisories](https://github.com/rahshaun44-byte/mycelium-public/security/advisories/new).
 - **Dual Licensing**: Apache-2.0 and MIT. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).

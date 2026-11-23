@@ -35,8 +35,8 @@ All contributions must adhere to our non-negotiable core invariants:
 
 ```bash
 # Clone the repository
-git clone https://github.com/rahshaun44-byte/mycelium.git
-cd mycelium
+git clone https://github.com/rahshaun44-byte/mycelium-public.git
+cd mycelium-public
 
 # Create and activate a Python virtual environment
 python3 -m venv .venv
@@ -98,4 +98,4 @@ python3 tools/qf_audit.py .
 
 ## 5. Security Vulnerabilities
 
-Please **do not report security vulnerabilities via public GitHub issues**. Follow the coordinated disclosure procedure in [SECURITY.md](SECURITY.md) or submit a private security report via [GitHub Security Advisories](https://github.com/rahshaun44-byte/mycelium/security/advisories/new).
+Please **do not report security vulnerabilities via public GitHub issues**. Follow the coordinated disclosure procedure in [SECURITY.md](SECURITY.md) or submit a private security report via [GitHub Security Advisories](https://github.com/rahshaun44-byte/mycelium-public/security/advisories/new).
