@@ -5,19 +5,19 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Open Policy Agent](https://img.shields.io/badge/OPA-Rego_Policies_Passing-brightgreen.svg)](sentinel/policies/)
 
-> **Status:** Open-source research prototype published for study, peer review, and public-good development under the **NLnet Foundation / NGI Zero Restack Fund** (Grant Application `2026-11-4af`). All experimental post-quantum key establishment modules (legacy hand-written FrodoKEM-976) are quarantined. Canonical cryptographic runtime definitions reside in [`quantumflex`](https://github.com/rahshaun44-byte/quantumflex). See [`STATUS.md`](STATUS.md) and [`HANDOFF.md`](HANDOFF.md).
+> **Status:** Open-source research prototype published for study, peer review, and public-good development under the **NLnet Foundation / NGI Zero Restack Fund** (Grant Application `2026-11-4af`). All experimental post-quantum key establishment modules (legacy hand-written FrodoKEM-976) are quarantined. Canonical cryptographic runtime definitions reside in the `quantumflex` package (not yet public). See [`STATUS.md`](STATUS.md) and [`HANDOFF.md`](HANDOFF.md).
 
 ---
 
 ## NLnet grant application (`2026-11-4af`, pending)
 
-### `pqc-immune-daemon`: Formally Verified Post-Quantum Edge Security Membrane & Descriptor-Bound Runtime
+### `pqc-immune-daemon`: Post-Quantum Edge Security Membrane with a Formally Verified Decision Core
 
 Edge Linux systems, decentralized nodes, and civic infrastructure face two urgent threats: **Harvest Now, Decrypt Later (HNDL)** quantum cryptanalysis and **Time-of-Check to Time-of-Use (TOCTOU)** binary substitution attacks. 
 
 This repository hosts **Mycelium** and the **`pqc-immune-daemon`** project, an open-source, zero-cloud security architecture delivering:
 
-1. **Formally Verified Decision Core**: Low* / F* 2026.09 formal specification with automated C11 extraction via KaRaMeL and a 10,000+ vector differential test harness proving state-machine non-bypassability.
+1. **Formally Verified Decision Core**: Low* / F* 2026.09 formal specification with automated C11 extraction via KaRaMeL and a differential test harness that checks the F* model, the KaRaMeL extraction and the C reference agree (10,670 checks, zero divergence as of 2026-11-23). Differential testing checks agreement; it is not itself a proof.
 2. **Descriptor-Bound Loader (`pqc-exec-bound`)**: Linux kernel-sealed execution using `memfd_create()`, write-sealing (`F_SEAL_WRITE | F_SEAL_SEAL`), and `fexecve()` to mathematically eliminate TOCTOU disk substitution races.
 3. **In-Process OPA WebAssembly Membrane**: Sub-millisecond ($<0.50\text{ms}$) declarative policy enforcement running entirely in-process without exposed network sockets.
 4. **Automated Cryptographic Inventory (CBOM) & SLSA v1.0 Provenance**: Standalone CycloneDX 1.6 Cryptographic Bill of Materials mapping NIST post-quantum algorithm levels (FIPS 203 / 204 / 205).
