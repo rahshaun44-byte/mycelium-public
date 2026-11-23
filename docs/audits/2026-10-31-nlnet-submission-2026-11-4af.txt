@@ -4,7 +4,7 @@ The following submission was recorded by NLnet. Thanks for your application, we 
 Contact
 name: Rahshaun Chambers
 phone: [Redacted for Public Repository / On File with NLnet]
-email: rahshaun44-byte@users.noreply.github.com
+email: [redacted]
 organisation name:
 country: US
 entity: Individual
