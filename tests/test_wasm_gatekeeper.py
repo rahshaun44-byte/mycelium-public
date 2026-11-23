@@ -272,3 +272,36 @@ def test_invariant_gate_fail_secure_when_http_unreachable(monkeypatch):
     assert allow is False
     assert verdict == "DENY"
     assert "Fail-Secure" in reason
+
+
+# ── Adversarial regressions (2026-11-23) against the compiled reserve Wasm ──
+# OPA orders string/array/object above every number, so before the fix a
+# non-number reserve "covered" any obligation; a negative delta and a
+# caller-widened staleness window were also admitted.
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"reserve_measured": "0", "units_claimed": 1_000_000},
+        {"reserve_measured": [], "units_claimed": 5},
+        {"reserve_measured": {}, "units_claimed": 5},
+        {"reserve_measured": 10, "units_claimed": "1"},
+        {"reserve_measured": 1, "units_claimed": 1000, "requested_delta": -1000},
+        {"reserve_measured": 10, "units_claimed": 1, "requested_delta": "0"},
+        {"reserve_measured": 10, "units_claimed": 1, "telemetry_timestamp": 0,
+         "max_staleness_seconds": 10**12},
+    ],
+    ids=["string-reserve", "array-reserve", "object-reserve", "string-obligation",
+         "negative-delta", "string-delta", "caller-widened-staleness"],
+)
+def test_reserve_invariant_wasm_adversarial_inputs_deny(reserve_gate, extra):
+    payload = {"resource_type": "MEMORY_MB", "telemetry_timestamp": int(time.time()),
+               "max_staleness_seconds": 30, **extra}
+    allow, verdict, _ = reserve_gate.evaluate_invariant(payload)
+    assert allow is False
+    assert verdict == "DENY"
+
+
+@pytest.mark.parametrize("value", ["café", "☃ snow", "日本"])
+def test_wasm_host_json_round_trip_preserves_utf8(reserve_gate, value):
+    engine = reserve_gate.engine
+    assert engine._read_json(engine._write_json(value)) == value

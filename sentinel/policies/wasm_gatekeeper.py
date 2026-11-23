@@ -91,24 +91,20 @@ class OPAWasmEngine:
         self._lock = threading.Lock()
 
     def _opa_abort(self, addr: int) -> None:
-        raw = self.memory.data_ptr(self.store)
-        chars = []
-        idx = addr
-        while raw[idx] != 0:
-            chars.append(chr(raw[idx]))
-            idx += 1
-        msg = "".join(chars)
+        msg = self._read_cstring(addr)
         raise RuntimeError(f"OPA Wasm abort: {msg}")
+
+    def _read_cstring(self, addr: int) -> str:
+        """Read a NUL-terminated UTF-8 string from linear memory."""
+        mem = self.memory.data_ptr(self.store)
+        end = addr
+        while mem[end] != 0:
+            end += 1
+        return bytes(mem[addr:end]).decode("utf-8")
 
     def _read_json(self, val_ref: int) -> Any:
         dump_addr = self.exports["opa_json_dump"](self.store, val_ref)
-        mem = self.memory.data_ptr(self.store)
-        chars = []
-        idx = dump_addr
-        while mem[idx] != 0:
-            chars.append(chr(mem[idx]))
-            idx += 1
-        return json.loads("".join(chars))
+        return json.loads(self._read_cstring(dump_addr))
 
     def _write_json(self, val: Any) -> int:
         encoded = json.dumps(val).encode("utf-8")
@@ -127,7 +123,8 @@ class OPAWasmEngine:
             res = fmt_str
             for a in fmt_args:
                 val_str = str(a) if not isinstance(a, (dict, list)) else json.dumps(a)
-                res = re.sub(r"%(v|s|d)", val_str, res, count=1)
+                # Callable replacement: a backslash in the value must stay literal.
+                res = re.sub(r"%(v|s|d)", lambda _m, v=val_str: v, res, count=1)
             return self._write_json(res)
 
         # Builtin: time.now_ns (ID 10)

@@ -110,3 +110,62 @@ test_tpm_hardware_anchor_tamper_desync if {
     invariant.verdict == "DENY" with input as inp
     contains(invariant.reason, "ANCHOR_DESYNC") with input as inp
 }
+
+# ── Adversarial regressions (2026-11-23): type confusion, negative delta, caller-widened SLA ───
+# OPA orders null < boolean < number < string < array < object, so a non-number reserve
+# compared against a numeric obligation used to win. Each of these must DENY.
+
+adv_base(extra) := object.union({
+	"resource_type": "MEMORY_MB",
+	"telemetry_timestamp": time.now_ns() / 1000000000,
+	"max_staleness_seconds": 30,
+}, extra)
+
+test_adv_string_reserve_denied if {
+	inp := adv_base({"reserve_measured": "0", "units_claimed": 1000000})
+	not invariant.allow with input as inp
+	invariant.domain_verdict == "INSOLVENT" with input as inp
+}
+
+test_adv_array_reserve_denied if {
+	not invariant.allow with input as adv_base({"reserve_measured": [], "units_claimed": 5})
+}
+
+test_adv_object_reserve_denied if {
+	not invariant.allow with input as adv_base({"reserve_measured": {}, "units_claimed": 5})
+}
+
+test_adv_string_obligation_denied if {
+	not invariant.allow with input as adv_base({"reserve_measured": 10, "units_claimed": "1"})
+}
+
+test_adv_negative_delta_denied if {
+	inp := adv_base({"reserve_measured": 1, "units_claimed": 1000, "requested_delta": -1000})
+	not invariant.allow with input as inp
+}
+
+test_adv_string_delta_denied if {
+	not invariant.allow with input as adv_base({"reserve_measured": 10, "units_claimed": 1, "requested_delta": "0"})
+}
+
+test_adv_caller_cannot_widen_staleness if {
+	inp := adv_base({"reserve_measured": 10, "units_claimed": 1, "telemetry_timestamp": 0, "max_staleness_seconds": 1000000000000})
+	not invariant.allow with input as inp
+}
+
+test_adv_caller_may_tighten_staleness if {
+	now := time.now_ns() / 1000000000
+	inp := adv_base({"reserve_measured": 10, "units_claimed": 1, "telemetry_timestamp": now - 20, "max_staleness_seconds": 10})
+	not invariant.allow with input as inp
+}
+
+test_adv_string_timestamp_denied if {
+	now := time.now_ns() / 1000000000
+	inp := adv_base({"reserve_measured": 10, "units_claimed": 1, "telemetry_timestamp": sprintf("%d", [now])})
+	not invariant.allow with input as inp
+}
+
+test_adv_numeric_solvent_still_admits if {
+	inp := adv_base({"reserve_measured": 10, "units_claimed": 1, "requested_delta": 0})
+	invariant.allow with input as inp
+}

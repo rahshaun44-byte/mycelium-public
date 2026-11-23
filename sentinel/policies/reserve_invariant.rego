@@ -15,15 +15,19 @@ import rego.v1
 default allow := false
 default verdict := "DENY"
 
-# Determine effective staleness window (default 60s)
+# Staleness ceiling. A caller may tighten the window, never widen it.
+max_staleness_ceiling := 60
+
+# Determine effective staleness window (default and maximum 60s)
 effective_max_staleness := input.max_staleness_seconds if {
-    input.max_staleness_seconds != null
+    is_number(input.max_staleness_seconds)
     input.max_staleness_seconds > 0
-} else := 60
+    input.max_staleness_seconds <= max_staleness_ceiling
+} else := max_staleness_ceiling
 
 # Freshness assertion
 is_fresh if {
-    input.telemetry_timestamp != null
+    is_number(input.telemetry_timestamp)
     now_sec := time.now_ns() / 1000000000
     age := now_sec - input.telemetry_timestamp
     age >= 0
@@ -40,10 +44,14 @@ solvency_valid if {
     avail := object.get(input, "available", object.get(input, "reserve_measured", null))
     oblig := object.get(input, "obligated", object.get(input, "units_claimed", null))
     delta := object.get(input, "requested_delta", 0)
-    avail != null
-    oblig != null
+    # Numbers only: OPA orders string/array/object above every number, so a
+    # non-number reserve would otherwise "cover" any obligation.
+    is_number(avail)
+    is_number(oblig)
+    is_number(delta)
     avail >= 0
     oblig >= 0
+    delta >= 0
     avail >= (oblig + delta)
 }
 
